@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.eggs
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+.mypy_cache
+.ruff_cache
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Data (will use mounted volume)
+data/
+
+# Docs
+*.md
+!README.md
+docs/
+
+# Tests
+tests/
+*_test.py
+test_*.py
