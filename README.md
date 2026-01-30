@@ -1,123 +1,70 @@
 # Job Engine
 
-AI-powered opportunity finder. Minimum effort, maximum return.
+Find opportunities. Ranked by **$/hour**.
 
-## What It Does
-
-Searches everything - VC opportunities, grants, job boards, freelance gigs - and ranks them by the only metric that matters: **dollars per hour of your life**.
-
-### Core Philosophy
-- Less work, more money
-- Remote by default
-- AI does the hunting, you do the winning
-
-## Stack
-
-- **LangGraph** - Intelligent agent orchestration
-- **ChromaDB** - Vector memory (remembers what you've seen, learns your preferences)
-- **OpenAI** - Embeddings + reasoning
-- **Brave Search** - Real-time web search
-- **Perplexity** - Deep research on opportunities
-- **FastAPI** - Lean API layer
-- **Fly.io** - Deploys anywhere
-
-## Quick Start
+## Use
 
 ```bash
-# Install
 pip install -e .
 
-# Set your API keys
-cp .env.example .env
-# Edit .env with your keys
+# Set API keys
+export OPENAI_API_KEY=sk-...
+export BRAVE_API_KEY=BSA...      # optional
+export PERPLEXITY_API_KEY=pplx-... # optional
 
-# Search (CLI)
-python -m src.cli search "senior python engineer remote"
-
-# Or start the API
-python -m src.cli serve
+# Search
+job-engine "AI engineer"
+job-engine "python freelance"
+job-engine "startup equity"
 ```
 
-## Usage
+## Output
 
-### CLI
+```
+#   Title                                    Company        Pay       Hrs    $/hr
+1   Senior ML Engineer (Remote)              Acme AI        $220,000  30     $147
+2   AI Consultant - Part Time                TechCorp       $180,000  20     $180
+3   Python Contract - 6 months               StartupX       $150,000  25     $120
+...
 
-```bash
-# Quick search
-python -m src.cli search "AI engineer" --quick
-
-# Full search with deep analysis
-python -m src.cli search "machine learning contract work"
-
-# Create your profile
-python -m src.cli profile --income 150000 --hours 25 --skills "python,ml,ai"
-
-# Use your profile
-python -m src.cli search "remote work" --profile profile.json
+Top picks:
+  1. Senior ML Engineer (Remote)
+     https://example.com/job/123
+     $147/hr
 ```
 
-### API
+## API
 
 ```bash
 # Start server
-python -m src.cli serve
-
-# Set your profile
-curl -X POST http://localhost:8000/profile \
-  -H "Content-Type: application/json" \
-  -d '{
-    "min_income": 150000,
-    "max_hours_weekly": 20,
-    "skills": ["python", "ai", "ml"],
-    "remote_only": true
-  }'
+job-engine serve
 
 # Search
-curl -X POST http://localhost:8000/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "senior AI engineer remote"}'
+curl "localhost:8000/search?q=AI+engineer"
 ```
 
-## Configuration
+## How It Works
 
-Create `.env`:
+1. Searches Brave + Perplexity in parallel
+2. Extracts pay/hours with GPT-4o
+3. Ranks by efficiency: `pay / (hours * 50 weeks)`
+4. Penalizes office jobs (-30%)
+5. Returns highest $/hr first
+
+## Files
 
 ```
-OPENAI_API_KEY=sk-...
-BRAVE_API_KEY=BSA...
-PERPLEXITY_API_KEY=pplx-...
+src/
+├── engine.py   # The whole thing
+├── models.py   # One model: Opportunity
+├── cli.py      # CLI
+└── api/        # FastAPI
 ```
 
 ## Deploy
 
 ```bash
-# Fly.io
 fly launch
-fly secrets set OPENAI_API_KEY=sk-... BRAVE_API_KEY=... PERPLEXITY_API_KEY=...
+fly secrets set OPENAI_API_KEY=... BRAVE_API_KEY=... PERPLEXITY_API_KEY=...
 fly deploy
 ```
-
-## How It Works
-
-1. **Profile** - You tell it what you want (income, hours, skills)
-2. **Search** - LangGraph agent searches Brave, Perplexity, job boards
-3. **Rank** - Scores by income potential / effort required
-4. **Research** - Deep dives top candidates with Perplexity
-5. **Recommend** - Returns ranked opportunities with efficiency metrics
-
-## Project Structure
-
-```
-src/
-├── agents/          # LangGraph orchestrator
-├── memory/          # ChromaDB vector storage
-├── search/          # Brave, Perplexity integrations
-├── ranking/         # Scoring algorithm
-├── api/             # FastAPI routes
-├── cli.py           # CLI interface
-└── models.py        # Data models
-```
-
-## License
-
-MIT
