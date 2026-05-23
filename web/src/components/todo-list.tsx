@@ -55,31 +55,29 @@ export function TodoList({
 
   return (
     <Panel label="Pipeline">
-      <div className="flex justify-between meta mb-3">
+      <div className="meta-row">
         <span>{todos.length} tasks</span>
-        <span>{completionPct}%</span>
+        <span>{completionPct}% complete</span>
       </div>
-      <div className="bar-track mb-4">
+      <div className="bar-track mb-3">
         <div className="bar-fill" style={{ width: `${completionPct}%` }} />
       </div>
 
-      <div className="flex gap-1 mb-4" role="tablist" aria-label="Filter tasks">
+      <div className="flex gap-1 mb-3 flex-wrap">
         {FILTERS.map((f) => (
           <button
             key={f}
             type="button"
-            role="tab"
-            aria-selected={filter === f}
             onClick={() => setFilter(f)}
-            className={`btn btn-sm btn-ghost meta ${filter === f ? "btn-ghost-active" : ""}`}
+            className={`btn btn-ghost ${filter === f ? "btn-ghost-active" : ""}`}
           >
             {f}
           </button>
         ))}
       </div>
 
-      <div className="input-shell mb-4">
-        <span className="input-prompt" aria-hidden>
+      <div className="input-row">
+        <span className="prompt" aria-hidden>
           +
         </span>
         <input
@@ -95,33 +93,29 @@ export function TodoList({
             if (e.key === "Escape") setDraft("");
           }}
           placeholder="Add task…"
-          className="input"
-          autoComplete="off"
           aria-label="New task"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="hint py-6 text-center">No tasks</p>
+        <p className="hint py-4 text-center">No tasks</p>
       ) : (
-        <ul className="scroll max-h-[min(320px,40vh)] overflow-y-auto divide-soft">
+        <ul className="todo-list">
           {filtered.map((todo) => (
             <li
               key={todo.id}
-              className={`flex items-start gap-2 py-3 min-w-0 ${todo.done ? "opacity-40" : ""}`}
+              className={`flex items-start gap-1 py-2 min-w-0 ${todo.done ? "opacity-40" : ""}`}
             >
               <button
                 type="button"
                 onClick={() => toggle(todo.id)}
-                className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-[var(--accent-muted)] hover:text-[var(--accent)] cursor-pointer text-[11px] shrink-0 meta normal-case tracking-normal"
+                className="check-btn"
                 aria-label={todo.done ? "Mark incomplete" : "Mark complete"}
               >
                 {todo.done ? "[x]" : "[ ]"}
               </button>
-              <div className="flex-1 min-w-0 pt-2">
-                <span
-                  className={`block text-[15px] leading-snug break-words ${todo.done ? "line-through text-muted" : ""}`}
-                >
+              <div className="flex-1 min-w-0 pt-1">
+                <span className={`block leading-snug break-words ${todo.done ? "line-through" : ""}`}>
                   {todo.text}
                 </span>
                 {todo.opportunityUrl && (
@@ -129,7 +123,7 @@ export function TodoList({
                     href={todo.opportunityUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block hint mt-1 truncate hover:text-[var(--accent)]"
+                    className="block hint mt-1 truncate hover:opacity-75"
                   >
                     {todo.opportunityUrl.replace(/^https?:\/\//, "")}
                   </a>
@@ -138,7 +132,7 @@ export function TodoList({
               <button
                 type="button"
                 onClick={() => remove(todo.id)}
-                className="btn btn-sm btn-ghost shrink-0 mt-1 meta"
+                className="btn btn-ghost shrink-0"
                 aria-label="Remove"
               >
                 ×
@@ -149,7 +143,7 @@ export function TodoList({
       )}
 
       {todos.some((t) => t.done) && (
-        <button type="button" onClick={clearDone} className="btn btn-sm btn-ghost w-full mt-4 meta">
+        <button type="button" onClick={clearDone} className="btn w-full mt-3">
           clear done
         </button>
       )}

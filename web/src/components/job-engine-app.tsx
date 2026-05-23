@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import { checkHealth } from "@/lib/api";
 import { useTodos } from "@/lib/use-todos";
-import { Header } from "./header";
 import { Hero } from "./hero";
-import { SearchPanel } from "./search-panel";
+import { MetricsSection } from "./metrics-section";
+import { ResultsList } from "./results-list";
+import { SearchComposer } from "./search-composer";
 import { TodoList } from "./todo-list";
 
 export function JobEngineApp() {
@@ -16,6 +17,7 @@ export function JobEngineApp() {
   const todos = useTodos();
 
   const live = searching || results.length > 0 || apiOnline === true;
+  const status = apiOnline === null ? "…" : apiOnline ? "online" : "offline";
 
   useEffect(() => {
     checkHealth().then(setApiOnline);
@@ -31,30 +33,39 @@ export function JobEngineApp() {
   }
 
   return (
-    <div className="page">
-      <Header apiOnline={apiOnline} resultCount={results.length} />
+    <div className="frame">
+      <header className="frame-rail">
+        <span className="truncate">
+          api {status}
+          {results.length > 0 ? ` · ${results.length} ranked` : ""}
+        </span>
+        <span>Job Engine</span>
+        <span className="text-right">
+          <a href="https://github.com/pdj555/job-engine" target="_blank" rel="noopener noreferrer">
+            github
+          </a>
+        </span>
+      </header>
 
-      <main className="page-main">
-        <div className="stack">
-          <Hero pipelinePct={todos.completionPct} live={live} />
+      <main className="frame-body">
+        <Hero
+          resultCount={results.length}
+          pipelinePct={todos.completionPct}
+          live={live}
+        />
 
-          <div className="dashboard">
-            <div className="min-w-0">
-              <SearchPanel
-                onResults={setResults}
-                onAdd={handleAdd}
-                onSearching={setSearching}
-              />
-            </div>
+        <SearchComposer
+          onResults={setResults}
+          onSearching={setSearching}
+        />
 
-            <aside id="pipeline" className="min-w-0 scroll-mt-6 lg:sticky lg:top-[4.25rem]">
-              <TodoList {...todos} />
-            </aside>
-          </div>
+        <MetricsSection results={results} />
+
+        <div className="split">
+          <ResultsList results={results} onAdd={handleAdd} />
+          <TodoList {...todos} />
         </div>
       </main>
-
-      <footer className="site-footer">Ranked by effective $/hr</footer>
     </div>
   );
 }

@@ -1,40 +1,53 @@
 "use client";
 
-import { NodeMap } from "./node-map";
 import { Panel } from "./panel";
+import { WorldMap } from "./world-map";
 
 export function Hero({
+  resultCount,
   pipelinePct,
   live,
 }: {
+  resultCount: number;
   pipelinePct: number;
   live: boolean;
 }) {
+  const progress = resultCount > 0 ? 100 : 0;
+  const status = resultCount > 0 ? "run complete" : "idle";
+
   return (
-    <section className="grid lg:grid-cols-[1fr_13rem] gap-6 lg:gap-8 items-start">
+    <section className="hero-grid">
       <div className="min-w-0">
-        <h1 className="title">
+        <h1>
           <span className="title-text">Job Engine</span>
         </h1>
 
-        <Panel label="Search Progress" className="mt-6 lg:mt-8">
-          <div className="flex justify-between meta mb-3 gap-4">
-            <span>Query → rank → pipeline</span>
-            <span className="shrink-0">{pipelinePct}% pipeline</span>
+        <Panel label="Search Progress" className="mt-5">
+          <div className="meta-row">
+            <span>
+              {resultCount > 0 ? `${resultCount} ranked` : "0 results"}
+            </span>
+            <span>{status}</span>
           </div>
           <div className="bar-track">
-            <div className="bar-fill" style={{ width: `${pipelinePct}%` }} />
+            <div className="bar-fill" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="meta-row mt-3 mb-0">
+            <span>pipeline {pipelinePct}%</span>
+            <span>{resultCount > 0 ? "100%" : "0%"}</span>
           </div>
         </Panel>
 
-        <p className="prose mt-6 max-w-xl">
-          Search contracts, grants, and roles. Results ranked by effective hourly
-          rate — pay divided by expected hours, not title prestige.
+        <p className="about">
+          About Job Engine: search contracts, grants, and roles across sources.
+          Each listing is ranked by effective hourly rate — annual pay divided by
+          expected hours — so compensation compares on equal footing. Add roles to
+          your pipeline and track applications in one place.
         </p>
       </div>
 
-      <Panel label="Live Global Status" className="min-w-0">
-        <NodeMap live={live} />
+      <Panel label="Live Global Status">
+        <WorldMap live={live} />
       </Panel>
     </section>
   );
