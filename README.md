@@ -39,6 +39,15 @@ job-engine serve
 curl "http://localhost:8000/search?q=AI+engineer"
 ```
 
+Web UI (Next.js):
+
+```bash
+job-engine serve          # terminal 1 — API on :8000
+cd web && npm install && npm run dev   # terminal 2 — UI on :3000
+```
+
+Deploy the UI to Vercel with root directory `web`. Set `JOB_ENGINE_API_URL` to your API host.
+
 ## Reference
 
 **Deploy.**

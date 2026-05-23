@@ -1,9 +1,10 @@
 """The engine. One class. Does everything."""
 
 import asyncio
-import hashlib
 import json
+import re
 from datetime import datetime
+from html import unescape
 from typing import Optional
 
 import httpx
@@ -75,9 +76,9 @@ class Engine:
         return unique
 
     async def _search_brave(self, query: str) -> list[dict]:
-        """Search Brave."""
+        """Search Brave, or DuckDuckGo when no Brave key."""
         if not self.brave_key:
-            return []
+            return await self._search_ddg(query)
 
         async with httpx.AsyncClient() as client:
             try:
@@ -90,7 +91,7 @@ class Engine:
                 resp.raise_for_status()
                 data = resp.json()
 
-                return [
+                results = [
                     {
                         "title": r.get("title", ""),
                         "url": r.get("url", ""),
@@ -99,8 +100,28 @@ class Engine:
                     }
                     for r in data.get("web", {}).get("results", [])
                 ]
+                if results:
+                    return results
+                return await self._search_ddg(query)
             except Exception as e:
                 print(f"Brave error: {e}")
+                return await self._search_ddg(query)
+
+    async def _search_ddg(self, query: str) -> list[dict]:
+        """Free web search fallback."""
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.post(
+                    "https://html.duckduckgo.com/html/",
+                    data={"q": query, "b": ""},
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
+                    timeout=30.0,
+                    follow_redirects=True,
+                )
+                resp.raise_for_status()
+                return _parse_ddg_html(resp.text)
+            except Exception as e:
+                print(f"DDG error: {e}")
                 return []
 
     async def _search_perplexity(self, query: str) -> list[dict]:
@@ -183,16 +204,17 @@ Only return the JSON array, nothing else."""
         if self.openai:
             return await self._extract_with_llm(raw_results, query)
 
-        # Otherwise, create basic opportunities
+        # Otherwise, create basic opportunities with conservative guesses
         return [
             Opportunity(
                 title=r.get("title", "Unknown"),
                 url=r.get("url", ""),
                 description=r.get("description", ""),
                 company=r.get("company"),
-                pay_high=r.get("pay"),
-                hours_per_week=r.get("hours"),
-                remote=r.get("remote", True),
+                pay_high=r.get("pay") or _guess_pay(r.get("title", ""), r.get("description", "")),
+                hours_per_week=r.get("hours")
+                or _guess_hours(r.get("title", ""), r.get("description", "")),
+                remote=r.get("remote", _guess_remote(r.get("title", ""), r.get("description", ""))),
                 source=r.get("source", "")
             )
             for r in raw_results if r.get("url")
@@ -331,6 +353,69 @@ Be direct. No fluff."""
                 return resp.json()["choices"][0]["message"]["content"]
             except Exception as e:
                 return f"Research failed: {e}"
+
+
+def _parse_ddg_html(html: str) -> list[dict]:
+    """Parse DuckDuckGo HTML results."""
+    results: list[dict] = []
+    for match in re.finditer(
+        r'class="result__a"\s+href="([^"]+)"[^>]*>([^<]+)</a>',
+        html,
+    ):
+        url = unescape(match.group(1))
+        title = unescape(re.sub(r"\s+", " ", match.group(2)).strip())
+        if not url or not title:
+            continue
+        if "duckduckgo.com/y.js" in url or "bing.com/aclick" in url:
+            continue
+        if url.startswith("//"):
+            url = f"https:{url}"
+        results.append(
+            {
+                "title": title,
+                "url": url,
+                "description": "",
+                "source": "duckduckgo",
+            }
+        )
+
+    for item in results:
+        idx = html.find(item["url"])
+        if idx < 0:
+            continue
+        snippet = re.search(
+            r'class="result__snippet"[^>]*>([^<]+)',
+            html[idx : idx + 1200],
+        )
+        if snippet:
+            item["description"] = unescape(re.sub(r"\s+", " ", snippet.group(1)).strip())
+
+    return results[:20]
+
+
+def _guess_pay(title: str, description: str) -> int:
+    text = f"{title} {description}".lower()
+    if any(w in text for w in ("senior", "staff", "principal", "lead")):
+        return 180_000
+    if any(w in text for w in ("junior", "entry", "intern")):
+        return 90_000
+    if any(w in text for w in ("contract", "freelance", "consultant")):
+        return 130_000
+    return 120_000
+
+
+def _guess_hours(title: str, description: str) -> int:
+    text = f"{title} {description}".lower()
+    if any(w in text for w in ("contract", "freelance", "part-time", "part time")):
+        return 30
+    return 40
+
+
+def _guess_remote(title: str, description: str) -> bool:
+    text = f"{title} {description}".lower()
+    if any(w in text for w in ("onsite", "on-site", "in-office", "in office", "hybrid")):
+        return False
+    return True
 
 
 # Singleton
