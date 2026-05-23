@@ -6,14 +6,22 @@ import { searchJobs } from "@/lib/api";
 export function SearchComposer({
   onResults,
   onSearching,
+  apiOnline,
+  searchReady,
 }: {
   onResults: (results: import("@/lib/types").Opportunity[]) => void;
   onSearching?: (loading: boolean) => void;
+  apiOnline: boolean | null;
+  searchReady: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [empty, setEmpty] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const disabled =
+    loading || !query.trim() || apiOnline === false || (apiOnline === true && !searchReady);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -29,15 +37,17 @@ export function SearchComposer({
   async function runSearch(e?: React.FormEvent) {
     e?.preventDefault();
     const q = query.trim();
-    if (!q) return;
+    if (!q || apiOnline === false) return;
 
     setLoading(true);
     onSearching?.(true);
     setError(null);
+    setEmpty(false);
 
     try {
       const data = await searchJobs(q);
       onResults(data.results);
+      if (data.results.length === 0) setEmpty(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Search failed");
       onResults([]);
@@ -60,14 +70,25 @@ export function SearchComposer({
           autoComplete="off"
           spellCheck={false}
           aria-label="Search query"
+          disabled={apiOnline === false}
         />
-        <button type="submit" disabled={loading || !query.trim()} className="composer-btn">
+        <button type="submit" disabled={disabled} className="composer-btn">
           {loading ? "…" : "Search"}
         </button>
       </form>
-      <p className="composer-hint">Press / to focus</p>
+      <p className="composer-hint">
+        {apiOnline === false
+          ? "Start the API with `job-engine serve` on :8000"
+          : "Press / to focus"}
+      </p>
 
       {loading && <p className="loading">loading...</p>}
+
+      {empty && !loading && !error && (
+        <p className="hint text-center" style={{ maxWidth: "36rem" }}>
+          No results for that query. Try different keywords.
+        </p>
+      )}
 
       {error && (
         <section className="panel w-full" style={{ maxWidth: "36rem" }}>

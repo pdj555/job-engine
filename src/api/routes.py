@@ -41,7 +41,8 @@ async def health():
             "openai": bool(settings.openai_api_key),
             "brave": bool(settings.brave_api_key),
             "perplexity": bool(settings.perplexity_api_key),
-        }
+        },
+        "search_ready": True,
     }
 
 

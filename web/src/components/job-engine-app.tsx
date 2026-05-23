@@ -14,6 +14,7 @@ import { TodoList } from "./todo-list";
 export function JobEngineApp() {
   const [results, setResults] = useState<Opportunity[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  const [searchReady, setSearchReady] = useState(true);
   const [searching, setSearching] = useState(false);
   const todos = useTodos();
 
@@ -21,8 +22,14 @@ export function JobEngineApp() {
   const status = apiOnline === null ? "…" : apiOnline ? "online" : "offline";
 
   useEffect(() => {
-    checkHealth().then(setApiOnline);
-    const id = setInterval(() => checkHealth().then(setApiOnline), 15000);
+    const poll = () =>
+      checkHealth().then((health) => {
+        setApiOnline(health !== null);
+        setSearchReady(health?.search_ready ?? false);
+      });
+
+    poll();
+    const id = setInterval(poll, 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -44,7 +51,12 @@ export function JobEngineApp() {
           live={live}
         />
 
-        <SearchComposer onResults={setResults} onSearching={setSearching} />
+        <SearchComposer
+          onResults={setResults}
+          onSearching={setSearching}
+          apiOnline={apiOnline}
+          searchReady={searchReady}
+        />
 
         <MetricsSection results={results} />
 

@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
+/* Dark default — DisTrO dark + OpenAI */
 :root {
-  --bg: #ffffff;
-  --accent: #0040ff;
-  --accent-dim: rgba(0, 64, 255, 0.55);
-  --accent-soft: rgba(0, 64, 255, 0.06);
-  --grid: rgba(0, 64, 255, 0.09);
-  --node: #ff6b00;
-  --composer-bg: #2f2f2f;
-  --composer-border: rgba(255, 255, 255, 0.12);
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --accent: #6b9bff;
+  --accent-dim: rgba(107, 155, 255, 0.48);
+  --accent-soft: rgba(107, 155, 255, 0.07);
+  --grid: rgba(107, 155, 255, 0.06);
+  --node: #ff8c42;
+  --composer-bg: #212121;
+  --composer-border: rgba(255, 255, 255, 0.1);
   --composer-text: #ececec;
+  --composer-muted: rgba(255, 255, 255, 0.42);
   --scanline: repeating-linear-gradient(
     0deg,
     transparent,
@@ -17,17 +20,23 @@
     var(--accent) 2px,
     var(--accent) 3px
   );
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-.dark {
-  --bg: #000000;
-  --accent: #6b9bff;
-  --accent-dim: rgba(107, 155, 255, 0.5);
-  --accent-soft: rgba(107, 155, 255, 0.08);
-  --grid: rgba(107, 155, 255, 0.07);
-  --node: #ff8c42;
-  color-scheme: dark;
+/* DisTrO light — toggle only */
+.light {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --accent: #0040ff;
+  --accent-dim: rgba(0, 64, 255, 0.55);
+  --accent-soft: rgba(0, 64, 255, 0.06);
+  --grid: rgba(0, 64, 255, 0.09);
+  --node: #ff6b00;
+  --composer-bg: #212121;
+  --composer-border: rgba(255, 255, 255, 0.1);
+  --composer-text: #ececec;
+  --composer-muted: rgba(255, 255, 255, 0.42);
+  color-scheme: light;
 }
 
 * {
@@ -64,7 +73,7 @@ body {
   min-height: calc(100dvh - 2rem);
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 @media (min-width: 768px) {
@@ -83,6 +92,7 @@ body {
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  background: var(--surface);
 }
 
 .frame-rail-center {
@@ -147,7 +157,7 @@ body {
   position: relative;
   padding: 1rem;
   padding-top: calc(1rem + 0.3rem);
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .panel-label {
@@ -155,7 +165,7 @@ body {
   top: 0;
   left: 10px;
   transform: translateY(-50%);
-  background: var(--bg);
+  background: var(--surface);
   padding: 0 5px;
   font-size: 9px;
   letter-spacing: 0.14em;
@@ -168,7 +178,7 @@ body {
   position: relative;
   padding: 1rem;
   padding-top: calc(1rem + 0.3rem);
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .section-head-label {
@@ -176,7 +186,7 @@ body {
   top: 0;
   left: 10px;
   transform: translateY(-50%);
-  background: var(--bg);
+  background: var(--surface);
   padding: 0 5px;
   font-size: 9px;
   letter-spacing: 0.14em;
@@ -218,7 +228,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0 0.25rem;
+  padding: 0.75rem 0 0.25rem;
 }
 
 .composer {
@@ -226,18 +236,21 @@ body {
   align-items: flex-end;
   gap: 0.5rem;
   width: 100%;
-  max-width: 36rem;
-  padding: 0.45rem;
+  max-width: 40rem;
+  padding: 0.5rem;
   border-radius: 1.75rem;
   background: var(--composer-bg);
   border: 1px solid var(--composer-border);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.25),
-    0 16px 48px rgba(0, 0, 0, 0.22);
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 20px 50px rgba(0, 0, 0, 0.55);
 }
 
 .composer:focus-within {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(107, 155, 255, 0.2),
+    0 20px 50px rgba(0, 0, 0, 0.6);
 }
 
 .composer-input {
@@ -245,7 +258,7 @@ body {
   min-width: 0;
   border: none;
   background: transparent;
-  padding: 0.8rem 0.65rem;
+  padding: 0.85rem 0.75rem;
   color: var(--composer-text);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
@@ -253,7 +266,7 @@ body {
 }
 
 .composer-input::placeholder {
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--composer-muted);
 }
 
 .composer-input:focus {
@@ -263,8 +276,8 @@ body {
 .composer-btn {
   border: none;
   border-radius: 1.25rem;
-  padding: 0.6rem 1.15rem;
-  min-height: 40px;
+  padding: 0.65rem 1.2rem;
+  min-height: 42px;
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -309,7 +322,7 @@ body {
 .metric-cell {
   border: 1px solid var(--accent);
   padding: 0.75rem;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .metric-title {
@@ -336,7 +349,7 @@ body {
   display: flex;
   border: 1px solid var(--accent);
   margin-bottom: 0.75rem;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .input-row .prompt {
@@ -368,7 +381,7 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
-  background: var(--bg);
+  background: var(--surface);
   cursor: pointer;
 }
 
