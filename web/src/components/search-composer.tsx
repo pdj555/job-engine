@@ -8,12 +8,10 @@ export function SearchComposer({
   onResults,
   onSearching,
   apiOnline,
-  searchReady,
 }: {
   onResults: (results: import("@/lib/types").Opportunity[]) => void;
   onSearching?: (loading: boolean) => void;
   apiOnline: boolean | null;
-  searchReady: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,8 +19,7 @@ export function SearchComposer({
   const [empty, setEmpty] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const disabled =
-    loading || !query.trim() || apiOnline === false || (apiOnline === true && !searchReady);
+  const disabled = loading || !query.trim();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,7 +35,7 @@ export function SearchComposer({
   async function runSearch(e?: React.FormEvent) {
     e?.preventDefault();
     const q = query.trim();
-    if (!q || apiOnline === false) return;
+    if (!q || loading) return;
 
     setLoading(true);
     onSearching?.(true);
@@ -67,14 +64,13 @@ export function SearchComposer({
           </span>
           <input
             ref={inputRef}
-            type="search"
+            type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="roles, contracts, grants…"
             autoComplete="off"
             spellCheck={false}
             aria-label="Search query"
-            disabled={apiOnline === false}
           />
           <button type="submit" disabled={disabled} className="btn shrink-0">
             {loading ? "…" : "run"}

@@ -14,7 +14,6 @@ import { TodoList } from "./todo-list";
 export function JobEngineApp() {
   const [results, setResults] = useState<Opportunity[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
-  const [searchReady, setSearchReady] = useState(true);
   const [searching, setSearching] = useState(false);
   const todos = useTodos();
 
@@ -25,7 +24,6 @@ export function JobEngineApp() {
     const poll = () =>
       checkHealth().then((health) => {
         setApiOnline(health !== null);
-        setSearchReady(health?.search_ready ?? false);
       });
 
     poll();
@@ -55,7 +53,6 @@ export function JobEngineApp() {
           onResults={setResults}
           onSearching={setSearching}
           apiOnline={apiOnline}
-          searchReady={searchReady}
         />
 
         <MetricsSection results={results} />
