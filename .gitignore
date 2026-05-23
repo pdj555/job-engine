@@ -1,9 +1,18 @@
 temp/
 tmp/
 
+# Next.js (web/)
+web/node_modules/
+web/.next/
+web/out/
+web/*.tsbuildinfo
+web/next-env.d.ts
+web/.vercel/
+
 # Environment
 .env
 .env.local
+.env*.local
 *.env
 
 # Python
@@ -69,4 +78,4 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
-.vercel
+.vercel/

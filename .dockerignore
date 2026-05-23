@@ -2,6 +2,14 @@
 .git
 .gitignore
 
+# Web UI (deployed separately via Vercel)
+web/
+
+# Local scratch
+temp/
+tmp/
+.playwright-mcp/
+
 # Python
 __pycache__
 *.pyc
