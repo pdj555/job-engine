@@ -76,7 +76,7 @@ export function TodoList({
         ))}
       </div>
 
-      <div className="input-row">
+      <div className="input-row mb-3">
         <span className="prompt" aria-hidden>
           +
         </span>

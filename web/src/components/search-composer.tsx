@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { searchJobs } from "@/lib/api";
+import { Panel } from "./panel";
 
 export function SearchComposer({
   onResults,
@@ -58,44 +59,42 @@ export function SearchComposer({
   }
 
   return (
-    <div className="search-zone">
-      <form onSubmit={runSearch} className="composer">
-        <input
-          ref={inputRef}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search roles, contracts, grants…"
-          className="composer-input"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="Search query"
-          disabled={apiOnline === false}
-        />
-        <button type="submit" disabled={disabled} className="composer-btn">
-          {loading ? "…" : "Search"}
-        </button>
+    <Panel label="Query">
+      <form onSubmit={runSearch}>
+        <div className="input-row">
+          <span className="prompt" aria-hidden>
+            &gt;
+          </span>
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="roles, contracts, grants…"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Search query"
+            disabled={apiOnline === false}
+          />
+          <button type="submit" disabled={disabled} className="btn shrink-0">
+            {loading ? "…" : "run"}
+          </button>
+        </div>
       </form>
-      <p className="composer-hint">
+
+      <p className="hint mt-2">
         {apiOnline === false
-          ? "Start the API with `job-engine serve` on :8000"
-          : "Press / to focus"}
+          ? "api offline · run `job-engine serve` on :8000"
+          : "/ focus · enter to search"}
       </p>
 
-      {loading && <p className="loading">loading...</p>}
+      {loading && <p className="loading py-4">loading...</p>}
 
       {empty && !loading && !error && (
-        <p className="hint text-center" style={{ maxWidth: "36rem" }}>
-          No results for that query. Try different keywords.
-        </p>
+        <p className="hint py-2">no results · try different keywords</p>
       )}
 
-      {error && (
-        <section className="panel w-full" style={{ maxWidth: "36rem" }}>
-          <span className="panel-label">Error</span>
-          <p style={{ fontFamily: "var(--font-sans)", color: "var(--accent-dim)" }}>{error}</p>
-        </section>
-      )}
-    </div>
+      {error && <p className="hint py-2">{error}</p>}
+    </Panel>
   );
 }
