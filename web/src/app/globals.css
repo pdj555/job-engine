@@ -132,7 +132,7 @@ body {
   }
 }
 
-/* ── Hero / wordmark ──────────────────────────────────────── */
+/* ── Hero ─────────────────────────────────────────────────── */
 .hero-grid {
   display: grid;
   gap: 1.1rem;
@@ -145,12 +145,6 @@ body {
   }
 }
 
-.wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 0.12em;
-}
-
 .title-text {
   display: inline-block;
   font-size: clamp(2.6rem, 8vw, 4.6rem);
@@ -158,26 +152,6 @@ body {
   letter-spacing: -0.035em;
   line-height: 1;
   color: var(--text);
-}
-
-.caret {
-  display: inline-block;
-  width: 0.34em;
-  height: clamp(2rem, 6vw, 3.4rem);
-  background: var(--accent);
-  transform: translateY(0.04em);
-  animation: blink 1.15s steps(1) infinite;
-}
-
-@keyframes blink {
-  0%,
-  48% {
-    opacity: 1;
-  }
-  49%,
-  100% {
-    opacity: 0;
-  }
 }
 
 /* ── Panels (notched-label boxes) ─────────────────────────── */
@@ -513,7 +487,6 @@ a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .bar-fill,
-  .caret,
   .loading::after {
     animation: none;
     transition: none;

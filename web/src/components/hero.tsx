@@ -18,10 +18,7 @@ export function Hero({
     <section className="hero-grid">
       <div className="min-w-0 flex flex-col gap-5">
         <h1>
-          <span className="wordmark">
-            <span className="title-text">Job Engine</span>
-            <span className="caret" aria-hidden />
-          </span>
+          <span className="title-text">Job Engine</span>
         </h1>
 
         <p className="about">
