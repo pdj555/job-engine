@@ -1,14 +1,17 @@
 @import "tailwindcss";
 
-/* Dark default — DisTrO dark + OpenAI */
+/* Horizon — warm charcoal, saffron wire, phosphor mint */
 :root {
-  --bg: #000000;
-  --surface: #0a0a0a;
-  --accent: #6b9bff;
-  --accent-dim: rgba(107, 155, 255, 0.48);
-  --accent-soft: rgba(107, 155, 255, 0.07);
-  --grid: rgba(107, 155, 255, 0.06);
-  --node: #ff8c42;
+  --bg: #110f0d;
+  --surface: #1a1714;
+  --text: #ede8df;
+  --accent: #f0b429;
+  --accent-bright: #7dff8a;
+  --accent-dim: rgba(237, 232, 223, 0.42);
+  --accent-soft: rgba(240, 180, 41, 0.09);
+  --grid: rgba(240, 180, 41, 0.05);
+  --glow: rgba(240, 180, 41, 0.12);
+  --node: #ff6b4a;
   --scanline: repeating-linear-gradient(
     0deg,
     transparent,
@@ -19,15 +22,25 @@
   color-scheme: dark;
 }
 
-/* DisTrO light — toggle only */
+/* Paper — warm sand, high-contrast ink */
 .light {
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --accent: #0040ff;
-  --accent-dim: rgba(0, 64, 255, 0.55);
-  --accent-soft: rgba(0, 64, 255, 0.06);
-  --grid: rgba(0, 64, 255, 0.09);
-  --node: #ff6b00;
+  --bg: #e8e0d4;
+  --surface: #fffdf9;
+  --text: #121110;
+  --accent: #8a320f;
+  --accent-bright: #0f665c;
+  --accent-dim: #4a433c;
+  --accent-soft: rgba(138, 50, 15, 0.07);
+  --grid: rgba(138, 50, 15, 0.035);
+  --glow: rgba(15, 102, 92, 0.05);
+  --node: #c2410c;
+  --scanline: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    #8a320f 2px,
+    #8a320f 3px
+  );
   color-scheme: light;
 }
 
@@ -44,10 +57,11 @@ body {
   min-height: 100%;
   background-color: var(--bg);
   background-image:
+    radial-gradient(ellipse 90% 60% at 50% -15%, var(--glow), transparent 55%),
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 24px 24px;
-  color: var(--accent);
+  background-size: 100% 100%, 24px 24px, 24px 24px;
+  color: var(--text);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 12px;
   line-height: 1.5;
@@ -66,6 +80,7 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 @media (min-width: 768px) {
@@ -85,6 +100,7 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   background: var(--surface);
+  color: var(--accent);
 }
 
 .frame-rail-center {
@@ -136,7 +152,8 @@ body {
 
 @supports (-webkit-background-clip: text) {
   .title-text {
-    background-image: var(--scanline);
+    background-image: var(--scanline),
+      linear-gradient(118deg, var(--accent) 0%, var(--accent-bright) 52%, var(--accent) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -163,6 +180,7 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.3;
+  color: var(--accent);
 }
 
 .section-head {
@@ -183,6 +201,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--accent);
 }
 
 .about {
@@ -202,6 +221,7 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 0.65rem;
+  color: var(--text);
 }
 
 .bar-track {
@@ -211,7 +231,7 @@ body {
 
 .bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
   transition: width 0.35s ease;
 }
 
@@ -245,6 +265,7 @@ body {
   text-transform: uppercase;
   margin-bottom: 0.65rem;
   line-height: 1.35;
+  color: var(--accent);
 }
 
 .split {
@@ -263,7 +284,7 @@ body {
   display: flex;
   align-items: stretch;
   border: 1px solid var(--accent);
-  background: var(--surface);
+  background: var(--bg);
 }
 
 .input-row .btn {
@@ -277,7 +298,7 @@ body {
 
 .input-row .prompt {
   padding: 0.5rem 0.6rem;
-  color: var(--accent-dim);
+  color: var(--accent);
   user-select: none;
 }
 
@@ -287,9 +308,13 @@ body {
   border: none;
   background: transparent;
   padding: 0.5rem 0.6rem 0.5rem 0;
-  color: var(--accent);
+  color: var(--text);
   font-family: inherit;
   font-size: 12px;
+}
+
+.input-row input::placeholder {
+  color: var(--accent-dim);
 }
 
 .input-row input:focus {
@@ -324,6 +349,7 @@ body {
 
 .btn-ghost-active {
   border-color: var(--accent);
+  color: var(--accent-bright);
 }
 
 .btn-theme {
@@ -367,17 +393,22 @@ body {
   background: var(--accent-soft);
 }
 
+.result-row a {
+  color: var(--text);
+}
+
 .result-rank {
   width: 1.25rem;
   flex-shrink: 0;
   font-size: 10px;
-  color: var(--accent-dim);
+  color: var(--accent);
 }
 
 .stat-value {
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
 }
 
 .hint {
@@ -419,12 +450,12 @@ body {
 }
 
 .check-btn:hover {
-  color: var(--accent);
+  color: var(--accent-bright);
 }
 
 input:focus-visible,
 button:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--accent-bright);
   outline-offset: 2px;
 }
 
@@ -432,4 +463,63 @@ button:focus-visible {
   .bar-fill {
     transition: none;
   }
+}
+
+/* Paper readability */
+.light body {
+  font-size: 13px;
+}
+
+.light .title-text {
+  background-image: linear-gradient(118deg, #8a320f 0%, #0f665c 100%);
+}
+
+.light .frame {
+  box-shadow: 0 1px 0 rgba(18, 17, 16, 0.06);
+}
+
+.light .panel-label,
+.light .section-head-label,
+.light .metric-title {
+  font-weight: 600;
+}
+
+.light .input-row {
+  background: #ffffff;
+}
+
+.light .bar-track {
+  height: 2px;
+  background: #c9bfb3;
+}
+
+.light .hint,
+.light .about,
+.light .loading {
+  color: var(--accent-dim);
+  font-weight: 500;
+}
+
+.light .result-row a {
+  font-weight: 500;
+}
+
+.light .result-row a:hover {
+  color: var(--accent);
+}
+
+.light .stat-value {
+  font-weight: 700;
+}
+
+.light .frame-rail {
+  color: var(--text);
+}
+
+.light .frame-rail-center {
+  color: var(--accent);
+}
+
+.light .btn:hover:not(:disabled) {
+  color: #fffdf9;
 }

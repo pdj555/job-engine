@@ -53,7 +53,7 @@ export function WorldMap({ live }: { live: boolean }) {
             cx={n.x}
             cy={n.y}
             r="1.7"
-            fill={n.hot && live ? "var(--node)" : "var(--accent)"}
+            fill={n.hot && live ? "var(--node)" : "var(--accent-bright)"}
             opacity={live ? 1 : 0.3}
           />
         ))}

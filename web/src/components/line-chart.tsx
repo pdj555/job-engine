@@ -60,7 +60,7 @@ export function LineChart({ data, height = 64 }: LineChartProps) {
           </g>
         );
       })}
-      <polyline fill="none" stroke="var(--accent)" strokeWidth="1.2" points={points} />
+      <polyline fill="none" stroke="var(--accent-bright)" strokeWidth="1.2" points={points} />
     </svg>
   );
 }
