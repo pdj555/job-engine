@@ -48,34 +48,33 @@ export function SearchComposer({
   }
 
   return (
-    <>
-      <div className="composer-wrap">
-        <form onSubmit={runSearch} className="composer">
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search roles, contracts, grants…"
-            className="composer-input"
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Search query"
-          />
-          <button type="submit" disabled={loading || !query.trim()} className="composer-btn">
-            {loading ? "…" : "Run"}
-          </button>
-        </form>
-      </div>
+    <div className="search-zone">
+      <form onSubmit={runSearch} className="composer">
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search roles, contracts, grants…"
+          className="composer-input"
+          autoComplete="off"
+          spellCheck={false}
+          aria-label="Search query"
+        />
+        <button type="submit" disabled={loading || !query.trim()} className="composer-btn">
+          {loading ? "…" : "Search"}
+        </button>
+      </form>
+      <p className="composer-hint">Press / to focus</p>
 
-      {loading && <p className="loading">loading…</p>}
+      {loading && <p className="loading">loading...</p>}
 
       {error && (
-        <section className="panel">
+        <section className="panel w-full" style={{ maxWidth: "36rem" }}>
           <span className="panel-label">Error</span>
-          <p style={{ color: "var(--text)", lineHeight: 1.5 }}>{error}</p>
+          <p style={{ fontFamily: "var(--font-sans)", color: "var(--accent-dim)" }}>{error}</p>
         </section>
       )}
-    </>
+    </div>
   );
 }

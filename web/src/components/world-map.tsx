@@ -1,27 +1,38 @@
 "use client";
 
 const NODES = [
-  { x: 24, y: 36, hot: true },
-  { x: 42, y: 28, hot: false },
-  { x: 52, y: 42, hot: true },
-  { x: 68, y: 30, hot: false },
-  { x: 78, y: 38, hot: true },
-  { x: 48, y: 58, hot: false },
-  { x: 62, y: 62, hot: true },
-  { x: 32, y: 65, hot: false },
+  { x: 22, y: 38, hot: true },
+  { x: 38, y: 28, hot: false },
+  { x: 50, y: 42, hot: true },
+  { x: 64, y: 30, hot: false },
+  { x: 76, y: 36, hot: true },
+  { x: 46, y: 56, hot: false },
+  { x: 58, y: 62, hot: true },
+  { x: 30, y: 64, hot: false },
+  { x: 72, y: 54, hot: true },
 ];
 const EDGES = [
-  [0, 1], [1, 2], [2, 3], [3, 4], [2, 5], [5, 6], [6, 7], [5, 0],
+  [0, 1], [1, 2], [2, 3], [3, 4], [2, 5], [5, 6], [6, 7], [5, 8], [4, 8],
 ];
 
 export function WorldMap({ live }: { live: boolean }) {
   return (
-    <div className="relative aspect-[5/3] min-h-[100px]">
-      <svg viewBox="0 0 100 70" className="absolute inset-0 w-full h-full" aria-hidden>
-        <ellipse cx="28" cy="38" rx="14" ry="16" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.35" />
-        <ellipse cx="52" cy="34" rx="11" ry="13" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.35" />
-        <ellipse cx="72" cy="36" rx="16" ry="14" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.35" />
-        <ellipse cx="58" cy="58" rx="10" ry="8" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.35" />
+    <div className="relative aspect-[5/3] min-h-[108px]">
+      <svg viewBox="0 0 100 72" className="absolute inset-0 w-full h-full" aria-hidden>
+        <path
+          d="M18 38 Q28 28 38 32 T58 30 Q68 26 78 34 T82 42 Q72 48 62 44 T42 48 Q28 52 18 44 Z"
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="0.5"
+          opacity="0.35"
+        />
+        <path
+          d="M44 52 Q52 48 58 50 T68 56 Q62 64 52 62 T38 58 Q42 54 44 52 Z"
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="0.5"
+          opacity="0.35"
+        />
 
         {EDGES.map(([a, b], i) => (
           <line
@@ -32,7 +43,7 @@ export function WorldMap({ live }: { live: boolean }) {
             y2={NODES[b].y}
             stroke="var(--accent)"
             strokeWidth="0.35"
-            opacity={live ? 0.45 : 0.15}
+            opacity={live ? 0.5 : 0.18}
           />
         ))}
 
@@ -41,18 +52,12 @@ export function WorldMap({ live }: { live: boolean }) {
             key={i}
             cx={n.x}
             cy={n.y}
-            r="1.8"
+            r="1.7"
             fill={n.hot && live ? "var(--node)" : "var(--accent)"}
-            opacity={live ? 1 : 0.25}
+            opacity={live ? 1 : 0.3}
           />
         ))}
       </svg>
-      <span
-        className="absolute bottom-1 left-2 uppercase tracking-widest"
-        style={{ fontSize: "8px", color: "var(--accent-dim)" }}
-      >
-        {live ? "live" : "idle"}
-      </span>
     </div>
   );
 }

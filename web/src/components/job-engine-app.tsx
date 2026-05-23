@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import { checkHealth } from "@/lib/api";
 import { useTodos } from "@/lib/use-todos";
+import { FrameRail } from "./frame-rail";
 import { Hero } from "./hero";
 import { MetricsSection } from "./metrics-section";
 import { ResultsList } from "./results-list";
@@ -34,18 +35,7 @@ export function JobEngineApp() {
 
   return (
     <div className="frame">
-      <header className="frame-rail">
-        <span className="truncate">
-          api {status}
-          {results.length > 0 ? ` · ${results.length} ranked` : ""}
-        </span>
-        <span>Job Engine</span>
-        <span className="text-right">
-          <a href="https://github.com/pdj555/job-engine" target="_blank" rel="noopener noreferrer">
-            github
-          </a>
-        </span>
-      </header>
+      <FrameRail status={status} resultCount={results.length} />
 
       <main className="frame-body">
         <Hero
@@ -54,10 +44,7 @@ export function JobEngineApp() {
           live={live}
         />
 
-        <SearchComposer
-          onResults={setResults}
-          onSearching={setSearching}
-        />
+        <SearchComposer onResults={setResults} onSearching={setSearching} />
 
         <MetricsSection results={results} />
 

@@ -12,8 +12,7 @@ export function Hero({
   pipelinePct: number;
   live: boolean;
 }) {
-  const progress = resultCount > 0 ? 100 : 0;
-  const status = resultCount > 0 ? "run complete" : "idle";
+  const done = resultCount > 0;
 
   return (
     <section className="hero-grid">
@@ -25,24 +24,25 @@ export function Hero({
         <Panel label="Search Progress" className="mt-5">
           <div className="meta-row">
             <span>
-              {resultCount > 0 ? `${resultCount} ranked` : "0 results"}
+              {done ? `${resultCount} ranked` : "0 results"}
+              {done ? ` / ${resultCount}` : " / —"}
             </span>
-            <span>{status}</span>
+            <span>{done ? "100%" : "—"}</span>
           </div>
           <div className="bar-track">
-            <div className="bar-fill" style={{ width: `${progress}%` }} />
+            <div className="bar-fill" style={{ width: done ? "100%" : "0%" }} />
           </div>
           <div className="meta-row mt-3 mb-0">
+            <span>{done ? "run complete" : "idle"}</span>
             <span>pipeline {pipelinePct}%</span>
-            <span>{resultCount > 0 ? "100%" : "0%"}</span>
           </div>
         </Panel>
 
         <p className="about">
-          About Job Engine: search contracts, grants, and roles across sources.
-          Each listing is ranked by effective hourly rate — annual pay divided by
-          expected hours — so compensation compares on equal footing. Add roles to
-          your pipeline and track applications in one place.
+          About Job Engine: search contracts, grants, and roles across sources. Each
+          listing is ranked by effective hourly rate — annual compensation divided by
+          expected hours — so opportunities compare on equal footing. Track applications
+          in your pipeline from search to offer.
         </p>
       </div>
 
