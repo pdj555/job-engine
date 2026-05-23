@@ -10,7 +10,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`panel px-5 py-5 pt-6 ${className}`}>
+    <section className={`panel min-w-0 ${className}`}>
       <span className="panel-label">{label}</span>
       {children}
     </section>

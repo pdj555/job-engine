@@ -8,13 +8,14 @@ import { Header } from "./header";
 import { Hero } from "./hero";
 import { SearchPanel } from "./search-panel";
 import { TodoList } from "./todo-list";
-import { StatsPanel } from "./stats-panel";
-import { ThemeProvider } from "./theme-provider";
 
 export function JobEngineApp() {
   const [results, setResults] = useState<Opportunity[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  const [searching, setSearching] = useState(false);
   const todos = useTodos();
+
+  const live = searching || results.length > 0 || apiOnline === true;
 
   useEffect(() => {
     checkHealth().then(setApiOnline);
@@ -30,34 +31,30 @@ export function JobEngineApp() {
   }
 
   return (
-    <ThemeProvider>
-      <Header apiOnline={apiOnline} />
+    <div className="page">
+      <Header apiOnline={apiOnline} resultCount={results.length} />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-12 flex-1 w-full">
-        <Hero
-          resultCount={results.length}
-          pipelinePct={todos.completionPct}
-          apiOnline={apiOnline}
-        />
+      <main className="page-main">
+        <div className="stack">
+          <Hero pipelinePct={todos.completionPct} live={live} />
 
-        <div className="grid lg:grid-cols-[1fr_260px] gap-8 lg:gap-10">
-          <div className="space-y-6 min-w-0">
-            <SearchPanel onResults={setResults} onAdd={handleAdd} />
-            <TodoList {...todos} />
+          <div className="dashboard">
+            <div className="min-w-0">
+              <SearchPanel
+                onResults={setResults}
+                onAdd={handleAdd}
+                onSearching={setSearching}
+              />
+            </div>
+
+            <aside id="pipeline" className="min-w-0 scroll-mt-6 lg:sticky lg:top-[4.25rem]">
+              <TodoList {...todos} />
+            </aside>
           </div>
-          <StatsPanel
-            results={results}
-            apiOnline={apiOnline}
-            activeCount={todos.activeCount}
-            doneCount={todos.doneCount}
-            completionPct={todos.completionPct}
-          />
         </div>
       </main>
 
-      <footer className="border-t border-[var(--border)] py-5 text-[8px] uppercase tracking-[0.16em] text-[var(--text-subtle)] text-center">
-        ranked by effective $/hr · MIT
-      </footer>
-    </ThemeProvider>
+      <footer className="site-footer">Ranked by effective $/hr</footer>
+    </div>
   );
 }
