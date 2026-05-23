@@ -3,9 +3,10 @@
 type LineChartProps = {
   data: number[];
   height?: number;
+  active?: boolean;
 };
 
-export function LineChart({ data, height = 64 }: LineChartProps) {
+export function LineChart({ data, height = 64, active = true }: LineChartProps) {
   const w = 220;
   const h = height;
   const padL = 28;
@@ -16,7 +17,8 @@ export function LineChart({ data, height = 64 }: LineChartProps) {
   const series = data.length >= 2 ? data : [0, 0];
   const max = Math.max(...series);
   const min = Math.min(...series);
-  const range = max - min || 1;
+  const range = max - min;
+  const flat = !active || range === 0;
 
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
@@ -24,7 +26,7 @@ export function LineChart({ data, height = 64 }: LineChartProps) {
   const points = series
     .map((v, i) => {
       const x = padL + (i / (series.length - 1)) * plotW;
-      const y = padT + (1 - (v - min) / range) * plotH;
+      const y = flat ? padT + plotH : padT + (1 - (v - min) / (range || 1)) * plotH;
       return `${x},${y}`;
     })
     .join(" ");
@@ -35,7 +37,7 @@ export function LineChart({ data, height = 64 }: LineChartProps) {
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full block" preserveAspectRatio="none" aria-hidden>
       {Array.from({ length: ticks + 1 }, (_, i) => {
         const y = padT + (i / ticks) * plotH;
-        const val = max - (i / ticks) * range;
+        const val = max - (i / ticks) * (range || 1);
         return (
           <g key={i}>
             <line
@@ -43,24 +45,37 @@ export function LineChart({ data, height = 64 }: LineChartProps) {
               y1={y}
               x2={w - padR}
               y2={y}
-              stroke="var(--accent)"
+              stroke="var(--line)"
               strokeWidth="0.5"
-              opacity="0.25"
+              opacity={flat ? 0.08 : 0.14}
             />
-            <text
-              x={0}
-              y={y + 3}
-              fill="var(--accent)"
-              fontSize="6"
-              opacity="0.55"
-              fontFamily="var(--font-mono), monospace"
-            >
-              {val >= 1000 ? `${Math.round(val / 1000)}k` : val.toFixed(val < 10 ? 1 : 0)}
-            </text>
+            {!flat && (
+              <text
+                x={0}
+                y={y + 3}
+                fill="var(--muted)"
+                fontSize="6"
+                fontFamily="var(--font-mono), monospace"
+              >
+                {val >= 1000 ? `${Math.round(val / 1000)}k` : val.toFixed(val < 10 ? 1 : 0)}
+              </text>
+            )}
           </g>
         );
       })}
-      <polyline fill="none" stroke="var(--accent-bright)" strokeWidth="1.2" points={points} />
+      {flat ? (
+        <line
+          x1={padL}
+          y1={padT + plotH}
+          x2={w - padR}
+          y2={padT + plotH}
+          stroke="var(--faint)"
+          strokeWidth="1"
+          strokeDasharray="2 3"
+        />
+      ) : (
+        <polyline fill="none" stroke="var(--accent)" strokeWidth="1.4" points={points} />
+      )}
     </svg>
   );
 }

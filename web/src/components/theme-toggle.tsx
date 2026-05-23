@@ -3,22 +3,27 @@
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const [light, setLight] = useState(false);
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    setLight(document.documentElement.classList.contains("light"));
+    setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
   function toggle() {
-    const next = !light;
-    setLight(next);
-    document.documentElement.classList.toggle("light", next);
-    localStorage.setItem("job-engine-theme", next ? "light" : "dark");
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("job-engine-theme", next ? "dark" : "light");
   }
 
   return (
-    <button type="button" className="btn-theme" onClick={toggle}>
-      {light ? "horizon" : "paper"}
+    <button
+      type="button"
+      className="btn-theme"
+      onClick={toggle}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {dark ? "light" : "dark"}
     </button>
   );
 }

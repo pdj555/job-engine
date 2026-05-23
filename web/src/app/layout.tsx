@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
 
-const sans = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const mono = IBM_Plex_Mono({
+const mono = Ubuntu_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,11 +17,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${mono.variable} h-full`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("job-engine-theme");if(t==="light")document.documentElement.classList.add("light");}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("job-engine-theme");if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`,
           }}
         />
       </head>

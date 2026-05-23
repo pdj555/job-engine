@@ -16,37 +16,36 @@ export function Hero({
 
   return (
     <section className="hero-grid">
-      <div className="min-w-0">
+      <div className="min-w-0 flex flex-col gap-5">
         <h1>
-          <span className="title-text">Job Engine</span>
+          <span className="wordmark">
+            <span className="title-text">Job Engine</span>
+            <span className="caret" aria-hidden />
+          </span>
         </h1>
 
-        <Panel label="Search Progress" className="mt-5">
+        <p className="about">
+          Search contracts, grants, and roles across sources. Every listing is ranked by
+          effective hourly rate — annual compensation divided by expected hours — so
+          opportunities compare on equal footing. Track applications from search to offer.
+        </p>
+
+        <Panel label="Search Progress" className="mt-auto">
           <div className="meta-row">
-            <span>
-              {done ? `${resultCount} ranked` : "0 results"}
-              {done ? ` / ${resultCount}` : " / —"}
-            </span>
+            <span>{done ? `${resultCount} ranked / ${resultCount}` : "0 results / —"}</span>
             <span>{done ? "100%" : "—"}</span>
           </div>
-          <div className="bar-track">
+          <div className="bar-track mt-2">
             <div className="bar-fill" style={{ width: done ? "100%" : "0%" }} />
           </div>
-          <div className="meta-row mt-3 mb-0">
+          <div className="meta-row mt-2">
             <span>{done ? "run complete" : "idle"}</span>
             <span>pipeline {pipelinePct}%</span>
           </div>
         </Panel>
-
-        <p className="about">
-          About Job Engine: search contracts, grants, and roles across sources. Each
-          listing is ranked by effective hourly rate — annual compensation divided by
-          expected hours — so opportunities compare on equal footing. Track applications
-          in your pipeline from search to offer.
-        </p>
       </div>
 
-      <Panel label="Live Global Status">
+      <Panel label="Live Global Status" className="flex flex-col">
         <WorldMap live={live} />
       </Panel>
     </section>

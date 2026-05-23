@@ -22,16 +22,16 @@ export function WorldMap({ live }: { live: boolean }) {
         <path
           d="M18 38 Q28 28 38 32 T58 30 Q68 26 78 34 T82 42 Q72 48 62 44 T42 48 Q28 52 18 44 Z"
           fill="none"
-          stroke="var(--accent)"
-          strokeWidth="0.5"
-          opacity="0.35"
+          stroke="var(--line)"
+          strokeWidth="0.4"
+          opacity="0.18"
         />
         <path
           d="M44 52 Q52 48 58 50 T68 56 Q62 64 52 62 T38 58 Q42 54 44 52 Z"
           fill="none"
-          stroke="var(--accent)"
-          strokeWidth="0.5"
-          opacity="0.35"
+          stroke="var(--line)"
+          strokeWidth="0.4"
+          opacity="0.18"
         />
 
         {EDGES.map(([a, b], i) => (
@@ -42,8 +42,8 @@ export function WorldMap({ live }: { live: boolean }) {
             x2={NODES[b].x}
             y2={NODES[b].y}
             stroke="var(--accent)"
-            strokeWidth="0.35"
-            opacity={live ? 0.5 : 0.18}
+            strokeWidth="0.3"
+            opacity={live ? 0.45 : 0.12}
           />
         ))}
 
@@ -52,10 +52,20 @@ export function WorldMap({ live }: { live: boolean }) {
             key={i}
             cx={n.x}
             cy={n.y}
-            r="1.7"
-            fill={n.hot && live ? "var(--node)" : "var(--accent-bright)"}
-            opacity={live ? 1 : 0.3}
-          />
+            r="1.5"
+            fill={live ? "var(--accent)" : "var(--faint)"}
+            opacity={live ? 1 : 0.5}
+          >
+            {live && n.hot && (
+              <animate
+                attributeName="r"
+                values="1.5;2.6;1.5"
+                dur="2.4s"
+                repeatCount="indefinite"
+                begin={`${i * 0.3}s`}
+              />
+            )}
+          </circle>
         ))}
       </svg>
     </div>

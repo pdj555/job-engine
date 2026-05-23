@@ -5,7 +5,7 @@ import { formatRate } from "@/lib/format";
 import { LineChart } from "./line-chart";
 
 function series(values: number[], points = 16): number[] {
-  if (values.length === 0) return Array.from({ length: points }, (_, i) => i * 0.5);
+  if (values.length === 0) return Array.from({ length: points }, () => 0);
   const out: number[] = [];
   const size = Math.max(1, values.length / points);
   for (let i = 0; i < points; i++) {
@@ -16,13 +16,23 @@ function series(values: number[], points = 16): number[] {
   return out;
 }
 
-function MetricCell({ title, value, data }: { title: string; value: string; data: number[] }) {
+function MetricCell({
+  title,
+  value,
+  data,
+  active,
+}: {
+  title: string;
+  value: string;
+  data: number[];
+  active: boolean;
+}) {
   return (
     <div className="metric-cell">
       <div className="metric-title">
-        {title}: {value}
+        {title} <b className={active ? "on" : ""}>{value}</b>
       </div>
-      <LineChart data={data} />
+      <LineChart data={data} active={active} />
     </div>
   );
 }
@@ -44,21 +54,25 @@ export function MetricsSection({ results }: { results: Opportunity[] }) {
           title="Avg $/hr"
           value={idle ? "—" : formatRate(avg)}
           data={series(rates)}
+          active={!idle}
         />
         <MetricCell
           title="Remote"
           value={idle ? "—" : `${remotePct}%`}
           data={series(idle ? [] : results.map((r) => (r.remote ? 100 : 0)))}
+          active={!idle}
         />
         <MetricCell
           title="Top $/hr"
           value={idle ? "—" : formatRate(top)}
           data={series(idle ? [] : [...rates].sort((a, b) => a - b))}
+          active={!idle}
         />
         <MetricCell
           title="Results"
           value={idle ? "0" : String(results.length)}
           data={series(idle ? [] : rates.map((_, i) => i + 1))}
+          active={!idle}
         />
       </div>
     </section>
