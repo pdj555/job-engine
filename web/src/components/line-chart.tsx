@@ -29,18 +29,19 @@ export function LineChart({
 
   const w = 240;
   const h = 72;
-  const pad = 4;
+  const pad = 6;
   const max = Math.max(...values);
   const min = Math.min(...values);
   const d = path(values, w, h, pad);
   const last = values[values.length - 1];
 
   return (
-    <div className="panel-grid border border-[var(--accent-soft)] p-3">
-      <p className="text-[10px] uppercase tracking-widest mb-2">
-        {title}: <span className="font-bold">{format(last)}</span>
+    <div className="panel-grid border border-[var(--border)] p-3.5 bg-[var(--bg)]">
+      <p className="text-[9px] uppercase tracking-[0.12em] mb-3 text-[var(--accent-muted)]">
+        {title}{" "}
+        <span className="text-[var(--fg)] font-semibold">{format(last)}</span>
       </p>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[72px]" aria-hidden>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[68px]" aria-hidden>
         {[0.25, 0.5, 0.75].map((p) => (
           <line
             key={p}
@@ -49,20 +50,20 @@ export function LineChart({
             x2={w - pad}
             y2={h * p}
             stroke="var(--accent)"
-            strokeWidth="0.3"
-            opacity="0.15"
+            strokeWidth="0.25"
+            opacity="0.12"
           />
         ))}
-        <path d={d} fill="none" stroke="var(--accent)" strokeWidth="1.2" />
+        <path d={d} fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.9" />
         {values.map((v, i) => {
           const step = (w - pad * 2) / Math.max(values.length - 1, 1);
           const x = pad + i * step;
           const range = max - min || 1;
           const y = h - pad - ((v - min) / range) * (h - pad * 2);
-          return <circle key={i} cx={x} cy={y} r="1.5" fill="var(--accent)" />;
+          return <circle key={i} cx={x} cy={y} r="1.25" fill="var(--accent)" />;
         })}
       </svg>
-      <div className="flex justify-between mt-1 text-[8px] tabular-nums text-[var(--accent-muted)]">
+      <div className="flex justify-between mt-2 text-[8px] tabular-nums text-[var(--text-subtle)] tracking-wide">
         <span>{format(min)}</span>
         <span>{format(max)}</span>
       </div>

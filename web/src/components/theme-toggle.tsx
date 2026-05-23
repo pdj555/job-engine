@@ -9,10 +9,10 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="cursor-pointer uppercase tracking-widest text-[10px] text-[var(--accent-muted)] hover:text-[var(--fg)] transition-colors"
+      className="btn btn-ghost !px-2 !py-1"
       aria-label="Toggle theme"
     >
-      {theme === "light" ? "dark mode" : "light mode"}
+      {theme === "light" ? "dark" : "light"}
     </button>
   );
 }

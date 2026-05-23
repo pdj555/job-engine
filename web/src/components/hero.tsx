@@ -12,48 +12,42 @@ export function Hero({
   pipelinePct: number;
   apiOnline: boolean | null;
 }) {
-  const complete = resultCount > 0;
-  const status = apiOnline === null ? "..." : apiOnline ? "online" : "offline";
+  const progress = resultCount > 0 ? Math.min(resultCount * 5, 100) : 0;
+  const live = resultCount > 0 || apiOnline === true;
 
   return (
-    <section className="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
+    <section className="grid lg:grid-cols-[1fr_240px] gap-8 lg:gap-10 items-start">
       <div>
+        <p className="subtitle mb-3">Opportunity search · ranked by $/hr</p>
         <h1 className="title">Job Engine</h1>
 
-        <Panel label="Search Progress" className="mt-6">
-          <div className="flex justify-between text-[10px] uppercase tracking-widest mb-2">
-            <span className="tabular-nums">
-              {resultCount > 0 ? `${resultCount} ranked` : "0 results"}
+        <Panel label="Search Progress" className="mt-8">
+          <div className="flex justify-between items-baseline text-[9px] uppercase tracking-[0.12em] mb-3">
+            <span className="tabular-nums text-[var(--fg)]">
+              {resultCount > 0 ? `${resultCount} ranked` : "Awaiting query"}
             </span>
             <span className="text-[var(--accent-muted)]">
-              {complete ? "run complete" : "idle"}
+              {resultCount > 0 ? "complete" : "idle"}
             </span>
           </div>
           <div className="bar-track">
-            <div
-              className="bar-fill"
-              style={{ width: `${Math.min(resultCount * 5, 100)}%` }}
-            />
+            <div className="bar-fill" style={{ width: `${progress}%` }} />
           </div>
-          <p className="mt-3 text-[10px] uppercase tracking-widest text-[var(--accent-muted)]">
-            API <span className="text-[var(--fg)]">{status}</span>
-            <span className="mx-2 opacity-30">·</span>
-            Pipeline <span className="text-[var(--fg)] tabular-nums">{pipelinePct}%</span>
+          <p className="mt-4 text-[9px] uppercase tracking-[0.12em] text-[var(--accent-muted)]">
+            Pipeline completion{" "}
+            <span className="text-[var(--fg)] tabular-nums">{pipelinePct}%</span>
           </p>
         </Panel>
 
-        <p className="mt-6 text-[11px] leading-[1.7] text-[var(--accent-muted)] max-w-xl">
-          <span className="text-[var(--fg)] uppercase tracking-widest text-[10px]">
-            About Job Engine:{" "}
-          </span>
-          Find roles, contracts, grants, and equity opportunities ranked by compensation
-          per hour. Non-remote roles take a 30% penalty. Track applications in the
-          pipeline below.
+        <p className="mt-8 text-[11px] leading-[1.75] text-[var(--accent-muted)] max-w-lg">
+          Find roles, contracts, grants, and equity opportunities ranked by
+          compensation per hour. Non-remote roles take a 30% penalty. Track
+          applications in the pipeline below.
         </p>
       </div>
 
-      <Panel label="Live Global Status">
-        <NodeMap live={complete || apiOnline === true} />
+      <Panel label="Network Status">
+        <NodeMap live={live} />
       </Panel>
     </section>
   );

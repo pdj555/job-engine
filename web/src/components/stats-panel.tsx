@@ -31,40 +31,37 @@ export function StatsPanel({
       : null;
 
   return (
-    <div className="space-y-4 lg:sticky lg:top-14">
-      <Panel label="Live Status">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--accent-soft)]">
-          <span
-            className={`w-2 h-2 rounded-full bg-[var(--accent)] ${
-              apiOnline ? "pulse" : "opacity-25"
-            }`}
-          />
-          <span className="text-[10px] uppercase tracking-widest">
-            API {apiOnline === null ? "..." : apiOnline ? "online" : "offline"}
-          </span>
-        </div>
-        <dl className="grid grid-cols-2 gap-3">
-          <div className="border border-[var(--accent-soft)] p-2">
+    <div className="space-y-5 lg:sticky lg:top-[4.25rem]">
+      <Panel label="Metrics">
+        <dl className="grid grid-cols-2 gap-2.5">
+          <div className="stat-tile">
             <dt className="stat-label">Avg $/hr</dt>
-            <dd className="stat-value text-lg">{avgRate != null ? `$${avgRate}` : "—"}</dd>
+            <dd className="stat-value text-lg mt-1">
+              {avgRate != null ? `$${avgRate}` : "—"}
+            </dd>
           </div>
-          <div className="border border-[var(--accent-soft)] p-2">
+          <div className="stat-tile">
             <dt className="stat-label">Remote</dt>
-            <dd className="stat-value text-lg">{remotePct != null ? `${remotePct}%` : "—"}</dd>
+            <dd className="stat-value text-lg mt-1">
+              {remotePct != null ? `${remotePct}%` : "—"}
+            </dd>
           </div>
-          <div className="border border-[var(--accent-soft)] p-2">
+          <div className="stat-tile">
             <dt className="stat-label">Results</dt>
-            <dd className="stat-value text-lg">{results.length}</dd>
+            <dd className="stat-value text-lg mt-1">{results.length}</dd>
           </div>
-          <div className="border border-[var(--accent-soft)] p-2">
+          <div className="stat-tile">
             <dt className="stat-label">Pipeline</dt>
-            <dd className="stat-value text-lg">{completionPct}%</dd>
+            <dd className="stat-value text-lg mt-1">{completionPct}%</dd>
           </div>
         </dl>
+        <p className="mt-4 pt-3 border-t border-[var(--border)] text-[8px] uppercase tracking-[0.12em] text-[var(--accent-muted)]">
+          API {apiOnline === null ? "checking" : apiOnline ? "online" : "offline"}
+        </p>
       </Panel>
 
       {rates.length > 0 && (
-        <Panel label="Compensation Evaluations">
+        <Panel label="Compensation">
           <LineChart values={rates} title="Top by $/hr" format={(v) => `$${Math.round(v)}`} />
         </Panel>
       )}

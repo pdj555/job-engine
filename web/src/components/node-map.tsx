@@ -8,7 +8,7 @@ const EDGES = [[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,7],[6,8]];
 
 export function NodeMap({ live }: { live: boolean }) {
   return (
-    <div className="panel-grid aspect-[5/3] border border-[var(--accent-soft)] relative">
+    <div className="panel-grid aspect-[5/3] border border-[var(--border)] relative overflow-hidden">
       <svg viewBox="0 0 100 70" className="absolute inset-0 w-full h-full" aria-hidden>
         {EDGES.map(([a, b], i) => (
           <line
@@ -18,8 +18,8 @@ export function NodeMap({ live }: { live: boolean }) {
             x2={NODES[b][0]}
             y2={NODES[b][1]}
             stroke="var(--accent)"
-            strokeWidth="0.35"
-            opacity="0.35"
+            strokeWidth="0.3"
+            opacity="0.28"
           />
         ))}
         {NODES.map(([x, y], i) => (
@@ -27,15 +27,15 @@ export function NodeMap({ live }: { live: boolean }) {
             key={i}
             cx={x}
             cy={y}
-            r="2"
+            r="1.75"
             fill="var(--accent)"
-            opacity={live ? 0.9 : 0.3}
+            opacity={live ? 0.85 : 0.22}
             className={live ? "node-live" : undefined}
-            style={{ animationDelay: `${i * 0.25}s` }}
+            style={{ animationDelay: `${i * 0.3}s` }}
           />
         ))}
       </svg>
-      <span className="absolute bottom-2 left-2 text-[8px] uppercase tracking-widest text-[var(--accent-muted)]">
+      <span className="absolute bottom-2.5 left-3 text-[8px] uppercase tracking-[0.14em] text-[var(--accent-muted)]">
         {live ? "parallel fetch" : "standby"}
       </span>
     </div>

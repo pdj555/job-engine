@@ -54,7 +54,7 @@ export function SearchPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Panel label="Search Query">
         <form onSubmit={runSearch} className="flex gap-2">
           <input
@@ -63,39 +63,40 @@ export function SearchPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="AI engineer, contract, grant..."
-            className="flex-1 bg-[var(--bg)] border border-[var(--accent-soft)] px-3 py-2.5 placeholder:text-[var(--accent-muted)] focus:border-[var(--accent)] transition-colors"
+            className="input"
             autoComplete="off"
             spellCheck={false}
           />
-          <button
-            type="submit"
-            disabled={loading || !query.trim()}
-            className="border border-[var(--border)] px-4 py-2.5 uppercase text-[10px] tracking-widest cursor-pointer disabled:opacity-30 hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-colors"
-          >
+          <button type="submit" disabled={loading || !query.trim()} className="btn shrink-0">
             {loading ? "..." : "run"}
           </button>
         </form>
-        <p className="mt-2 text-[10px] text-[var(--accent-muted)]">
-          <kbd>/</kbd> to focus · ranked by $/hr
+        <p className="mt-3 text-[9px] text-[var(--accent-muted)] tracking-wide">
+          <kbd>/</kbd> focus · ranked by effective $/hr
         </p>
       </Panel>
 
       {loading && (
-        <p className="py-12 text-center text-[var(--accent-muted)] lowercase">loading...</p>
+        <Panel label="Running">
+          <div className="loading-bar" />
+          <p className="mt-4 text-center text-[9px] uppercase tracking-[0.12em] text-[var(--accent-muted)]">
+            Fetching opportunities
+          </p>
+        </Panel>
       )}
 
       {error && (
         <Panel label="Error">
-          <p>{error}</p>
-          <p className="mt-2 text-[10px] text-[var(--accent-muted)]">
-            Run <code>job-engine serve</code> first.
+          <p className="text-[12px] leading-relaxed">{error}</p>
+          <p className="mt-3 text-[9px] text-[var(--accent-muted)]">
+            Run <code className="text-[var(--fg)]">job-engine serve</code> on port 8000.
           </p>
         </Panel>
       )}
 
       {!loading && results.length > 0 && (
         <Panel label={`Results · ${results.length}`}>
-          <ul className="scroll max-h-[480px] overflow-y-auto divide-y divide-[var(--accent-soft)]">
+          <ul className="scroll max-h-[520px] overflow-y-auto divide-soft -mx-1 px-1">
             {results.map((opp, i) => {
               const rate = opp.dollars_per_hour ?? 0;
               const pct = maxRate > 0 ? (rate / maxRate) * 100 : 0;
@@ -103,25 +104,25 @@ export function SearchPanel({
               return (
                 <li
                   key={opp.url}
-                  className="py-3 first:pt-0 last:pb-0 fade-up group"
-                  style={{ animationDelay: `${i * 25}ms` }}
+                  className="py-4 first:pt-2 last:pb-2 fade-up group"
+                  style={{ animationDelay: `${i * 20}ms` }}
                 >
                   <div className="flex gap-3">
-                    <span className="text-[10px] text-[var(--accent-muted)] tabular-nums pt-0.5 w-5">
+                    <span className="text-[9px] text-[var(--text-subtle)] tabular-nums pt-1 w-5">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between gap-3">
+                      <div className="flex justify-between gap-4 items-start">
                         <div className="min-w-0">
                           <a
                             href={opp.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block truncate hover:underline"
+                            className="block truncate text-[13px] hover:text-[var(--accent)] transition-colors"
                           >
                             {opp.title}
                           </a>
-                          <p className="text-[10px] text-[var(--accent-muted)] mt-1 truncate">
+                          <p className="text-[9px] text-[var(--accent-muted)] mt-1.5 truncate tracking-wide">
                             {opp.company ?? "Unknown"} · {opp.remote ? "remote" : "onsite"} ·{" "}
                             {formatPay(opp.pay)}/yr · {opp.hours_per_week ?? "?"}h/wk
                           </p>
@@ -131,13 +132,13 @@ export function SearchPanel({
                           <button
                             type="button"
                             onClick={() => onAdd(opp)}
-                            className="mt-1 text-[9px] uppercase tracking-widest text-[var(--accent-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--fg)] cursor-pointer transition-opacity"
+                            className="mt-1.5 text-[8px] uppercase tracking-[0.14em] text-[var(--text-subtle)] group-hover:text-[var(--accent-muted)] hover:!text-[var(--fg)] cursor-pointer transition-colors"
                           >
                             + pipeline
                           </button>
                         </div>
                       </div>
-                      <div className="bar-track mt-2">
+                      <div className="bar-track mt-3">
                         <div className="bar-fill" style={{ width: `${pct}%` }} />
                       </div>
                     </div>

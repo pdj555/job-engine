@@ -31,16 +31,16 @@ export function JobEngineApp() {
 
   return (
     <ThemeProvider>
-      <Header />
+      <Header apiOnline={apiOnline} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10 flex-1 w-full">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-12 flex-1 w-full">
         <Hero
           resultCount={results.length}
           pipelinePct={todos.completionPct}
           apiOnline={apiOnline}
         />
 
-        <div className="grid lg:grid-cols-[1fr_280px] gap-6 lg:gap-8">
+        <div className="grid lg:grid-cols-[1fr_260px] gap-8 lg:gap-10">
           <div className="space-y-6 min-w-0">
             <SearchPanel onResults={setResults} onAdd={handleAdd} />
             <TodoList {...todos} />
@@ -55,8 +55,8 @@ export function JobEngineApp() {
         </div>
       </main>
 
-      <footer className="border-t border-[var(--border)] py-4 text-[9px] uppercase tracking-[0.2em] text-[var(--accent-muted)] text-center">
-        ranked by $/hr · MIT
+      <footer className="border-t border-[var(--border)] py-5 text-[8px] uppercase tracking-[0.16em] text-[var(--text-subtle)] text-center">
+        ranked by effective $/hr · MIT
       </footer>
     </ThemeProvider>
   );
