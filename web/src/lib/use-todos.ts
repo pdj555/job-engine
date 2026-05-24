@@ -1,46 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { Todo } from "./types";
-import { createTodo, loadTodos, saveTodos } from "./todo-storage";
+import {
+  createTodo,
+  getServerSnapshot,
+  getSnapshot,
+  mutateTodos,
+  subscribe,
+} from "./todo-storage";
+
+const EMPTY: Todo[] = [];
 
 export function useTodos() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [ready, setReady] = useState(false);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    setTodos(loadTodos());
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (ready) saveTodos(todos);
-  }, [todos, ready]);
+  const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const ready = stored !== null;
+  const todos = stored ?? EMPTY;
 
   const add = useCallback((text: string, opportunityUrl?: string) => {
     const trimmed = text.trim();
     if (!trimmed) return false;
-    setTodos((prev) => [createTodo(trimmed, opportunityUrl), ...prev]);
-    setTick((t) => t + 1);
+    mutateTodos((prev) => [createTodo(trimmed, opportunityUrl), ...prev]);
     return true;
   }, []);
 
   const toggle = useCallback((id: string) => {
-    setTodos((prev) =>
+    mutateTodos((prev) =>
       prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
     );
   }, []);
 
   const remove = useCallback((id: string) => {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
+    mutateTodos((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const clearDone = useCallback(() => {
-    setTodos((prev) => prev.filter((t) => !t.done));
+    mutateTodos((prev) => prev.filter((t) => !t.done));
   }, []);
 
-  const activeCount = todos.filter((t) => !t.done).length;
   const doneCount = todos.filter((t) => t.done).length;
   const completionPct =
     todos.length > 0 ? Math.round((doneCount / todos.length) * 100) : 0;
@@ -48,13 +45,10 @@ export function useTodos() {
   return {
     todos,
     ready,
-    tick,
     add,
     toggle,
     remove,
     clearDone,
-    activeCount,
-    doneCount,
     completionPct,
   };
 }
