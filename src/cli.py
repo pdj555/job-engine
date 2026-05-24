@@ -1,7 +1,6 @@
 """CLI - one command, instant results."""
 
 import asyncio
-import sys
 
 import typer
 from rich.console import Console
@@ -90,6 +89,45 @@ def display(opportunities: list[Opportunity]):
         if eff:
             console.print(f"     [green]{eff}[/green]")
         console.print()
+
+
+@app.command()
+def agent(
+    query: str = typer.Argument(..., help="What you want"),
+    limit: int = typer.Option(15, "-n", help="Results"),
+):
+    """
+    Find opportunities autonomously via the Hermes Agent brain.
+
+    The agent plans its own searches, extracts opportunities, and ranks by
+    $/hour. Requires a running Hermes Agent server (see docs/AGENT.md).
+    """
+    from src.agent import agent_find
+
+    console.print(f"\n[bold]Agent hunting:[/bold] {query}\n")
+
+    async def run():
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+            transient=True,
+        ) as progress:
+            progress.add_task("Agent planning + searching...", total=None)
+            try:
+                results = await agent_find(query, limit)
+            except Exception as e:
+                console.print(f"[red]Agent error:[/red] {e}")
+                console.print("[dim]Is Hermes Agent running? See docs/AGENT.md[/dim]")
+                return
+
+        if not results:
+            console.print("[yellow]Nothing found.[/yellow]")
+            return
+
+        display(results)
+
+    asyncio.run(run())
 
 
 @app.command()

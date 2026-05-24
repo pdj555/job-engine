@@ -14,6 +14,11 @@ export type SearchResponse = {
   count: number;
 };
 
+// The agent response adds the autonomous trace — the queries the agent chose to run.
+export type AgentResponse = SearchResponse & {
+  searches: string[];
+};
+
 export type Todo = {
   id: string;
   text: string;

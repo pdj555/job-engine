@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import { checkHealth } from "@/lib/api";
 import { useTodos } from "@/lib/use-todos";
+import { AgentTrace } from "./agent-trace";
 import { FrameRail } from "./frame-rail";
 import { Hero } from "./hero";
 import { MetricsSection } from "./metrics-section";
@@ -13,6 +14,7 @@ import { TodoList } from "./todo-list";
 
 export function JobEngineApp() {
   const [results, setResults] = useState<Opportunity[]>([]);
+  const [agentTrace, setAgentTrace] = useState<string[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [searching, setSearching] = useState(false);
   const todos = useTodos();
@@ -52,8 +54,11 @@ export function JobEngineApp() {
         <SearchComposer
           onResults={setResults}
           onSearching={setSearching}
+          onTrace={setAgentTrace}
           apiOnline={apiOnline}
         />
+
+        <AgentTrace searches={agentTrace} />
 
         <MetricsSection results={results} />
 

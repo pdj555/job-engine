@@ -17,13 +17,10 @@ export function TodoList({
 }: {
   todos: Todo[];
   ready: boolean;
-  tick: number;
   add: (text: string, url?: string) => boolean;
   toggle: (id: string) => void;
   remove: (id: string) => void;
   clearDone: () => void;
-  activeCount: number;
-  doneCount: number;
   completionPct: number;
 }) {
   const [draft, setDraft] = useState("");
