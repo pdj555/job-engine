@@ -43,7 +43,26 @@ Hand the search to an autonomous brain:
 job-engine agent "senior ML contract, remote"
 ```
 
-[**Hermes Agent**](https://github.com/NousResearch/hermes-agent) researches the open web on its own and returns candidates; Job Engine ranks them by $/hour — the model decides *what*, the score owns the *math*. Requires a running Hermes server. See [docs/AGENT.md](docs/AGENT.md).
+[**Hermes Agent**](https://github.com/NousResearch/hermes-agent) researches the open web on its own and returns candidates; Job Engine ranks them by $/hour. Requires a running Hermes server. See [docs/AGENT.md](docs/AGENT.md).
+
+```mermaid
+flowchart LR
+  G([goal]) --> A
+
+  subgraph A[autonomous · Hermes decides what]
+    H[plan · research web · extract]
+  end
+
+  A -->|searches + opportunities| D
+
+  subgraph D[deterministic · code owns the math]
+    R{{rank · $/hour · office −30%}}
+  end
+
+  D --> O([CLI · API · Web])
+```
+
+The brain decides *what* to surface; the deterministic core owns *the $/hour* — it never invents a number it's graded on.
 
 ## API & Web
 
