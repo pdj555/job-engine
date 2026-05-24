@@ -75,15 +75,13 @@ curl "localhost:8000/search?q=AI+engineer"
 cd web && npm install && npm run dev        # UI → :3000
 ```
 
-Deploy the UI to Vercel (root directory `web`); point `JOB_ENGINE_API_URL` at your API.
+Both halves deploy to Vercel from this repo — the UI (root directory `web/`) and the API (repo root, FastAPI via Fluid Compute). Point the UI's `JOB_ENGINE_API_URL` at the API deployment.
 
 ## Develop
 
 ```bash
 pip install -e ".[dev]" && pytest -q
 ```
-
-Deploy the API to Fly: `fly launch && fly deploy`.
 
 ---
 
