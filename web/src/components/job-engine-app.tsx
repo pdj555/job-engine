@@ -5,6 +5,7 @@ import type { Opportunity } from "@/lib/types";
 import { checkHealth } from "@/lib/api";
 import { useTodos } from "@/lib/use-todos";
 import { AgentTrace } from "./agent-trace";
+import { ArchitectureView } from "./architecture-view";
 import { FrameRail } from "./frame-rail";
 import { Hero } from "./hero";
 import { MetricsSection } from "./metrics-section";
@@ -12,7 +13,11 @@ import { ResultsList } from "./results-list";
 import { SearchComposer } from "./search-composer";
 import { TodoList } from "./todo-list";
 
+type Tab = "console" | "architecture";
+const TABS: Tab[] = ["console", "architecture"];
+
 export function JobEngineApp() {
+  const [tab, setTab] = useState<Tab>("console");
   const [results, setResults] = useState<Opportunity[]>([]);
   const [agentTrace, setAgentTrace] = useState<string[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -45,27 +50,47 @@ export function JobEngineApp() {
       <FrameRail status={status} resultCount={results.length} />
 
       <main className="frame-body">
-        <Hero
-          resultCount={results.length}
-          pipelinePct={todos.completionPct}
-          live={live}
-        />
+        <nav className="tabs" aria-label="Views">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`tab ${tab === t ? "tab-active" : ""}`}
+              onClick={() => setTab(t)}
+              aria-current={tab === t ? "page" : undefined}
+            >
+              {t}
+            </button>
+          ))}
+        </nav>
 
-        <SearchComposer
-          onResults={setResults}
-          onSearching={setSearching}
-          onTrace={setAgentTrace}
-          apiOnline={apiOnline}
-        />
+        {tab === "console" ? (
+          <>
+            <Hero
+              resultCount={results.length}
+              pipelinePct={todos.completionPct}
+              live={live}
+            />
 
-        <AgentTrace searches={agentTrace} />
+            <SearchComposer
+              onResults={setResults}
+              onSearching={setSearching}
+              onTrace={setAgentTrace}
+              apiOnline={apiOnline}
+            />
 
-        <MetricsSection results={results} />
+            <AgentTrace searches={agentTrace} />
 
-        <div className="split">
-          <ResultsList results={results} onAdd={handleAdd} />
-          <TodoList {...todos} />
-        </div>
+            <MetricsSection results={results} />
+
+            <div className="split">
+              <ResultsList results={results} onAdd={handleAdd} />
+              <TodoList {...todos} />
+            </div>
+          </>
+        ) : (
+          <ArchitectureView />
+        )}
       </main>
     </div>
   );

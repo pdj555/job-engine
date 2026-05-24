@@ -454,6 +454,108 @@ body {
   }
 }
 
+/* ── Tabs (view switch) ───────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  border: none;
+  background: transparent;
+  padding: 0 0 0.6rem;
+  margin-bottom: -1px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Flow (architecture view) ─────────────────────────────── */
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0;
+}
+
+.flow-end {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.flow-arrow {
+  color: var(--faint);
+}
+
+.flow-edge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.flow-node {
+  position: relative;
+  width: 100%;
+  max-width: 30rem;
+  border: 1px solid var(--line);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.flow-zone {
+  position: absolute;
+  top: 0;
+  right: 11px;
+  transform: translateY(-50%);
+  background: var(--surface);
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.flow-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.flow-title b {
+  color: var(--accent);
+}
+
+.flow-sub {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
 /* ── Agent trace (autonomous query transcript) ────────────── */
 .agent-trace {
   list-style: none;
