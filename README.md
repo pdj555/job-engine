@@ -1,68 +1,71 @@
 # Job Engine
 
-Find roles, contracts, grants, and equity opportunities — ranked by compensation per hour.
+Find roles, contracts, grants, and equity — ranked by what they truly pay per hour.
 
 ```mermaid
 flowchart LR
-  Q[Query] --> S[Search]
-  S --> E[Extract]
-  E --> R[Rank by $/hr]
-  R --> O[CLI · API]
+  G([goal]) --> S[search<br/>multi-source web]
+  G --> A[agent<br/>Hermes researches]
+  S --> R{{rank · $/hour}}
+  A --> R
+  R --> O([CLI · API · Web])
 ```
 
-## Get started
+## Quickstart
 
 ```bash
-python3 -m pip install -e .
-
-export OPENAI_API_KEY=sk-...
-export BRAVE_API_KEY=BSA...        # optional
-export PERPLEXITY_API_KEY=pplx-... # optional
-
-job-engine "AI engineer"
+pip install -e .
+job-engine find "AI engineer"
 ```
 
-## Overview
+Runs with zero configuration — it falls back to open web search. Add keys to sharpen results:
 
-Every result is scored on one metric:
+```bash
+export OPENAI_API_KEY=sk-...     # structured extraction
+export BRAVE_API_KEY=BSA...      # richer, faster search
+```
+
+## How it ranks
+
+One number orders every result:
 
 ```text
-annual_compensation ÷ (hours_per_week × 50)
+$/hour  =  annual pay ÷ (hours per week × 50)
 ```
 
-Non-remote roles take a 30% penalty. Missing pay or hours are imputed conservatively so weak listings sink.
+Office roles take a 30% penalty. Missing pay or hours are imputed conservatively, so thin listings sink to the bottom.
 
-HTTP API:
+## Autonomous agent
+
+Hand the search to an autonomous brain:
 
 ```bash
-job-engine serve
-curl "http://localhost:8000/search?q=AI+engineer"
+job-engine agent "senior ML contract, remote"
 ```
 
-Web UI (Next.js):
+[**Hermes Agent**](https://github.com/NousResearch/hermes-agent) researches the open web on its own and returns candidates; Job Engine ranks them by $/hour — the model decides *what*, the score owns the *math*. Requires a running Hermes server. See [docs/AGENT.md](docs/AGENT.md).
+
+## API & Web
 
 ```bash
-job-engine serve          # terminal 1 — API on :8000
-cd web && npm install && npm run dev   # terminal 2 — UI on :3000
+job-engine serve                            # API → :8000
+curl "localhost:8000/search?q=AI+engineer"
 ```
-
-Deploy the UI to Vercel with root directory `web`. Set `JOB_ENGINE_API_URL` to your API host.
-
-## Reference
-
-**Deploy.**
 
 ```bash
-fly launch
-fly secrets set OPENAI_API_KEY=... BRAVE_API_KEY=... PERPLEXITY_API_KEY=...
-fly deploy
+cd web && npm install && npm run dev        # UI → :3000
 ```
 
-**Test.**
+Deploy the UI to Vercel (root directory `web`); point `JOB_ENGINE_API_URL` at your API.
+
+## Develop
 
 ```bash
-python3 -m pip install -e ".[dev]"
-python -m pytest -q
+pip install -e ".[dev]" && pytest -q
 ```
+
+Deploy the API to Fly: `fly launch && fly deploy`.
+
+---
 
 MIT · [LICENSE](LICENSE)

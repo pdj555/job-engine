@@ -16,7 +16,7 @@ console = Console()
 
 
 @app.command()
-def main(
+def find(
     query: str = typer.Argument(..., help="What you want"),
     limit: int = typer.Option(15, "-n", help="Results"),
 ):
@@ -24,9 +24,9 @@ def main(
     Find opportunities. Ranked by $/hour.
 
     Examples:
-        job-engine "AI engineer"
-        job-engine "python freelance"
-        job-engine "startup equity"
+        job-engine find "AI engineer"
+        job-engine find "python freelance"
+        job-engine find "startup equity"
     """
     console.print(f"\n[bold]Hunting:[/bold] {query}\n")
 
