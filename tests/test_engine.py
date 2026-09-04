@@ -3991,6 +3991,29 @@ def test_html_is_gone_removed_listing_banner():
         "<p>$180,000 a year</p>"
     ) is True
     assert _html_is_gone(
+        "<title>Engineer</title><p>This listing is no longer available.</p>"
+        "<p>$180,000 a year</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This opening has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job has been withdrawn.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting was withdrawn.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This requisition has been cancelled.</p>"
+        "<p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This listing has been taken down.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job is no longer listed.</p>"
+    ) is True
+    assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Once the position has been filled, the team will grow.</p>"
         "<p>$180,000 a year</p>"
@@ -4080,6 +4103,32 @@ def test_enrich_drops_closed_opportunity_with_leftover_pay():
     ghost = Opportunity(
         title="Ghost",
         url="https://jobs.example/closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Keep"]
+    assert keep.pay_high == 180_000
+
+
+def test_enrich_drops_withdrawn_listing_with_leftover_pay():
+    engine = Engine()
+
+    async def page(url: str):
+        if "withdrawn" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This listing is no longer available.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Keep", url="https://jobs.example/live")
+    ghost = Opportunity(
+        title="Ghost",
+        url="https://jobs.example/withdrawn",
         pay_high=220_000,
         hours_per_week=40,
     )
