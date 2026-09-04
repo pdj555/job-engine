@@ -4326,6 +4326,16 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\b(?:monthly\s+)?stipend\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly))?"
+    r"(?:\s+(?:housing|living|relocation|car|vehicle|auto|phone|cell|internet|meal|food|travel|commuter|parking))?"
+    r"\s+allowance\b"
+    r"|"
+    r"\b(?:(?:monthly|housing|living|relocation|car|vehicle|auto|phone|cell|internet|meal|food|travel|commuter|parking)\s+)*allowance\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r")"
 )
 _HOURS_RE = re.compile(
@@ -4655,12 +4665,22 @@ def _workplace_remote(place: str) -> Optional[bool]:
         return True
     if re.search(r"\bhybrid\b", p) or re.search(r"\bflex(?:ible)?\b", p):
         return False
-    if re.search(r"\b(?:onsite|on-site|on site|in-office|in office)\b", p):
+    if re.search(r"\b(?:onsite|on-site|on site|in-office|in office|in the office|into the office)\b", p):
         return False
     compact = re.sub(r"[\s_-]+", "", p)
     if compact in {"remote", "offsite", "telecommute", "distributed"}:
         return True
-    if compact in {"hybrid", "onsite", "office", "inoffice", "flex", "flexible", "officebased"}:
+    if compact in {
+        "hybrid",
+        "onsite",
+        "office",
+        "inoffice",
+        "intheoffice",
+        "intotheoffice",
+        "flex",
+        "flexible",
+        "officebased",
+    }:
         return False
     return None
 
@@ -4746,7 +4766,8 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
     r"|office[-\s]based\b"
     r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?office\b"
-    r"|in\s+our\s+offices?\b"
+    r"|in(?:to)?\s+the\s+offices?\b"
+    r"|in\s+our\s+(?:\S+\s+){0,4}offices?\b"
     r"|in[-\s]person\s+(?:role|position|job)\b"
     r"|work\s+in[-\s]person\b"
     r"|in[-\s]person\s+in\b"
