@@ -1708,6 +1708,12 @@ def _workable_is_board(url: str) -> bool:
 _SR_JOB_RE = re.compile(
     r"(?i)https?://(?:www\.)?jobs\.smartrecruiters\.com/([^/]+)/(\d+)",
 )
+_SR_PAY_UNITS = (
+    ("hour", "HOUR"),
+    ("month", "MONTH"),
+    ("week", "WEEK"),
+    ("year", "YEAR"),
+)
 
 
 def _smartrecruiters_ids(url: str) -> Optional[tuple[str, str]]:
@@ -1729,6 +1735,33 @@ def _smartrecruiters_is_board(url: str) -> bool:
     if host != "jobs.smartrecruiters.com":
         return False
     return _smartrecruiters_ids(url) is None
+
+
+def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
+    """USD or stated foreign salary from compensation. Skip rows with no amounts."""
+    comp = data.get("compensation")
+    if not isinstance(comp, dict):
+        return None
+    low, high = _num(comp.get("min")), _num(comp.get("max"))
+    if low is None and high is None:
+        return None
+    period = str(comp.get("period") or "").lower()
+    unit = None
+    for needle, name in _SR_PAY_UNITS:
+        if needle in period:
+            unit = name
+            break
+    value: dict = {}
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    currency = str(comp.get("currency") or "").upper() or "USD"
+    return {"currency": currency, "value": value}
 
 
 def _smartrecruiters_to_html(data: dict) -> str:
@@ -1762,6 +1795,9 @@ def _smartrecruiters_to_html(data: dict) -> str:
     else:
         place = str(loc.get("fullLocation") or loc.get("city") or "")
     _apply_workplace(posting, place)
+    pay = _smartrecruiters_pay_ld(data)
+    if pay:
+        posting["baseSalary"] = pay
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")

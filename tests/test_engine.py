@@ -3719,6 +3719,84 @@ def test_smartrecruiters_to_html_fills_company_pay_and_remote():
     assert remote.pay_high is None
 
 
+def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
+    from src.engine import _apply_listing, _foreign_salary, _smartrecruiters_to_html
+
+    usd = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/ServiceNow/744000147354611",
+        remote=True,
+    )
+    _apply_listing(
+        usd,
+        _smartrecruiters_to_html(
+            {
+                "name": "Enterprise Account Exec (Armis/Veza)",
+                "company": {"name": "ServiceNow"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {
+                    "city": "Raleigh",
+                    "remote": True,
+                    "hybrid": False,
+                    "fullLocation": "Raleigh, NC, United States",
+                },
+                "compensation": {
+                    "min": 114400,
+                    "max": 165000,
+                    "currency": "USD",
+                    "period": "YEARLY",
+                },
+                "jobAd": {"sections": {"jobDescription": {"text": "<p>Sell software.</p>"}}},
+            }
+        ),
+    )
+    assert usd.company == "ServiceNow"
+    assert usd.remote is True
+    assert usd.pay_low == 114_400
+    assert usd.pay_high == 165_000
+    assert usd.hours_per_week == 40
+
+    gbp_html = _smartrecruiters_to_html(
+        {
+            "name": "Lead Data Scientist - Pricing",
+            "company": {"name": "Wise"},
+            "typeOfEmployment": {"label": "Full-time"},
+            "location": {"city": "London", "remote": False, "hybrid": False},
+            "compensation": {
+                "min": 90500,
+                "max": 127000,
+                "currency": "GBP",
+                "period": "YEARLY",
+            },
+            "jobAd": {"sections": {"jobDescription": {"text": "<p>Price FX.</p>"}}},
+        }
+    )
+    assert _foreign_salary(gbp_html) is True
+    gbp = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Wise/744000147450869",
+    )
+    assert _apply_listing(gbp, gbp_html) is False
+    assert gbp.pay_high is None
+
+    eur_html = _smartrecruiters_to_html(
+        {
+            "name": "Senior Operations Analyst",
+            "company": {"name": "Wise"},
+            "typeOfEmployment": {"label": "Full-time"},
+            "location": {"city": "Tallinn", "remote": False},
+            "compensation": {
+                "min": 3500,
+                "max": 5000,
+                "currency": "EUR",
+                "period": "MONTHLY",
+            },
+            "jobAd": {"sections": {"jobDescription": {"text": "<p>Payments ops.</p>"}}},
+        }
+    )
+    assert _foreign_salary(eur_html) is True
+
+
 def test_listing_text_reads_smartrecruiters_api(monkeypatch):
     engine = Engine()
     seen: list[str] = []
