@@ -3639,6 +3639,33 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title><p>We're no longer hiring for this role.</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>The position has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This vacancy has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This opportunity has been filled.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>We have filled this position.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting has been closed.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>We are no longer accepting applications.</p>"
+        "<p>$180,000 a year</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once the position has been filled, the team will grow.</p>"
+        "<p>$180,000 a year</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
