@@ -4201,6 +4201,14 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\b(?:signing|sign-on|sign on|relocation|annual|target|performance|retention)\s+bonus\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"\s+(?:OTE\b|on[- ]target\s+earnings\b|commission\b)"
+    r"|"
+    r"\b(?:OTE|on[- ]target\s+earnings|commission)\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r")"
 )
 _HOURS_RE = re.compile(
