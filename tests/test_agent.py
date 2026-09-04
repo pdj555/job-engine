@@ -10,8 +10,8 @@ from src.models import Opportunity
 
 def test_rank_orders_by_dollars_per_hour():
     items = [
-        {"title": "Low", "url": "u1", "pay": 100_000, "hours_per_week": 40},   # $50/hr
-        {"title": "High", "url": "u2", "pay": 200_000, "hours_per_week": 20},  # $200/hr
+        {"title": "Low", "url": "https://a.example/1", "pay": 100_000, "hours_per_week": 40},
+        {"title": "High", "url": "https://a.example/2", "pay": 200_000, "hours_per_week": 20},
     ]
     assert [o.title for o in _rank(items)] == ["High", "Low"]
 
@@ -20,9 +20,21 @@ def test_rank_skips_items_without_url():
     assert _rank([{"title": "no url", "pay": 100_000, "hours_per_week": 10}]) == []
 
 
+def test_rank_skips_non_http_urls():
+    ranked = _rank(
+        [
+            {"title": "bare", "url": "u1", "pay": 400_000, "hours_per_week": 10},
+            {"title": "js", "url": "javascript:alert(1)", "pay": 400_000, "hours_per_week": 10},
+            {"title": "ftp", "url": "ftp://files.example/x", "pay": 400_000, "hours_per_week": 10},
+            {"title": "ok", "url": "https://jobs.example/x", "pay": 100_000, "hours_per_week": 40},
+        ]
+    )
+    assert [o.title for o in ranked] == ["ok"]
+
+
 def test_rank_builds_opportunity_models_with_fields():
     ranked = _rank(
-        [{"title": "X", "url": "u", "company": "Acme", "pay": 120_000,
+        [{"title": "X", "url": "https://acme.example/x", "company": "Acme", "pay": 120_000,
           "hours_per_week": 30, "remote": False}]
     )
     assert isinstance(ranked[0], Opportunity)
@@ -69,8 +81,8 @@ def test_agent_run_parses_and_ranks_hermes_reply(monkeypatch):
     reply = (
         '{"searches": ["remote ml contract", "ai grants"],'
         ' "opportunities": ['
-        '   {"title": "Cheap", "url": "u1", "pay": 100000, "hours_per_week": 40},'
-        '   {"title": "Lush", "url": "u2", "pay": 200000, "hours_per_week": 20}'
+        '   {"title": "Cheap", "url": "https://a.example/1", "pay": 100000, "hours_per_week": 40},'
+        '   {"title": "Lush", "url": "https://a.example/2", "pay": 200000, "hours_per_week": 20}'
         ' ]}'
     )
     monkeypatch.setattr("src.agent._client", lambda: _fake_client(reply))

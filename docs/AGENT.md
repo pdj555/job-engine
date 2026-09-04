@@ -71,8 +71,9 @@ OpenAI-compatible server (default `http://127.0.0.1:8642/v1`, model `hermes-agen
    curl -X POST localhost:8000/agent -d '{"q":"..."}'  # API (job-engine serve)
    ```
 
-If Hermes isn't reachable, the CLI prints the error and `/agent` returns `503` —
-the deterministic `/search` path is unaffected.
+If Hermes isn't reachable, the CLI prints the error and `/agent` returns `503`.
+A hung brain returns `504` after `HERMES_TIMEOUT` (default 120s). The
+deterministic `/search` path is unaffected.
 
 ## What's verified
 

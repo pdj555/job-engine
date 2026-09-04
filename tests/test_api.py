@@ -23,6 +23,34 @@ def test_payload_known_rate_is_not_imputed():
     assert row["score"] == 70.0
 
 
+def test_health_reports_hermes_configured():
+    res = TestClient(routes.app).get("/health")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["hermes_configured"] is True
+    assert body["apis"]["hermes"] is True
+
+
+def test_agent_timeout_returns_504(monkeypatch):
+    from openai import APITimeoutError
+
+    async def boom(*_args, **_kwargs):
+        raise APITimeoutError(request=None)
+
+    monkeypatch.setattr("src.agent.agent_run", boom)
+    res = TestClient(routes.app).post("/agent", json={"q": "ai"})
+    assert res.status_code == 504
+
+
+def test_agent_other_error_returns_503(monkeypatch):
+    async def boom(*_args, **_kwargs):
+        raise RuntimeError("down")
+
+    monkeypatch.setattr("src.agent.agent_run", boom)
+    res = TestClient(routes.app).post("/agent", json={"q": "ai"})
+    assert res.status_code == 503
+
+
 def test_search_http_returns_refined_fields(monkeypatch):
     async def fake_find(query, limit=20):
         return [Opportunity(title="x", url="https://u", pay_high=100_000)]
