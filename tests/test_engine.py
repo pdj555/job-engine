@@ -6697,6 +6697,19 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title><p>This posting will expire on Friday.</p>"
         "<p>$180,000</p>"
     ) is False
+    expired_ld = (
+        '<title>Engineer</title><script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","validThrough":"2020-01-01",'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script><p>Related $400,000</p>"
+    )
+    assert _html_is_gone(expired_ld) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020-06-01T00:00:00Z")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2029-12-31")
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Applications for this position are closed.</p><p>$180,000</p>"
@@ -7300,12 +7313,20 @@ def test_enrich_drops_removed_listing_html():
                 "<p>Sorry, this job was removed at 08:39 a.m. (UTC)</p>"
                 "<p>$151,800</p>"
             )
+        if "valid-through" in url:
+            return (
+                '<title>Engineer</title><script type="application/ld+json">'
+                '{"@type":"JobPosting","title":"Engineer","validThrough":"2020-01-01",'
+                '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+                "</script><p>Related $400,000</p>"
+            )
         return "<title>Senior ML</title><p>$180,000 a year</p>"
 
     engine._listing_text = page
     keep = Opportunity(title="Keep", url="https://jobs.example/live")
     ghost = Opportunity(title="Ghost", url="https://www.builtin.com/job/removed/1")
-    opps = [keep, ghost]
+    expired = Opportunity(title="ExpiredLD", url="https://jobs.example/valid-through")
+    opps = [keep, ghost, expired]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000
@@ -8843,6 +8864,44 @@ def test_lever_eur_salary_range_is_foreign():
     _apply_listing(opp, html)
     assert opp.pay_high is None
     assert _foreign_salary(html) is True
+    usd = _lever_to_html(
+        {
+            "text": "Engineer",
+            "categories": {"commitment": "Full-time"},
+            "salaryRange": {
+                "min": "180000",
+                "max": "220000",
+                "interval": "per-year-salary",
+            },
+        },
+        "Acme",
+    )
+    listed = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    )
+    assert _apply_listing(listed, usd) is True
+    assert listed.pay_low == 180_000
+    assert listed.pay_high == 220_000
+    hourly = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "interval": "per-hour",
+            },
+        },
+        "Acme",
+    )
+    contract = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+    )
+    assert _apply_listing(contract, hourly) is True
+    assert contract.pay_low == 160_000
+    assert contract.pay_high == 200_000
 
 
 def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):

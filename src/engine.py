@@ -4,6 +4,7 @@ import asyncio
 import json
 import re
 import xml.etree.ElementTree as ET
+from datetime import date
 from html import unescape
 from typing import Optional
 from urllib.parse import parse_qs, unquote, urlparse
@@ -830,25 +831,23 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
         elif "full" in commit:
             posting["employmentType"] = "FULL_TIME"
     rng = data.get("salaryRange")
-    if isinstance(rng, dict) and rng.get("currency"):
-        interval = str(rng.get("interval") or "").lower()
-        unit = "YEAR"
-        for needle, name in _LEVER_PAY_UNITS:
-            if needle in interval:
-                unit = name
-                break
-        value: dict = {"unitText": unit}
-        low, high = rng.get("min"), rng.get("max")
-        if isinstance(low, (int, float)) and isinstance(high, (int, float)):
-            value["minValue"] = low
-            value["maxValue"] = high
-        elif isinstance(high, (int, float)):
-            value["value"] = high
-        elif isinstance(low, (int, float)):
-            value["value"] = low
-        if "value" in value or "minValue" in value:
+    if isinstance(rng, dict):
+        low, high = _num(rng.get("min")), _num(rng.get("max"))
+        if low or high:
+            interval = str(rng.get("interval") or "").lower()
+            unit = "YEAR"
+            for needle, name in _LEVER_PAY_UNITS:
+                if needle in interval:
+                    unit = name
+                    break
+            value: dict = {"unitText": unit}
+            if low is not None and high is not None:
+                value["minValue"] = low
+                value["maxValue"] = high
+            else:
+                value["value"] = high or low
             posting["baseSalary"] = {
-                "currency": str(rng.get("currency")).upper(),
+                "currency": str(rng.get("currency") or "USD").upper(),
                 "value": value,
             }
     parts = []
@@ -4487,9 +4486,26 @@ _GONE_LISTING_RE = re.compile(
 )
 
 
+def _posting_expired(posting: Optional[dict]) -> bool:
+    """True when JobPosting.validThrough is a date before today."""
+    if not isinstance(posting, dict):
+        return False
+    raw = str(posting.get("validThrough") or "").strip()
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", raw)
+    if not m:
+        return False
+    try:
+        through = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return False
+    return through < date.today()
+
+
 def _html_is_gone(html: str) -> bool:
     """True when the page says the posting was taken down. 200 HTML is not a listing."""
-    return bool(_GONE_LISTING_RE.search(_listing_plain_text(html)))
+    if _GONE_LISTING_RE.search(_listing_plain_text(html)):
+        return True
+    return _posting_expired(_job_posting(html))
 
 
 def _html_is_index(html: str, url: str) -> bool:
