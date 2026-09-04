@@ -212,6 +212,12 @@ def test_guess_pay_annualizes_hourly():
     from src.engine import _parse_pay
     assert _parse_pay("$80 - $100 / Hour") == (160_000, 200_000)
     assert _parse_pay("$80–$100/hr") == (160_000, 200_000)
+    assert _parse_pay("$80 an hour") == (None, 160_000)
+    assert _parse_pay("$80 hourly") == (None, 160_000)
+    assert _parse_pay("$80 an hr") == (None, 160_000)
+    assert _parse_pay("USD 80 per hour") == (None, 160_000)
+    assert _parse_pay("$80–$100 an hour") == (160_000, 200_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
 
 
 def test_parse_pay_annualizes_monthly_usd():

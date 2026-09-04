@@ -4133,13 +4133,15 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
+_HOUR_TAIL = r"\s*(?:/\s*h(?:r|our)s?|(?:per|an|a)\s+h(?:r|our)s?|hourly)\b"
 _HOURLY_RANGE_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*\$?\s*(\d{1,3}(?:\.\d+)?)\s*(?:/|\s+per\s+)\s*h(?:r|our)s?\b",
-    re.I,
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:\.\d+)?)"
+    r"\s*(?:[-–—]|to)\s*"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:\.\d+)?)"
+    + _HOUR_TAIL
 )
 _HOURLY_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:/|\s+per\s+)\s*h(?:r|our)s?\b",
-    re.I,
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)" + _HOUR_TAIL
 )
 _MONTH_TAIL = r"\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly)\b"
 _MONTHLY_RANGE_RE = re.compile(
