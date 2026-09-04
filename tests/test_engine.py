@@ -788,6 +788,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_egp is False
     assert egp.pay_high is None
+    assert _parse_pay("80,000 KES. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 KES. Account Executive $220,000</p>") is True
+    assert _parse_pay("KES80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>KES80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 KES. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 KES. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k KES. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k KES. Account Executive $220,000</p>") is True
+    kes = Opportunity(title="Engineer", url="https://jobs.example/ke")
+    listed_kes = _apply_listing(
+        kes, "<p>Salary 80,000 KES. Account Executive $400,000</p>"
+    )
+    assert listed_kes is False
+    assert kes.pay_high is None
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
