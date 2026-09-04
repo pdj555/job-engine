@@ -6385,6 +6385,16 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_bound, posting_lb) is True
     assert posting_bound.pay_low == 180_000
     assert posting_bound.pay_high == 220_000
+    posting_one = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "amount":180000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_amount = Opportunity(title="Engineer", url="https://jobs.example/ld-post-amount")
+    assert _apply_listing(posting_amount, posting_one) is True
+    assert posting_amount.pay_high == 180_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -7019,6 +7029,16 @@ def test_apply_listing_ignores_non_usd_salary():
     amt_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-minAmount-eur")
     _apply_listing(amt_eur, eur_amt)
     assert amt_eur.pay_high is None
+    eur_one = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","amount":80000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    one_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-amount-eur")
+    _apply_listing(one_eur, eur_one)
+    assert one_eur.pay_high is None
     eur_comp = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -11516,6 +11536,23 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(two_row, two_weeks) is True
     assert two_row.pay_low == 75_000
     assert two_row.pay_high == 100_000
+    freq = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "frequency": "every two weeks",
+            },
+        }
+    )
+    freq_row = Opportunity(title="x", url="https://jobs.workable.com/view/qrs/engineer")
+    assert _apply_listing(freq_row, freq) is True
+    assert freq_row.pay_low == 75_000
+    assert freq_row.pay_high == 100_000
     two_str = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -11839,6 +11876,62 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
     )
     assert fromto.pay_low == 180_000
     assert fromto.pay_high == 220_000
+    freq = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354614",
+    )
+    assert _apply_listing(
+        freq,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "compensation": {
+                    "min": 3000,
+                    "max": 4000,
+                    "currency": "USD",
+                    "frequency": "every two weeks",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office. Full time.</p>"}
+                    }
+                },
+            }
+        ),
+    ) is True
+    assert freq.pay_low == 75_000
+    assert freq.pay_high == 100_000
+    interval = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354615",
+    )
+    assert _apply_listing(
+        interval,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "compensation": {
+                    "min": 3000,
+                    "max": 4000,
+                    "currency": "USD",
+                    "interval": "every-two-weeks",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office. Full time.</p>"}
+                    }
+                },
+            }
+        ),
+    ) is True
+    assert interval.pay_low == 75_000
+    assert interval.pay_high == 100_000
     text = Opportunity(
         title="x",
         url="https://jobs.smartrecruiters.com/Acme/744000147354613",
@@ -12753,6 +12846,46 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    freq = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-freq")
+    assert _apply_listing(
+        freq,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "min": 3000,
+                    "max": 4000,
+                    "frequency": "every two weeks",
+                    "currency": "USD",
+                },
+                "description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert freq.pay_low == 75_000
+    assert freq.pay_high == 100_000
+    interval = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-interval")
+    assert _apply_listing(
+        interval,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "min": 3000,
+                    "max": 4000,
+                    "interval": "every-two-weeks",
+                    "currency": "USD",
+                },
+                "description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert interval.pay_low == 75_000
+    assert interval.pay_high == 100_000
     year_sfx = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-year")
     assert _apply_listing(
         year_sfx,

@@ -824,6 +824,11 @@ def _period_unit(period: str) -> Optional[str]:
     return None
 
 
+def _ats_period(raw: dict) -> str:
+    """Occupied period / interval / frequency on an ATS salary object."""
+    return str(raw.get("period") or raw.get("interval") or raw.get("frequency") or "")
+
+
 def _lever_api_url(url: str) -> Optional[str]:
     m = _LEVER_JOB_RE.search(_lever_job_url(url) or "")
     if not m:
@@ -1947,8 +1952,7 @@ def _workable_pay_ld(data: dict) -> Optional[dict]:
         low, high = _bound_nums(raw)
         if low is None and high is None:
             continue
-        period = str(raw.get("period") or raw.get("interval") or "").lower()
-        unit = _period_unit(period) or "YEAR"
+        unit = _period_unit(_ats_period(raw)) or "YEAR"
         value: dict = {"unitText": unit}
         if low is not None and high is not None:
             value["minValue"] = low
@@ -2054,8 +2058,7 @@ def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
     low, high = _bound_nums(comp)
     if low is None and high is None:
         return None
-    period = str(comp.get("period") or "").lower()
-    unit = _period_unit(period)
+    unit = _period_unit(_ats_period(comp))
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -2503,8 +2506,7 @@ def _recruitee_pay_ld(data: dict) -> Optional[dict]:
         low, high = _bound_nums(sal)
         if low is None and high is None:
             continue
-        period = str(sal.get("period") or "").lower()
-        unit = _period_unit(period)
+        unit = _period_unit(_ats_period(sal))
         value: dict = {}
         if unit:
             value["unitText"] = unit
@@ -2779,8 +2781,7 @@ def _breezy_pay_ld(job: dict) -> Optional[dict]:
     low, high = _bound_nums(raw)
     if low is None and high is None:
         return None
-    period = str(raw.get("period") or raw.get("frequency") or "").lower()
-    unit = _period_unit(period)
+    unit = _period_unit(_ats_period(raw))
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -3139,8 +3140,7 @@ def _bamboohr_pay_ld(job: dict) -> Optional[dict]:
     low, high = _bound_nums(raw)
     if low is None and high is None:
         return None
-    period = str(raw.get("period") or raw.get("frequency") or "").lower()
-    unit = _period_unit(period)
+    unit = _period_unit(_ats_period(raw))
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -4827,7 +4827,7 @@ def _salary_span(items: list) -> dict:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, then salary aliases, then salaryMin/salaryFrom. Skip empty objects."""
+    """baseSalary, then salary aliases, then salaryMin/amount. Skip empty objects."""
     if not isinstance(posting, dict):
         return None
     for key in (
@@ -4881,7 +4881,10 @@ def _posting_salary(posting: Optional[dict]):
         low, high = min(nums), max(nums)
         break
     if low is None and high is None:
-        return None
+        nums = _nums(posting.get("amount"))
+        if not nums:
+            return None
+        low, high = min(nums), max(nums)
     unit = _ld_text(posting.get("salaryUnit")) or _ld_text(posting.get("unitText"))
     value: dict = {}
     if unit:
