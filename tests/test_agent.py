@@ -187,3 +187,32 @@ def test_agent_run_enriches_missing_pay_from_listing(monkeypatch):
     run = asyncio.run(agent_run("ml"))
     assert run.ranked[0].pay_high == 197_000
     assert run.ranked[0].score() == 98.5
+
+
+def test_agent_run_enriches_company_from_json_ld(monkeypatch):
+    reply = (
+        '{"searches": ["x"], "opportunities": ['
+        '  {"title": "Senior ML Engineer", "url": "https://karkidi.example/x",'
+        '   "pay": 200000}'
+        ']}'
+    )
+    monkeypatch.setattr("src.agent._client", lambda: _fake_client(reply))
+
+    from src.engine import Engine
+
+    engine = Engine()
+
+    async def page(_url: str) -> str:
+        return (
+            '<script type="application/ld+json">'
+            '{"@type":"JobPosting","hiringOrganization":{"name":"Braintrust"},'
+            '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+            "</script>"
+        )
+
+    engine._listing_text = page
+    monkeypatch.setattr("src.agent.get_engine", lambda: engine)
+
+    run = asyncio.run(agent_run("ml"))
+    assert run.ranked[0].company == "Braintrust"
+    assert run.ranked[0].pay_high == 200_000

@@ -46,8 +46,8 @@ class Engine:
         return _dedupe_opportunities(ranked)[:limit]
 
     async def _enrich_pay(self, opps: list[Opportunity]) -> None:
-        """Fill missing pay/hours from the listing page. Never invent."""
-        missing = [o for o in opps if o.pay is None]
+        """Fill missing pay/hours/company from the listing page. Never invent."""
+        missing = [o for o in opps if o.pay is None or not o.company]
         if not missing:
             return
         async with httpx.AsyncClient(
@@ -64,18 +64,8 @@ class Engine:
             finally:
                 self._http_client = None
         for o, text in zip(missing, texts):
-            if not isinstance(text, str) or not text:
-                continue
-            visible = _listing_plain_text(text[:80_000])
-            hours = o.hours_per_week or _guess_hours(o.title, visible)
-            low, high = _parse_pay(visible, hours)
-            if not high and not low:
-                continue
-            o.pay_low = low
-            o.pay_high = high
-            if o.hours_per_week is None and hours:
-                o.hours_per_week = hours
-            o.efficiency = o.refined_rate
+            if isinstance(text, str) and text:
+                _apply_listing(o, text[:80_000])
 
     async def _listing_text(self, url: str) -> str:
         if not _public_http_url(url):
@@ -567,6 +557,192 @@ def _listing_plain_text(html: str) -> str:
     html = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", html)
     html = re.sub(r"(?is)<noscript\b[^>]*>.*?</noscript>", " ", html)
     return _visible_text(html)
+
+
+_LD_SCRIPT_RE = re.compile(
+    r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    re.I | re.S,
+)
+_PAY_UNITS = {
+    "HOUR": "hour",
+    "HOURLY": "hour",
+    "HR": "hour",
+    "YEAR": "year",
+    "ANNUAL": "year",
+    "ANNUM": "year",
+    "YR": "year",
+    "WEEK": "week",
+    "WEEKLY": "week",
+    "MONTH": "month",
+    "MONTHLY": "month",
+}
+
+
+def _ld_types(value) -> set[str]:
+    if isinstance(value, str):
+        return {value.rsplit("/", 1)[-1]}
+    if isinstance(value, list):
+        out: set[str] = set()
+        for item in value:
+            out |= _ld_types(item)
+        return out
+    return set()
+
+
+def _walk_ld(obj):
+    if isinstance(obj, list):
+        for item in obj:
+            yield from _walk_ld(item)
+    elif isinstance(obj, dict):
+        yield obj
+        for value in obj.values():
+            if isinstance(value, (dict, list)):
+                yield from _walk_ld(value)
+
+
+def _job_posting(html: str) -> Optional[dict]:
+    for raw in _LD_SCRIPT_RE.findall(html or ""):
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        for obj in _walk_ld(data):
+            if "JobPosting" in _ld_types(obj.get("@type")):
+                return obj
+    return None
+
+
+def _num(value) -> Optional[float]:
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.replace(",", "").strip())
+        except ValueError:
+            return None
+    return None
+
+
+def _usd(currency) -> bool:
+    if not currency:
+        return True
+    return str(currency).upper().replace("$", "").strip() in {"USD", "US", "USA"}
+
+
+def _posting_company(posting: dict) -> Optional[str]:
+    org = posting.get("hiringOrganization")
+    if isinstance(org, list) and org:
+        org = org[0]
+    if isinstance(org, str):
+        name = org.strip()
+    elif isinstance(org, dict):
+        name = str(org.get("name") or "").strip()
+    else:
+        return None
+    if not name or _PLACE_RE.search(name):
+        return None
+    return name
+
+
+def _posting_hours(posting: dict) -> Optional[int]:
+    work = posting.get("workHours")
+    n = _num(work)
+    if n is None and isinstance(work, str):
+        m = re.search(r"\b(\d{1,2})\b", work)
+        n = float(m.group(1)) if m else None
+    if n is not None and 1 <= n <= 80:
+        return int(n)
+    types = posting.get("employmentType")
+    blob = " ".join(str(t).upper().replace("-", "_") for t in (
+        types if isinstance(types, list) else [types]
+    ) if t)
+    if "PART_TIME" in blob:
+        return 20
+    if "FULL_TIME" in blob:
+        return 40
+    return None
+
+
+def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Optional[int]:
+    if unit == "hour":
+        if not 10 <= amount <= 1000:
+            return None
+        return int(amount * (hours or 40) * 50)
+    if unit == "week":
+        return int(amount * 50)
+    if unit == "month":
+        return int(amount * 12)
+    if unit == "year" or (unit is None and 10_000 <= amount <= 2_000_000):
+        return int(amount)
+    return None
+
+
+def _posting_pay(
+    posting: dict, hours: Optional[int]
+) -> tuple[Optional[int], Optional[int]]:
+    salary = posting.get("baseSalary") or posting.get("salary")
+    if salary is None:
+        return None, None
+    if isinstance(salary, (int, float, str)):
+        annual = _annualize(_num(salary) or 0, None, hours)
+        if annual and 10_000 <= annual <= 2_000_000:
+            return None, annual
+        return None, None
+    if not isinstance(salary, dict) or not _usd(salary.get("currency")):
+        return None, None
+    value = salary.get("value")
+    unit = None
+    low = high = None
+    if isinstance(value, dict):
+        unit = _PAY_UNITS.get(str(value.get("unitText") or "").upper())
+        low, high = _num(value.get("minValue")), _num(value.get("maxValue"))
+        if high is None:
+            high = _num(value.get("value"))
+    else:
+        high = _num(value)
+        unit = _PAY_UNITS.get(str(salary.get("unitText") or "").upper())
+    annual_low = _annualize(low, unit, hours) if low is not None else None
+    annual_high = _annualize(high, unit, hours) if high is not None else None
+    if annual_low and annual_high and annual_low > annual_high:
+        annual_low, annual_high = annual_high, annual_low
+    if annual_high is None:
+        annual_high, annual_low = annual_low, None
+    if not annual_high or not (10_000 <= annual_high <= 2_000_000):
+        return None, None
+    if annual_low and not (10_000 <= annual_low <= annual_high):
+        annual_low = None
+    return annual_low, annual_high
+
+
+def _apply_listing(opp: Opportunity, html: str) -> None:
+    """Fill missing fields from JobPosting JSON-LD, then visible listing text."""
+    posting = _job_posting(html)
+    if posting:
+        if not opp.company:
+            name = _posting_company(posting)
+            if name:
+                opp.company = name
+        if opp.hours_per_week is None:
+            hours = _posting_hours(posting)
+            if hours:
+                opp.hours_per_week = hours
+        if opp.pay is None:
+            low, high = _posting_pay(posting, opp.hours_per_week)
+            if high or low:
+                opp.pay_low = low
+                opp.pay_high = high
+    if opp.pay is None:
+        visible = _listing_plain_text(html)
+        hours = opp.hours_per_week or _guess_hours(opp.title, visible)
+        low, high = _parse_pay(visible, hours)
+        if high or low:
+            opp.pay_low = low
+            opp.pay_high = high
+            if opp.hours_per_week is None and hours:
+                opp.hours_per_week = hours
+    opp.efficiency = opp.refined_rate
 
 
 def _parse_ddg_html(html: str) -> list[dict]:

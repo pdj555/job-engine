@@ -741,6 +741,84 @@ def test_enrich_pay_from_listing_html():
     assert opp.score() == 98.5
 
 
+def test_apply_listing_json_ld_company_and_hourly_pay():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Senior ML Engineer",
+     "hiringOrganization":{"@type":"Organization","name":"Braintrust"},
+     "employmentType":"FULL_TIME",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    """
+    opp = Opportunity(title="Senior ML Engineer", url="https://karkidi.example/x")
+    _apply_listing(opp, html)
+    assert opp.company == "Braintrust"
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 200_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 100.0
+
+
+def test_apply_listing_empty_json_ld_salary_falls_back_to_visible_text():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Lyra Health"},
+     "baseSalary":{"@type":"MonetaryAmount","currency":"","value":{"unitText":""}}}
+    </script>
+    <p>for this full-time position is $143,000 to 197,000.</p>
+    """
+    opp = Opportunity(title="Senior ML Engineer", url="https://careers.example/x")
+    _apply_listing(opp, html)
+    assert opp.company == "Lyra Health"
+    assert opp.pay_low == 143_000
+    assert opp.pay_high == 197_000
+
+
+def test_apply_listing_ignores_non_usd_salary():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/x")
+    _apply_listing(opp, html)
+    assert opp.company == "Acme"
+    assert opp.pay_high is None
+
+
+def test_enrich_fetches_when_company_missing_even_if_paid():
+    engine = Engine()
+    captured: list[str] = []
+
+    async def page(url: str) -> str:
+        captured.append(url)
+        return """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","hiringOrganization":{"name":"Braintrust"}}
+        </script>
+        """
+
+    engine._listing_text = page
+    opp = Opportunity(
+        title="Senior ML Engineer",
+        url="https://karkidi.example/x",
+        pay_low=160_000,
+        pay_high=200_000,
+    )
+    asyncio.run(engine._enrich_pay([opp]))
+    assert captured == ["https://karkidi.example/x"]
+    assert opp.company == "Braintrust"
+    assert opp.pay_high == 200_000
+
+
 def test_listing_plain_text_ignores_script_salaries():
     from src.engine import _listing_plain_text, _parse_pay, _visible_text
 
