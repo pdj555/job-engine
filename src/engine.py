@@ -2400,6 +2400,7 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
         descs = []
         pay_text = None
         pay_name = None
+        hours = None
         for block in pos.findall("jobDescriptions/jobDescription"):
             name = (block.findtext("name") or "").strip()
             if re.search(r"reward|referr", name, re.I):
@@ -2420,6 +2421,8 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
             if pay_text is None and _GH_PAY_META_RE.fullmatch(name):
                 pay_text = text
                 pay_name = name
+            if hours is None:
+                hours = _stated_hours("", f"{name}: {text}")
         return {
             "name": (pos.findtext("name") or "").strip(),
             "subcompany": (pos.findtext("subcompany") or "").strip(),
@@ -2428,6 +2431,7 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
             "descriptions": descs,
             "pay_text": pay_text,
             "pay_name": pay_name,
+            "hours": hours,
         }
     if found or root.tag.endswith("workzag-jobs"):
         return None
@@ -2452,6 +2456,9 @@ def _personio_to_html(pos: dict) -> str:
     offices = pos.get("offices") if isinstance(pos.get("offices"), list) else []
     labels = [str(o).strip() for o in offices if str(o).strip()]
     _apply_workplace(posting, *labels)
+    n = _num(pos.get("hours"))
+    if n is not None and 1 <= n <= 80:
+        posting["workHours"] = str(int(n))
     pay = _named_pay_ld(str(pos.get("pay_name") or ""), str(pos.get("pay_text") or ""))
     if pay:
         posting["baseSalary"] = pay
@@ -3071,6 +3078,9 @@ def _comeet_to_html(data: dict) -> str:
             parts.append(val)
             if pay is None and _GH_PAY_META_RE.fullmatch(name):
                 pay = _named_pay_ld(name, val)
+            stated = _stated_hours("", f"{name}: {val}")
+            if stated and posting.get("workHours") is None:
+                posting["workHours"] = str(stated)
     if pay:
         posting["baseSalary"] = pay
     page_title = f"{title} at {company}" if company else title

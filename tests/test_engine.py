@@ -12962,6 +12962,25 @@ def test_personio_city_offices_stay_office():
     ) is True
     assert hourly.pay_low == 160_000
     assert hourly.pay_high == 200_000
+    hours_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?><workzag-jobs><position>'
+        "<id>2724251</id><subcompany>Acme</subcompany><office>Austin</office>"
+        "<name>Engineer</name><schedule>full-time</schedule><jobDescriptions>"
+        "<jobDescription><name>Description</name>"
+        "<value>Office. Full time.</value></jobDescription>"
+        "<jobDescription><name>Hourly Rate</name>"
+        "<value>$80 - $100</value></jobDescription>"
+        "<jobDescription><name>Hours per week</name>"
+        "<value>32</value></jobDescription>"
+        "</jobDescriptions></position></workzag-jobs>"
+    )
+    hours = Opportunity(title="x", url="https://acme.jobs.personio.de/job/2724251")
+    assert _apply_listing(
+        hours, _personio_to_html(_personio_position(hours_xml, "2724251"))
+    ) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_low == 128_000
+    assert hours.pay_high == 160_000
 
 
 def test_listing_text_personio_xml_missing_id_is_gone(monkeypatch):
@@ -14392,6 +14411,30 @@ def test_listing_text_reads_comeet_api_not_referral_pay(monkeypatch):
     ) is True
     assert hourly.pay_low == 160_000
     assert hourly.pay_high == 200_000
+    hpw = Opportunity(
+        title="x",
+        url="https://www.comeet.com/jobs/acme/1.000/engineer/2.003",
+    )
+    assert _apply_listing(
+        hpw,
+        _comeet_to_html(
+            {
+                "name": "Engineer",
+                "company_name": "Acme",
+                "employment_type": "Full-time",
+                "workplace_type": "Onsite",
+                "location": {"name": "Austin"},
+                "details": [
+                    {"name": "About", "value": "Office."},
+                    {"name": "Hourly Rate", "value": "$80 - $100"},
+                    {"name": "Hours per week", "value": "32"},
+                ],
+            }
+        ),
+    ) is True
+    assert hpw.hours_per_week == 32
+    assert hpw.pay_low == 128_000
+    assert hpw.pay_high == 160_000
 
 
 def test_listing_text_comeet_missing_position_is_gone(monkeypatch):
