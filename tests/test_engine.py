@@ -947,6 +947,16 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Senior Machine Learning Engineer - Acme",
+                "url": "https://www.ziprecruiter.com/c/Acme/Job/Senior-Machine-Learning-Engineer/-in-San-Francisco,CA",
+                "description": "$180,000 - $220,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Staff Machine Learning Engineer Job Description, Salary & Career Outlook",
                 "url": "https://jobdescription.org/jobs/artificial-intelligence/staff-machine-learning-engineer",
                 "description": "Staff Machine Learning Engineer salary ($195K–$310K)",
@@ -1231,8 +1241,7 @@ def test_index_pages_are_not_opportunities():
             "description": "$180k–$220k",
         }
     )
-    assert kept_listing is not None
-    assert kept_listing.pay_high == 220_000
+    assert kept_listing is None
     kept_builtin = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1334,6 +1343,11 @@ def test_index_pages_are_not_opportunities():
         "<title>Senior Machine Learning Engineer - Acme</title>"
         "<p>$180,000 - $220,000 a year</p>",
         "https://www.indeed.com/viewjob?jk=abc123def456",
+    )
+    assert _html_is_index(
+        "<title>Senior Machine Learning Engineer - Acme</title>"
+        "<p>$180k–$220k</p>",
+        "https://www.glassdoor.com/job-listing/senior-machine-learning-engineer-acme-JV_IC1147401_KO0,32.htm",
     )
     assert _html_is_index(
         "<title>John Behling - Staff Engineer, Applied Machine Learning at Greenhouse</title>",
