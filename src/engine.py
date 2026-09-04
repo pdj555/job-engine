@@ -2571,22 +2571,6 @@ _RIPPLING_JOB_RE = re.compile(
 _NEXT_DATA_RE = re.compile(
     r'(?is)<script id="__NEXT_DATA__"[^>]*>(.*?)</script>'
 )
-_RIPPLING_PAY_UNITS = {
-    "YEAR": "YEAR",
-    "ANNUAL": "YEAR",
-    "ANNUALLY": "YEAR",
-    "YEARLY": "YEAR",
-    "MONTH": "MONTH",
-    "MONTHLY": "MONTH",
-    "HOUR": "HOUR",
-    "HOURLY": "HOUR",
-    "WEEK": "WEEK",
-    "WEEKLY": "WEEK",
-    "BIWEEKLY": "BIWEEKLY",
-    "BI-WEEKLY": "BIWEEKLY",
-    "SEMIMONTHLY": "SEMIMONTHLY",
-    "SEMI-MONTHLY": "SEMIMONTHLY",
-}
 
 
 def _rippling_ids(url: str) -> Optional[tuple[str, str]]:
@@ -2670,9 +2654,8 @@ def _rippling_pay_ld(post: dict) -> Optional[dict]:
         if low is None and high is None:
             continue
         cur = str(row.get("currency") or "").upper() or "USD"
-        freq = str(row.get("frequency") or "").upper()
         value: dict = {}
-        unit = _RIPPLING_PAY_UNITS.get(freq)
+        unit = _period_unit(row.get("frequency") or "")
         if unit:
             value["unitText"] = unit
         if low is not None and high is not None:
@@ -2863,22 +2846,6 @@ _PINPOINT_JOB_RE = re.compile(
     r"(?i)https?://([a-z0-9-]+)\.pinpointhq\.com/(?:en/)?postings/"
     r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 )
-_PINPOINT_PAY_UNITS = {
-    "year": "YEAR",
-    "annual": "YEAR",
-    "annually": "YEAR",
-    "yearly": "YEAR",
-    "month": "MONTH",
-    "monthly": "MONTH",
-    "hour": "HOUR",
-    "hourly": "HOUR",
-    "week": "WEEK",
-    "weekly": "WEEK",
-    "biweekly": "BIWEEKLY",
-    "bi-weekly": "BIWEEKLY",
-    "semimonthly": "SEMIMONTHLY",
-    "semi-monthly": "SEMIMONTHLY",
-}
 
 
 def _pinpoint_ids(url: str) -> Optional[tuple[str, str]]:
@@ -2943,9 +2910,8 @@ def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
         if low is None and high is None:
             return None
     cur = str(job.get("compensation_currency") or "").upper() or "USD"
-    freq = str(job.get("compensation_frequency") or "").lower()
     value: dict = {}
-    unit = _PINPOINT_PAY_UNITS.get(freq)
+    unit = _period_unit(job.get("compensation_frequency") or "")
     if unit:
         value["unitText"] = unit
     if low is not None and high is not None:
@@ -3266,21 +3232,6 @@ _DOVER_APPLY_RE = re.compile(
 _DOVER_CAREERS_RE = re.compile(
     rf"(?i)https?://(?:www\.)?app\.dover\.com/dover/careers/({_DOVER_UUID})"
 )
-_DOVER_PAY_UNITS = {
-    "YEARLY": "YEAR",
-    "ANNUAL": "YEAR",
-    "YEAR": "YEAR",
-    "MONTHLY": "MONTH",
-    "MONTH": "MONTH",
-    "HOURLY": "HOUR",
-    "HOUR": "HOUR",
-    "WEEKLY": "WEEK",
-    "WEEK": "WEEK",
-    "BIWEEKLY": "BIWEEKLY",
-    "BI-WEEKLY": "BIWEEKLY",
-    "SEMIMONTHLY": "SEMIMONTHLY",
-    "SEMI-MONTHLY": "SEMIMONTHLY",
-}
 
 
 def _dover_ids(url: str) -> Optional[str]:
@@ -3356,7 +3307,7 @@ def _dover_pay_ld(job: dict) -> Optional[dict]:
         return None
     cur = str(comp.get("currency_code") or "").upper() or "USD"
     value: dict = {}
-    unit = _DOVER_PAY_UNITS.get(str(comp.get("salary_range_type") or "").upper())
+    unit = _period_unit(comp.get("salary_range_type") or "")
     if unit:
         value["unitText"] = unit
     if low is not None and high is not None:

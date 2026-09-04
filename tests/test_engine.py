@@ -12893,6 +12893,33 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     ) is True
     assert hourly.pay_low == 160_000
     assert hourly.pay_high == 200_000
+    two_weeks = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-ffffffffffff",
+    )
+    assert _apply_listing(
+        two_weeks,
+        _rippling_to_html(
+            {
+                "name": "Engineer",
+                "companyName": "Acme",
+                "employmentType": "FULL_TIME",
+                "workLocations": ["Austin, TX"],
+                "payRangeDetails": [
+                    {
+                        "currency": "USD",
+                        "frequency": "EVERY_TWO_WEEKS",
+                        "rangeStart": 3000,
+                        "rangeEnd": 4000,
+                        "isRemote": False,
+                    }
+                ],
+                "description": {"role": "<p>Office. Full time.</p>"},
+            }
+        ),
+    ) is True
+    assert two_weeks.pay_low == 75_000
+    assert two_weeks.pay_high == 100_000
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
@@ -13398,6 +13425,29 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     ) is True
     assert k.pay_low == 180_000
     assert k.pay_high == 220_000
+    two = Opportunity(
+        title="x",
+        url="https://clearview.pinpointhq.com/postings/cccccccc-dddd-eeee-ffff-000000000000",
+    )
+    assert _apply_listing(
+        two,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "compensation_minimum": 3000,
+                "compensation_maximum": 4000,
+                "compensation_currency": "USD",
+                "compensation_frequency": "every two weeks",
+                "description": "<p>Office. Full time.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert two.pay_low == 75_000
+    assert two.pay_high == 100_000
 
 
 def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):
@@ -14116,6 +14166,50 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert hour_sfx.pay_low == 160_000
     assert hour_sfx.pay_high == 200_000
+    two_weeks = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/ffffffff-ffff-ffff-ffff-ffffffffffff"
+    )
+    assert _apply_listing(
+        two_weeks,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "lower_bound": 3000,
+                    "upper_bound": 4000,
+                    "currency_code": "USD",
+                    "salary_range_type": "every-two-weeks",
+                },
+                "user_provided_description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert two_weeks.pay_low == 75_000
+    assert two_weeks.pay_high == 100_000
+    twice = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    )
+    assert _apply_listing(
+        twice,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "lower_bound": 3000,
+                    "upper_bound": 4000,
+                    "currency_code": "USD",
+                    "salary_range_type": "twice per month",
+                },
+                "user_provided_description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert twice.pay_low == 72_000
+    assert twice.pay_high == 96_000
     dollar = Opportunity(title="x", url="https://app.dover.com/apply/Acme/cccccccc-cccc-cccc-cccc-cccccccccccc")
     assert _apply_listing(
         dollar,
