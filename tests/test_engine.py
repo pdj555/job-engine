@@ -1375,9 +1375,30 @@ def test_index_pages_are_not_opportunities():
         "<title>Staff Machine Learning Engineer</title>",
         "https://job-boards.greenhouse.io/reddit/jobs/7747244",
     )
-    assert not _html_is_index(
+    assert _html_is_index(
         "<title>Staff Machine Learning Engineer - Edge AI</title>",
         "https://www.samsara.com/careers?gh_jid=7266357",
+    ) is False
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff AI Engineer (d/f/m) - Internal AI - Personio",
+                "url": "https://www.personio.com/careers/3872de70-5678-44be-90fd-475541abd6f4/apply/",
+                "description": "Personio",
+            }
+        )
+        is None
+    )
+    assert _html_is_index(
+        "<title>Staff AI Engineer</title>",
+        "https://www.personio.com/careers/3872de70-5678-44be-90fd-475541abd6f4/apply/",
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://inbrain-neuroelectronics.jobs.personio.com/job/2749890",
+            "title": "Machine Learning Operations Architect",
+            "description": "",
+        }
     )
     assert not _is_index_page(
         {

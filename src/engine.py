@@ -1529,7 +1529,8 @@ _INDEX_URL_RE = re.compile(
     r"|bilingualjobs\.io/"
     r"|jobquip\.com/"
     r"|developers\.comeet\.com/"
-    r"|personio\.com/blog/)",
+    r"|personio\.com/blog/"
+    r"|personio\.com/careers)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
@@ -3474,7 +3475,8 @@ def _apple_to_html(job: dict) -> str:
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search"
     r"|^/(?:careers|jobs)/?$"
-    r"|^/hire(?:/|$)",
+    r"|^/hire(?:/|$)"
+    r"|/apply/?$",
     re.I,
 )
 
