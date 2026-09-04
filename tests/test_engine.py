@@ -10381,6 +10381,18 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(annual_base_row, annual_base)
     assert annual_base_row.pay_low == 180_000
     assert annual_base_row.pay_high == 220_000
+    band_pay = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000 - $500,000</p>",
+            "metadata": [{"name": "Salary Band", "value": "$180,000 - $220,000"}],
+        }
+    )
+    band_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/12")
+    _apply_listing(band_row, band_pay)
+    assert band_row.pay_low == 180_000
+    assert band_row.pay_high == 220_000
     meta_eur = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -11550,6 +11562,39 @@ def test_personio_city_offices_stay_office():
     assert _apply_listing(opp, html) is False
     assert opp.company == "The Nunatak Group GmbH"
     assert opp.remote is False
+    from src.engine import _personio_position
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?><workzag-jobs><position>'
+        "<id>2724248</id><subcompany>Acme</subcompany><office>Austin</office>"
+        "<name>Engineer</name><schedule>full-time</schedule><jobDescriptions>"
+        "<jobDescription><name>Description</name>"
+        "<value>Account Executive $400,000 - $500,000</value></jobDescription>"
+        "<jobDescription><name>Salary</name>"
+        "<value>$180,000 - $220,000</value></jobDescription>"
+        "<jobDescription><name>Referral reward</name>"
+        "<value>$2,000</value></jobDescription>"
+        "</jobDescriptions></position></workzag-jobs>"
+    )
+    paid = Opportunity(title="x", url="https://acme.jobs.personio.de/job/2724248")
+    assert _apply_listing(paid, _personio_to_html(_personio_position(xml, "2724248"))) is True
+    assert paid.pay_low == 180_000
+    assert paid.pay_high == 220_000
+    assert paid.remote is False
+    desired = (
+        '<?xml version="1.0" encoding="UTF-8"?><workzag-jobs><position>'
+        "<id>2724249</id><subcompany>Acme</subcompany><office>Austin</office>"
+        "<name>Engineer</name><schedule>full-time</schedule><jobDescriptions>"
+        "<jobDescription><name>Description</name>"
+        "<value>Account Executive $400,000</value></jobDescription>"
+        "<jobDescription><name>Desired Salary</name>"
+        "<value>$180,000 - $220,000</value></jobDescription>"
+        "</jobDescriptions></position></workzag-jobs>"
+    )
+    prompt = Opportunity(title="x", url="https://acme.jobs.personio.de/job/2724249")
+    _apply_listing(prompt, _personio_to_html(_personio_position(desired, "2724249")))
+    assert prompt.pay_high != 180_000
+    assert prompt.pay_high != 220_000
 
 
 def test_listing_text_personio_xml_missing_id_is_gone(monkeypatch):
@@ -13722,6 +13767,12 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Continue exploring jobs",
         "See more",
         "Discover more",
+        "Featured listings",
+        "Related listings",
+        "Jobs nearby",
+        "Roles for you",
+        "Browse more",
+        "View more",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

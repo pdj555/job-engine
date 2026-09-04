@@ -1781,7 +1781,7 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:(?:base|annual|yearly|hourly)\s+)*(?:salary|compensation|pay)(?:\s+range)?$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band))?$"
 )
 
 
@@ -2373,20 +2373,33 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
                 if label:
                     offices.append(label)
         descs = []
-        for block in pos.findall("jobDescriptions/jobDescription/value"):
-            text = block.text or ""
-            for child in list(block):
-                text += ET.tostring(child, encoding="unicode")
-                text += child.tail or ""
-            text = text.strip()
-            if text:
-                descs.append(text)
+        pay_text = None
+        for block in pos.findall("jobDescriptions/jobDescription"):
+            name = (block.findtext("name") or "").strip()
+            if re.search(r"reward|referr", name, re.I):
+                continue
+            if re.fullmatch(r"(?i)(?:desired|expected|target)\s+salary", name):
+                continue
+            value_el = block.find("value")
+            text = ""
+            if value_el is not None:
+                text = value_el.text or ""
+                for child in list(value_el):
+                    text += ET.tostring(child, encoding="unicode")
+                    text += child.tail or ""
+                text = text.strip()
+            if not text:
+                continue
+            descs.append(text)
+            if pay_text is None and _GH_PAY_META_RE.fullmatch(name):
+                pay_text = text
         return {
             "name": (pos.findtext("name") or "").strip(),
             "subcompany": (pos.findtext("subcompany") or "").strip(),
             "offices": offices,
             "schedule": (pos.findtext("schedule") or "").strip(),
             "descriptions": descs,
+            "pay_text": pay_text,
         }
     if found or root.tag.endswith("workzag-jobs"):
         return None
@@ -2394,7 +2407,10 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
 
 
 def _personio_to_html(pos: dict) -> str:
-    """Turn Personio XML position into listing HTML. Never invent pay."""
+    """Turn Personio XML position into listing HTML. Never invent pay.
+
+    Omit referral and desired-salary jobDescription blocks — those are not listed pay.
+    """
     title = str(pos.get("name") or "").strip()
     company = str(pos.get("subcompany") or "").strip()
     posting: dict = {"@type": "JobPosting", "title": title}
@@ -2408,6 +2424,9 @@ def _personio_to_html(pos: dict) -> str:
     offices = pos.get("offices") if isinstance(pos.get("offices"), list) else []
     labels = [str(o).strip() for o in offices if str(o).strip()]
     _apply_workplace(posting, *labels)
+    pay = _span_pay_ld(str(pos.get("pay_text") or ""))
+    if pay:
+        posting["baseSalary"] = pay
     parts = [f"<p>{label}</p>" for label in labels]
     for desc in pos.get("descriptions") or []:
         if isinstance(desc, str) and desc.strip():
@@ -3962,8 +3981,12 @@ _RELATED_HEADING_RE = re.compile(
     r"|recent\s+searches"
     r"|hiring\s+in\s+your\s+area"
     r"|explore\s+more"
+    r"|browse\s+more"
+    r"|view\s+more"
     r"|jobs\s+for\s+you"
+    r"|roles\s+for\s+you"
     r"|jobs\s+in\s+your\s+area"
+    r"|jobs\s+nearby"
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
@@ -3993,6 +4016,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|related\s+careers"
     r"|other\s+careers"
     r"|similar\s+listings"
+    r"|(?:featured|related|other|recommended)\s+listings"
     r"|similar\s+job"
     r"|matching\s+roles"
     r"|related"
