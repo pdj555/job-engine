@@ -4016,7 +4016,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|related\s+careers"
     r"|other\s+careers"
     r"|similar\s+listings"
-    r"|(?:featured|related|other|recommended)\s+listings"
+    r"|(?:featured|related|other|recommended|more|popular|open)\s+listings"
     r"|similar\s+job"
     r"|matching\s+roles"
     r"|related"
@@ -4254,6 +4254,7 @@ def _num(value) -> Optional[float]:
     if isinstance(value, str):
         s = value.replace(",", "").replace("$", "").strip()
         s = re.sub(r"^(?:USD|US)\s*", "", s, flags=re.I)
+        s = re.sub(r"\s*(?:USD|US)$", "", s, flags=re.I)
         m = re.fullmatch(r"(\d+(?:\.\d+)?)\s*k", s, flags=re.I)
         if m:
             return float(m.group(1)) * 1000
@@ -4276,6 +4277,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minSalary", "maxSalary"),
         ("salaryFrom", "salaryTo"),
         ("minCompensation", "maxCompensation"),
+        ("minAmount", "maxAmount"),
     ):
         if low is None:
             low = _num(raw.get(a))
@@ -4528,6 +4530,9 @@ def _salary_blob(salary) -> str:
                 "salaryTo",
                 "minCompensation",
                 "maxCompensation",
+                "amount",
+                "minAmount",
+                "maxAmount",
             )
             if key in salary
         )
@@ -4571,6 +4576,9 @@ def _nums(value) -> list[float]:
             "salaryTo",
             "minCompensation",
             "maxCompensation",
+            "amount",
+            "minAmount",
+            "maxAmount",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
@@ -5025,6 +5033,7 @@ _GONE_LISTING_RE = re.compile(
     r"|we(?:'ve|\s+have)\s+closed\s+recruiting\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we(?:'ve|\s+have)\s+stopped\s+(?:accepting|taking)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)"
+    r"|we(?:'re| are)\s+no\s+longer\s+considering\s+applications\b(?!\s+from)"
     r"|applications\s+are\s+no\s+longer\s+being\s+reviewed\b"
     r"|no\s+longer\s+hiring\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"

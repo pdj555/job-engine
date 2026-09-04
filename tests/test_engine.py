@@ -5952,6 +5952,27 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_nested_mc, nested_mc) is True
     assert posting_nested_mc.pay_low == 180_000
     assert posting_nested_mc.pay_high == 220_000
+    amount = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD","amount":180000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_amt = Opportunity(title="Engineer", url="https://jobs.example/ld-amount")
+    assert _apply_listing(posting_amt, amount) is True
+    assert posting_amt.pay_high == 180_000
+    min_amt = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","minAmount":180000,"maxAmount":220000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_min_amt = Opportunity(title="Engineer", url="https://jobs.example/ld-minAmount")
+    assert _apply_listing(posting_min_amt, min_amt) is True
+    assert posting_min_amt.pay_low == 180_000
+    assert posting_min_amt.pay_high == 220_000
     min_k = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -5963,6 +5984,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_k, min_k) is True
     assert posting_k.pay_low == 180_000
     assert posting_k.pay_high == 220_000
+    usd_suffix = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":"$180,000 USD","salaryMax":"220k USD"}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_usd = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryMin-usd")
+    assert _apply_listing(posting_usd, usd_suffix) is True
+    assert posting_usd.pay_low == 180_000
+    assert posting_usd.pay_high == 220_000
     min_span = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6719,6 +6751,16 @@ def test_apply_listing_ignores_non_usd_salary():
     )
     _apply_listing(nested_from_eur, eur_nested_from)
     assert nested_from_eur.pay_high is None
+    eur_amt = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","amount":80000}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    amt_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-amount-eur")
+    _apply_listing(amt_eur, eur_amt)
+    assert amt_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -8043,6 +8085,15 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We've stopped accepting applications from recruiters.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We are no longer considering applications.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We are no longer considering applications from recruiters.</p>"
+        "<p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
@@ -13773,6 +13824,9 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Roles for you",
         "Browse more",
         "View more",
+        "More listings",
+        "Popular listings",
+        "Open listings",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
