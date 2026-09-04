@@ -4502,6 +4502,29 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title><p>This posting is expired.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
+        "<title>Engineer</title><p>Position has expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Job has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Sorry, position has expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this position has been filled, the team will grow.</p>"
+        "<p>$180,000 a year</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job expires on January 1.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>The application window has closed.</p><p>$180,000</p>"
     ) is True
@@ -4645,6 +4668,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
                 "<p>This posting is expired.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
+        if "position-expired" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Position has expired.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "job-filled" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Job has been filled.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         if "expired" in url:
             return (
                 "<title>Senior ML Engineer</title>"
@@ -4691,7 +4726,19 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
-    opps = [keep, expired, closed, window, is_expired]
+    position_expired = Opportunity(
+        title="PositionExpired",
+        url="https://jobs.example/position-expired",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    job_filled = Opportunity(
+        title="JobFilled",
+        url="https://jobs.example/job-filled",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, expired, closed, window, is_expired, position_expired, job_filled]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000
