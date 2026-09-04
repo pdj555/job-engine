@@ -1104,6 +1104,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:app.dover.com",
         "senior ML engineer remote site:jobs.gem.com",
         "senior ML engineer remote site:careers.walmart.com",
+        "senior ML engineer remote site:jobs.apple.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4950,6 +4951,158 @@ def test_listing_text_walmart_open_reads_next_data(monkeypatch):
     _apply_listing(opp, html)
     assert opp.company == "Walmart"
     assert opp.pay_high == 260_000
+    assert opp.remote is False
+
+
+def _apple_hydration_html(payload: dict) -> str:
+    blob = json.dumps(payload)
+    escaped = json.dumps(blob)[1:-1]
+    return (
+        f'<script>window.__staticRouterHydrationData = JSON.parse("{escaped}");</script>'
+    )
+
+
+def test_apple_ids_keep_jobs_titled_postings():
+    from src.engine import (
+        _apple_ids,
+        _apple_is_board,
+        _apple_job_url,
+        _ats_job_url,
+        _company_from_url,
+        _is_index_page,
+    )
+
+    url = (
+        "https://jobs.apple.com/en-us/details/200617298-1435/"
+        "aiml-staff-machine-learning-engineer"
+    )
+    assert _apple_ids(url) == "200617298-1435"
+    assert _apple_job_url(url) == "https://jobs.apple.com/en-us/details/200617298-1435"
+    assert _ats_job_url(url)
+    assert _company_from_url(url) == "Apple"
+    assert not _is_index_page(
+        {
+            "url": url,
+            "title": "AIML - Staff Machine Learning Engineer - Jobs - Careers at Apple",
+            "description": "",
+        }
+    )
+    assert _apple_is_board("https://jobs.apple.com/en-us/search?search=ml")
+    assert _is_index_page(
+        {
+            "url": "https://jobs.apple.com/en-us/search?search=ml",
+            "title": "Search Jobs - Jobs - Careers at Apple",
+            "description": "",
+        }
+    )
+
+
+def test_apple_job_hydration_404_is_gone():
+    from src.engine import _apple_job
+
+    html = _apple_hydration_html(
+        {
+            "loaderData": {"root": {}},
+            "errors": {
+                "jobDetails": {
+                    "status": 404,
+                    "statusText": "",
+                    "internal": False,
+                    "data": "",
+                    "__type": "RouteErrorResponse",
+                }
+            },
+        }
+    )
+    assert _apple_job(html) is None
+    assert _apple_job("Page not found. Sorry, this role does not exist or is no longer available.") is None
+
+
+def test_apple_to_html_fills_company_hours_and_office():
+    from src.engine import _apply_listing, _apple_to_html
+
+    html = _apple_to_html(
+        {
+            "postingTitle": "Packaging Product Design Engineer",
+            "homeOffice": False,
+            "standardWeeklyHours": 40,
+            "locations": [{"name": "Austin", "city": "Austin", "countryName": "United States"}],
+            "jobSummary": "Design packaging in Austin.",
+        }
+    )
+    opp = Opportunity(title="x", url="https://jobs.apple.com/en-us/details/200681889-0157")
+    _apply_listing(opp, html)
+    assert opp.company == "Apple"
+    assert opp.title == "Packaging Product Design Engineer"
+    assert opp.remote is False
+    assert opp.hours_per_week == 40
+    assert opp.pay_high is None
+    remote_html = _apple_to_html(
+        {
+            "postingTitle": "Engineer",
+            "homeOffice": True,
+            "jobSummary": "Work from home.",
+        }
+    )
+    remote = Opportunity(title="x", url="https://jobs.apple.com/en-us/details/1")
+    _apply_listing(remote, remote_html)
+    assert remote.remote is True
+    assert remote.company == "Apple"
+
+
+def test_listing_text_apple_gone_is_none(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        assert "jobs.apple.com" in url
+        return _apple_hydration_html(
+            {
+                "loaderData": {"root": {}},
+                "errors": {"jobDetails": {"status": 404, "internal": False, "data": ""}},
+            }
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.apple.com/en-us/details/200617298-1435/aiml-staff-machine-learning-engineer"
+        )
+    )
+    assert html is None
+
+
+def test_listing_text_apple_open_reads_jobs_data(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        return _apple_hydration_html(
+            {
+                "loaderData": {
+                    "root": {},
+                    "jobDetails": {
+                        "jobsData": {
+                            "id": "200681889-0157",
+                            "postingTitle": "Packaging Product Design Engineer",
+                            "homeOffice": False,
+                            "standardWeeklyHours": 40,
+                            "locations": [{"name": "Austin", "city": "Austin"}],
+                            "jobSummary": "Design packaging.",
+                        }
+                    },
+                }
+            }
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://jobs.apple.com/en-us/details/200681889-0157"
+    html = asyncio.run(engine._listing_text(url))
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.company == "Apple"
+    assert opp.title == "Packaging Product Design Engineer"
+    assert opp.hours_per_week == 40
     assert opp.remote is False
 
 

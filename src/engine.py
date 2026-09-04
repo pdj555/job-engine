@@ -332,6 +332,19 @@ class Engine:
                     return _walmart_to_html(job)
                 return None
             return ""
+        ap = _apple_ids(url)
+        if ap:
+            raw = await fetch(_apple_job_url(url))
+            if raw is None:
+                return None
+            if raw:
+                job = _apple_job(raw)
+                if job is None:
+                    return None
+                if job:
+                    return _apple_to_html(job)
+                return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -721,6 +734,9 @@ def _lever_job_url(url: str) -> str:
     wm = _walmart_job_url(url)
     if wm:
         return wm
+    ap = _apple_job_url(url)
+    if ap:
+        return ap
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -1027,6 +1043,7 @@ def _search_angles(query: str) -> list[str]:
             "app.dover.com",
             "jobs.gem.com",
             "careers.walmart.com",
+            "jobs.apple.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1243,6 +1260,8 @@ def _company_from_url(url: str) -> str | None:
             return None
     elif host in {"careers.walmart.com", "www.careers.walmart.com"}:
         slug = "walmart"
+    elif host in {"jobs.apple.com", "www.jobs.apple.com"}:
+        slug = "apple"
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -3048,6 +3067,115 @@ def _walmart_to_html(details: dict) -> str:
     )
 
 
+_APPLE_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?jobs\.apple\.com/(?:[a-z]{2}(?:-[a-z]{2})?/)?"
+    r"details/(\d+(?:-\d+)?)"
+)
+_APPLE_HYDRATION_RE = re.compile(
+    r'window\.__staticRouterHydrationData\s*=\s*JSON\.parse\("((?:\\.|[^"\\])*)"\)',
+)
+
+
+def _apple_ids(url: str) -> Optional[str]:
+    m = _APPLE_JOB_RE.search(url or "")
+    return m.group(1) if m else None
+
+
+def _apple_job_url(url: str) -> Optional[str]:
+    jid = _apple_ids(url)
+    if not jid:
+        return None
+    return f"https://jobs.apple.com/en-us/details/{jid}"
+
+
+def _apple_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host not in {"jobs.apple.com", "www.jobs.apple.com"}:
+        return False
+    return _apple_ids(url) is None
+
+
+def _apple_hydration(html: str) -> Optional[dict]:
+    m = _APPLE_HYDRATION_RE.search(html or "")
+    if not m:
+        return None
+    try:
+        blob = json.loads(f'"{m.group(1)}"')
+        data = json.loads(blob)
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _apple_job(html: str) -> Optional[dict]:
+    """Open jobsData. None if gone. Empty dict if the page is unusable."""
+    data = _apple_hydration(html)
+    if not data:
+        if re.search(r"(?i)this role does not exist|no longer available", html or ""):
+            return None
+        return {}
+    errors = data.get("errors")
+    if isinstance(errors, dict):
+        err = errors.get("jobDetails")
+        if isinstance(err, dict) and err.get("status") in (404, 410):
+            return None
+    ld = data.get("loaderData")
+    details = ld.get("jobDetails") if isinstance(ld, dict) else None
+    job = details.get("jobsData") if isinstance(details, dict) else None
+    if job is None and isinstance(details, dict) and "jobsData" in details:
+        return None
+    if not isinstance(job, dict) or not (job.get("postingTitle") or job.get("id")):
+        return {}
+    return job
+
+
+def _apple_place(job: dict) -> str:
+    if job.get("homeOffice") is True:
+        return "Remote"
+    for row in job.get("locations") or []:
+        if not isinstance(row, dict):
+            continue
+        name = str(row.get("name") or row.get("city") or "").strip()
+        if name:
+            return f"{name} onsite"
+    return "onsite"
+
+
+def _apple_to_html(job: dict) -> str:
+    """Turn Apple jobsData into listing HTML. Never invent pay.
+
+    Omit questionnaires — those are applicant prompts, not listed pay.
+    """
+    title = str(job.get("postingTitle") or "").strip()
+    posting: dict = {
+        "@type": "JobPosting",
+        "title": title,
+        "hiringOrganization": {"@type": "Organization", "name": "Apple"},
+    }
+    place = _apple_place(job)
+    _apply_workplace(posting, place)
+    n = _num(job.get("standardWeeklyHours"))
+    if n is not None and 1 <= n <= 80:
+        posting["workHours"] = str(int(n))
+    emp = str(job.get("employmentType") or "").lower().replace("_", " ").replace("-", " ")
+    if "part" in emp and "full" not in emp:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in emp:
+        posting["employmentType"] = "FULL_TIME"
+    parts = [f"<p>{place}</p>"] if place else []
+    for key in ("jobSummary", "description"):
+        val = job.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(f"<p>{unescape(val)}</p>")
+            break
+    page_title = f"{title} at Apple" if title else "Apple"
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -3079,6 +3207,7 @@ def _ats_job_url(url: str) -> bool:
         or _dover_ids(url)
         or _gem_ids(url)
         or _walmart_ids(url)
+        or _apple_ids(url)
     )
 
 
@@ -3136,6 +3265,8 @@ def _is_index_page(raw: dict) -> bool:
     if _gem_is_board(url):
         return True
     if _walmart_is_board(url):
+        return True
+    if _apple_is_board(url):
         return True
     return False
 
