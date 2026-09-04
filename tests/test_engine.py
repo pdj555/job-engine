@@ -1601,7 +1601,9 @@ def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):
     html = asyncio.run(
         engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/8084032")
     )
-    assert seen == ["https://boards-api.greenhouse.io/v1/boards/reddit/jobs/8084032"]
+    assert seen == [
+        "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/8084032?pay_transparency=true"
+    ]
     assert html is None
 
 
@@ -1619,7 +1621,9 @@ def test_listing_text_greenhouse_api_timeout_falls_back_to_html(monkeypatch):
     html = asyncio.run(
         engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/6960831")
     )
-    assert seen[0] == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    assert seen[0] == (
+        "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
+    )
     assert seen[1] == "https://job-boards.greenhouse.io/reddit/jobs/6960831"
     assert html and "$180,000" in html
 
@@ -1650,10 +1654,10 @@ def test_greenhouse_api_url_from_job_board_link():
 
     assert _greenhouse_api_url(
         "https://job-boards.greenhouse.io/reddit/jobs/6960831"
-    ) == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    ) == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
     assert _greenhouse_api_url(
         "https://job-boards.eu.greenhouse.io/jetbrains/jobs/4713663101"
-    ) == "https://boards-api.greenhouse.io/v1/boards/jetbrains/jobs/4713663101"
+    ) == "https://boards-api.greenhouse.io/v1/boards/jetbrains/jobs/4713663101?pay_transparency=true"
     assert _greenhouse_api_url("https://jobs.lever.co/lyrahealth/abc") is None
 
 
@@ -1681,6 +1685,49 @@ def test_greenhouse_api_html_fills_company_and_pay_range():
     assert opp.title == "Senior Machine Learning Engineer"
     assert opp.pay_low == 216_700
     assert opp.pay_high == 303_400
+
+
+def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
+    from src.engine import _apply_listing, _greenhouse_to_html
+
+    html = _greenhouse_to_html(
+        {
+            "company_name": "Reddit",
+            "title": "Senior ML",
+            "content": "<p>Apply now. No figures in the body.</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 21670000,
+                    "max_cents": 30340000,
+                    "currency_type": "USD",
+                    "title": "The base salary range for this position is:",
+                },
+                {
+                    "min_cents": 10000000,
+                    "max_cents": 12000000,
+                    "currency_type": "EUR",
+                },
+            ],
+        }
+    )
+    opp = Opportunity(title="x", url="https://job-boards.greenhouse.io/reddit/jobs/6960831")
+    _apply_listing(opp, html)
+    assert opp.pay_low == 216_700
+    assert opp.pay_high == 303_400
+
+    eur_only = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Apply now.</p>",
+            "pay_input_ranges": [
+                {"min_cents": 12000000, "max_cents": 18000000, "currency_type": "EUR"}
+            ],
+        }
+    )
+    skipped = Opportunity(title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/1")
+    _apply_listing(skipped, eur_only)
+    assert skipped.pay_high is None
 
 
 def test_workable_jobs_api_url_from_view_link():
@@ -1775,7 +1822,9 @@ def test_listing_text_prefers_greenhouse_api_over_board_shell(monkeypatch):
     html = asyncio.run(
         engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/6960831")
     )
-    assert seen[0] == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    assert seen[0] == (
+        "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
+    )
     from src.engine import _apply_listing
 
     opp = Opportunity(title="x", url="https://job-boards.greenhouse.io/reddit/jobs/6960831")

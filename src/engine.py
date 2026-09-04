@@ -768,7 +768,40 @@ def _greenhouse_api_url(url: str) -> Optional[str]:
     m = _GH_JOB_RE.search(url or "")
     if not m:
         return None
-    return f"https://boards-api.greenhouse.io/v1/boards/{m.group(1)}/jobs/{m.group(2)}"
+    return (
+        f"https://boards-api.greenhouse.io/v1/boards/{m.group(1)}/jobs/{m.group(2)}"
+        "?pay_transparency=true"
+    )
+
+
+def _cents_to_annual(cents) -> Optional[int]:
+    if not isinstance(cents, (int, float)):
+        return None
+    annual = int(cents) // 100
+    if 10_000 <= annual <= 2_000_000:
+        return annual
+    return None
+
+
+def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
+    """USD baseSalary from pay_input_ranges. Ignore other currencies."""
+    for row in data.get("pay_input_ranges") or []:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("currency_type") or "").upper() not in {"USD", "US", "USA"}:
+            continue
+        low = _cents_to_annual(row.get("min_cents"))
+        high = _cents_to_annual(row.get("max_cents"))
+        if not high and not low:
+            continue
+        value: dict = {"unitText": "YEAR"}
+        if low and high:
+            value["minValue"] = low
+            value["maxValue"] = high
+        else:
+            value["value"] = high or low
+        return {"currency": "USD", "value": value}
+    return None
 
 
 def _greenhouse_to_html(data: dict) -> str:
@@ -783,6 +816,9 @@ def _greenhouse_to_html(data: dict) -> str:
     posting = {"@type": "JobPosting", "title": title}
     if company:
         posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    pay = _greenhouse_pay_ld(data)
+    if pay:
+        posting["baseSalary"] = pay
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
