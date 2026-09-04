@@ -47,12 +47,7 @@ class Engine:
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
-        searches = [
-            self._search_brave(f"{query} remote job hiring"),
-            self._search_brave(f"{query} freelance contract"),
-            self._search_brave(f"{query} grant funding opportunity"),
-            self._search_brave(f"{query} startup equity cofounder"),
-        ]
+        searches = [self._search_brave(q) for q in _search_angles(query)]
 
         if self.perplexity_key:
             searches.append(self._search_perplexity(query))
@@ -318,6 +313,17 @@ Be direct. No fluff."""
 
 def _normalize_url(url: str) -> str:
     return url.strip().rstrip("/").casefold()
+
+
+def _search_angles(query: str) -> list[str]:
+    """Web queries for this goal. Grants and equity only when the user asked."""
+    text = query.casefold()
+    angles = [f"{query} remote job hiring", f"{query} freelance contract"]
+    if any(w in text for w in ("grant", "funding", "fellowship", "scholarship")):
+        angles.append(f"{query} grant funding opportunity")
+    if any(w in text for w in ("equity", "cofounder", "co-founder", "startup")):
+        angles.append(f"{query} startup equity cofounder")
+    return angles
 
 
 def _items_from_llm(content: Optional[str]) -> list:

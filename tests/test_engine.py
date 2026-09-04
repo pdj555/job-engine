@@ -9,6 +9,7 @@ from src.engine import (
     _guess_remote,
     _heuristic_opportunity,
     _parse_ddg_html,
+    _search_angles,
 )
 from src.models import Opportunity
 
@@ -343,6 +344,19 @@ def test_search_all_drops_index_pages():
     engine._search_perplexity = fake_perplexity
     results = asyncio.run(engine._search_all("ml"))
     assert [r["url"] for r in results] == ["https://jobs.example/ml"]
+
+
+def test_search_angles_omit_grants_and_equity_unless_asked():
+    job = _search_angles("senior ML engineer remote")
+    assert job == [
+        "senior ML engineer remote remote job hiring",
+        "senior ML engineer remote freelance contract",
+    ]
+    grant = _search_angles("AI grant funding")
+    assert any("grant funding opportunity" in q for q in grant)
+    assert any("hiring" in q for q in grant)
+    equity = _search_angles("startup cofounder")
+    assert any("startup equity cofounder" in q for q in equity)
 
 
 def test_find_ranks_and_limits_without_llm():
