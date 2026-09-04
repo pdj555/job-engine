@@ -8190,6 +8190,50 @@ def test_apply_listing_ignores_non_usd_salary():
     assert _apply_listing(place_eur, loc_eur) is True
     assert place_eur.pay_low == 180_000
     assert place_eur.pay_high == 220_000
+    type_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency_type":"EUR",
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    typed = Opportunity(title="Engineer", url="https://jobs.example/currency_type-eur")
+    _apply_listing(typed, type_eur)
+    assert typed.pay_high is None
+    camel_type = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currencyType":"EUR",
+       "value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    camel = Opportunity(title="Engineer", url="https://jobs.example/currencyType-eur")
+    _apply_listing(camel, camel_type)
+    assert camel.pay_high is None
+    root_type = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "currency_type":"EUR",
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    posting_type = Opportunity(title="Engineer", url="https://jobs.example/posting-currency_type-eur")
+    _apply_listing(posting_type, root_type)
+    assert posting_type.pay_high is None
+    usd_wins = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","currency_type":"EUR",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    explicit = Opportunity(title="Engineer", url="https://jobs.example/currency-wins-type")
+    assert _apply_listing(explicit, usd_wins) is True
+    assert explicit.pay_low == 180_000
+    assert explicit.pay_high == 220_000
     nested_cur = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},

@@ -5104,6 +5104,8 @@ def _currency_of(value) -> Optional[str]:
         or _ld_text(value.get("currency_code"))
         or _ld_text(value.get("salaryCurrency"))
         or _ld_text(value.get("salary_currency"))
+        or _ld_text(value.get("currencyType"))
+        or _ld_text(value.get("currency_type"))
     )
     if cur:
         return cur
@@ -5129,6 +5131,8 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         or _ld_text(posting.get("currency"))
         or _ld_text(posting.get("currencyCode"))
         or _ld_text(posting.get("currency_code"))
+        or _ld_text(posting.get("currencyType"))
+        or _ld_text(posting.get("currency_type"))
     )
     if stated:
         return stated
@@ -5725,7 +5729,7 @@ def _posting_date(raw) -> Optional[date]:
 
 
 def _posting_expired(posting: Optional[dict]) -> bool:
-    """True when JobPosting.validThrough (or expires) is a date before today."""
+    """True when JobPosting.validThrough / valid_through / expires is before today."""
     if not isinstance(posting, dict):
         return False
     through = _posting_date(
