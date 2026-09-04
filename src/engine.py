@@ -4140,7 +4140,7 @@ def _nums(value) -> list[float]:
         return out
     if isinstance(value, dict):
         out: list[float] = []
-        for key in ("minValue", "maxValue", "value"):
+        for key in ("minValue", "maxValue", "value", "min", "max", "from", "to"):
             if key in value:
                 out.extend(_nums(value.get(key)))
         return out
