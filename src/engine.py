@@ -976,13 +976,7 @@ def _ashby_to_html(data: dict) -> str:
     desc = str(data.get("descriptionHtml") or "")
     place = str(data.get("workplaceType") or "").strip()
     loc_name = str(data.get("locationName") or "").strip()
-    if place:
-        _apply_workplace(posting, place)
-    elif loc_name:
-        if _workplace_remote(loc_name) is True:
-            _apply_workplace(posting, loc_name)
-        else:
-            _apply_workplace(posting, "onsite")
+    _apply_workplace(posting, place or loc_name)
     loc = "".join(f"<p>{p}</p>" for p in (place, loc_name) if p)
     return (
         f"<title>{title}</title>"
@@ -3881,6 +3875,20 @@ def _guess_hours(title: str, description: str) -> Optional[int]:
     return _employment_hours(title) or _employment_hours(description)
 
 
+_COUNTRY_ONLY_RE = re.compile(
+    r"(?i)^(?:the\s+)?(?:"
+    r"united states(?:\s+of\s+america)?|usa|u\.s\.a?\.?|us|"
+    r"canada|mexico|united kingdom|great britain|uk|"
+    r"australia|new zealand|germany|france|spain|italy|netherlands|"
+    r"sweden|norway|denmark|finland|ireland|switzerland|"
+    r"india|japan|china|singapore|brazil|"
+    r"worldwide|global|anywhere|"
+    r"north america|south america|emea|europe|apac|asia(?:[-\s]pacific)?|"
+    r"european union|eu"
+    r")$"
+)
+
+
 def _workplace_remote(place: str) -> Optional[bool]:
     """True/False from an ATS workplace/location string. None if unknown.
 
@@ -3910,6 +3918,8 @@ def _apply_workplace(posting: dict, place: str) -> None:
     if flag is True:
         posting["jobLocationType"] = "TELECOMMUTE"
     elif flag is False:
+        posting["jobLocationType"] = "ON_SITE"
+    elif (place or "").strip() and not _COUNTRY_ONLY_RE.fullmatch(place.strip()):
         posting["jobLocationType"] = "ON_SITE"
 
 

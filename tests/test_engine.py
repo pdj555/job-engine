@@ -2567,6 +2567,43 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert opp.pay_high == 170_000
     assert opp.score() == 85.0
 
+    city = Opportunity(
+        title="Engineer",
+        url="https://job-boards.greenhouse.io/acme/jobs/2",
+        remote=True,
+    )
+    _apply_listing(
+        city,
+        _greenhouse_to_html(
+            {
+                "company_name": "Stripe",
+                "title": "Account Executive, AI Sales",
+                "location": {"name": "San Francisco, CA"},
+                "content": "<p>Sell to AI companies. $180,000 - $200,000</p>",
+            }
+        ),
+    )
+    assert city.remote is False
+    assert city.pay_high == 200_000
+
+    country = Opportunity(
+        title="Engineer",
+        url="https://job-boards.greenhouse.io/acme/jobs/3",
+        remote=True,
+    )
+    _apply_listing(
+        country,
+        _greenhouse_to_html(
+            {
+                "company_name": "Acme",
+                "title": "Engineer",
+                "location": {"name": "United States"},
+                "content": "<p>Build systems. $180,000 - $200,000</p>",
+            }
+        ),
+    )
+    assert country.remote is True
+
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
     from src.engine import _apply_listing, _ashby_to_html, _foreign_salary
@@ -3980,7 +4017,8 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     assert opp.pay_low == 185_000
     assert opp.pay_high == 275_000
     assert opp.hours_per_week == 40
-    assert opp.score() == 137.5
+    assert opp.remote is False
+    assert opp.score() == 96.25
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
