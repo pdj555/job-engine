@@ -5763,6 +5763,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(band, low_high) is True
     assert band.pay_low == 180_000
     assert band.pay_high == 220_000
+    mins = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":180000,"salaryMax":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_min = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryMin")
+    assert _apply_listing(posting_min, mins) is True
+    assert posting_min.pay_low == 180_000
+    assert posting_min.pay_high == 220_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6377,6 +6388,16 @@ def test_apply_listing_ignores_non_usd_salary():
     low_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-low-high-eur")
     _apply_listing(low_eur, eur_low)
     assert low_eur.pay_high is None
+    eur_min = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","salaryMin":80000,"salaryMax":100000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    min_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryMin-eur")
+    _apply_listing(min_eur, eur_min)
+    assert min_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -10353,6 +10374,29 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
     )
     assert fromto.pay_low == 180_000
     assert fromto.pay_high == 220_000
+    text = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354613",
+    )
+    _apply_listing(
+        text,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False},
+                "compensation": "$180,000 - $220,000",
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office. Account Executive $400,000</p>"}
+                    }
+                },
+            }
+        ),
+    )
+    assert text.pay_low == 180_000
+    assert text.pay_high == 220_000
 
 
 def test_listing_text_reads_smartrecruiters_api(monkeypatch):
@@ -11382,6 +11426,31 @@ def test_rippling_office_pay_range_stays_office():
     assert _apply_listing(opp, html) is True
     assert opp.remote is False
     assert opp.pay_high == 275_000
+    bounds = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "workLocations": ["Bellevue, WA"],
+            "payRangeDetails": [
+                {
+                    "location": "Bellevue, WA",
+                    "currency": "USD",
+                    "frequency": "YEAR",
+                    "min": 180000,
+                    "max": 220000,
+                    "isRemote": False,
+                }
+            ],
+        }
+    )
+    row = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+    )
+    assert _apply_listing(row, bounds) is True
+    assert row.remote is False
+    assert row.pay_low == 180_000
+    assert row.pay_high == 220_000
 
 
 def test_rippling_cad_pay_range_is_foreign():
@@ -12201,6 +12270,21 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    dollar = Opportunity(title="x", url="https://app.dover.com/apply/Acme/cccccccc-cccc-cccc-cccc-cccccccccccc")
+    assert _apply_listing(
+        dollar,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "REMOTE",
+                "compensation": "$180,000 - $220,000",
+                "user_provided_description": "<p>Account Executive $400,000</p>",
+            }
+        ),
+    ) is True
+    assert dollar.pay_low == 180_000
+    assert dollar.pay_high == 220_000
 
 
 def test_dover_inr_salary_is_foreign():

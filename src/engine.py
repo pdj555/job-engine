@@ -2006,6 +2006,8 @@ def _smartrecruiters_is_board(url: str) -> bool:
 def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary from compensation. Skip rows with no amounts."""
     comp = data.get("compensation")
+    if isinstance(comp, str):
+        return _span_pay_ld(comp)
     if not isinstance(comp, dict):
         return None
     low, high = _bound_nums(comp)
@@ -2615,6 +2617,8 @@ def _rippling_pay_ld(post: dict) -> Optional[dict]:
         if not isinstance(row, dict):
             continue
         low, high = _num(row.get("rangeStart")), _num(row.get("rangeEnd"))
+        if low is None and high is None:
+            low, high = _bound_nums(row)
         if low is None and high is None:
             continue
         cur = str(row.get("currency") or "").upper() or "USD"
@@ -3294,7 +3298,10 @@ def _dover_place(job: dict) -> str:
 
 
 def _dover_pay_ld(job: dict) -> Optional[dict]:
-    comp = job.get("compensation") if isinstance(job.get("compensation"), dict) else {}
+    raw = job.get("compensation")
+    if isinstance(raw, str):
+        return _span_pay_ld(raw)
+    comp = raw if isinstance(raw, dict) else {}
     low, high = _num(comp.get("lower_bound")), _num(comp.get("upper_bound"))
     if low is None and high is None:
         low, high = _bound_nums(comp)
@@ -4548,7 +4555,24 @@ def _posting_salary(posting: Optional[dict]):
         if len(found) == 1 or not all(len(_nums(item)) == 1 for item in found):
             return found[0]
         return _salary_span(found)
-    return None
+    low = _num(posting.get("salaryMin"))
+    if low is None:
+        low = _num(posting.get("salaryMinimum"))
+    high = _num(posting.get("salaryMax"))
+    if high is None:
+        high = _num(posting.get("salaryMaximum"))
+    if low is None and high is None:
+        return None
+    unit = _ld_text(posting.get("salaryUnit")) or _ld_text(posting.get("unitText"))
+    value: dict = {}
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = low
+        value["maxValue"] = high
+    else:
+        value["value"] = high or low
+    return value
 
 
 def _currency_of(value) -> Optional[str]:
