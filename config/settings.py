@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     hermes_base_url: str = Field(default="http://127.0.0.1:8642/v1", alias="HERMES_BASE_URL")
     hermes_api_key: str = Field(default="change-me-local-dev", alias="HERMES_API_KEY")
     hermes_model: str = Field(default="hermes-agent", alias="HERMES_MODEL")
+    hermes_timeout: float = Field(default=120.0, alias="HERMES_TIMEOUT")
 
     class Config:
         env_file = ".env"

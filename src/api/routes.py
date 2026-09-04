@@ -63,7 +63,9 @@ async def health():
             "openai": bool(settings.openai_api_key),
             "brave": bool(settings.brave_api_key),
             "perplexity": bool(settings.perplexity_api_key),
+            "hermes": bool(settings.hermes_base_url and settings.hermes_api_key),
         },
+        "hermes_configured": bool(settings.hermes_base_url and settings.hermes_api_key),
         "search_ready": True,
     }
 
@@ -93,10 +95,14 @@ async def agent_search(req: SearchRequest):
     The Hermes Agent brain plans searches, extracts opportunities, and ranks
     them by $/hour. Returns the same shape as /search.
     """
+    from openai import APITimeoutError
+
     from src.agent import agent_run
 
     try:
         run = await agent_run(req.q, req.limit)
+    except APITimeoutError as e:
+        raise HTTPException(status_code=504, detail=f"Agent timed out: {e}") from e
     except Exception as e:
         raise HTTPException(
             status_code=503,

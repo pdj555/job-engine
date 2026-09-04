@@ -9,6 +9,7 @@ owns the $/hour. See docs/AGENT.md.
 
 import json
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 from openai import AsyncOpenAI
 
@@ -41,24 +42,36 @@ class AgentRun:
 
 def _client() -> AsyncOpenAI:
     """Hermes Agent over its OpenAI-compatible API server."""
-    return AsyncOpenAI(base_url=settings.hermes_base_url, api_key=settings.hermes_api_key)
+    return AsyncOpenAI(
+        base_url=settings.hermes_base_url,
+        api_key=settings.hermes_api_key,
+        timeout=settings.hermes_timeout,
+    )
+
+
+def _http_url(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
 def _rank(items: list[dict]) -> list[Opportunity]:
     """Build Opportunity models and order by $/hour (highest first). Deterministic."""
-    opportunities = [
-        Opportunity(
+    opportunities = []
+    for o in items:
+        url = o.get("url") or ""
+        if not _http_url(url):
+            continue
+        opp = Opportunity(
             title=o.get("title", "Unknown"),
-            url=o["url"],
+            url=url,
             company=o.get("company"),
             pay_high=o.get("pay"),
             hours_per_week=o.get("hours_per_week"),
             remote=o.get("remote", True),
             source="agent",
         )
-        for o in items
-        if o.get("url")
-    ]
+        opp.efficiency = opp.refined_rate
+        opportunities.append(opp)
     return sorted(opportunities, key=lambda o: o.score(), reverse=True)
 
 
