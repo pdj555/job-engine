@@ -484,6 +484,12 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>CHF80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("JPY80,000. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>JPY80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 CHF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 CHF. Account Executive $220,000</p>") is True
+    assert _parse_pay("80 000 CHF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80 000 CHF. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k CHF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k CHF. Account Executive $220,000</p>") is True
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
@@ -11063,6 +11069,26 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We wrapped up this ticket.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We ended this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stopped this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search wrapped up.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We ended this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer open.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
