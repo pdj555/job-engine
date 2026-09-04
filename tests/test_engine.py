@@ -6006,6 +6006,52 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_span, min_span) is True
     assert posting_span.pay_low == 180_000
     assert posting_span.pay_high == 220_000
+    job_salary = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "jobSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_js = Opportunity(title="Engineer", url="https://jobs.example/ld-jobSalary")
+    assert _apply_listing(posting_js, job_salary) is True
+    assert posting_js.pay_low == 180_000
+    assert posting_js.pay_high == 220_000
+    empty_then_job = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD"},
+     "jobSalary":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_empty_js = Opportunity(title="Engineer", url="https://jobs.example/ld-empty-jobSalary")
+    assert _apply_listing(posting_empty_js, empty_then_job) is True
+    assert posting_empty_js.pay_low == 180_000
+    assert posting_empty_js.pay_high == 220_000
+    string_js = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","jobSalary":"$180,000 - $220,000"}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_str_js = Opportunity(title="Engineer", url="https://jobs.example/ld-jobSalary-str")
+    assert _apply_listing(posting_str_js, string_js) is True
+    assert posting_str_js.pay_low == 180_000
+    assert posting_str_js.pay_high == 220_000
+    base_pay = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "basePay":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_bp = Opportunity(title="Engineer", url="https://jobs.example/ld-basePay")
+    assert _apply_listing(posting_bp, base_pay) is True
+    assert posting_bp.pay_low == 180_000
+    assert posting_bp.pay_high == 220_000
     range_minmax = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6761,6 +6807,28 @@ def test_apply_listing_ignores_non_usd_salary():
     amt_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-amount-eur")
     _apply_listing(amt_eur, eur_amt)
     assert amt_eur.pay_high is None
+    eur_js = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobSalary":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    js_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-jobSalary-eur")
+    _apply_listing(js_eur, eur_js)
+    assert js_eur.pay_high is None
+    eur_bp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "basePay":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    bp_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-basePay-eur")
+    _apply_listing(bp_eur, eur_bp)
+    assert bp_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -7779,6 +7847,27 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title><p>Job is no longer available.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Job no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Sorry, this job no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this position no longer available, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting is no longer open.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title><p>Role is no longer active.</p><p>$180,000</p>"
     ) is True
@@ -10369,6 +10458,24 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(dollar_row, dollars)
     assert dollar_row.pay_low == 180_000
     assert dollar_row.pay_high == 220_000
+    year_suffix = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000 - $500,000</p>",
+            "pay_input_ranges": [
+                {
+                    "min": "180000/year",
+                    "max": "$220,000 per year",
+                    "currency_type": "USD",
+                }
+            ],
+        }
+    )
+    year_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/13")
+    _apply_listing(year_row, year_suffix)
+    assert year_row.pay_low == 180_000
+    assert year_row.pay_high == 220_000
     eur_dollars = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -10624,6 +10731,26 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(listed, structured) is True
     assert listed.pay_low == 160_000
     assert listed.pay_high == 190_000
+    year_sfx = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "employmentType": "Full-time",
+            "description": "<p>Account Executive $400,000 - $500,000</p>",
+            "salary": {
+                "min": "180000/year",
+                "max": "$220,000 per year",
+                "currency": "USD",
+            },
+        }
+    )
+    year_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/year/engineer",
+    )
+    assert _apply_listing(year_row, year_sfx) is True
+    assert year_row.pay_low == 180_000
+    assert year_row.pay_high == 220_000
     eur = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -11054,6 +11181,36 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
     )
     assert k.pay_low == 180_000
     assert k.pay_high == 220_000
+    year_sfx = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354615",
+    )
+    _apply_listing(
+        year_sfx,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False},
+                "compensation": {
+                    "min": "180000/year",
+                    "max": "$220,000 per year",
+                    "currency": "USD",
+                    "period": "YEARLY",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {
+                            "text": "<p>Office. Account Executive $400,000 - $500,000</p>"
+                        }
+                    }
+                },
+            }
+        ),
+    )
+    assert year_sfx.pay_low == 180_000
+    assert year_sfx.pay_high == 220_000
 
 
 def test_listing_text_reads_smartrecruiters_api(monkeypatch):
@@ -11871,6 +12028,26 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    year_sfx = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-year")
+    assert _apply_listing(
+        year_sfx,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "min": "180000/year",
+                    "max": "$220,000 per year",
+                    "period": "year",
+                    "currency": "USD",
+                },
+                "description": "<p>Office. Account Executive $400,000 - $500,000</p>",
+            }
+        ),
+    ) is True
+    assert year_sfx.pay_low == 180_000
+    assert year_sfx.pay_high == 220_000
     text_pay = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-str")
     assert _apply_listing(
         text_pay,
@@ -12197,6 +12374,31 @@ def test_rippling_office_pay_range_stays_office():
     assert _apply_listing(band, k) is True
     assert band.pay_low == 180_000
     assert band.pay_high == 220_000
+    year_html = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "workLocations": ["Bellevue, WA"],
+            "description": "<p>Office. Account Executive $400,000 - $500,000</p>",
+            "payRangeDetails": [
+                {
+                    "location": "Bellevue, WA",
+                    "currency": "USD",
+                    "frequency": "YEAR",
+                    "rangeStart": "180000/year",
+                    "rangeEnd": "$220,000 per year",
+                    "isRemote": False,
+                }
+            ],
+        }
+    )
+    year_band = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/dddddddd-eeee-ffff-0000-111111111111",
+    )
+    assert _apply_listing(year_band, year_html) is True
+    assert year_band.pay_low == 180_000
+    assert year_band.pay_high == 220_000
 
 
 def test_rippling_cad_pay_range_is_foreign():
@@ -12377,6 +12579,26 @@ def test_breezy_foreign_salary_is_foreign():
     ) is True
     assert obj.pay_low == 180_000
     assert obj.pay_high == 220_000
+    year_sfx = Opportunity(title="x", url="https://acme.breezy.hr/p/cccccccccccc")
+    assert _apply_listing(
+        year_sfx,
+        _breezy_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "type": {"id": "fullTime"},
+                "location": {"is_remote": False, "name": "Austin"},
+                "salary": {
+                    "min": "180000/year",
+                    "max": "$220,000 per year",
+                    "currency": "USD",
+                    "period": "year",
+                },
+            }
+        ),
+    ) is True
+    assert year_sfx.pay_low == 180_000
+    assert year_sfx.pay_high == 220_000
 
 
 def test_pinpoint_job_urls_are_not_boards():
@@ -12821,6 +13043,27 @@ def test_listing_text_reads_bamboohr_detail_not_form_pay(monkeypatch):
     ) is True
     assert k.pay_low == 180_000
     assert k.pay_high == 220_000
+    year_sfx = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/160")
+    assert _apply_listing(
+        year_sfx,
+        _bamboohr_to_html(
+            {
+                "jobOpeningName": "Engineer",
+                "employmentStatusLabel": "Full-Time",
+                "locationType": 0,
+                "compensation": {
+                    "min": "180000/year",
+                    "max": "$220,000 per year",
+                    "currency": "USD",
+                    "period": "year",
+                },
+                "description": "<p>Office. Account Executive $400,000 - $500,000</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert year_sfx.pay_low == 180_000
+    assert year_sfx.pay_high == 220_000
 
 
 def test_listing_text_bamboohr_hybrid_is_office_and_remote_type(monkeypatch):
@@ -13108,6 +13351,28 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    year_sfx = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/dddddddd-dddd-dddd-dddd-dddddddddddd"
+    )
+    assert _apply_listing(
+        year_sfx,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "lower_bound": "180000/year",
+                    "upper_bound": "$220,000 per year",
+                    "currency_code": "USD",
+                    "salary_range_type": "YEARLY",
+                },
+                "user_provided_description": "<p>Office. Account Executive $400,000 - $500,000</p>",
+            }
+        ),
+    ) is True
+    assert year_sfx.pay_low == 180_000
+    assert year_sfx.pay_high == 220_000
     dollar = Opportunity(title="x", url="https://app.dover.com/apply/Acme/cccccccc-cccc-cccc-cccc-cccccccccccc")
     assert _apply_listing(
         dollar,
@@ -13827,6 +14092,13 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "More listings",
         "Popular listings",
         "Open listings",
+        "Because you saved",
+        "Your applications",
+        "Recently saved",
+        "Jobs you saved",
+        "Keep scrolling",
+        "Continue looking",
+        "Explore similar",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

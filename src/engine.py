@@ -3991,6 +3991,13 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
+    r"|because\s+you\s+saved"
+    r"|your\s+applications"
+    r"|recently\s+saved"
+    r"|jobs\s+you\s+saved"
+    r"|keep\s+scrolling"
+    r"|continue\s+looking"
+    r"|explore\s+similar"
     r"|trending\s+(?:jobs|roles)"
     r"|(?:your\s+)?saved\s+jobs"
     r"|applied\s+jobs"
@@ -4255,6 +4262,18 @@ def _num(value) -> Optional[float]:
         s = value.replace(",", "").replace("$", "").strip()
         s = re.sub(r"^(?:USD|US)\s*", "", s, flags=re.I)
         s = re.sub(r"\s*(?:USD|US)$", "", s, flags=re.I)
+        s = re.sub(
+            r"(?:\s*(?:USD|US))?(?:"
+            r"\s*/\s*(?:yearly|annual(?:ly)?|year(?!s)|yr|annum)"
+            r"|\s+per\s+(?:yearly|annual(?:ly)?|year(?!s)|yr|annum)"
+            r"|\s+a\s+year(?!s)"
+            r"|\s+yearly"
+            r"|\s+annual(?:ly)?"
+            r")\s*$",
+            "",
+            s,
+            flags=re.I,
+        )
         m = re.fullmatch(r"(\d+(?:\.\d+)?)\s*k", s, flags=re.I)
         if m:
             return float(m.group(1)) * 1000
@@ -4279,10 +4298,16 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minCompensation", "maxCompensation"),
         ("minAmount", "maxAmount"),
     ):
-        if low is None:
-            low = _num(raw.get(a))
-        if high is None:
-            high = _num(raw.get(b))
+        a_nums = _nums(raw.get(a))
+        b_nums = _nums(raw.get(b))
+        if low is None and a_nums:
+            low = min(a_nums)
+            if high is None and len(a_nums) >= 2:
+                high = max(a_nums)
+        if high is None and b_nums:
+            high = max(b_nums)
+            if low is None and len(b_nums) >= 2:
+                low = min(b_nums)
     return low, high
 
 
@@ -4695,6 +4720,8 @@ def _posting_salary(posting: Optional[dict]):
         "jobCompensation",
         "offeredSalary",
         "annualSalary",
+        "jobSalary",
+        "basePay",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4762,6 +4789,8 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "jobCompensation",
         "offeredSalary",
         "annualSalary",
+        "jobSalary",
+        "basePay",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4987,6 +5016,12 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?<!this )(?<!the )(?<!a )(?:sorry,\s+)?"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+is\s+no\s+longer\s+(?:available|active|posted|listed|live|published)"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"\s+no\s+longer\s+available\b"
+    r"|(?<!once )(?<!after )(?<!when )(?<!this )(?<!the )(?<!a )(?:sorry,\s+)?"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"\s+no\s+longer\s+available\b"
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+does(?:n['’]t|\s+not)\s+exist"
