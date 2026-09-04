@@ -4884,6 +4884,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|work\s+on[-\s]campus\b"
     r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?(?:office|campus)\b"
     r"|report\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
+    r"|commute\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|in(?:to)?\s+the\s+offices?\b"
     r"|in\s+our\s+(?:\S+\s+){0,4}offices?\b"
     r"|in[-\s]person\s+(?:role|position|job)\b"
@@ -4897,6 +4898,8 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"|(?:you|candidates)\s+must\s+be\s+(?:based|located)\s+in"
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"|must\s+commute\s+to\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|interviews?)\b)"
 )
 
 
