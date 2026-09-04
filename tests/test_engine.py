@@ -515,6 +515,10 @@ def test_foreign_salary_detects_kr_and_zl_without_iso_code():
     assert _parse_pay("800.000 kr") == (None, None)
     assert _foreign_salary("<p>Compensation: 750000 kr</p>") is True
     assert _parse_pay("kr 750 000") == (None, None)
+    assert _parse_pay("kr80000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>kr80000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k kr. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k kr. Account Executive $220,000</p>") is True
     assert _parse_pay("800 000:-") == (None, None)
     zl = "240 000 zł or $180,000"
     assert _parse_pay(zl) == (None, None)
@@ -1542,6 +1546,17 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert weekly_count.hours_per_week == 32
     assert weekly_count.pay_high == 128_000
+    hours_a_week = Opportunity(title="Engineer", url="https://jobs.example/ld-hoursAWeek")
+    assert _apply_listing(
+        hours_a_week,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"hoursAWeek":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert hours_a_week.hours_per_week == 32
+    assert hours_a_week.pay_high == 128_000
     snake_std = Opportunity(title="Engineer", url="https://jobs.example/ld-standard_weekly_hours")
     assert _apply_listing(
         snake_std,
@@ -11082,6 +11097,26 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This search wrapped up.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We closed recruiting for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We closed recruiting for this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting ended.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We ended this meeting.</p><p>$180,000</p>"

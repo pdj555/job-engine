@@ -4452,7 +4452,8 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:kr|zł)\b"
     r"|\d{5,7}\s*(?:kr|zł)\b"
-    r"|\b(?:kr|zł)\s+['’]?\d"
+    r"|\b(?:kr|zł)\s*['’]?\d"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:kr|zł)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*:-"
     r"|\bRs\.?\s*['’]?\d"
     r"|\d{1,2}(?:\.\d+)?\s*(?:[-–—]\s*\d{1,2}(?:\.\d+)?)?\s*(?:lpa|lacs?|lakhs?)\b",
@@ -5310,6 +5311,12 @@ _HOUR_KEYS = (
     "weekly_hour_count",
     "hoursWeek",
     "hours_week",
+    "weekHours",
+    "week_hours",
+    "hoursAWeek",
+    "hours_a_week",
+    "fteHoursPerWeek",
+    "fte_hours_per_week",
     "minHoursPerWeek",
     "min_hours_per_week",
     "maxHoursPerWeek",
@@ -5601,7 +5608,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+(?:has\s+)?concluded\b"
-    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+expired\b"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?(?:expired|ended(?!\s+up))\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:paused|on\s+hold)\b"
     r"|we(?:'ve|\s+have)?\s+paused\s+this\s+search\b"
     r"|we(?:'ve|\s+have)?\s+concluded\s+this\s+search\b"
@@ -5626,8 +5633,8 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+stopped\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
-    r"|we(?:'ve|\s+have)\s+closed\s+recruiting\s+for\s+this\s+"
-    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"|we(?:'ve|\s+have)?\s+closed\s+recruiting\s+for\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)\s+stopped\s+(?:accepting|taking)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)"
     r"|we(?:'re| are)\s+no\s+longer\s+considering\s+applications\b(?!\s+from)"
     r"|applications\s+are\s+no\s+longer\s+being\s+reviewed\b"
