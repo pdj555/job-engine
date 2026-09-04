@@ -3984,7 +3984,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|explore\s+more"
     r"|browse\s+more"
     r"|view\s+more"
-    r"|jobs\s+for\s+you"
+    r"|jobs\s+for\s+you(?:\s+nearby)?"
     r"|roles\s+for\s+you"
     r"|jobs\s+in\s+your\s+area"
     r"|jobs\s+nearby"
@@ -3992,11 +3992,11 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
-    r"|because\s+you\s+liked(?:\s+this)?"
+    r"|because\s+you\s+liked(?:\s+this(?:\s+job)?)?"
     r"|because\s+you\s+saved(?:\s+this\s+job)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
-    r"|recently\s+saved"
+    r"|recently\s+saved(?:\s+jobs)?"
     r"|jobs\s+you\s+saved"
     r"|saved\s+for\s+later"
     r"|keep\s+scrolling"
@@ -4316,6 +4316,10 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("min_salary", "max_salary"),
         ("minPay", "maxPay"),
         ("payMin", "payMax"),
+        ("min_pay", "max_pay"),
+        ("pay_min", "pay_max"),
+        ("salary_from", "salary_to"),
+        ("compensationMin", "compensationMax"),
         ("minAmount", "maxAmount"),
         ("rangeStart", "rangeEnd"),
         ("lower_bound", "upper_bound"),
@@ -4591,6 +4595,14 @@ def _salary_blob(salary) -> str:
                 "maxPay",
                 "payMin",
                 "payMax",
+                "min_pay",
+                "max_pay",
+                "pay_min",
+                "pay_max",
+                "salary_from",
+                "salary_to",
+                "compensationMin",
+                "compensationMax",
                 "amount",
                 "minAmount",
                 "maxAmount",
@@ -4655,6 +4667,14 @@ def _nums(value) -> list[float]:
             "maxPay",
             "payMin",
             "payMax",
+            "min_pay",
+            "max_pay",
+            "pay_min",
+            "pay_max",
+            "salary_from",
+            "salary_to",
+            "compensationMin",
+            "compensationMax",
             "amount",
             "minAmount",
             "maxAmount",
@@ -4801,6 +4821,10 @@ def _posting_salary(posting: Optional[dict]):
         ("minPay", "maxPay"),
         ("payMin", "payMax"),
         ("minimumSalary", "maximumSalary"),
+        ("min_pay", "max_pay"),
+        ("pay_min", "pay_max"),
+        ("salary_from", "salary_to"),
+        ("compensationMin", "compensationMax"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:

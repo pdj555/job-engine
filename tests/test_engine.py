@@ -6146,6 +6146,52 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_msw, min_sal_word) is True
     assert posting_msw.pay_low == 180_000
     assert posting_msw.pay_high == 220_000
+    nested_min_pay = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","min_pay":180000,"max_pay":220000}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_nmp = Opportunity(title="Engineer", url="https://jobs.example/ld-base-min_pay")
+    assert _apply_listing(posting_nmp, nested_min_pay) is True
+    assert posting_nmp.pay_low == 180_000
+    assert posting_nmp.pay_high == 220_000
+    nested_from = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","salary_from":180000,"salary_to":220000}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_nfrom = Opportunity(title="Engineer", url="https://jobs.example/ld-base-salary_from")
+    assert _apply_listing(posting_nfrom, nested_from) is True
+    assert posting_nfrom.pay_low == 180_000
+    assert posting_nfrom.pay_high == 220_000
+    nested_cmin = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","compensationMin":180000,"compensationMax":220000}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_ncmin = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-compensationMin"
+    )
+    assert _apply_listing(posting_ncmin, nested_cmin) is True
+    assert posting_ncmin.pay_low == 180_000
+    assert posting_ncmin.pay_high == 220_000
+    pay_min_snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "pay_min":180000,"pay_max":220000}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_pms = Opportunity(title="Engineer", url="https://jobs.example/ld-pay_min")
+    assert _apply_listing(posting_pms, pay_min_snake) is True
+    assert posting_pms.pay_low == 180_000
+    assert posting_pms.pay_high == 220_000
     range_minmax = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6945,6 +6991,18 @@ def test_apply_listing_ignores_non_usd_salary():
     )
     _apply_listing(nested_smin_eur, eur_nested_smin)
     assert nested_smin_eur.pay_high is None
+    eur_cmin = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","compensationMin":80000,"compensationMax":100000}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    cmin_eur = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-compensationMin-eur"
+    )
+    _apply_listing(cmin_eur, eur_cmin)
+    assert cmin_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -14345,6 +14403,9 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Continue discovering",
         "People also liked",
         "Because you liked this",
+        "Because you liked this job",
+        "Recently saved jobs",
+        "Jobs for you nearby",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
