@@ -443,6 +443,11 @@ def _strip_ats_title(title: str) -> str:
     return re.sub(r"(?i)^job application for\s+", "", t)
 
 
+def _role_title(title: str) -> str:
+    t = _strip_ats_title(title).strip()
+    return t or (title or "Unknown").strip() or "Unknown"
+
+
 def _title_key(title: str, company: Optional[str] = None) -> str:
     """Role identity across boards: strip ATS suffixes and company wrappers."""
     t = _strip_ats_title(title)
@@ -520,7 +525,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
     if not url or _is_index_page(raw):
         return None
     url = _lever_job_url(url)
-    title = raw.get("title") or "Unknown"
+    title = _role_title(raw.get("title") or "")
     desc = raw.get("description") or ""
     remote = raw.get("remote")
     if remote is None:
@@ -545,7 +550,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
 
 
 def _merge_extracted(raw: dict, item: dict) -> Opportunity:
-    title = item.get("title") or raw.get("title") or "Unknown"
+    title = _role_title(item.get("title") or raw.get("title") or "")
     desc = item.get("description") or raw.get("description") or ""
     company = item.get("company") if item.get("company") is not None else raw.get("company")
     if not company:
@@ -1028,6 +1033,9 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
     """Fill missing fields from JobPosting JSON-LD, then visible listing text."""
     posting = _job_posting(html)
     if posting:
+        pt = str(posting.get("title") or "").strip()
+        if pt:
+            opp.title = _role_title(pt)
         name = _posting_company(posting)
         if name:
             opp.company = name
@@ -1051,6 +1059,7 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
             opp.pay_high = high
             if opp.hours_per_week is None and hours:
                 opp.hours_per_week = hours
+    opp.title = _role_title(opp.title)
     opp.efficiency = opp.refined_rate
 
 

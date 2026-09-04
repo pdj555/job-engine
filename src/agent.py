@@ -20,6 +20,7 @@ from src.engine import (
     _guess_company,
     _is_index_page,
     _lever_job_url,
+    _role_title,
     get_engine,
 )
 
@@ -71,7 +72,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
             continue
         url = _lever_job_url(url)
         opp = Opportunity(
-            title=o.get("title", "Unknown"),
+            title=_role_title(o.get("title") or ""),
             url=url,
             company=o.get("company") or _guess_company(o.get("title") or "", url),
             pay_high=o.get("pay"),

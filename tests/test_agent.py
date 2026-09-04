@@ -149,6 +149,19 @@ def test_rank_company_from_title_when_field_missing():
     assert ranked[0].company == "Lyra Health"
 
 
+def test_rank_strips_job_application_title():
+    ranked = _rank(
+        [
+            {
+                "title": "Job Application for Senior AI/ML Engineer at Dragos",
+                "url": "https://job-boards.greenhouse.io/dragos/jobs/5364876008",
+            }
+        ]
+    )
+    assert ranked[0].title == "Senior AI/ML Engineer at Dragos"
+    assert ranked[0].company == "Dragos"
+
+
 def test_rank_skips_hire_a_freelance_directory():
     ranked = _rank(
         [

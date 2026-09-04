@@ -398,6 +398,17 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert lever is not None
+    assert lever.title == "Lyra Health - Senior ML Engineer (ML/AI)"
+    gh_app = _heuristic_opportunity(
+        {
+            "title": "Job Application for Senior, ML Engineer - VLM at Torc Robotics",
+            "url": "https://job-boards.greenhouse.io/torcrobotics/jobs/8572505002",
+            "description": "",
+        }
+    )
+    assert gh_app is not None
+    assert gh_app.title == "Senior, ML Engineer - VLM at Torc Robotics"
+    assert gh_app.company == "Torc Robotics"
     workable = _heuristic_opportunity(
         {
             "title": "Senior ML Engineer | Canopy | Jobs By Workable",
@@ -407,6 +418,7 @@ def test_index_pages_are_not_opportunities():
     )
     assert workable is not None
     assert workable.company == "Canopy"
+    assert workable.title == "Senior ML Engineer | Canopy"
     assert (
         _heuristic_opportunity(
             {
@@ -1353,6 +1365,7 @@ def test_greenhouse_api_html_fills_company_and_pay_range():
     )
     _apply_listing(opp, html)
     assert opp.company == "Reddit"
+    assert opp.title == "Senior Machine Learning Engineer"
     assert opp.pay_low == 216_700
     assert opp.pay_high == 303_400
 
