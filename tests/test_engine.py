@@ -4734,6 +4734,21 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title><p>This posting is expired.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
+        "<title>Engineer</title><p>This req is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>The req has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This req has expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This req is no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This request is closed.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
         "<title>Engineer</title><p>Position has expired.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
@@ -4912,6 +4927,12 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
                 "<p>Job has been filled.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
+        if "req-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This req is closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         if "expired" in url:
             return (
                 "<title>Senior ML Engineer</title>"
@@ -4970,7 +4991,13 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
-    opps = [keep, expired, closed, window, is_expired, position_expired, job_filled]
+    req_closed = Opportunity(
+        title="ReqClosed",
+        url="https://jobs.example/req-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, expired, closed, window, is_expired, position_expired, job_filled, req_closed]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000
