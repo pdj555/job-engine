@@ -3248,6 +3248,26 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Apply Careers | Acme",
+                "url": "https://acme.com/apply-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Open Careers | Acme",
+                "url": "https://acme.com/open-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Search Openings | Acme",
                 "url": "https://acme.com/search-openings",
                 "description": "$400,000",
@@ -6855,6 +6875,16 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert role_name.title == "Staff Engineer"
+    position_title = Opportunity(title="x", url="https://jobs.example/ld-positionTitle")
+    assert _apply_listing(
+        position_title,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","positionTitle":"Staff Engineer",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert position_title.title == "Staff Engineer"
     titled = Opportunity(title="x", url="https://jobs.example/ld-title-wins")
     assert _apply_listing(
         titled,
@@ -11121,6 +11151,18 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This search ended.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search was filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting was filled.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We closed recruiting for this role.</p><p>$180,000</p>"
