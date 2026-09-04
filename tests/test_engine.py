@@ -11689,6 +11689,44 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(duration_row, duration) is True
     assert duration_row.pay_low == 160_000
     assert duration_row.pay_high == 200_000
+    hur = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "unitCode": "HUR",
+            },
+        },
+        "Acme",
+    )
+    hur_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-aaaaaaaaaaaa",
+    )
+    assert _apply_listing(hur_row, hur) is True
+    assert hur_row.pay_low == 160_000
+    assert hur_row.pay_high == 200_000
+    hur_id = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "unitCode": {"@id": "https://schema.org/HUR"},
+            },
+        },
+        "Acme",
+    )
+    hur_id_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-bbbbbbbbbbbb",
+    )
+    assert _apply_listing(hur_id_row, hur_id) is True
+    assert hur_id_row.pay_low == 160_000
+    assert hur_id_row.pay_high == 200_000
     biweekly = _lever_to_html(
         {
             "text": "Engineer",
@@ -12857,6 +12895,20 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(code_row, unit_code) is True
     assert code_row.pay_low == 160_000
     assert code_row.pay_high == 200_000
+    hur_code = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "unitCode": "HUR"},
+        }
+    )
+    hur_code_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/unitcode-hur/engineer",
+    )
+    assert _apply_listing(hur_code_row, hur_code) is True
+    assert hur_code_row.pay_low == 160_000
+    assert hur_code_row.pay_high == 200_000
     salary_unit = _workable_jobs_to_html(
         {
             "title": "Engineer",

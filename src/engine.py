@@ -812,6 +812,17 @@ _PERIOD_NEEDLES = (
 )
 
 
+_PERIOD_FROM_PAY = {
+    "hour": "HOUR",
+    "day": "DAY",
+    "week": "WEEK",
+    "biweek": "BIWEEKLY",
+    "semimonth": "SEMIMONTHLY",
+    "month": "MONTH",
+    "year": "YEAR",
+}
+
+
 def _period_unit(period: str) -> Optional[str]:
     """Map an ATS period string to JSON-LD unitText. Longer units win."""
     raw = str(period or "").lower()
@@ -821,22 +832,25 @@ def _period_unit(period: str) -> Optional[str]:
     for needle, name in _PERIOD_NEEDLES:
         if needle in raw or needle in blob:
             return name
-    return None
+    token = str(period or "").rsplit("/", 1)[-1].upper().replace("-", "_").strip()
+    token = re.sub(r"^(?:USD|US\$|US|\$)\s*", "", token).strip()
+    mapped = _PAY_UNITS.get(token) or _PAY_UNITS.get(token.replace("_", " "))
+    return _PERIOD_FROM_PAY.get(mapped) if mapped else None
 
 
 def _ats_period(raw: dict) -> str:
     """Occupied period / interval / frequency / unitText / unitCode / salaryUnit / duration."""
-    text = str(
-        raw.get("period")
-        or raw.get("interval")
-        or raw.get("frequency")
-        or raw.get("unitText")
-        or raw.get("unit_text")
-        or raw.get("unit")
-        or raw.get("unitCode")
-        or raw.get("unit_code")
-        or raw.get("salaryUnit")
-        or raw.get("salary_unit")
+    text = (
+        _ld_text(raw.get("period"))
+        or _ld_text(raw.get("interval"))
+        or _ld_text(raw.get("frequency"))
+        or _ld_text(raw.get("unitText"))
+        or _ld_text(raw.get("unit_text"))
+        or _ld_text(raw.get("unit"))
+        or _ld_text(raw.get("unitCode"))
+        or _ld_text(raw.get("unit_code"))
+        or _ld_text(raw.get("salaryUnit"))
+        or _ld_text(raw.get("salary_unit"))
         or ""
     )
     if text:
