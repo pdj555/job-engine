@@ -2760,6 +2760,9 @@ def test_listing_text_greenhouse_and_ashby_boards_are_gone(monkeypatch):
         is None
     )
     assert asyncio.run(engine._listing_text("https://boards.greenhouse.io/figma")) is None
+    assert (
+        asyncio.run(engine._listing_text("https://www.greenhouse.com/careers")) is None
+    )
     assert asyncio.run(engine._listing_text("https://jobs.ashbyhq.com/webai")) is None
 
 
