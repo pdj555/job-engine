@@ -470,6 +470,9 @@ def _normalize_url(url: str) -> str:
 
 def _lever_job_url(url: str) -> str:
     """Job page, not the apply form (Lever /apply, Ashby /application, Workable .md)."""
+    gh = _greenhouse_ids(url)
+    if gh:
+        return f"https://job-boards.greenhouse.io/{gh[0]}/jobs/{gh[1]}"
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -975,17 +978,36 @@ _INDEX_URL_RE = re.compile(
 _INDEX_TITLE_RE = re.compile(
     r"(?i)\bjobs\b(?!\.)(?! by workable)|^hire a freelance\b|\bcurrent openings\b"
 )
+_GH_HOST = r"(?:job-boards(?:\.[a-z]+)?|boards(?:\.[a-z]+)?)\.greenhouse\.io"
 _GH_JOB_RE = re.compile(
-    r"(?i)https?://(?:job-boards(?:\.[a-z]+)?|boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)",
+    rf"(?i)https?://{_GH_HOST}/(?!embed\b)([^/]+)/jobs/(\d+)",
 )
 
 
-def _greenhouse_api_url(url: str) -> Optional[str]:
+def _greenhouse_ids(url: str) -> Optional[tuple[str, str]]:
+    """Board token and numeric job id from job-boards, boards.eu, or embed URLs."""
     m = _GH_JOB_RE.search(url or "")
-    if not m:
+    if m:
+        return m.group(1), m.group(2)
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    if not host.endswith("greenhouse.io"):
+        return None
+    q = parse_qs(parsed.query)
+    board = (q.get("for") or [""])[0].strip()
+    jid = (q.get("token") or q.get("gh_jid") or [""])[0].strip()
+    path = (parsed.path or "").casefold()
+    if board and jid.isdigit() and ("/embed/" in path or q.get("token") or q.get("gh_jid")):
+        return board, jid
+    return None
+
+
+def _greenhouse_api_url(url: str) -> Optional[str]:
+    ids = _greenhouse_ids(url)
+    if not ids:
         return None
     return (
-        f"https://boards-api.greenhouse.io/v1/boards/{m.group(1)}/jobs/{m.group(2)}"
+        f"https://boards-api.greenhouse.io/v1/boards/{ids[0]}/jobs/{ids[1]}"
         "?pay_transparency=true"
     )
 

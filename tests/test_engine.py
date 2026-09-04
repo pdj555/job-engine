@@ -1138,6 +1138,18 @@ def test_heuristic_title_company_wins_over_url_slug():
     assert h.company == "Torc Robotics"
 
 
+def test_heuristic_canonicalizes_greenhouse_embed_url():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer",
+            "url": "https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831",
+            "description": "$216,700",
+        }
+    )
+    assert h.url == "https://job-boards.greenhouse.io/reddit/jobs/6960831"
+    assert h.company == "Reddit"
+
+
 def test_find_dedupes_same_role_across_boards():
     engine = Engine()
     engine.openai = None
@@ -2311,15 +2323,29 @@ def test_enrich_drops_http_404_listings_keeps_empty_fetches():
 
 
 def test_greenhouse_api_url_from_job_board_link():
-    from src.engine import _greenhouse_api_url
+    from src.engine import _greenhouse_api_url, _lever_job_url, _normalize_url
 
+    api = "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
+    assert _greenhouse_api_url("https://job-boards.greenhouse.io/reddit/jobs/6960831") == api
     assert _greenhouse_api_url(
-        "https://job-boards.greenhouse.io/reddit/jobs/6960831"
-    ) == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
+        "https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831"
+    ) == api
+    assert _greenhouse_api_url(
+        "https://job-boards.greenhouse.io/embed/job_app?token=6960831&for=reddit"
+    ) == api
     assert _greenhouse_api_url(
         "https://job-boards.eu.greenhouse.io/jetbrains/jobs/4713663101"
     ) == "https://boards-api.greenhouse.io/v1/boards/jetbrains/jobs/4713663101?pay_transparency=true"
+    assert _greenhouse_api_url(
+        "https://boards.eu.greenhouse.io/jetbrains/jobs/4713663101"
+    ) == "https://boards-api.greenhouse.io/v1/boards/jetbrains/jobs/4713663101?pay_transparency=true"
     assert _greenhouse_api_url("https://jobs.lever.co/lyrahealth/abc") is None
+    assert _lever_job_url(
+        "https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831"
+    ) == "https://job-boards.greenhouse.io/reddit/jobs/6960831"
+    assert _normalize_url(
+        "https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831"
+    ) == _normalize_url("https://job-boards.greenhouse.io/reddit/jobs/6960831")
 
 
 def test_greenhouse_api_html_fills_company_and_pay_range():
@@ -2596,6 +2622,44 @@ def test_listing_text_prefers_greenhouse_api_over_board_shell(monkeypatch):
     _apply_listing(opp, html)
     assert opp.company == "Reddit"
     assert opp.pay_high == 180_000
+
+
+def test_listing_text_reads_greenhouse_embed_via_api(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return json.dumps(
+                {
+                    "company_name": "Reddit",
+                    "title": "Senior ML",
+                    "content": "$180,000",
+                    "location": {"name": "Remote - United States"},
+                }
+            )
+        return "<title>Jobs at Reddit</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831"
+        )
+    )
+    assert seen[0] == (
+        "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831?pay_transparency=true"
+    )
+    from src.engine import _apply_listing
+
+    opp = Opportunity(
+        title="x",
+        url="https://boards.greenhouse.io/embed/job_app?for=reddit&token=6960831",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Reddit"
+    assert opp.pay_high == 180_000
+    assert opp.remote is True
 
 
 def test_listing_plain_text_ignores_script_salaries():
