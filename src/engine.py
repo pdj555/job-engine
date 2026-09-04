@@ -44,6 +44,10 @@ class Engine:
 
         return ranked[:limit]
 
+    async def search_web(self, query: str) -> list[dict]:
+        """One web search. Brave, or DuckDuckGo when no Brave key."""
+        return await self._search_brave(query)
+
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
         searches = [

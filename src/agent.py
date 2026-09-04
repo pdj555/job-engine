@@ -1,47 +1,57 @@
 """Autonomous opportunity agent.
 
-Hermes Agent (Nous Research — github.com/NousResearch/hermes-agent) is the brain.
-Given a goal it plans and runs its OWN web research with its built-in toolset, then
-returns structured opportunities. We reach it over its OpenAI-compatible API server
-and rank the results deterministically: Hermes decides WHAT, Opportunity.score()
-owns the $/hour. See docs/AGENT.md.
+The OpenAI Agents SDK is the brain when OPENAI_API_KEY is set: it plans web
+searches via a tool, then returns candidates. With no key, the same Engine
+search path as `find` runs so agent mode never depends on an extra process.
+Opportunity.score() owns the $/hour either way. See docs/AGENT.md.
 """
 
 import json
 from dataclasses import dataclass, field
 
-from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
 from config.settings import settings
+from src.engine import Engine
 from src.models import Opportunity
 
-PROMPT = """You are an autonomous opportunity scout. Goal: {query}
+INSTRUCTIONS = """You are an opportunity scout. Use search_web to research the
+open web across remote roles, contracts/freelance, grants, and cofounder/equity.
+Then return searches you actually ran plus opportunities you found.
 
-Research the open web across remote roles, contracts/freelance, grants, and
-cofounder/equity. Then return ONLY this JSON, no prose:
-
-{{
-  "searches": ["the angles you actually researched"],
-  "opportunities": [
-    {{"title": "...", "url": "https://...", "company": "...",
-      "pay": 180000, "hours_per_week": 40, "remote": true}}
-  ]
-}}
-
-pay = annual USD number (null if unknown). hours_per_week = number (null if unknown)."""
+pay = annual USD (null if unknown). hours_per_week = number (null if unknown).
+Only include http(s) listing URLs, never search-result homepages."""
 
 
 @dataclass
 class AgentRun:
-    """What a run produced: the angles Hermes researched + the ranked shortlist."""
+    """Angles researched + the ranked shortlist."""
 
     searches: list[str] = field(default_factory=list)
     ranked: list[Opportunity] = field(default_factory=list)
 
 
-def _client() -> AsyncOpenAI:
-    """Hermes Agent over its OpenAI-compatible API server."""
-    return AsyncOpenAI(base_url=settings.hermes_base_url, api_key=settings.hermes_api_key)
+class ScoutHit(BaseModel):
+    title: str = "Unknown"
+    url: str
+    company: str | None = None
+    pay: int | None = None
+    hours_per_week: int | None = None
+    remote: bool = True
+
+
+class ScoutResult(BaseModel):
+    searches: list[str] = Field(default_factory=list)
+    opportunities: list[ScoutHit] = Field(default_factory=list)
+
+
+def _angles(query: str) -> list[str]:
+    return [
+        f"{query} remote job hiring",
+        f"{query} freelance contract",
+        f"{query} grant funding opportunity",
+        f"{query} startup equity cofounder",
+    ]
 
 
 def _rank(items: list[dict]) -> list[Opportunity]:
@@ -63,7 +73,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
 
 
 def _parse(content: str) -> dict:
-    """Pull the JSON out of Hermes' reply, tolerating wrapping prose. Always a dict."""
+    """Pull JSON out of a model reply, tolerating wrapping prose. Always a dict."""
     raw = None
     try:
         raw = json.loads(content)
@@ -81,17 +91,53 @@ def _parse(content: str) -> dict:
     return raw if isinstance(raw, dict) else {}
 
 
-async def agent_run(query: str, limit: int = 20) -> AgentRun:
-    """Hermes autonomously researches the goal; we rank what it returns by $/hour."""
-    resp = await _client().chat.completions.create(
-        model=settings.hermes_model,
-        messages=[{"role": "user", "content": PROMPT.format(query=query)}],
+def _from_scout(out: ScoutResult, searches: list[str], limit: int) -> AgentRun:
+    ranked = _rank([o.model_dump() for o in out.opportunities])[:limit]
+    return AgentRun(searches=out.searches or searches, ranked=ranked)
+
+
+async def _search_run(query: str, limit: int) -> AgentRun:
+    """Open-web research when no LLM is configured."""
+    ranked = await Engine().find(query, limit)
+    return AgentRun(searches=_angles(query), ranked=ranked)
+
+
+async def _sdk_run(query: str, limit: int) -> AgentRun:
+    from agents import Agent, Runner, function_tool
+
+    engine = Engine()
+    searches: list[str] = []
+
+    @function_tool
+    async def search_web(q: str) -> str:
+        """Search the open web for roles, contracts, grants, or equity."""
+        searches.append(q)
+        hits = await engine.search_web(q)
+        return json.dumps(hits[:10])
+
+    agent = Agent(
+        name="OpportunityScout",
+        instructions=INSTRUCTIONS,
+        tools=[search_web],
+        output_type=ScoutResult,
+        model=settings.fast_model,
     )
-    data = _parse(resp.choices[0].message.content or "")
+    result = await Runner.run(agent, query, max_turns=8)
+    out = result.final_output
+    if isinstance(out, ScoutResult):
+        return _from_scout(out, searches, limit)
+    data = _parse(str(out or ""))
     ranked = _rank(data.get("opportunities", []))[:limit]
-    return AgentRun(searches=data.get("searches", []), ranked=ranked)
+    return AgentRun(searches=data.get("searches") or searches, ranked=ranked)
+
+
+async def agent_run(query: str, limit: int = 20) -> AgentRun:
+    """Research the goal; rank what comes back by $/hour."""
+    if settings.openai_api_key:
+        return await _sdk_run(query, limit)
+    return await _search_run(query, limit)
 
 
 async def agent_find(query: str, limit: int = 20) -> list[Opportunity]:
-    """Autonomously find + rank opportunities for a goal, via the Hermes Agent brain."""
+    """Autonomously find + rank opportunities for a goal."""
     return (await agent_run(query, limit)).ranked

@@ -1,7 +1,8 @@
 import asyncio
 import types
 
-from src.agent import _parse, _rank, agent_run
+from src.agent import ScoutHit, ScoutResult, _parse, _rank, agent_run
+from src.engine import Engine
 from src.models import Opportunity
 
 
@@ -30,7 +31,7 @@ def test_rank_builds_opportunity_models_with_fields():
     assert ranked[0].remote is False
 
 
-# --- parsing Hermes' reply -----------------------------------------------
+# --- parsing model replies -----------------------------------------------
 
 
 def test_parse_clean_object():
@@ -52,31 +53,45 @@ def test_parse_garbage_is_empty_dict():
     assert _parse("not json at all") == {}
 
 
-# --- end to end: Hermes brain mocked, real parse + rank ------------------
+# --- agent_run: Engine fallback and SDK ----------------------------------
 
 
-def _fake_client(content: str):
-    """Stub the AsyncOpenAI surface agent_run touches: .chat.completions.create."""
+def test_agent_run_without_openai_uses_engine(monkeypatch):
+    monkeypatch.setattr("src.agent.settings.openai_api_key", "")
 
-    async def create(**kwargs):
-        message = types.SimpleNamespace(content=content)
-        return types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+    async def fake_find(self, query, limit=20):
+        return [
+            Opportunity(title="Lush", url="u2", pay_high=200_000, hours_per_week=20),
+            Opportunity(title="Cheap", url="u1", pay_high=100_000, hours_per_week=40),
+        ]
 
-    return types.SimpleNamespace(chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create)))
+    monkeypatch.setattr(Engine, "find", fake_find)
+
+    run = asyncio.run(agent_run("ml contract"))
+
+    assert [o.title for o in run.ranked] == ["Lush", "Cheap"]
+    assert run.ranked[0].score() == 200.0
+    assert any("ml contract" in s for s in run.searches)
 
 
-def test_agent_run_parses_and_ranks_hermes_reply(monkeypatch):
-    reply = (
-        '{"searches": ["remote ml contract", "ai grants"],'
-        ' "opportunities": ['
-        '   {"title": "Cheap", "url": "u1", "pay": 100000, "hours_per_week": 40},'
-        '   {"title": "Lush", "url": "u2", "pay": 200000, "hours_per_week": 20}'
-        ' ]}'
+def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
+    monkeypatch.setattr("src.agent.settings.openai_api_key", "sk-test")
+
+    out = ScoutResult(
+        searches=["remote ml contract", "ai grants"],
+        opportunities=[
+            ScoutHit(title="Cheap", url="u1", pay=100_000, hours_per_week=40),
+            ScoutHit(title="Lush", url="u2", pay=200_000, hours_per_week=20),
+        ],
     )
-    monkeypatch.setattr("src.agent._client", lambda: _fake_client(reply))
+
+    async def fake_run(agent, input, max_turns=None):
+        return types.SimpleNamespace(final_output=out)
+
+    monkeypatch.setattr("agents.Runner.run", fake_run)
 
     run = asyncio.run(agent_run("find me work"))
 
     assert run.searches == ["remote ml contract", "ai grants"]
-    assert [o.title for o in run.ranked] == ["Lush", "Cheap"]  # ranked by $/hr
+    assert [o.title for o in run.ranked] == ["Lush", "Cheap"]
     assert run.ranked[0].score() == 200.0

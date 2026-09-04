@@ -5,7 +5,7 @@ Find roles, contracts, grants, and equity — ranked by what they truly pay per 
 ```mermaid
 flowchart LR
   G([goal]) --> S[search<br/>multi-source web]
-  G --> A[agent<br/>Hermes researches]
+  G --> A[agent<br/>plans searches]
   S --> R{{rank · $/hour}}
   A --> R
   R --> O([CLI · API · Web])
@@ -43,13 +43,13 @@ Hand the search to an autonomous brain:
 job-engine agent "senior ML contract, remote"
 ```
 
-[**Hermes Agent**](https://github.com/NousResearch/hermes-agent) researches the open web on its own and returns candidates; Job Engine ranks them by $/hour. Requires a running Hermes server. See [docs/AGENT.md](docs/AGENT.md).
+The [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) plans its own web searches and returns candidates; Job Engine ranks them by $/hour. With no `OPENAI_API_KEY`, agent mode uses the same open-web engine as `find`. See [docs/AGENT.md](docs/AGENT.md).
 
 ```mermaid
 flowchart LR
   G([goal]) --> A
 
-  subgraph A[autonomous · Hermes decides what]
+  subgraph A[autonomous · agent decides what]
     H[plan · research web · extract]
   end
 

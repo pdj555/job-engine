@@ -1,6 +1,6 @@
 """API - one endpoint that matters."""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -88,16 +88,11 @@ async def agent_search(req: SearchRequest):
     """
     Autonomous agent search.
 
-    The Hermes Agent brain plans searches, extracts opportunities, and ranks
-    them by $/hour. Returns the same shape as /search.
+    Plans its own web searches (OpenAI Agents SDK when OPENAI_API_KEY is set,
+    otherwise the open-web engine), then ranks by $/hour. Same shape as /search
+    plus `searches`.
     """
     from src.agent import agent_run
 
-    try:
-        run = await agent_run(req.q, req.limit)
-    except Exception as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Agent unavailable (is Hermes Agent running?): {e}",
-        ) from e
+    run = await agent_run(req.q, req.limit)
     return {**_payload(run.ranked), "searches": run.searches}

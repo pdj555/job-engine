@@ -1,8 +1,8 @@
 import { Panel } from "./panel";
 
 const STACK: [string, string][] = [
-  ["brain", "Hermes Agent — autonomous web research"],
-  ["transport", "OpenAI-compatible API"],
+  ["brain", "OpenAI Agents SDK — plans web searches"],
+  ["transport", "search_web tool · Engine fallback"],
   ["ranking", "deterministic · Opportunity.score()"],
   ["surfaces", "CLI · API · Web"],
 ];
@@ -19,7 +19,7 @@ export function ArchitectureView() {
 
           <div className="flow-node">
             <span className="flow-zone">autonomous</span>
-            <span className="flow-title">Hermes Agent</span>
+            <span className="flow-title">OpenAI Agents SDK</span>
             <span className="flow-sub">plan · research the open web · extract</span>
           </div>
 
