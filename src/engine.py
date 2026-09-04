@@ -4401,7 +4401,15 @@ def _usd(currency) -> bool:
         return True
     token = str(currency).upper().replace("$", "").strip()
     token = token.rsplit("/", 1)[-1].rsplit("#", 1)[-1].strip()
-    return token in {"USD", "US", "USA"}
+    if token in {"USD", "US", "USA"}:
+        return True
+    compact = re.sub(r"[^A-Z]", "", token)
+    return compact in {
+        "USDOLLAR",
+        "USDOLLARS",
+        "UNITEDSTATESDOLLAR",
+        "UNITEDSTATESDOLLARS",
+    }
 
 
 _FOREIGN_PAY_RE = re.compile(

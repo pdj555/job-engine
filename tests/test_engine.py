@@ -6567,6 +6567,28 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(named, currency_obj) is True
     assert named.pay_low == 180_000
     assert named.pay_high == 220_000
+    dollar_name = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":{"@type":"Currency","name":"US Dollar"},
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    named_dollar = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-us-dollar")
+    assert _apply_listing(named_dollar, dollar_name) is True
+    assert named_dollar.pay_low == 180_000
+    assert named_dollar.pay_high == 220_000
+    dollar_str = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"United States Dollar",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    united = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-united-states")
+    assert _apply_listing(united, dollar_str) is True
+    assert united.pay_low == 180_000
+    assert united.pay_high == 220_000
     bounds = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
