@@ -10332,6 +10332,25 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(contract, hourly) is True
     assert contract.pay_low == 160_000
     assert contract.pay_high == 200_000
+    biweekly = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "interval": "biweekly",
+            },
+        },
+        "Acme",
+    )
+    bi = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-111111111111",
+    )
+    assert _apply_listing(bi, biweekly) is True
+    assert bi.pay_low == 75_000
+    assert bi.pay_high == 100_000
     described = _lever_to_html(
         {
             "text": "Engineer",
@@ -10944,6 +10963,30 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(weekly_drow, weekly_dollars)
     assert weekly_drow.pay_low == 150_000
     assert weekly_drow.pay_high == 200_000
+    biweekly_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Biweekly Salary", "value": "$3,000 - $4,000"}],
+        }
+    )
+    biweekly_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/20")
+    _apply_listing(biweekly_drow, biweekly_dollars)
+    assert biweekly_drow.pay_low == 75_000
+    assert biweekly_drow.pay_high == 100_000
+    semi_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Semi-Monthly Pay", "value": "$3,000 - $4,000"}],
+        }
+    )
+    semi_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/21")
+    _apply_listing(semi_drow, semi_dollars)
+    assert semi_drow.pay_low == 72_000
+    assert semi_drow.pay_high == 96_000
     meta_eur = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -11269,6 +11312,40 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     day_row = Opportunity(title="x", url="https://jobs.workable.com/view/yza/engineer")
     assert _apply_listing(day_row, day_str) is True
     assert day_row.pay_high == 500_000
+    biweek = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "period": "biweekly",
+            },
+        }
+    )
+    biweek_row = Opportunity(title="x", url="https://jobs.workable.com/view/bcd/engineer")
+    assert _apply_listing(biweek_row, biweek) is True
+    assert biweek_row.pay_low == 75_000
+    assert biweek_row.pay_high == 100_000
+    semi = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "period": "semi-monthly",
+            },
+        }
+    )
+    semi_row = Opportunity(title="x", url="https://jobs.workable.com/view/efg/engineer")
+    assert _apply_listing(semi_row, semi) is True
+    assert semi_row.pay_low == 72_000
+    assert semi_row.pay_high == 96_000
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
@@ -13073,6 +13150,26 @@ def test_breezy_foreign_salary_is_foreign():
     ) is True
     assert year_sfx.pay_low == 180_000
     assert year_sfx.pay_high == 220_000
+    biweek = Opportunity(title="x", url="https://acme.breezy.hr/p/dddddddddddd")
+    assert _apply_listing(
+        biweek,
+        _breezy_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "type": {"id": "fullTime"},
+                "location": {"is_remote": False, "name": "Austin"},
+                "salary": {
+                    "min": 3000,
+                    "max": 4000,
+                    "currency": "USD",
+                    "period": "biweekly",
+                },
+            }
+        ),
+    ) is True
+    assert biweek.pay_low == 75_000
+    assert biweek.pay_high == 100_000
 
 
 def test_pinpoint_job_urls_are_not_boards():
@@ -13518,6 +13615,27 @@ def test_listing_text_reads_bamboohr_detail_not_form_pay(monkeypatch):
     assert obj.pay_low == 180_000
     assert obj.pay_high == 220_000
     assert obj.remote is False
+    semi = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/161")
+    assert _apply_listing(
+        semi,
+        _bamboohr_to_html(
+            {
+                "jobOpeningName": "Engineer",
+                "employmentStatusLabel": "Full-Time",
+                "locationType": 0,
+                "compensation": {
+                    "min": 3000,
+                    "max": 4000,
+                    "currency": "USD",
+                    "period": "semi-monthly",
+                },
+                "description": "<p>Office. Full time.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert semi.pay_low == 72_000
+    assert semi.pay_high == 96_000
     k = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/159")
     assert _apply_listing(
         k,

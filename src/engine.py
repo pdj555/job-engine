@@ -791,12 +791,33 @@ _LEVER_JOB_RE = re.compile(
     r"(?i)https?://(jobs(?:\.[a-z]+)?)\.lever\.co/([^/]+)/"
     r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 )
-_LEVER_PAY_UNITS = (
+_PERIOD_NEEDLES = (
+    ("bi week", "BIWEEKLY"),
+    ("biweek", "BIWEEKLY"),
+    ("fortnight", "BIWEEKLY"),
+    ("semi month", "SEMIMONTHLY"),
+    ("semimonth", "SEMIMONTHLY"),
+    ("twice a month", "SEMIMONTHLY"),
+    ("twice monthly", "SEMIMONTHLY"),
     ("hour", "HOUR"),
+    ("day", "DAY"),
     ("month", "MONTH"),
     ("week", "WEEK"),
     ("year", "YEAR"),
+    ("annual", "YEAR"),
 )
+
+
+def _period_unit(period: str) -> Optional[str]:
+    """Map an ATS period string to JSON-LD unitText. Longer units win."""
+    raw = str(period or "").lower()
+    if not raw.strip():
+        return None
+    blob = raw.replace("_", " ").replace("-", " ")
+    for needle, name in _PERIOD_NEEDLES:
+        if needle in raw or needle in blob:
+            return name
+    return None
 
 
 def _lever_api_url(url: str) -> Optional[str]:
@@ -840,11 +861,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
         low, high = _bound_nums(rng)
         if low or high:
             interval = str(rng.get("interval") or "").lower()
-            unit = "YEAR"
-            for needle, name in _LEVER_PAY_UNITS:
-                if needle in interval:
-                    unit = name
-                    break
+            unit = _period_unit(interval) or "YEAR"
             value: dict = {"unitText": unit}
             if low is not None and high is not None:
                 value["minValue"] = low
@@ -1781,8 +1798,8 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
-    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly)\s+)+rate$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly|biweekly|semi-?monthly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
+    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly|biweekly|semi-?monthly)\s+)+rate$"
 )
 
 
@@ -1910,12 +1927,6 @@ def _workable_jobs_api_url(url: str) -> Optional[str]:
     return f"https://jobs.workable.com/api/v1/jobs/{m.group(1)}"
 
 
-_WORKABLE_PAY_UNITS = (
-    ("hour", "HOUR"),
-    ("month", "MONTH"),
-    ("week", "WEEK"),
-    ("year", "YEAR"),
-)
 
 
 def _workable_pay_ld(data: dict) -> Optional[dict]:
@@ -1933,11 +1944,7 @@ def _workable_pay_ld(data: dict) -> Optional[dict]:
         if low is None and high is None:
             continue
         period = str(raw.get("period") or raw.get("interval") or "").lower()
-        unit = "YEAR"
-        for needle, name in _WORKABLE_PAY_UNITS:
-            if needle in period:
-                unit = name
-                break
+        unit = _period_unit(period) or "YEAR"
         value: dict = {"unitText": unit}
         if low is not None and high is not None:
             value["minValue"] = low
@@ -2010,12 +2017,6 @@ def _workable_is_board(url: str) -> bool:
 _SR_JOB_RE = re.compile(
     r"(?i)https?://(?:www\.)?jobs\.smartrecruiters\.com/([^/]+)/(\d+)",
 )
-_SR_PAY_UNITS = (
-    ("hour", "HOUR"),
-    ("month", "MONTH"),
-    ("week", "WEEK"),
-    ("year", "YEAR"),
-)
 
 
 def _smartrecruiters_ids(url: str) -> Optional[tuple[str, str]]:
@@ -2050,11 +2051,7 @@ def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
     if low is None and high is None:
         return None
     period = str(comp.get("period") or "").lower()
-    unit = None
-    for needle, name in _SR_PAY_UNITS:
-        if needle in period:
-            unit = name
-            break
+    unit = _period_unit(period)
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -2446,12 +2443,6 @@ def _personio_to_html(pos: dict) -> str:
 _RECRUITEE_JOB_RE = re.compile(
     r"(?i)https?://([a-z0-9-]+)\.recruitee\.com/o/([A-Za-z0-9_-]+)"
 )
-_RECRUITEE_PAY_UNITS = (
-    ("hour", "HOUR"),
-    ("month", "MONTH"),
-    ("week", "WEEK"),
-    ("year", "YEAR"),
-)
 
 
 def _recruitee_ids(url: str) -> Optional[tuple[str, str]]:
@@ -2516,11 +2507,7 @@ def _recruitee_pay_ld(data: dict) -> Optional[dict]:
         if low is None and high is None:
             continue
         period = str(sal.get("period") or "").lower()
-        unit = None
-        for needle, name in _RECRUITEE_PAY_UNITS:
-            if needle in period:
-                unit = name
-                break
+        unit = _period_unit(period)
         value: dict = {}
         if unit:
             value["unitText"] = unit
@@ -2598,6 +2585,10 @@ _RIPPLING_PAY_UNITS = {
     "HOURLY": "HOUR",
     "WEEK": "WEEK",
     "WEEKLY": "WEEK",
+    "BIWEEKLY": "BIWEEKLY",
+    "BI-WEEKLY": "BIWEEKLY",
+    "SEMIMONTHLY": "SEMIMONTHLY",
+    "SEMI-MONTHLY": "SEMIMONTHLY",
 }
 
 
@@ -2809,17 +2800,7 @@ def _breezy_pay_ld(job: dict) -> Optional[dict]:
     if low is None and high is None:
         return None
     period = str(raw.get("period") or raw.get("frequency") or "").lower()
-    unit = None
-    for needle, name in (
-        ("hour", "HOUR"),
-        ("month", "MONTH"),
-        ("week", "WEEK"),
-        ("year", "YEAR"),
-        ("annual", "YEAR"),
-    ):
-        if needle in period:
-            unit = name
-            break
+    unit = _period_unit(period)
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -2896,6 +2877,10 @@ _PINPOINT_PAY_UNITS = {
     "hourly": "HOUR",
     "week": "WEEK",
     "weekly": "WEEK",
+    "biweekly": "BIWEEKLY",
+    "bi-weekly": "BIWEEKLY",
+    "semimonthly": "SEMIMONTHLY",
+    "semi-monthly": "SEMIMONTHLY",
 }
 
 
@@ -3192,17 +3177,7 @@ def _bamboohr_pay_ld(job: dict) -> Optional[dict]:
     if low is None and high is None:
         return None
     period = str(raw.get("period") or raw.get("frequency") or "").lower()
-    unit = None
-    for needle, name in (
-        ("hour", "HOUR"),
-        ("month", "MONTH"),
-        ("week", "WEEK"),
-        ("year", "YEAR"),
-        ("annual", "YEAR"),
-    ):
-        if needle in period:
-            unit = name
-            break
+    unit = _period_unit(period)
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -3304,6 +3279,10 @@ _DOVER_PAY_UNITS = {
     "HOUR": "HOUR",
     "WEEKLY": "WEEK",
     "WEEK": "WEEK",
+    "BIWEEKLY": "BIWEEKLY",
+    "BI-WEEKLY": "BIWEEKLY",
+    "SEMIMONTHLY": "SEMIMONTHLY",
+    "SEMI-MONTHLY": "SEMIMONTHLY",
 }
 
 
@@ -4510,6 +4489,8 @@ _SALARY_TOKEN_RE = re.compile(
 
 _BLOB_UNIT_RE = re.compile(
     r"(?i)(?:/|\bper\s+|\ban?\s+)?\b("
+    r"biweekly|bi-weekly|fortnightly|fortnight|"
+    r"semi-monthly|semimonthly|"
     r"hourly|hours|hour|hrs|hr|"
     r"yearly|year|yr|"
     r"annually|annual|annum|"
