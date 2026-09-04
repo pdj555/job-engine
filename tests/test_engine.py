@@ -279,6 +279,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 laptop stipend") == (None, None)
     assert _parse_pay("$10,000 vacation payout") == (None, None)
     assert _parse_pay("vacation buyback of $10,000") == (None, None)
+    assert _parse_pay("$10,000 unused PTO") == (None, None)
+    assert _parse_pay("$10,000 family leave") == (None, None)
+    assert _parse_pay("$10,000 clothing allowance") == (None, None)
     assert _parse_pay("$180,000 vacation in NYC") == (None, 180_000)
     assert _parse_pay("$10,000 wellness") == (None, 10_000)
     assert _parse_pay("$10,000 HSA") == (None, 10_000)
@@ -2682,6 +2685,26 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Sustainability | Acme",
+                "url": "https://acme.com/sustainability",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Sustainability Engineer",
+                "url": "https://jobs.example.com/job/sustainability-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -3743,6 +3766,18 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
         "https://acme.com/newsroom/senior-engineer",
+    )
+    assert _html_is_index(
+        "<title>Sustainability | Acme</title><p>$180,000</p>",
+        "https://acme.com/sustainability",
+    )
+    assert not _html_is_index(
+        "<title>Sustainability Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/sustainability-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/sustainability/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
@@ -6320,6 +6355,30 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This page has been removed.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stopped accepting applications.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Hiring for this role has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is no longer being recruited.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has concluded.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>No longer hiring for this position.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stopped accepting applications from recruiters.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -6935,6 +6994,8 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Newsroom | Acme</title><p>$180,000 - $270,000</p>"
         if url.rstrip("/").endswith("/investors"):
             return "<title>Investors | Acme</title><p>$180,000</p>"
+        if url.rstrip("/").endswith("/sustainability"):
+            return "<title>Sustainability | Acme</title><p>$180,000</p>"
         return ""
 
     engine._listing_text = page
@@ -7048,7 +7109,12 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/investors",
         pay_high=180_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news, newsroom, investors]
+    sustainability = Opportunity(
+        title="Sustainability | Acme",
+        url="https://acme.com/sustainability",
+        pay_high=180_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news, newsroom, investors, sustainability]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
