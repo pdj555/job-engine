@@ -489,6 +489,36 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "ML Engineer - Lemon.io",
+                "url": "https://lemon.io/for-developers/ml-engineer-jobs/",
+                "description": "ML Engineer on an oncology KOL analytics backend $35-$100/hr",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Ilias - Senior Machine Learning Engineer expert on Lemon.io",
+                "url": "https://magic.lemon.io/share/ilias-s-gabgcvgom",
+                "description": "",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior AI/ML Developer : Remote : Contract - Corp to Corp",
+                "url": "https://corptocorp.org/senior-ai-ml-developer-remote-contract/",
+                "description": "",
+            }
+        )
+        is None
+    )
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
