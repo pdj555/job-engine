@@ -3111,6 +3111,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Find Positions | Acme",
+                "url": "https://acme.com/find-positions",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Search Openings | Acme",
+                "url": "https://acme.com/search-openings",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Apply Roles | Acme",
+                "url": "https://acme.com/apply-roles",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Explore Openings | Acme",
                 "url": "https://acme.com/explore-openings",
                 "description": "$180,000",
@@ -9224,6 +9254,44 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _apply_listing(req_us_opp, req_us) is True
     assert req_us_opp.remote is True
     assert req_us_opp.pay_high == 120_000
+    work_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "workLocation":{"address":{"addressCountry":"Germany"}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    work_opp = Opportunity(title="Engineer", url="https://jobs.example/de-workLocation")
+    assert _apply_listing(work_opp, work_de) is False
+    assert work_opp.pay_high is None
+    assert _foreign_salary(work_de) is True
+    work_snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "work_location":{"address":{"addressCountry":"Germany"}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    work_snake_opp = Opportunity(title="Engineer", url="https://jobs.example/de-work-location")
+    assert _apply_listing(work_snake_opp, work_snake) is False
+    assert work_snake_opp.pay_high is None
+    assert _foreign_salary(work_snake) is True
+    work_city = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "workLocation":{"address":{"addressLocality":"Mountain View"}},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>All other: $100,000 - $120,000</p>
+    """
+    work_office = Opportunity(
+        title="Engineer", url="https://jobs.example/work-mv", remote=True
+    )
+    assert _apply_listing(work_office, work_city) is True
+    assert work_office.remote is False
+    assert work_office.pay_high == 220_000
 
 
 def test_apply_listing_json_ld_amount_without_currency_reads_place_name():

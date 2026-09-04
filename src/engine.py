@@ -1643,7 +1643,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|^browse careers\b"
     r"|\b(?:job|role|position|listing) vacancies\b"
     r"|\bavailable (?:positions|roles|listings|opportunities|openings)\b"
-    r"|\b(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see) (?:positions|roles|listings|openings|opportunities)\b"
+    r"|\b(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply) (?:positions|roles|listings|openings|opportunities)\b"
     r"|^life at\b"
     r"|^meet (?:the|our) team(?:\s*[|\-–—].*)?$"
     r"|^our (?:team|people)(?:\s*[|\-–—].*)?$"
@@ -3832,7 +3832,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
     r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|hiring)/?$"
-    r"|/(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
+    r"|/(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
@@ -4527,6 +4527,8 @@ def _posting_countries(posting: dict) -> list[str]:
     for key in (
         "jobLocation",
         "job_location",
+        "workLocation",
+        "work_location",
         "applicantLocationRequirements",
         "applicant_location_requirements",
     ):
@@ -6584,7 +6586,12 @@ def _apply_workplace(posting: dict, *places: str) -> None:
 
 def _jsonld_place(posting: dict) -> str:
     """Workplace label from JobPosting jobLocation / job_location. Empty if omitted."""
-    loc = posting.get("jobLocation") or posting.get("job_location")
+    loc = (
+        posting.get("jobLocation")
+        or posting.get("job_location")
+        or posting.get("workLocation")
+        or posting.get("work_location")
+    )
     rows = loc if isinstance(loc, list) else [loc]
     names = []
     for row in rows:
