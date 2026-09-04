@@ -604,12 +604,21 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "This position is located in Seattle") is False
     assert _guess_remote("Engineer", "you will be based in Austin") is False
     assert _guess_remote("Engineer", "The job is based in Boston") is False
+    assert _guess_remote("Engineer", "This role requires you to be in San Francisco") is False
+    assert _guess_remote("Engineer", "you must be located in New York") is False
+    assert _guess_remote("Engineer", "candidates must be based in Seattle") is False
+    assert _guess_remote("Engineer", "This role requires you to be in the US") is True
+    assert _guess_remote("Engineer", "must live in the San Francisco Bay Area") is True
+    assert _guess_remote("Engineer", "must reside in California") is True
     assert _guess_remote("Engineer", "This role is based in the US") is True
     assert _guess_remote("Engineer", "We're based in New York. Great team.") is True
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
     assert _guess_remote("Engineer", "work from home") is True
     assert _guess_remote("Engineer", "work from home. This is a site-based role") is True
     assert _guess_remote("Engineer", "work from home. This is an on-campus role") is True
+    assert _guess_remote(
+        "Engineer", "work from home. This role requires you to be in San Francisco"
+    ) is True
     office = Opportunity(title="Engineer", url="https://jobs.example/off")
     assert _apply_listing(
         office, "<p>Work from our office in NYC. Salary $180,000</p>"
@@ -629,6 +638,20 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert based.remote is False
     assert based.score() == 0.7 * (180_000 / (40 * 50))
+    require = Opportunity(title="Engineer", url="https://jobs.example/require")
+    assert _apply_listing(
+        require,
+        "<p>This role requires you to be in San Francisco. Salary $180,000</p>",
+    ) is True
+    assert require.remote is False
+    assert require.pay_high == 180_000
+    assert require.score() == 0.7 * (180_000 / (40 * 50))
+    located = Opportunity(title="Engineer", url="https://jobs.example/located")
+    assert _apply_listing(
+        located, "<p>You must be located in New York. Salary $180,000</p>"
+    ) is True
+    assert located.remote is False
+    assert located.score() == 0.7 * (180_000 / (40 * 50))
     site = Opportunity(title="Engineer", url="https://jobs.example/site")
     assert _apply_listing(
         site, "<p>This is a site-based role. Salary $180,000</p>"
