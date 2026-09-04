@@ -1957,6 +1957,56 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Campus Recruiting | Acme",
+                "url": "https://acme.com/campus-recruiting",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Early Careers | Acme",
+                "url": "https://acme.com/early-careers",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Student Programs",
+                "url": "https://acme.com/student-programs",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Graduate Programs | Acme",
+                "url": "https://acme.com/graduate-programs",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "University Programs",
+                "url": "https://acme.com/university-programs",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -1970,6 +2020,36 @@ def test_index_pages_are_not_opportunities():
                 "title": "University Recruiting Coordinator",
                 "url": "https://jobs.example.com/job/university-recruiting-coordinator",
                 "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Early Career Software Engineer",
+                "url": "https://jobs.example.com/job/early-career-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Campus Recruiter",
+                "url": "https://jobs.example.com/job/campus-recruiter",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineering Intern",
+                "url": "https://acme.com/campus-recruiting/intern",
+                "description": "$80,000",
             }
         )
         is not None
@@ -2856,6 +2936,34 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>University Recruiting</title><p>$180,000</p>",
         "https://acme.com/university-recruiting",
+    )
+    assert _html_is_index(
+        "<title>Campus Recruiting | Acme</title><p>$180,000</p>",
+        "https://acme.com/campus-recruiting",
+    )
+    assert _html_is_index(
+        "<title>Early Careers | Acme</title><p>$180,000</p>",
+        "https://acme.com/early-careers",
+    )
+    assert _html_is_index(
+        "<title>Student Programs</title><p>$180,000</p>",
+        "https://acme.com/student-programs",
+    )
+    assert _html_is_index(
+        "<title>Graduate Programs | Acme</title><p>$180,000</p>",
+        "https://acme.com/graduate-programs",
+    )
+    assert not _html_is_index(
+        "<title>Early Career Software Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/early-career-software-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Campus Recruiter</title><p>$180,000</p>",
+        "https://jobs.example.com/job/campus-recruiter",
+    )
+    assert not _html_is_index(
+        "<title>Software Engineering Intern</title><p>$80,000</p>",
+        "https://acme.com/campus-recruiting/intern",
     )
     assert _html_is_index(
         "<title>Software Engineer</title><p>$180,000</p>",
@@ -5613,6 +5721,10 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Internships | Acme</title><p>$180,000</p>"
         if "meet-the-team" in url:
             return "<title>Meet the Team | Acme</title><p>$180,000 - $270,000</p>"
+        if "campus-recruiting" in url:
+            return "<title>Campus Recruiting | Acme</title><p>$180,000 - $270,000</p>"
+        if "early-careers" in url:
+            return "<title>Early Careers | Acme</title><p>$180,000</p>"
         return ""
 
     engine._listing_text = page
@@ -5641,7 +5753,17 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/meet-the-team",
         pay_high=270_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet]
+    campus = Opportunity(
+        title="Campus Recruiting | Acme",
+        url="https://acme.com/campus-recruiting",
+        pay_high=270_000,
+    )
+    early = Opportunity(
+        title="Early Careers | Acme",
+        url="https://acme.com/early-careers",
+        pay_high=180_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 

@@ -1564,6 +1564,11 @@ _INDEX_TITLE_RE = re.compile(
     r"|^why \S+(?:\s*[|\-–—].*)?$"
     r"|\binternships\b"
     r"|^university recruiting(?:\s*[|\-–—].*)?$"
+    r"|^campus recruiting(?:\s*[|\-–—].*)?$"
+    r"|^early careers?(?:\s*[|\-–—].*)?$"
+    r"|^student programs?(?:\s*[|\-–—].*)?$"
+    r"|^graduate programs?(?:\s*[|\-–—].*)?$"
+    r"|^university programs?(?:\s*[|\-–—].*)?$"
     r"|\bfreelancers\b"
     r"|\bsalary guide\b"
     r"|\bsalary data\b"
@@ -3510,7 +3515,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
     r"|/(?:job[-_]?vacancies|available[-_]?positions|vacancies|explore[-_]?careers|hiring)/?$"
-    r"|/(?:internships|university[-_]?recruiting|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people))/?$"
+    r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people))/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
     re.I,
