@@ -825,7 +825,7 @@ def _period_unit(period: str) -> Optional[str]:
 
 
 def _ats_period(raw: dict) -> str:
-    """Occupied period / interval / frequency / unitText on an ATS salary object."""
+    """Occupied period / interval / frequency / unitText / unitCode on an ATS salary object."""
     return str(
         raw.get("period")
         or raw.get("interval")
@@ -833,6 +833,8 @@ def _ats_period(raw: dict) -> str:
         or raw.get("unitText")
         or raw.get("unit_text")
         or raw.get("unit")
+        or raw.get("unitCode")
+        or raw.get("unit_code")
         or ""
     )
 
@@ -4374,7 +4376,9 @@ def _pay_unit(raw) -> Optional[str]:
 def _usd(currency) -> bool:
     if not currency:
         return True
-    return str(currency).upper().replace("$", "").strip() in {"USD", "US", "USA"}
+    token = str(currency).upper().replace("$", "").strip()
+    token = token.rsplit("/", 1)[-1].rsplit("#", 1)[-1].strip()
+    return token in {"USD", "US", "USA"}
 
 
 _FOREIGN_PAY_RE = re.compile(
@@ -4847,7 +4851,7 @@ _DURATION_UNITS = {
 
 
 def _ld_text(value) -> Optional[str]:
-    """String from a JSON-LD scalar, [scalar], or {@value,name,value} node."""
+    """String from a JSON-LD scalar, [scalar], or {@value,name,value,@id} node."""
     if isinstance(value, str) and value.strip():
         return value
     if isinstance(value, list):
@@ -4857,7 +4861,7 @@ def _ld_text(value) -> Optional[str]:
                 return text
         return None
     if isinstance(value, dict):
-        for key in ("@value", "name", "value"):
+        for key in ("@value", "name", "value", "@id"):
             raw = value.get(key)
             if isinstance(raw, str) and raw.strip():
                 return raw
@@ -5015,6 +5019,8 @@ def _posting_salary(posting: Optional[dict]):
         or _ld_text(posting.get("unitText"))
         or _ld_text(posting.get("unit_text"))
         or _ld_text(posting.get("unit"))
+        or _ld_text(posting.get("unitCode"))
+        or _ld_text(posting.get("unit_code"))
     )
     value: dict = {}
     if unit:
@@ -5129,6 +5135,7 @@ def _hours_from_node(work) -> Optional[int]:
 
 _HOUR_KEYS = (
     "workHours",
+    "work_hours",
     "hoursPerWeek",
     "weeklyHours",
     "hours_per_week",

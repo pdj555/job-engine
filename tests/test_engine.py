@@ -1287,6 +1287,17 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert snake_std.hours_per_week == 32
     assert snake_std.pay_high == 128_000
+    snake_work = Opportunity(title="Engineer", url="https://jobs.example/ld-work_hours")
+    assert _apply_listing(
+        snake_work,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"work_hours":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert snake_work.hours_per_week == 32
+    assert snake_work.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -5763,6 +5774,18 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
     schema = Opportunity(title="Engineer", url="https://jobs.example/ld-unitcode-schema")
     assert _apply_listing(schema, schema_code) is True
     assert schema.pay_high == 200_000
+    schema_id = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,
+        "unitCode":{"@id":"https://schema.org/HOUR"}}}}
+    </script>
+    """
+    coded_id = Opportunity(title="Engineer", url="https://jobs.example/ld-unitcode-id")
+    assert _apply_listing(coded_id, schema_id) is True
+    assert coded_id.pay_low == 160_000
+    assert coded_id.pay_high == 200_000
     duration = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6571,6 +6594,28 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_sunit, posting_su) is True
     assert posting_sunit.pay_low == 160_000
     assert posting_sunit.pay_high == 200_000
+    posting_uc = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":80,"salaryMax":100,"unitCode":"HOUR"}
+    </script>
+    <p>Office.</p>
+    """
+    posting_ucode = Opportunity(title="Engineer", url="https://jobs.example/ld-post-unitCode")
+    assert _apply_listing(posting_ucode, posting_uc) is True
+    assert posting_ucode.pay_low == 160_000
+    assert posting_ucode.pay_high == 200_000
+    posting_ucs = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":80,"salaryMax":100,"unit_code":"HOUR"}
+    </script>
+    <p>Office.</p>
+    """
+    posting_ucode_s = Opportunity(title="Engineer", url="https://jobs.example/ld-post-unit_code")
+    assert _apply_listing(posting_ucode_s, posting_ucs) is True
+    assert posting_ucode_s.pay_low == 160_000
+    assert posting_ucode_s.pay_high == 200_000
     posting_qvs = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6719,6 +6764,30 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(money, dollar_str) is True
     assert money.pay_low == 180_000
     assert money.pay_high == 220_000
+    schema_usd = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"https://schema.org/USD",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    url_usd = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-schema-usd")
+    assert _apply_listing(url_usd, schema_usd) is True
+    assert url_usd.pay_low == 180_000
+    assert url_usd.pay_high == 220_000
+    id_usd = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":{"@id":"https://schema.org/USD"},
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    typed_usd = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-id-usd")
+    assert _apply_listing(typed_usd, id_usd) is True
+    assert typed_usd.pay_low == 180_000
+    assert typed_usd.pay_high == 220_000
     schema_hour = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -7224,6 +7293,28 @@ def test_apply_listing_ignores_non_usd_salary():
     named_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-obj-eur")
     _apply_listing(named_eur, eur_obj)
     assert named_eur.pay_high is None
+    schema_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"https://schema.org/EUR",
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    url_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-schema-eur")
+    _apply_listing(url_eur, schema_eur)
+    assert url_eur.pay_high is None
+    id_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":{"@id":"https://schema.org/EUR"},
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    typed_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-id-eur")
+    _apply_listing(typed_eur, id_eur)
+    assert typed_eur.pay_high is None
     eur_salary_cur = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -10555,6 +10646,19 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert typed_remote.remote is True
+    id_remote = Opportunity(title="x", url="https://jobs.example/tele-id")
+    _apply_listing(
+        id_remote,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocationType":{"@id":"https://schema.org/TELECOMMUTE"},
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}}}
+        </script>
+        <p>Build systems. $180,000 - $200,000</p>
+        """,
+    )
+    assert id_remote.remote is True
     typed_hybrid = Opportunity(title="x", url="https://jobs.example/hybrid-obj", remote=True)
     _apply_listing(
         typed_hybrid,
@@ -10787,6 +10891,25 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(unit_row, unit_text) is True
     assert unit_row.pay_low == 160_000
     assert unit_row.pay_high == 200_000
+    unit_code = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "unitCode": "HOUR",
+            },
+        },
+        "Acme",
+    )
+    code_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-777777777777",
+    )
+    assert _apply_listing(code_row, unit_code) is True
+    assert code_row.pay_low == 160_000
+    assert code_row.pay_high == 200_000
     biweekly = _lever_to_html(
         {
             "text": "Engineer",
@@ -11941,6 +12064,20 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(snake_unit_row, snake_unit) is True
     assert snake_unit_row.pay_low == 160_000
     assert snake_unit_row.pay_high == 200_000
+    unit_code = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "unitCode": "HOUR"},
+        }
+    )
+    code_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/unitcode/engineer",
+    )
+    assert _apply_listing(code_row, unit_code) is True
+    assert code_row.pay_low == 160_000
+    assert code_row.pay_high == 200_000
     comp = _workable_jobs_to_html(
         {
             "title": "Engineer",
