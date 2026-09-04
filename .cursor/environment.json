@@ -1,10 +1,10 @@
 {
   "name": "Job Engine",
-  "install": "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh; uv sync --extra dev && npm --prefix web ci",
+  "install": "export PATH=\"$HOME/.local/bin:$PATH\"\ncommand -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh\nuv sync --extra dev\nnpm --prefix web ci",
   "terminals": [
     {
       "name": "api",
-      "command": "uv run job-engine serve"
+      "command": "export PATH=\"$HOME/.local/bin:$PATH\"; uv run job-engine serve"
     },
     {
       "name": "web",
