@@ -1063,6 +1063,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "32 scheduled hours per week") == 32
     assert _guess_hours("Engineer", "Hours of the scheduled week: 32") == 32
     assert _guess_hours("Engineer", "Weekly hours scheduled: 32") == 32
+    assert _guess_hours("Engineer", "Hours scheduled for the week: 32") == 32
+    assert _guess_hours("Engineer", "Weekly scheduled work hours: 32") == 32
+    assert _guess_hours("Engineer", "Hours/wk scheduled: 32") == 32
+    assert _guess_hours("Engineer", "32 weekly scheduled hours") == 32
     assert _guess_hours("Engineer", "Scheduled hours: 32") is None
     assert _guess_hours("Engineer", "32 scheduled hours") is None
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
@@ -1238,6 +1242,30 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert n_sched_weekly.hours_per_week == 32
     assert n_sched_weekly.pay_high == 128_000
+    for_the = Opportunity(title="Engineer", url="https://jobs.example/hschedforthe")
+    assert _apply_listing(
+        for_the, "<p>$80/hour. Hours scheduled for the week: 32</p>"
+    ) is True
+    assert for_the.hours_per_week == 32
+    assert for_the.pay_high == 128_000
+    weekly_sched_work = Opportunity(title="Engineer", url="https://jobs.example/wkschedwork")
+    assert _apply_listing(
+        weekly_sched_work, "<p>$80/hour. Weekly scheduled work hours: 32</p>"
+    ) is True
+    assert weekly_sched_work.hours_per_week == 32
+    assert weekly_sched_work.pay_high == 128_000
+    wk_sched = Opportunity(title="Engineer", url="https://jobs.example/hwksched")
+    assert _apply_listing(
+        wk_sched, "<p>$80/hour. Hours/wk scheduled: 32</p>"
+    ) is True
+    assert wk_sched.hours_per_week == 32
+    assert wk_sched.pay_high == 128_000
+    n_weekly_sched = Opportunity(title="Engineer", url="https://jobs.example/nweeksched")
+    assert _apply_listing(
+        n_weekly_sched, "<p>$80/hour. 32 weekly scheduled hours.</p>"
+    ) is True
+    assert n_weekly_sched.hours_per_week == 32
+    assert n_weekly_sched.pay_high == 128_000
     of_the = Opportunity(title="Engineer", url="https://jobs.example/oftheweek")
     assert _apply_listing(
         of_the, "<p>$80/hour. Hours of the working week: 32</p>"
