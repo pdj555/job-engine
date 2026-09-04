@@ -1853,6 +1853,43 @@ def _workable_jobs_api_url(url: str) -> Optional[str]:
     return f"https://jobs.workable.com/api/v1/jobs/{m.group(1)}"
 
 
+_WORKABLE_PAY_UNITS = (
+    ("hour", "HOUR"),
+    ("month", "MONTH"),
+    ("week", "WEEK"),
+    ("year", "YEAR"),
+)
+
+
+def _workable_pay_ld(data: dict) -> Optional[dict]:
+    """USD or stated foreign salary from jobs.workable.com JSON."""
+    raw = data.get("salary")
+    if not isinstance(raw, dict):
+        raw = data.get("salaryRange")
+    if not isinstance(raw, dict):
+        return None
+    low = _num(raw.get("min") if raw.get("min") is not None else raw.get("from"))
+    high = _num(raw.get("max") if raw.get("max") is not None else raw.get("to"))
+    if low is None and high is None:
+        return None
+    period = str(raw.get("period") or raw.get("interval") or "").lower()
+    unit = "YEAR"
+    for needle, name in _WORKABLE_PAY_UNITS:
+        if needle in period:
+            unit = name
+            break
+    value: dict = {"unitText": unit}
+    if low is not None and high is not None:
+        value["minValue"] = low
+        value["maxValue"] = high
+    else:
+        value["value"] = high or low
+    return {
+        "currency": str(raw.get("currency") or "USD").upper(),
+        "value": value,
+    }
+
+
 def _workable_jobs_to_html(data: dict) -> str:
     """Turn jobs.workable.com job JSON into listing HTML. Never invent pay."""
     company = ""
@@ -1875,6 +1912,9 @@ def _workable_jobs_to_html(data: dict) -> str:
         posting["employmentType"] = emp.strip()
     place = str(data.get("workplace") or "").strip()
     loc = f"<p>{place}</p>" if place else ""
+    pay = _workable_pay_ld(data)
+    if pay:
+        posting["baseSalary"] = pay
     page_title = f"{title} at {company}" if company else title
     _apply_workplace(posting, place)
     return (

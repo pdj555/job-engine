@@ -9432,6 +9432,50 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert opp.pay_low == 160_000
     assert opp.pay_high == 190_000
     assert opp.hours_per_week == 40
+    structured = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "employmentType": "Full-time",
+            "description": "<p>Build agents. No figures.</p>",
+            "salary": {"min": "160000", "max": "190000", "currency": "USD"},
+        }
+    )
+    listed = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/abc/engineer",
+    )
+    assert _apply_listing(listed, structured) is True
+    assert listed.pay_low == 160_000
+    assert listed.pay_high == 190_000
+    eur = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $220,000</p>",
+            "salary": {"from": 60000, "to": 85000, "currency": "EUR"},
+        }
+    )
+    skipped = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/def/engineer",
+    )
+    _apply_listing(skipped, eur)
+    assert skipped.pay_high is None
+    hourly = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "period": "hour"},
+        }
+    )
+    contract = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/ghi/engineer",
+    )
+    assert _apply_listing(contract, hourly) is True
+    assert contract.pay_low == 160_000
+    assert contract.pay_high == 200_000
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
