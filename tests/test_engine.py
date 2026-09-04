@@ -8946,6 +8946,30 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _apply_listing(usd_opp, usd_se) is True
     assert usd_opp.pay_high == 200_000
     assert _foreign_salary(usd_se) is False
+    value_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"addressCountry":{"@value":"Germany"}}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    value_opp = Opportunity(title="Engineer", url="https://jobs.example/de-value")
+    assert _apply_listing(value_opp, value_de) is False
+    assert value_opp.pay_high is None
+    assert _foreign_salary(value_de) is True
+    id_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"addressCountry":{"@id":"https://schema.org/Germany"}}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    id_opp = Opportunity(title="Engineer", url="https://jobs.example/de-id")
+    assert _apply_listing(id_opp, id_de) is False
+    assert id_opp.pay_high is None
+    assert _foreign_salary(id_de) is True
 
 
 def test_apply_listing_json_ld_amount_without_currency_reads_place_name():
@@ -11837,6 +11861,64 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert country.remote is True
+    typed_us = Opportunity(title="x", url="https://jobs.example/us-name", remote=True)
+    _apply_listing(
+        typed_us,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocation":{"@type":"Place","address":{"addressCountry":{"name":"United States"}}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert typed_us.remote is True
+    assert typed_us.pay_low == 100_000
+    assert typed_us.pay_high == 120_000
+    value_us = Opportunity(title="x", url="https://jobs.example/us-value", remote=True)
+    _apply_listing(
+        value_us,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocation":{"@type":"Place","address":{"addressCountry":{"@value":"United States"}}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert value_us.remote is True
+    assert value_us.pay_high == 120_000
+    id_us = Opportunity(title="x", url="https://jobs.example/us-id", remote=True)
+    _apply_listing(
+        id_us,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocation":{"@type":"Place","address":{"addressCountry":{"@id":"https://schema.org/UnitedStates"}}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert id_us.remote is True
+    assert id_us.pay_high == 120_000
+    typed_city = Opportunity(title="x", url="https://jobs.example/city-typed", remote=True)
+    _apply_listing(
+        typed_city,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocation":{"@type":"Place","address":{"addressLocality":{"name":"Mountain View"},"addressRegion":{"name":"California"}}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert typed_city.remote is False
+    assert typed_city.pay_low == 180_000
+    assert typed_city.pay_high == 220_000
     hybrid = Opportunity(title="x", url="https://jobs.example/hybrid", remote=True)
     _apply_listing(
         hybrid,

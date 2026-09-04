@@ -4485,9 +4485,21 @@ _NON_US_PLACE_RE = re.compile(
 
 
 def _country_label(value) -> str:
+    """Scalar or {name,@value,@id,alternateName} country. @id keeps the last path token."""
     if isinstance(value, dict):
-        value = value.get("name") or value.get("alternateName") or ""
-    return str(value or "").strip()
+        text = (
+            _ld_text(value.get("name"))
+            or _ld_text(value.get("alternateName"))
+            or _ld_text(value)
+            or ""
+        )
+    else:
+        text = _ld_text(value) or ""
+    text = text.strip()
+    if not text:
+        return ""
+    token = text.rsplit("/", 1)[-1].rsplit("#", 1)[-1].strip().replace("_", " ")
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", token)
 
 
 def _country_from_label(label: str) -> Optional[str]:
@@ -4523,7 +4535,7 @@ def _posting_countries(posting: dict) -> list[str]:
             continue
         if not isinstance(row, dict):
             continue
-        add_label(str(row.get("name") or ""))
+        add_label(_ld_text(row.get("name")) or "")
         addr = row.get("address")
         addrs = addr if isinstance(addr, list) else [addr]
         for item in addrs:
@@ -4538,8 +4550,8 @@ def _posting_countries(posting: dict) -> list[str]:
                 if name:
                     push(name)
                     add_label(name)
-            city = str(item.get("addressLocality") or "").strip()
-            region = str(item.get("addressRegion") or "").strip()
+            city = (_ld_text(item.get("addressLocality")) or "").strip()
+            region = (_ld_text(item.get("addressRegion")) or "").strip()
             country = _country_label(item.get("addressCountry"))
             add_label(", ".join(p for p in (city, region, country) if p))
     return countries
@@ -6530,15 +6542,20 @@ def _jsonld_place(posting: dict) -> str:
             continue
         if not isinstance(row, dict):
             continue
-        label = str(row.get("name") or "").strip()
+        label = (_ld_text(row.get("name")) or "").strip()
         addr = row.get("address")
         if isinstance(addr, list) and addr:
             addr = addr[0]
         if isinstance(addr, dict):
-            city = str(addr.get("addressLocality") or "").strip()
-            region = str(addr.get("addressRegion") or "").strip()
-            country = str(addr.get("addressCountry") or "").strip()
-            label = label or ", ".join(p for p in (city, region) if p) or country
+            city = (_ld_text(addr.get("addressLocality")) or "").strip()
+            region = (_ld_text(addr.get("addressRegion")) or "").strip()
+            country = _country_label(addr.get("addressCountry"))
+            label = (
+                label
+                or ", ".join(p for p in (city, region) if p)
+                or country
+                or (_ld_text(addr) or "").strip()
+            )
         elif isinstance(addr, str) and addr.strip():
             label = label or addr.strip()
         if label:
