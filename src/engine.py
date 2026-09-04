@@ -3626,6 +3626,19 @@ _RELATED_JOBS_RE = re.compile(
     r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
     r"|(?:similar|related|recommended|other)\s+opportunities.*$"
 )
+_RELATED_HEADING_RE = re.compile(
+    r"(?is)(</(?:p|h1|article|section|div|ul|ol|li|main)>)(\s*)"
+    r"<(h[1-6])(?:\s[^>]*)?>\s*"
+    r"(?:browse(?:\s+all)?(?:\s+open)?\s+jobs"
+    r"|new\s+jobs"
+    r"|see\s+also"
+    r"|hot\s+jobs"
+    r"|latest\s+jobs"
+    r"|explore\s+jobs"
+    r"|continue\s+browsing"
+    r"|more\s+opportunities)\s*"
+    r"</\3>.*$"
+)
 
 
 def _visible_text(html: str) -> str:
@@ -3637,6 +3650,7 @@ def _listing_plain_text(html: str) -> str:
     html = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", html)
     html = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", html)
     html = re.sub(r"(?is)<noscript\b[^>]*>.*?</noscript>", " ", html)
+    html = _RELATED_HEADING_RE.sub(r"\1", html)
     return _RELATED_JOBS_RE.sub("", _visible_text(html))
 
 
