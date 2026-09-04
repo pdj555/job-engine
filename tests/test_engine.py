@@ -95,6 +95,19 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("$180,000 professional in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 per month") == (None, 180_000)
+    assert _parse_pay("$10,000 conference budget") == (None, None)
+    assert _parse_pay("$10,000 training reimbursement") == (None, None)
+    assert _parse_pay("$10,000 training budget") == (None, None)
+    assert _parse_pay("$10,000 wellness benefit") == (None, None)
+    assert _parse_pay("$15,000 parental leave") == (None, None)
+    assert _parse_pay("$10,000 fertility benefit") == (None, None)
+    assert _parse_pay("conference budget of $10,000") == (None, None)
+    assert _parse_pay("parental leave of $15,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 conference budget") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 training in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 per month") == (None, 180_000)
     assert _parse_pay("$25,000 annual bonus") == (None, None)
     assert _parse_pay("target bonus of $25,000") == (None, None)
@@ -383,6 +396,16 @@ def test_guess_pay_annualizes_hourly():
         "<p>Salary $180,000 plus $25,000 professional development budget</p>",
     ) is True
     assert devel_sal.pay_high == 180_000
+    conf = Opportunity(title="Engineer", url="https://jobs.example/conf")
+    assert _apply_listing(
+        conf, "<p>$10,000 conference budget. Great team.</p>"
+    ) is False
+    assert conf.pay_high is None
+    leave = Opportunity(title="Engineer", url="https://jobs.example/leave")
+    assert _apply_listing(
+        leave, "<p>$15,000 parental leave. Great team.</p>"
+    ) is False
+    assert leave.pay_high is None
     phone = Opportunity(title="Engineer", url="https://jobs.example/phone")
     assert _apply_listing(
         phone, "<p>$10,000 monthly internet stipend. Great team.</p>"
