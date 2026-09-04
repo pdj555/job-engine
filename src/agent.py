@@ -15,7 +15,7 @@ from openai import AsyncOpenAI
 
 from config.settings import settings
 from src.models import Opportunity
-from src.engine import _dedupe_opportunities, _is_index_page
+from src.engine import _dedupe_opportunities, _is_index_page, get_engine
 
 PROMPT = """You are an autonomous opportunity scout. Goal: {query}
 
@@ -30,7 +30,8 @@ cofounder/equity. Then return ONLY this JSON, no prose:
   ]
 }}
 
-pay = annual USD number (null if unknown). hours_per_week = number (null if unknown)."""
+pay = annual USD from the listing (null if unknown — do not invent).
+hours_per_week = number from the listing (null if unknown)."""
 
 
 @dataclass
@@ -104,7 +105,9 @@ async def agent_run(query: str, limit: int = 20) -> AgentRun:
         messages=[{"role": "user", "content": PROMPT.format(query=query)}],
     )
     data = _parse(resp.choices[0].message.content or "")
-    ranked = _rank(data.get("opportunities", []))[:limit]
+    ranked = _rank(data.get("opportunities", []))
+    await get_engine()._enrich_pay(ranked)
+    ranked = sorted(ranked, key=lambda o: o.score(), reverse=True)[:limit]
     return AgentRun(searches=data.get("searches", []), ranked=ranked)
 
 

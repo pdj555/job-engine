@@ -132,3 +132,26 @@ def test_agent_run_parses_and_ranks_hermes_reply(monkeypatch):
     assert run.searches == ["remote ml contract", "ai grants"]
     assert [o.title for o in run.ranked] == ["Lush", "Cheap"]  # ranked by $/hr
     assert run.ranked[0].score() == 200.0
+
+
+def test_agent_run_enriches_missing_pay_from_listing(monkeypatch):
+    reply = (
+        '{"searches": ["x"], "opportunities": ['
+        '  {"title": "Senior ML", "url": "https://careers.example/x"}'
+        ']}'
+    )
+    monkeypatch.setattr("src.agent._client", lambda: _fake_client(reply))
+
+    from src.engine import Engine
+
+    engine = Engine()
+
+    async def page(_url: str) -> str:
+        return "for this full-time position is $143,000 to 197,000."
+
+    engine._listing_text = page
+    monkeypatch.setattr("src.agent.get_engine", lambda: engine)
+
+    run = asyncio.run(agent_run("ml"))
+    assert run.ranked[0].pay_high == 197_000
+    assert run.ranked[0].score() == 98.5
