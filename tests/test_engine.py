@@ -33,6 +33,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
 
+def test_foreign_salary_detects_k_suffix_gbp_and_eur():
+    from src.engine import _foreign_salary, _parse_pay
+
+    for blob in ("£60k", "£60K - £80K", "€85k", "GBP 60k", "EUR 85k"):
+        assert _parse_pay(blob) == (None, None)
+        assert _foreign_salary(f"<p>{blob} a year</p>") is True
+    assert _foreign_salary("<p>$60k a year</p>") is False
+    assert _foreign_salary("<p>Apply now. No salary listed.</p>") is False
+
+
 def test_guess_pay_annualizes_hourly():
     assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
     assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
@@ -1489,6 +1499,23 @@ def test_enrich_drops_foreign_listing_even_when_snippet_has_dollars():
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Unknown"]
     assert unknown.pay_high == 90_000
+
+
+def test_enrich_drops_foreign_k_suffix_pay():
+    engine = Engine()
+
+    async def page(url: str) -> str:
+        if "gbp" in url:
+            return "<title>Engineer</title><p>£60K - £80K plus equity</p>"
+        return "<title>Engineer</title><p>Apply now. No salary listed.</p>"
+
+    engine._listing_text = page
+    gbp = Opportunity(title="GBP", url="https://jobs.example/gbp", company="Acme")
+    unknown = Opportunity(title="Unknown", url="https://jobs.example/unknown", company="Acme")
+    opps = [gbp, unknown]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Unknown"]
+    assert unknown.pay_high is None
 
 
 def test_enrich_fetches_when_company_missing_even_if_paid():

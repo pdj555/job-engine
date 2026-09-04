@@ -1278,8 +1278,10 @@ def _usd(currency) -> bool:
 _FOREIGN_PAY_RE = re.compile(
     r"(?:€|£)\s*\d{1,3}(?:,\d{3}){1,2}"
     r"|(?:€|£)\s*\d{5,7}\b"
+    r"|(?:€|£)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|\b(?:EUR|GBP)\s+\d{1,3}(?:,\d{3}){1,2}"
-    r"|\b(?:EUR|GBP)\s+\d{5,7}\b",
+    r"|\b(?:EUR|GBP)\s+\d{5,7}\b"
+    r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b",
     re.I,
 )
 
