@@ -1145,6 +1145,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert n_weekly_work.hours_per_week == 32
     assert n_weekly_work.pay_high == 128_000
+    weekly_working = Opportunity(title="Engineer", url="https://jobs.example/hweeklyworking")
+    assert _apply_listing(
+        weekly_working, "<p>$80/hour. Weekly working hours: 32</p>"
+    ) is True
+    assert weekly_working.hours_per_week == 32
+    assert weekly_working.pay_high == 128_000
     of_work_weekly = Opportunity(title="Engineer", url="https://jobs.example/hofworkweekly")
     assert _apply_listing(
         of_work_weekly, "<p>$80/hour. Hours of work weekly: 32</p>"
@@ -6637,6 +6643,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(united, dollar_str) is True
     assert united.pay_low == 180_000
     assert united.pay_high == 220_000
+    usd_dollar = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD Dollar",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    code_dollar = Opportunity(title="Engineer", url="https://jobs.example/ld-currency-usd-dollar")
+    assert _apply_listing(code_dollar, usd_dollar) is True
+    assert code_dollar.pay_low == 180_000
+    assert code_dollar.pay_high == 220_000
     bounds = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",

@@ -4408,6 +4408,8 @@ def _usd(currency) -> bool:
     return compact in {
         "USDOLLAR",
         "USDOLLARS",
+        "USDDOLLAR",
+        "USDDOLLARS",
         "UNITEDSTATESDOLLAR",
         "UNITEDSTATESDOLLARS",
     }
@@ -6108,9 +6110,9 @@ _HOURS_RE = re.compile(
     r"(?:wk|week(?:ly)?|workweeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|weekly\s+(?:work\s+)?(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|weekly\s+(?:work(?:ing)?\s+)?(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:work[\s-]+)?(?:hours?|hrs?)\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:work(?:ing)?[\s-]+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
