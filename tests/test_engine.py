@@ -680,6 +680,14 @@ def test_enrich_pay_from_listing_html():
     assert opp.score() == 98.5
 
 
+def test_listing_plain_text_ignores_script_salaries():
+    from src.engine import _listing_plain_text, _parse_pay, _visible_text
+
+    html = '<script>budget = "$500,000"</script><p>Apply now. No salary listed.</p>'
+    assert _parse_pay(_visible_text(html)) == (None, 500_000)
+    assert _parse_pay(_listing_plain_text(html)) == (None, None)
+
+
 def test_public_http_url_rejects_localhost():
     from src.engine import _public_http_url
 

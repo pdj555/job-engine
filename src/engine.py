@@ -55,7 +55,7 @@ class Engine:
         for o, text in zip(missing, texts):
             if not isinstance(text, str) or not text:
                 continue
-            visible = _visible_text(text[:80_000])
+            visible = _listing_plain_text(text[:80_000])
             hours = o.hours_per_week or _guess_hours(o.title, visible)
             low, high = _parse_pay(visible, hours)
             if not high and not low:
@@ -522,6 +522,14 @@ def _compensation_from_raw(
 
 def _visible_text(html: str) -> str:
     return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))).strip()
+
+
+def _listing_plain_text(html: str) -> str:
+    """Visible listing copy only — scripts/styles are not compensation."""
+    html = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", html)
+    html = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", html)
+    html = re.sub(r"(?is)<noscript\b[^>]*>.*?</noscript>", " ", html)
+    return _visible_text(html)
 
 
 def _parse_ddg_html(html: str) -> list[dict]:
