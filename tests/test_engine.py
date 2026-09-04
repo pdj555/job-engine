@@ -5523,6 +5523,39 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
     assert _apply_listing(contract, hourly) is True
     assert contract.pay_low == 160_000
     assert contract.pay_high == 200_000
+    unit_code = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitCode":"HOUR"}}}
+    </script>
+    """
+    coded = Opportunity(title="Engineer", url="https://jobs.example/ld-unitcode-hour")
+    assert _apply_listing(coded, unit_code) is True
+    assert coded.pay_low == 160_000
+    assert coded.pay_high == 200_000
+    hur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitCode":"HUR"}}}
+    </script>
+    """
+    uncefact = Opportunity(title="Engineer", url="https://jobs.example/ld-hur")
+    assert _apply_listing(uncefact, hur) is True
+    assert uncefact.pay_low == 160_000
+    assert uncefact.pay_high == 200_000
+    schema_code = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,
+        "unitCode":"https://schema.org/HOUR"}}}
+    </script>
+    """
+    schema = Opportunity(title="Engineer", url="https://jobs.example/ld-unitcode-schema")
+    assert _apply_listing(schema, schema_code) is True
+    assert schema.pay_high == 200_000
 
 
 def test_apply_listing_json_ld_yearly_thousands():
@@ -5965,6 +5998,17 @@ def test_apply_listing_ignores_non_usd_salary():
     listed_eur = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-list-eur")
     _apply_listing(listed_eur, eur_list)
     assert listed_eur.pay_high is None
+    eur_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR",
+       "value":{"minValue":80,"maxValue":100,"unitCode":"HOUR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    coded_eur = Opportunity(title="Engineer", url="https://jobs.example/unitcode-eur")
+    _apply_listing(coded_eur, eur_hour)
+    assert coded_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():

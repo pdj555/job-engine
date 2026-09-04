@@ -3798,18 +3798,22 @@ _PAY_UNITS = {
     "HOUR": "hour",
     "HOURLY": "hour",
     "HR": "hour",
+    "HUR": "hour",
     "YEAR": "year",
     "ANNUAL": "year",
     "ANNUALLY": "year",
     "ANNUM": "year",
     "YEARLY": "year",
     "YR": "year",
+    "ANN": "year",
     "PER_YEAR": "year",
     "PER YEAR": "year",
     "WEEK": "week",
     "WEEKLY": "week",
+    "WEE": "week",
     "MONTH": "month",
     "MONTHLY": "month",
+    "MON": "month",
     "DAY": "day",
     "DAILY": "day",
     "DIEM": "day",
@@ -4099,19 +4103,27 @@ def _salary_has_amount(salary) -> bool:
     return any(n > 0 for n in _nums(salary))
 
 
+def _unit_raw(node) -> Optional[str]:
+    if not isinstance(node, dict):
+        return None
+    raw = node.get("unitText") or node.get("unitCode")
+    return str(raw) if raw else None
+
+
 def _unit_text(salary) -> Optional[str]:
     if not isinstance(salary, dict):
         return None
     value = salary.get("value")
-    if isinstance(value, dict) and value.get("unitText"):
-        return str(value.get("unitText"))
+    if isinstance(value, dict):
+        raw = _unit_raw(value)
+        if raw:
+            return raw
     if isinstance(value, list):
         for item in value:
-            if isinstance(item, dict) and item.get("unitText"):
-                return str(item.get("unitText"))
-    if salary.get("unitText"):
-        return str(salary.get("unitText"))
-    return None
+            raw = _unit_raw(item)
+            if raw:
+                return raw
+    return _unit_raw(salary)
 
 
 def _salary_span(items: list) -> dict:
