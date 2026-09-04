@@ -1015,6 +1015,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:teamtailor.com",
         "senior ML engineer remote site:personio.com",
         "senior ML engineer remote site:personio.de",
+        "senior ML engineer remote site:recruitee.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3349,6 +3350,184 @@ def test_teamtailor_and_personio_job_urls_are_not_boards():
             "description": "",
         }
     )
+
+
+def test_recruitee_job_urls_are_not_boards():
+    from src.engine import _is_index_page, _lever_job_url, _recruitee_api_url
+
+    apply_url = (
+        "https://trafilea.recruitee.com/o/sr-software-engineer-fullstack/c/new"
+    )
+    assert _lever_job_url(apply_url) == (
+        "https://trafilea.recruitee.com/o/sr-software-engineer-fullstack"
+    )
+    assert _recruitee_api_url(apply_url) == (
+        "https://trafilea.recruitee.com/api/offers/sr-software-engineer-fullstack"
+    )
+    assert not _is_index_page(
+        {
+            "url": apply_url,
+            "title": "Jobs at Trafilea",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://holepunch.recruitee.com/",
+            "title": "Holepunch - Career Portal",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://skycellag.recruitee.com/homepage",
+            "title": "Homepage [skycellag.recruitee.com]",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_recruitee_api_not_form_pay_bands(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = {
+        "offer": {
+            "title": "React Native Developer - REMOTE",
+            "company_name": "Gorin Systems",
+            "slug": "reactjs-nodejs-developer-flutter-a-plus-remote-2",
+            "remote": True,
+            "hybrid": False,
+            "on_site": False,
+            "employment_type_code": "parttime_permanent",
+            "salary": {"min": None, "max": None, "period": "hour", "currency": "USD"},
+            "description": "<p>Build apps.</p>",
+            "open_questions": [
+                {
+                    "body": "expected salary per annum",
+                    "open_question_options": [
+                        {"body": "$17,500 - $21,000"},
+                        {"body": "$21,000 - $26,250"},
+                    ],
+                }
+            ],
+        }
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "/api/offers/" in url:
+            return json.dumps(payload)
+        return (
+            "<title>United States</title>"
+            "<p>Choose closest * $17,500 - $21,000 $21,000 - $26,250</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://gs.recruitee.com/o/"
+        "reactjs-nodejs-developer-flutter-a-plus-remote-2"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == [
+        "https://gs.recruitee.com/api/offers/"
+        "reactjs-nodejs-developer-flutter-a-plus-remote-2"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is False
+    assert opp.company == "Gorin Systems"
+    assert opp.remote is True
+    assert opp.pay_high is None
+    assert "$17,500" not in text
+
+
+def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = {
+        "title": "Staff Engineer",
+        "company_name": "Acme",
+        "slug": "staff-engineer",
+        "remote": True,
+        "employment_type_code": "fulltime",
+        "salary": {
+            "min": 160000,
+            "max": 190000,
+            "period": "year",
+            "currency": "USD",
+        },
+        "description": "<p>Distributed systems.</p>",
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return json.dumps(payload)
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://acme.recruitee.com/o/staff-engineer"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://acme.recruitee.com/api/offers/staff-engineer"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is True
+    assert opp.company == "Acme"
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 190_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 95.0
+
+
+def test_recruitee_zar_salary_is_foreign():
+    from src.engine import _apply_listing, _foreign_salary, _recruitee_to_html
+
+    html = _recruitee_to_html(
+        {
+            "title": "Senior .Net Developers Johannesburg",
+            "company_name": "DVT",
+            "remote": False,
+            "on_site": True,
+            "salary": {
+                "min": "500",
+                "max": "600",
+                "period": "hour",
+                "currency": "ZAR",
+            },
+            "description": "<p>Johannesburg office.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x", url="https://dvtcareers.recruitee.com/o/senior-net-developers-johannesburg"
+    )
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert opp.remote is False
+    assert _foreign_salary(html) is True
+
+
+def test_listing_text_recruitee_api_404_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "/api/offers/" in url:
+            return None
+        return "<title>United States</title><p>$17,500 - $21,000</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://nucsai.recruitee.com/o/senior-research-engineer-large-language-models"
+        )
+    )
+    assert seen == [
+        "https://nucsai.recruitee.com/api/offers/"
+        "senior-research-engineer-large-language-models"
+    ]
+    assert html is None
 
 
 def test_listing_plain_text_ignores_script_salaries():

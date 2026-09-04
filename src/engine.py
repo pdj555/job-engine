@@ -172,6 +172,22 @@ class Engine:
             if not raw or _jobvite_html_is_gone(raw):
                 return None
             return raw
+        rt_api = _recruitee_api_url(url)
+        if rt_api:
+            raw = await fetch(rt_api)
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                offer = _recruitee_offer(data) if isinstance(data, dict) else None
+                if offer:
+                    return _recruitee_to_html(offer)
+                if isinstance(data, dict) and data.get("error"):
+                    return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -518,6 +534,9 @@ def _lever_job_url(url: str) -> str:
     jv = _jobvite_ids(url)
     if jv:
         return f"https://jobs.jobvite.com/{jv[0]}/job/{jv[1]}"
+    rt = _recruitee_job_url(url)
+    if rt:
+        return rt
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -814,6 +833,7 @@ def _search_angles(query: str) -> list[str]:
             "teamtailor.com",
             "personio.com",
             "personio.de",
+            "recruitee.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -985,6 +1005,10 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug in {"jobs", "careers", "job"}:
             return None
+    elif host.endswith(".recruitee.com"):
+        slug = host.split(".")[0]
+        if slug in {"www", "app", "careers"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1020,6 +1044,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"jobs", "careers", "job"}:
             return None
         return f"jobvite:{slug}"
+    if host.endswith(".recruitee.com"):
+        slug = host.split(".")[0].casefold()
+        if slug in {"www", "app", "careers"}:
+            return None
+        return f"recruitee:{slug}"
     return None
 
 
@@ -1549,6 +1578,129 @@ def _personio_is_board(url: str) -> bool:
     return _personio_ids(url) is None
 
 
+_RECRUITEE_JOB_RE = re.compile(
+    r"(?i)https?://([a-z0-9-]+)\.recruitee\.com/o/([A-Za-z0-9_-]+)"
+)
+_RECRUITEE_PAY_UNITS = (
+    ("hour", "HOUR"),
+    ("month", "MONTH"),
+    ("week", "WEEK"),
+    ("year", "YEAR"),
+)
+
+
+def _recruitee_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _RECRUITEE_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1).casefold()
+    if board in {"www", "app"}:
+        return None
+    return f"{board}.recruitee.com", m.group(2)
+
+
+def _recruitee_job_url(url: str) -> Optional[str]:
+    ids = _recruitee_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}/o/{ids[1]}"
+
+
+def _recruitee_api_url(url: str) -> Optional[str]:
+    ids = _recruitee_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}/api/offers/{ids[1]}"
+
+
+def _recruitee_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith(".recruitee.com"):
+        return False
+    return _recruitee_ids(url) is None
+
+
+def _recruitee_offer(data: dict) -> Optional[dict]:
+    offer = data.get("offer") if isinstance(data.get("offer"), dict) else data
+    if not isinstance(offer, dict):
+        return None
+    if offer.get("title") or offer.get("slug"):
+        return offer
+    return None
+
+
+def _recruitee_pay_ld(data: dict) -> Optional[dict]:
+    """USD or stated foreign salary. Skip currency-only rows with no amounts."""
+    sal = data.get("salary")
+    if not isinstance(sal, dict):
+        return None
+    low, high = _num(sal.get("min")), _num(sal.get("max"))
+    if low is None and high is None:
+        return None
+    period = str(sal.get("period") or "").lower()
+    unit = None
+    for needle, name in _RECRUITEE_PAY_UNITS:
+        if needle in period:
+            unit = name
+            break
+    value: dict = {}
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    currency = str(sal.get("currency") or "").upper() or "USD"
+    return {"currency": currency, "value": value}
+
+
+def _recruitee_to_html(data: dict) -> str:
+    """Turn Recruitee offer JSON into listing HTML. Never invent pay.
+
+    Omit open_questions — those are applicant form bands, not listed compensation.
+    """
+    title = str(data.get("title") or "").strip()
+    company = str(data.get("company_name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    code = str(data.get("employment_type_code") or "").lower()
+    if "part" in code:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in code:
+        posting["employmentType"] = "FULL_TIME"
+    n = _num(data.get("min_hours_per_week"))
+    if n is not None and 1 <= n <= 80:
+        posting["workHours"] = str(int(n))
+    if data.get("remote") is True:
+        place = "remote"
+    elif data.get("hybrid") is True:
+        place = "hybrid"
+    elif data.get("on_site") is True:
+        place = "onsite"
+    else:
+        place = str(data.get("location") or "").strip()
+    _apply_workplace(posting, place)
+    pay = _recruitee_pay_ld(data)
+    if pay:
+        posting["baseSalary"] = pay
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    for key in ("description", "requirements"):
+        val = data.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1569,6 +1721,7 @@ def _ats_job_url(url: str) -> bool:
         or _jobvite_ids(url)
         or _teamtailor_ids(url)
         or _personio_ids(url)
+        or _recruitee_ids(url)
     )
 
 
@@ -1606,6 +1759,8 @@ def _is_index_page(raw: dict) -> bool:
     if _teamtailor_is_board(url):
         return True
     if _personio_is_board(url):
+        return True
+    if _recruitee_is_board(url):
         return True
     return False
 
