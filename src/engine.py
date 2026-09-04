@@ -4991,6 +4991,20 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|relocation\s+to\s+(?!(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"(?:\S+\s+){0,4}(?:is\s+)?required\b"
     r"|(?<!no )(?<!not )relocation\s+is\s+required\b"
+    r"|must\s+be\s+in\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
+    r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
+    r"|(?<!not )required\s+to\s+be\s+in\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
+    r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
+    r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+is\s+in\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
+    r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
+    r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\s+in\s+"
+    r"(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|hub)\b"
 )
 
 

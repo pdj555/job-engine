@@ -892,6 +892,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "This role requires you to be in the US") is True
     assert _guess_remote("Engineer", "must live in the San Francisco Bay Area") is True
     assert _guess_remote("Engineer", "must reside in California") is True
+    assert _guess_remote("Engineer", "must be in Seattle 3 days a week") is False
+    assert _guess_remote("Engineer", "must be in Seattle three days a week") is False
+    assert _guess_remote("Engineer", "required to be in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "this role is in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "2-3 days a week in our NYC hub") is False
+    assert _guess_remote("Engineer", "must be in the US 3 days a week") is True
+    assert _guess_remote("Engineer", "3 days a week in meetings") is True
+    assert _guess_remote(
+        "Engineer", "work from home. must be in Seattle 3 days a week"
+    ) is True
     assert _guess_remote("Engineer", "relocation to Seattle required") is False
     assert _guess_remote("Engineer", "Relocation to New York City is required") is False
     assert _guess_remote("Engineer", "this role requires relocation to NYC") is False
@@ -1080,6 +1090,19 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert requires_reloc.remote is False
     assert requires_reloc.score() == 0.7 * (180_000 / (40 * 50))
+    days_city = Opportunity(title="Engineer", url="https://jobs.example/days-city")
+    assert _apply_listing(
+        days_city, "<p>Must be in Seattle 3 days a week. Salary $180,000</p>"
+    ) is True
+    assert days_city.remote is False
+    assert days_city.pay_high == 180_000
+    assert days_city.score() == 0.7 * (180_000 / (40 * 50))
+    hub_days = Opportunity(title="Engineer", url="https://jobs.example/hub-days")
+    assert _apply_listing(
+        hub_days, "<p>2-3 days a week in our NYC hub. Salary $180,000</p>"
+    ) is True
+    assert hub_days.remote is False
+    assert hub_days.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
