@@ -105,6 +105,9 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>Annual Base Salary$196,000—$269,500 CAD</p>") is True
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
+    mixed = "UK £45,000 – £60,000. US $240,000 - $500,000"
+    assert _parse_pay(mixed) == (None, None)
+    assert _foreign_salary(f"<p>{mixed}</p>") is True
     assert _parse_pay("$15000 to $17000 gross Salary Monthly") == (None, None)
     assert _foreign_salary("<p>$15000 to $17000 gross Salary Monthly</p>") is True
 
@@ -955,6 +958,36 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salaries by Country 2025-2026",
+                "url": "https://optiveum.com/articles/machine-learning-engineer-salaries-by-country/",
+                "description": "US $240,000 - $500,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salary in Switzerland - SalaryExpert",
+                "url": "https://www.salaryexpert.com/salary/job/machine-learning-engineer/switzerland",
+                "description": "CHF 91'052",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer: Average Salary & Pay Trends 2026",
+                "url": "https://www.glassdoor.com/Salaries/switzerland-machine-learning-engineer-salary-SRCH_IL.0,11_IN226_KO12,37.htm",
+                "description": "$120,000",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1155,6 +1188,18 @@ def test_search_all_drops_index_pages():
             {
                 "title": "WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn",
                 "url": "https://www.linkedin.com/jobs/view/4459896965",
+            },
+            {
+                "title": "Machine Learning Engineer Salaries by Country",
+                "url": "https://optiveum.com/articles/machine-learning-engineer-salaries-by-country/",
+            },
+            {
+                "title": "Machine Learning Engineer Salary in Switzerland",
+                "url": "https://www.salaryexpert.com/salary/job/machine-learning-engineer/switzerland",
+            },
+            {
+                "title": "Machine Learning Engineer Salaries",
+                "url": "https://www.glassdoor.com/Salaries/machine-learning-engineer-salary-SRCH_KO0,25.htm",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]

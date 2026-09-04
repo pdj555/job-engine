@@ -1454,7 +1454,10 @@ _INDEX_URL_RE = re.compile(
     r"|7seventy\.net/"
     r"|globalcareer\.io/"
     r"|visa-hunt\.com/"
-    r"|dailyremote\.com/)",
+    r"|dailyremote\.com/"
+    r"|optiveum\.com/"
+    r"|salaryexpert\.com/"
+    r"|glassdoor\.com/Salaries/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
@@ -3976,7 +3979,7 @@ def _parse_pay(
 ) -> tuple[Optional[int], Optional[int]]:
     """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
     text = _NON_SALARY_MONEY_RE.sub(" ", text or "")
-    if _FOREIGN_DOLLAR_RE.search(text):
+    if _FOREIGN_DOLLAR_RE.search(text) or _FOREIGN_PAY_RE.search(text):
         return None, None
     hourly_range = _HOURLY_RANGE_RE.search(text)
     if hourly_range:
