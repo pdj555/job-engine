@@ -6251,6 +6251,32 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_nss, nested_sal_str) is True
     assert posting_nss.pay_low == 180_000
     assert posting_nss.pay_high == 220_000
+    nested_job_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","jobCompensation":{"min":180000,"max":220000}}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_njc = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-jobCompensation"
+    )
+    assert _apply_listing(posting_njc, nested_job_comp) is True
+    assert posting_njc.pay_low == 180_000
+    assert posting_njc.pay_high == 220_000
+    nested_offered = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","offeredSalary":"$180,000 - $220,000"}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_noff = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-offeredSalary"
+    )
+    assert _apply_listing(posting_noff, nested_offered) is True
+    assert posting_noff.pay_low == 180_000
+    assert posting_noff.pay_high == 220_000
     range_minmax = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -7086,6 +7112,18 @@ def test_apply_listing_ignores_non_usd_salary():
     )
     _apply_listing(comp_obj_eur, eur_comp_obj)
     assert comp_obj_eur.pay_high is None
+    eur_job_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","jobCompensation":{"min":80000,"max":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    job_comp_eur = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-jobCompensation-eur"
+    )
+    _apply_listing(job_comp_eur, eur_job_comp)
+    assert job_comp_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -10858,6 +10896,18 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(hourly_row, hourly_rate)
     assert hourly_row.pay_low == 180_000
     assert hourly_row.pay_high == 220_000
+    hourly_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Hourly Rate", "value": "$80 - $100"}],
+        }
+    )
+    hourly_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/17")
+    _apply_listing(hourly_drow, hourly_dollars)
+    assert hourly_drow.pay_low == 160_000
+    assert hourly_drow.pay_high == 200_000
     monthly_sal = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -11155,6 +11205,23 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     )
     _apply_listing(skipped_comp, eur_comp)
     assert skipped_comp.pay_high is None
+    pr = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $400,000 - $500,000</p>",
+            "payRange": {
+                "min": 180000,
+                "max": 220000,
+                "currency": "USD",
+                "period": "year",
+            },
+        }
+    )
+    pr_row = Opportunity(title="x", url="https://jobs.workable.com/view/stu/engineer")
+    assert _apply_listing(pr_row, pr) is True
+    assert pr_row.pay_low == 180_000
+    assert pr_row.pay_high == 220_000
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
@@ -12122,6 +12189,22 @@ def test_personio_city_offices_stay_office():
     _apply_listing(prompt, _personio_to_html(_personio_position(desired, "2724249")))
     assert prompt.pay_high != 180_000
     assert prompt.pay_high != 220_000
+    hourly_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?><workzag-jobs><position>'
+        "<id>2724250</id><subcompany>Acme</subcompany><office>Austin</office>"
+        "<name>Engineer</name><schedule>full-time</schedule><jobDescriptions>"
+        "<jobDescription><name>Description</name>"
+        "<value>Office. Full time.</value></jobDescription>"
+        "<jobDescription><name>Hourly Rate</name>"
+        "<value>$80 - $100</value></jobDescription>"
+        "</jobDescriptions></position></workzag-jobs>"
+    )
+    hourly = Opportunity(title="x", url="https://acme.jobs.personio.de/job/2724250")
+    assert _apply_listing(
+        hourly, _personio_to_html(_personio_position(hourly_xml, "2724250"))
+    ) is True
+    assert hourly.pay_low == 160_000
+    assert hourly.pay_high == 200_000
 
 
 def test_listing_text_personio_xml_missing_id_is_gone(monkeypatch):
@@ -13246,6 +13329,28 @@ def test_listing_text_reads_comeet_api_not_referral_pay(monkeypatch):
     )
     assert prompt.pay_high != 180_000
     assert prompt.pay_high != 220_000
+    hourly = Opportunity(
+        title="x",
+        url="https://www.comeet.com/jobs/acme/1.000/engineer/2.002",
+    )
+    assert _apply_listing(
+        hourly,
+        _comeet_to_html(
+            {
+                "name": "Engineer",
+                "company_name": "Acme",
+                "employment_type": "Full-time",
+                "workplace_type": "Onsite",
+                "location": {"name": "Austin"},
+                "details": [
+                    {"name": "About", "value": "Office. Full time."},
+                    {"name": "Hourly Rate", "value": "$80 - $100"},
+                ],
+            }
+        ),
+    ) is True
+    assert hourly.pay_low == 160_000
+    assert hourly.pay_high == 200_000
 
 
 def test_listing_text_comeet_missing_position_is_gone(monkeypatch):
@@ -14494,6 +14599,11 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Recently applied jobs",
         "Because you liked this role",
         "Jobs recommended for you",
+        "Because you applied to this job",
+        "Because you saved this",
+        "Recently viewed roles",
+        "Matching positions",
+        "Jobs based on your activity",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

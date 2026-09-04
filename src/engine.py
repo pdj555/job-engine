@@ -866,7 +866,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
             head = str(item.get("text") or "").strip()
             if not _GH_PAY_META_RE.fullmatch(head):
                 continue
-            pay = _span_pay_ld(str(item.get("content") or ""))
+            pay = _named_pay_ld(head, str(item.get("content") or ""))
             if pay:
                 posting["baseSalary"] = pay
                 break
@@ -1832,7 +1832,7 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
             continue
         if not _GH_PAY_META_RE.fullmatch(str(item.get("name") or "").strip()):
             continue
-        spanned = _span_pay_ld(str(item.get("value") or ""))
+        spanned = _named_pay_ld(str(item.get("name") or ""), str(item.get("value") or ""))
         if not spanned:
             continue
         if _usd(spanned.get("currency")):
@@ -1920,7 +1920,7 @@ _WORKABLE_PAY_UNITS = (
 
 def _workable_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary from jobs.workable.com JSON."""
-    for key in ("salary", "salaryRange", "compensation"):
+    for key in ("salary", "salaryRange", "compensation", "payRange"):
         raw = data.get(key)
         if isinstance(raw, str):
             pay = _span_pay_ld(raw)
@@ -2375,6 +2375,7 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
                     offices.append(label)
         descs = []
         pay_text = None
+        pay_name = None
         for block in pos.findall("jobDescriptions/jobDescription"):
             name = (block.findtext("name") or "").strip()
             if re.search(r"reward|referr", name, re.I):
@@ -2394,6 +2395,7 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
             descs.append(text)
             if pay_text is None and _GH_PAY_META_RE.fullmatch(name):
                 pay_text = text
+                pay_name = name
         return {
             "name": (pos.findtext("name") or "").strip(),
             "subcompany": (pos.findtext("subcompany") or "").strip(),
@@ -2401,6 +2403,7 @@ def _personio_position(xml: str, jid: str) -> Optional[dict]:
             "schedule": (pos.findtext("schedule") or "").strip(),
             "descriptions": descs,
             "pay_text": pay_text,
+            "pay_name": pay_name,
         }
     if found or root.tag.endswith("workzag-jobs"):
         return None
@@ -2425,7 +2428,7 @@ def _personio_to_html(pos: dict) -> str:
     offices = pos.get("offices") if isinstance(pos.get("offices"), list) else []
     labels = [str(o).strip() for o in offices if str(o).strip()]
     _apply_workplace(posting, *labels)
-    pay = _span_pay_ld(str(pos.get("pay_text") or ""))
+    pay = _named_pay_ld(str(pos.get("pay_name") or ""), str(pos.get("pay_text") or ""))
     if pay:
         posting["baseSalary"] = pay
     parts = [f"<p>{label}</p>" for label in labels]
@@ -3090,7 +3093,7 @@ def _comeet_to_html(data: dict) -> str:
         if isinstance(val, str) and val.strip():
             parts.append(val)
             if pay is None and _GH_PAY_META_RE.fullmatch(name):
-                pay = _span_pay_ld(val)
+                pay = _named_pay_ld(name, val)
     if pay:
         posting["baseSalary"] = pay
     page_title = f"{title} at {company}" if company else title
@@ -3976,6 +3979,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|hot\s+openings"
     r"|available\s+openings"
     r"|matching\s+openings"
+    r"|matching\s+positions"
     r"|people\s+also\s+applied(?:\s+for)?"
     r"|applicants\s+also\s+applied(?:\s+for)?"
     r"|available\s+(?:jobs|roles|positions)"
@@ -3992,9 +3996,9 @@ _RELATED_HEADING_RE = re.compile(
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
-    r"|because\s+you\s+applied"
+    r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+job)?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
-    r"|because\s+you\s+saved(?:\s+this\s+job)?"
+    r"|because\s+you\s+saved(?:\s+this(?:\s+job)?)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
     r"|recently\s+saved(?:\s+jobs)?"
@@ -4022,7 +4026,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
-    r"|recently\s+viewed(?:\s+jobs)?"
+    r"|recently\s+viewed(?:\s+(?:jobs|roles))?"
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed(?:\s+this(?:\s+job)?)?"
     r"|jobs\s+you\s+viewed"
@@ -4030,6 +4034,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|keep\s+exploring(?:\s+(?:jobs|roles))?"
     r"|continue\s+exploring(?:\s+(?:jobs|roles))?"
     r"|based\s+on\s+your\s+activity"
+    r"|jobs\s+based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
     r"|recently\s+applied(?:\s+jobs)?"
     r"|similar\s+careers"
@@ -4339,7 +4344,19 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
             if low is None and len(b_nums) >= 2:
                 low = min(b_nums)
     if low is None and high is None:
-        for key in ("compensation", "salary", "salaryRange", "payRange"):
+        for key in (
+            "compensation",
+            "salary",
+            "salaryRange",
+            "payRange",
+            "estimatedSalary",
+            "baseCompensation",
+            "jobCompensation",
+            "offeredSalary",
+            "annualSalary",
+            "jobSalary",
+            "basePay",
+        ):
             nested = raw.get(key)
             if isinstance(nested, dict):
                 return _bound_nums(nested)
@@ -4564,6 +4581,15 @@ def _span_pay_ld(blob: str) -> Optional[dict]:
     }
 
 
+def _named_pay_ld(name: str, value: str) -> Optional[dict]:
+    """Range from a pay-named field. Use the name when the value omits the period."""
+    pay = _span_pay_ld(value)
+    if pay:
+        return pay
+    blob = f"{name} {value}".strip()
+    return _span_pay_ld(blob) if blob != value.strip() else None
+
+
 def _salary_blob(salary) -> str:
     if isinstance(salary, str):
         return salary
@@ -4622,6 +4648,13 @@ def _salary_blob(salary) -> str:
                 "salary",
                 "salaryRange",
                 "payRange",
+                "estimatedSalary",
+                "baseCompensation",
+                "jobCompensation",
+                "offeredSalary",
+                "annualSalary",
+                "jobSalary",
+                "basePay",
                 "amount",
                 "minAmount",
                 "maxAmount",
@@ -4704,6 +4737,13 @@ def _nums(value) -> list[float]:
             "salary",
             "salaryRange",
             "payRange",
+            "estimatedSalary",
+            "baseCompensation",
+            "jobCompensation",
+            "offeredSalary",
+            "annualSalary",
+            "jobSalary",
+            "basePay",
             "amount",
             "minAmount",
             "maxAmount",
