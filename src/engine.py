@@ -1473,7 +1473,8 @@ _INDEX_URL_RE = re.compile(
     r"|jobright\.ai/"
     r"|aijobs\.net/"
     r"|aijobs\.com/"
-    r"|aijobs\.mlyearning\.org/)",
+    r"|aijobs\.mlyearning\.org/"
+    r"|wellfound\.com/role/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(

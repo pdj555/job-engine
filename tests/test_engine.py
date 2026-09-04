@@ -1028,6 +1028,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://wellfound.com/role/l/software-engineer/united-states",
+                "description": "$185k – $218k",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1045,6 +1055,15 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert kept_builtin is not None
+    kept_wellfound = _heuristic_opportunity(
+        {
+            "title": "IT Security Administrator at Bitwarden",
+            "url": "https://wellfound.com/jobs/4335648-it-security-administrator",
+            "description": "$115,000 - $145,000",
+        }
+    )
+    assert kept_wellfound is not None
+    assert kept_wellfound.pay_high == 145_000
     amgen = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer Jobs at Amgen in United States - Remote",
@@ -1084,6 +1103,14 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<p>$312K/yr - $351K/yr</p>",
         "https://jobright.ai/jobs/info/6a96d484455eaf6a08c18b9a",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$185k – $218k</p>",
+        "https://wellfound.com/role/l/software-engineer/united-states",
+    )
+    assert not _html_is_index(
+        "<title>IT Security Administrator at Bitwarden</title><p>$115,000 - $145,000</p>",
+        "https://wellfound.com/jobs/4335648-it-security-administrator",
     )
     assert not _is_index_page(
         {
