@@ -3916,7 +3916,7 @@ _RELATED_JOBS_RE = re.compile(
     r"|you\s+(?:may|might)\s+(?:also\s+)?like.*$"
     r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
     r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
-    r"|(?:similar|related|recommended|other)\s+opportunities.*$"
+    r"|(?:similar|related|recommended|other|featured|suggested|matching)\s+(?:opportunities|listings).*$"
     r"|(?:similar|related|recommended|featured|suggested|matching)\s*:?\s*\$.*$"
 )
 _RELATED_HEADING_RE = re.compile(
@@ -4790,21 +4790,38 @@ def _nums(value) -> list[float]:
             "compensation",
             "salary",
             "salaryRange",
+            "salary_range",
             "payRange",
+            "pay_range",
             "estimatedSalary",
+            "estimated_salary",
             "baseCompensation",
+            "base_compensation",
             "jobCompensation",
+            "job_compensation",
             "offeredSalary",
+            "offered_salary",
             "annualSalary",
+            "annual_salary",
             "jobSalary",
+            "job_salary",
             "basePay",
+            "base_pay",
             "amount",
             "minAmount",
             "maxAmount",
+            "min_amount",
+            "max_amount",
+            "min_value",
+            "max_value",
             "rangeStart",
             "rangeEnd",
+            "range_start",
+            "range_end",
             "lower_bound",
             "upper_bound",
+            "lowerBound",
+            "upperBound",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))

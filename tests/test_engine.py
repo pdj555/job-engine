@@ -6582,6 +6582,32 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_minval_s, posting_qvs) is True
     assert posting_minval_s.pay_low == 180_000
     assert posting_minval_s.pay_high == 220_000
+    nested_mv = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","min_value":180000,"max_value":220000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_nested_mv = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-min_value"
+    )
+    assert _apply_listing(posting_nested_mv, nested_mv) is True
+    assert posting_nested_mv.pay_low == 180_000
+    assert posting_nested_mv.pay_high == 220_000
+    nested_lb = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","lowerBound":180000,"upperBound":220000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_nested_lb = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-lowerBound"
+    )
+    assert _apply_listing(posting_nested_lb, nested_lb) is True
+    assert posting_nested_lb.pay_low == 180_000
+    assert posting_nested_lb.pay_high == 220_000
     posting_ft = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -15851,6 +15877,13 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<title>Engineer</title><p>We offer more opportunities for growth. Salary $180,000</p>",
     ) is True
     assert growth.pay_high == 180_000
+    similar_listings = Opportunity(title="Engineer", url="https://jobs.example/similar-listings-text")
+    assert _apply_listing(
+        similar_listings,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Similar listings Account Executive $400,000</p>",
+    ) is False
+    assert similar_listings.pay_high is None
     related_dollar = (
         "<title>Engineer</title><p>Great team. Apply now.</p><p>Related $400,000</p>"
     )
