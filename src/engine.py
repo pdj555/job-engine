@@ -454,7 +454,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
         title=title,
         url=url,
         description=desc,
-        company=raw.get("company"),
+        company=raw.get("company") or _company_from_title(title),
         pay_low=pay_low,
         pay_high=pay_high,
         hours_per_week=hours,
@@ -469,6 +469,8 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     title = item.get("title") or raw.get("title") or "Unknown"
     desc = item.get("description") or raw.get("description") or ""
     company = item.get("company") if item.get("company") is not None else raw.get("company")
+    if not company:
+        company = _company_from_title(title) or _company_from_title(raw.get("title") or "")
     guess_title = raw.get("title") or title
     guess_desc = raw.get("description") or desc
     hours = raw.get("hours")
@@ -496,12 +498,26 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     return opp
 
 
+_PLACE_RE = re.compile(r"(?i)^(remote|home|office|onsite|hybrid)\b")
+
+
+def _company_from_title(title: str) -> str | None:
+    """Last ` at X` segment when X is a name, not a location."""
+    m = re.search(r"(?i)\bat\s+(.+)$", title or "")
+    if not m:
+        return None
+    name = m.group(1).strip(" .,-")
+    if not name or _PLACE_RE.search(name):
+        return None
+    return name
+
+
 _INDEX_URL_RE = re.compile(
     r"(?:indeed\.com/q-|indeed\.com/jobs\?|linkedin\.com/jobs/(?!view/)"
     r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q=)",
     re.I,
 )
-_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b")
+_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b|^hire a freelance\b")
 
 
 _INDEX_PATH_RE = re.compile(

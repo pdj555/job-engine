@@ -72,6 +72,38 @@ def test_rank_skips_index_pages():
     assert [o.title for o in ranked] == ["Real"]
 
 
+def test_rank_company_from_title_when_field_missing():
+    ranked = _rank(
+        [
+            {
+                "title": "Senior Machine Learning Engineer at Lyra Health",
+                "url": "https://job-boards.greenhouse.io/lyrahealth/jobs/123",
+            }
+        ]
+    )
+    assert ranked[0].company == "Lyra Health"
+
+
+def test_rank_skips_hire_a_freelance_directory():
+    ranked = _rank(
+        [
+            {
+                "title": "Hire a Freelance Machine Learning Engineer — No Agency Fees",
+                "url": "https://remoteai.io/v2/freelance/machine-learning-engineers",
+                "pay": 400_000,
+                "hours_per_week": 10,
+            },
+            {
+                "title": "Real",
+                "url": "https://jobs.example/x",
+                "pay": 100_000,
+                "hours_per_week": 40,
+            },
+        ]
+    )
+    assert [o.title for o in ranked] == ["Real"]
+
+
 def test_rank_builds_opportunity_models_with_fields():
     ranked = _rank(
         [{"title": "X", "url": "https://acme.example/x", "company": "Acme", "pay": 120_000,

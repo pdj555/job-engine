@@ -15,7 +15,12 @@ from openai import AsyncOpenAI
 
 from config.settings import settings
 from src.models import Opportunity
-from src.engine import _dedupe_opportunities, _is_index_page, get_engine
+from src.engine import (
+    _company_from_title,
+    _dedupe_opportunities,
+    _is_index_page,
+    get_engine,
+)
 
 PROMPT = """You are an autonomous opportunity scout. Goal: {query}
 
@@ -66,7 +71,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         opp = Opportunity(
             title=o.get("title", "Unknown"),
             url=url,
-            company=o.get("company"),
+            company=o.get("company") or _company_from_title(o.get("title") or ""),
             pay_high=o.get("pay"),
             hours_per_week=o.get("hours_per_week"),
             remote=o.get("remote", True),

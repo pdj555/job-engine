@@ -328,6 +328,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Hire a Freelance Machine Learning Engineer — No Agency Fees",
+                "url": "https://remoteai.io/v2/freelance/machine-learning-engineers",
+                "description": "Browse freelance ML engineers.",
+            }
+        )
+        is None
+    )
 
 
 def test_search_all_drops_index_pages():
@@ -647,6 +657,57 @@ def test_find_ranks_parsed_pay_above_unknown():
     assert ranked[0].score() == 45.0
     assert ranked[0].rate_is_imputed is True
     assert ranked[1].score() == 0
+
+
+def test_heuristic_company_from_title_at():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer at Lyra Health",
+            "url": "https://job-boards.greenhouse.io/lyrahealth/jobs/123",
+            "description": "Role in San Francisco.",
+        }
+    )
+    assert h.company == "Lyra Health"
+
+
+def test_heuristic_skips_at_remote():
+    h = _heuristic_opportunity(
+        {
+            "title": "ML Engineer at Remote",
+            "url": "https://example.com/jobs/1",
+            "description": "Work from home.",
+        }
+    )
+    assert h.company is None
+
+
+def test_merge_company_from_raw_title_when_llm_omits_it():
+    engine = Engine()
+    engine.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {
+                        "title": "Senior Machine Learning Engineer",
+                        "url": "https://job-boards.greenhouse.io/lyrahealth/jobs/123",
+                    }
+                ]
+            }
+        )
+    )
+    out = asyncio.run(
+        engine._extract_batch(
+            [
+                {
+                    "title": "Senior Machine Learning Engineer at Lyra Health",
+                    "url": "https://job-boards.greenhouse.io/lyrahealth/jobs/123",
+                    "description": "San Francisco",
+                }
+            ],
+            "q",
+        )
+    )
+    assert out[0].company == "Lyra Health"
 
 
 def test_heuristic_range_and_imputed_hours():
