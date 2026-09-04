@@ -5564,6 +5564,50 @@ def test_apply_listing_json_ld_yearly_thousands():
     base = Opportunity(title="Engineer", url="https://jobs.example/ld-base-est")
     assert _apply_listing(base, listed) is True
     assert base.pay_high == 180_000
+    empty_base = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD"},
+     "estimatedSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    fallback = Opportunity(title="Engineer", url="https://jobs.example/ld-empty-base")
+    assert _apply_listing(fallback, empty_base) is True
+    assert fallback.pay_high == 220_000
+    listed_est = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "estimatedSalary":[{},
+       {"@type":"MonetaryAmount","currency":"USD",
+        "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}]}
+    </script>
+    """
+    first = Opportunity(title="Engineer", url="https://jobs.example/ld-est-list")
+    assert _apply_listing(first, listed_est) is True
+    assert first.pay_high == 220_000
+    dollar_str = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":"$180,000","maxValue":"$220,000","unitText":"YEAR"}}}
+    </script>
+    """
+    money = Opportunity(title="Engineer", url="https://jobs.example/ld-dollar-str")
+    assert _apply_listing(money, dollar_str) is True
+    assert money.pay_low == 180_000
+    assert money.pay_high == 220_000
+    schema_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"https://schema.org/HOUR"}}}
+    </script>
+    """
+    schema = Opportunity(title="Engineer", url="https://jobs.example/ld-schema-hour")
+    assert _apply_listing(schema, schema_hour) is True
+    assert schema.pay_low == 160_000
+    assert schema.pay_high == 200_000
     qv = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -5772,6 +5816,17 @@ def test_apply_listing_ignores_non_usd_salary():
     est = Opportunity(title="Engineer", url="https://jobs.example/est-eur")
     _apply_listing(est, estimated)
     assert est.pay_high is None
+    empty_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"USD"},
+     "estimatedSalary":{"currency":"EUR","value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    skipped = Opportunity(title="Engineer", url="https://jobs.example/empty-usd-eur")
+    _apply_listing(skipped, empty_eur)
+    assert skipped.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():

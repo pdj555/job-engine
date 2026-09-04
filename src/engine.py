@@ -3877,11 +3877,18 @@ def _num(value) -> Optional[float]:
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
+        s = value.replace(",", "").replace("$", "").strip()
+        s = re.sub(r"^(?:USD|US)\s*", "", s, flags=re.I)
         try:
-            return float(value.replace(",", "").strip())
+            return float(s)
         except ValueError:
             return None
     return None
+
+
+def _pay_unit(raw) -> Optional[str]:
+    token = str(raw or "").rsplit("/", 1)[-1].upper().replace("-", "_").strip()
+    return _PAY_UNITS.get(token) or _PAY_UNITS.get(token.replace("_", " "))
 
 
 def _usd(currency) -> bool:
@@ -4028,22 +4035,18 @@ def _salary_has_amount(salary) -> bool:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, then salary, then estimatedSalary. Lists take the first amount."""
+    """baseSalary, then salary, then estimatedSalary. Skip objects with no amount."""
     if not isinstance(posting, dict):
         return None
     for key in ("baseSalary", "salary", "estimatedSalary"):
         raw = posting.get(key)
-        if isinstance(raw, list):
-            for item in raw:
-                if isinstance(item, (dict, int, float)):
+        items = raw if isinstance(raw, list) else [raw]
+        for item in items:
+            if isinstance(item, dict):
+                if _salary_has_amount(item):
                     return item
-                if isinstance(item, str) and item.strip():
-                    return item
-            continue
-        if isinstance(raw, (dict, int, float)):
-            return raw
-        if isinstance(raw, str) and raw.strip():
-            return raw
+            elif isinstance(item, (int, float, str)) and _salary_has_amount(item):
+                return item
     return None
 
 
@@ -4054,10 +4057,17 @@ def _posting_foreign(posting: Optional[dict]) -> bool:
     currency = salary.get("currency") if isinstance(salary, dict) else None
     if currency:
         return not _usd(currency)
-    if not _salary_has_amount(salary):
-        return False
-    countries = _posting_countries(posting)
-    return bool(countries) and all(not _US_COUNTRY_RE.fullmatch(c) for c in countries)
+    if _salary_has_amount(salary):
+        countries = _posting_countries(posting)
+        return bool(countries) and all(not _US_COUNTRY_RE.fullmatch(c) for c in countries)
+    for key in ("baseSalary", "salary", "estimatedSalary"):
+        raw = posting.get(key)
+        items = raw if isinstance(raw, list) else [raw]
+        for item in items:
+            cur = item.get("currency") if isinstance(item, dict) else None
+            if cur and not _usd(cur):
+                return True
+    return False
 
 
 def _posting_company(posting: dict) -> Optional[str]:
@@ -4150,7 +4160,7 @@ def _salary_unit(salary) -> Optional[str]:
     raw = value.get("unitText") if isinstance(value, dict) else None
     if not raw:
         raw = salary.get("unitText")
-    return _PAY_UNITS.get(str(raw or "").upper())
+    return _pay_unit(raw)
 
 
 def _posting_pay(
@@ -4172,18 +4182,18 @@ def _posting_pay(
     unit = None
     low = high = None
     if isinstance(value, dict):
-        unit = _PAY_UNITS.get(str(value.get("unitText") or "").upper())
+        unit = _pay_unit(value.get("unitText"))
         low, high = _num(value.get("minValue")), _num(value.get("maxValue"))
         if high is None:
             high = _num(value.get("value"))
     elif salary.get("minValue") is not None or salary.get("maxValue") is not None:
-        unit = _PAY_UNITS.get(str(salary.get("unitText") or "").upper())
+        unit = _pay_unit(salary.get("unitText"))
         low, high = _num(salary.get("minValue")), _num(salary.get("maxValue"))
         if high is None:
             high = _num(salary.get("value"))
     else:
         high = _num(value)
-        unit = _PAY_UNITS.get(str(salary.get("unitText") or "").upper())
+        unit = _pay_unit(salary.get("unitText"))
     annual_low = _annualize(low, unit, hours) if low is not None else None
     annual_high = _annualize(high, unit, hours) if high is not None else None
     if annual_low and annual_high and annual_low > annual_high:
