@@ -2235,6 +2235,16 @@ def _rippling_place(post: dict) -> str:
                 label = str(loc.get("name") or loc.get("workplaceType") or "").strip()
                 if label:
                     names.append(label)
+    rows = post.get("payRangeDetails")
+    if isinstance(rows, list):
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if row.get("isRemote") is True:
+                return "remote"
+            loc = str(row.get("location") or "").strip()
+            if loc:
+                names.append(loc)
     if any(_workplace_remote(n) is True for n in names):
         return "remote"
     return ", ".join(names)

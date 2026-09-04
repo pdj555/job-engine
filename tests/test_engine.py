@@ -4555,8 +4555,8 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     assert opp.pay_low == 185_000
     assert opp.pay_high == 275_000
     assert opp.hours_per_week == 40
-    assert opp.remote is False
-    assert opp.score() == 96.25
+    assert opp.remote is True
+    assert opp.score() == 137.5
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
@@ -4592,6 +4592,35 @@ def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
     assert opp.remote is True
     assert opp.pay_low == 153_000
     assert opp.pay_high == 198_000
+
+
+def test_rippling_office_pay_range_stays_office():
+    from src.engine import _apply_listing, _rippling_to_html
+
+    html = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "workLocations": ["Bellevue, WA"],
+            "payRangeDetails": [
+                {
+                    "location": "Bellevue, WA",
+                    "currency": "USD",
+                    "frequency": "YEAR",
+                    "rangeStart": 185000,
+                    "rangeEnd": 275000,
+                    "isRemote": False,
+                }
+            ],
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    )
+    assert _apply_listing(opp, html) is True
+    assert opp.remote is False
+    assert opp.pay_high == 275_000
 
 
 def test_rippling_cad_pay_range_is_foreign():
