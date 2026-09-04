@@ -290,6 +290,25 @@ class Engine:
                     return _dover_to_html(job)
                 return None
             return ""
+        gem = _gem_ids(url)
+        if gem:
+            if client is not None:
+                posting = await _gem_posting(client, *gem)
+            else:
+                try:
+                    async with httpx.AsyncClient(
+                        follow_redirects=True,
+                        timeout=8.0,
+                        headers=_LISTING_HEADERS,
+                    ) as owned:
+                        posting = await _gem_posting(owned, *gem)
+                except Exception:
+                    posting = {}
+            if posting is None:
+                return None
+            if posting:
+                return _gem_to_html(posting, gem[0])
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -660,6 +679,9 @@ def _lever_job_url(url: str) -> str:
     dv = _dover_job_url(url)
     if dv:
         return dv
+    gm = _gem_job_url(url)
+    if gm:
+        return gm
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -964,6 +986,7 @@ def _search_angles(query: str) -> list[str]:
             "bamboohr.com",
             "applytojob.com",
             "app.dover.com",
+            "jobs.gem.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1174,6 +1197,10 @@ def _company_from_url(url: str) -> str | None:
                 return None
         else:
             return None
+    elif host in {"jobs.gem.com", "www.jobs.gem.com"}:
+        slug = parts[0]
+        if slug.casefold() in {"jobs", "apply", "application"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1253,6 +1280,11 @@ def _ats_board_key(url: str) -> Optional[str]:
                 return None
             return f"dover:{slug}"
         return None
+    if host in {"jobs.gem.com", "www.jobs.gem.com"}:
+        slug = parts[0].casefold()
+        if slug in {"jobs", "apply", "application"}:
+            return None
+        return f"gem:{slug}"
     return None
 
 
@@ -2638,6 +2670,132 @@ def _dover_to_html(job: dict) -> str:
     )
 
 
+_GEM_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?jobs\.gem\.com/([^/]+)/([^/?#]+)(?:/application)?"
+)
+_GEM_JOB_QUERY = """
+query ExternalJobPosting($boardId: String!, $extId: String!) {
+  oatsExternalJobPosting(boardId: $boardId, extId: $extId) {
+    id
+    title
+    descriptionHtml
+    compensationHtml
+    isUnlistedExternally
+    locations { name city isoCountry isRemote }
+    job { locationType employmentType teamDisplayName }
+  }
+}
+"""
+
+
+def _gem_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _GEM_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1)
+    jid = m.group(2)
+    if board.casefold() in {"jobs", "apply", "application"}:
+        return None
+    if jid.casefold() in {"jobs", "apply", "application"}:
+        return None
+    return board, jid
+
+
+def _gem_job_url(url: str) -> Optional[str]:
+    ids = _gem_ids(url)
+    if not ids:
+        return None
+    return f"https://jobs.gem.com/{ids[0]}/{ids[1]}"
+
+
+def _gem_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host not in {"jobs.gem.com", "www.jobs.gem.com"}:
+        return False
+    return _gem_ids(url) is None
+
+
+async def _gem_posting(client: httpx.AsyncClient, board: str, jid: str) -> Optional[dict]:
+    """None if the posting is gone. Empty dict if the API failed."""
+    try:
+        resp = await client.post(
+            "https://jobs.gem.com/api/public/graphql",
+            json={
+                "operationName": "ExternalJobPosting",
+                "variables": {"boardId": board, "extId": jid},
+                "query": _GEM_JOB_QUERY,
+            },
+            headers=_LISTING_HEADERS,
+        )
+        if resp.status_code in (404, 410):
+            return None
+        if resp.status_code >= 400:
+            return {}
+        data = json.loads(resp.text)
+        if not isinstance(data, dict) or not isinstance(data.get("data"), dict):
+            return {}
+        posting = data["data"].get("oatsExternalJobPosting")
+        if posting is None and "oatsExternalJobPosting" in data["data"]:
+            return None
+        if isinstance(posting, dict) and posting:
+            if posting.get("isUnlistedExternally") is True:
+                return None
+            return posting
+        return {}
+    except Exception:
+        return {}
+
+
+def _gem_place(post: dict) -> str:
+    job = post.get("job") if isinstance(post.get("job"), dict) else {}
+    kind = str(job.get("locationType") or "").strip()
+    if kind:
+        return kind.replace("_", " ")
+    rows = post.get("locations") if isinstance(post.get("locations"), list) else []
+    if any(isinstance(r, dict) and r.get("isRemote") is True for r in rows):
+        return "remote"
+    for row in rows:
+        if isinstance(row, dict) and str(row.get("name") or "").strip():
+            return str(row.get("name")).strip()
+    return ""
+
+
+def _gem_to_html(post: dict, board: str = "") -> str:
+    """Turn Gem oatsExternalJobPosting JSON into listing HTML. Never invent pay.
+
+    Omit application questions — those are applicant prompts, not listed pay.
+    """
+    title = str(post.get("title") or "").strip()
+    job = post.get("job") if isinstance(post.get("job"), dict) else {}
+    company = str(job.get("teamDisplayName") or "").strip()
+    if not company and board:
+        company = board.replace("-", " ").replace("_", " ").strip().title()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = str(job.get("employmentType") or "")
+    lower = emp.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    place = _gem_place(post)
+    _apply_workplace(posting, place)
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    for key in ("compensationHtml", "descriptionHtml"):
+        val = post.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2666,6 +2824,7 @@ def _ats_job_url(url: str) -> bool:
         or _bamboohr_ids(url)
         or _jazzhr_ids(url)
         or _dover_ids(url)
+        or _gem_ids(url)
     )
 
 
@@ -2719,6 +2878,8 @@ def _is_index_page(raw: dict) -> bool:
     if _jazzhr_is_board(url):
         return True
     if _dover_is_board(url):
+        return True
+    if _gem_is_board(url):
         return True
     return False
 

@@ -1023,6 +1023,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:bamboohr.com",
         "senior ML engineer remote site:applytojob.com",
         "senior ML engineer remote site:app.dover.com",
+        "senior ML engineer remote site:jobs.gem.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4465,6 +4466,114 @@ def test_listing_text_dover_inactive_is_gone(monkeypatch):
         )
     )
     assert html is None
+
+
+def test_gem_job_urls_are_not_boards():
+    from src.engine import _gem_job_url, _is_index_page, _lever_job_url
+
+    job = (
+        "https://jobs.gem.com/ascendarc/"
+        "am9icG9zdDr7i9rbOpLD20JgJavBiLRk/application"
+    )
+    assert _lever_job_url(job) == (
+        "https://jobs.gem.com/ascendarc/am9icG9zdDr7i9rbOpLD20JgJavBiLRk"
+    )
+    assert _gem_job_url(job) == (
+        "https://jobs.gem.com/ascendarc/am9icG9zdDr7i9rbOpLD20JgJavBiLRk"
+    )
+    assert not _is_index_page(
+        {"url": job, "title": "Senior RF Board Engineer", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://jobs.gem.com/ascendarc",
+            "title": "AscendArc Careers",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_gem_graphql_pay(monkeypatch):
+    engine = Engine()
+    seen: list[tuple[str, str]] = []
+    payload = {
+        "title": "Senior RF Board Engineer",
+        "descriptionHtml": "<p>The salary range for this position is $125,000-210,000.</p>",
+        "compensationHtml": None,
+        "isUnlistedExternally": False,
+        "locations": [
+            {"name": "Beaverton", "city": "Beaverton", "isoCountry": "USA", "isRemote": False}
+        ],
+        "job": {
+            "locationType": "IN_OFFICE",
+            "employmentType": "FULL_TIME",
+            "teamDisplayName": "AscendArc",
+        },
+    }
+
+    async def fake_gem(_client, board: str, jid: str):
+        seen.append((board, jid))
+        return payload
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("SPA HTML must not be fetched when GraphQL returns a posting")
+
+    monkeypatch.setattr("src.engine._gem_posting", fake_gem)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://jobs.gem.com/ascendarc/am9icG9zdDr7i9rbOpLD20JgJavBiLRk"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == [("ascendarc", "am9icG9zdDr7i9rbOpLD20JgJavBiLRk")]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is True
+    assert opp.company == "AscendArc"
+    assert opp.remote is False
+    assert opp.pay_low == 125_000
+    assert opp.pay_high == 210_000
+    assert opp.hours_per_week == 40
+
+
+def test_listing_text_gem_graphql_null_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[tuple[str, str]] = []
+
+    async def fake_gem(_client, board: str, jid: str):
+        seen.append((board, jid))
+        return None
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("SPA HTML must not be fetched when GraphQL says gone")
+
+    monkeypatch.setattr("src.engine._gem_posting", fake_gem)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://jobs.gem.com/aux-insights/4141242008")
+    )
+    assert seen == [("aux-insights", "4141242008")]
+    assert html is None
+
+
+def test_listing_text_gem_graphql_timeout_is_empty(monkeypatch):
+    engine = Engine()
+
+    async def fake_gem(_client, _board: str, _jid: str):
+        return {}
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("SPA HTML must not be fetched when GraphQL times out")
+
+    monkeypatch.setattr("src.engine._gem_posting", fake_gem)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.gem.com/converge/am9icG9zdDqFHmjnR-_vQgjRElAPit0P"
+        )
+    )
+    assert html == ""
 
 
 def test_listing_plain_text_ignores_script_salaries():
