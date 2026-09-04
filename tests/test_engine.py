@@ -844,6 +844,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_bhd is False
     assert bhd.pay_high is None
+    assert _parse_pay("80,000 OMR. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 OMR. Account Executive $220,000</p>") is True
+    assert _parse_pay("OMR80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>OMR80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 OMR. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 OMR. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k OMR. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k OMR. Account Executive $220,000</p>") is True
+    omr = Opportunity(title="Engineer", url="https://jobs.example/om")
+    listed_omr = _apply_listing(
+        omr, "<p>Salary 80,000 OMR. Account Executive $400,000</p>"
+    )
+    assert listed_omr is False
+    assert omr.pay_high is None
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
