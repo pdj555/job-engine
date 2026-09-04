@@ -3713,12 +3713,13 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:kr|zł)\b"
     r"|\d{5,7}\s*(?:kr|zł)\b"
     r"|\b(?:kr|zł)\s+['’]?\d"
-    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*:-",
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*:-"
+    r"|\bRs\.?\s*['’]?\d",
     re.I,
 )
 _FOREIGN_DOLLAR_RE = re.compile(
     r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b\s*\$?\s*\d"
-    r"|(?<![A-Za-z])(?:C|A)\$\s*\d"
+    r"|(?<![A-Za-z])(?:C|A|R|HK|NZ|S)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"

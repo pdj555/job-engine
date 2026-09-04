@@ -147,6 +147,28 @@ def test_foreign_salary_detects_kr_and_zl_without_iso_code():
     assert opp.pay_high is None
 
 
+def test_foreign_salary_detects_prefixed_dollars_and_rs():
+    from src.engine import _apply_listing, _foreign_salary, _parse_pay
+
+    assert _parse_pay("R$ 180,000") == (None, None)
+    assert _foreign_salary("<p>R$ 180,000 a year</p>") is True
+    assert _parse_pay("R$180,000. US equivalent $40,000") == (None, None)
+    assert _parse_pay("HK$ 180,000") == (None, None)
+    assert _foreign_salary("<p>HK$ 180,000 a year</p>") is True
+    assert _parse_pay("S$ 12,000") == (None, None)
+    assert _parse_pay("NZ$ 140,000") == (None, None)
+    assert _parse_pay("Rs. 12,00,000 or $90,000") == (None, None)
+    assert _foreign_salary("<p>Rs. 15,00,000 a year</p>") is True
+    assert _parse_pay("Rs 2400000") == (None, None)
+    assert _parse_pay("US$ 180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
+    assert _foreign_salary("<p>$180,000 a year</p>") is False
+    opp = Opportunity(title="Engineer", url="https://jobs.example/br")
+    listed = _apply_listing(opp, "<p>R$ 180,000 a year. US equivalent $40,000</p>")
+    assert listed is False
+    assert opp.pay_high is None
+
+
 def test_guess_pay_annualizes_hourly():
     assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
     assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
