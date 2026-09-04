@@ -197,6 +197,24 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$80–$100/hr") == (160_000, 200_000)
 
 
+def test_parse_pay_annualizes_monthly_usd():
+    from src.engine import _apply_listing, _parse_pay
+
+    assert _parse_pay("$15,000 per month") == (None, 180_000)
+    assert _parse_pay("$15,000/month") == (None, 180_000)
+    assert _parse_pay("$15,000 a month") == (None, 180_000)
+    assert _parse_pay("$15k/month") == (None, 180_000)
+    assert _parse_pay("USD 15,000 per month") == (None, 180_000)
+    assert _parse_pay("$15,000 monthly") == (None, 180_000)
+    assert _parse_pay("$8,000-$10,000 per month") == (96_000, 120_000)
+    assert _parse_pay("$8k–$12k/month") == (96_000, 144_000)
+    assert _parse_pay("$80/hr") == (None, 160_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
+    opp = Opportunity(title="Engineer", url="https://jobs.example/mo")
+    assert _apply_listing(opp, "<p>Salary $15,000 per month</p>") is True
+    assert opp.pay_high == 180_000
+
+
 def test_guess_pay_reads_description_not_just_title():
     assert _guess_pay("Engineer", "comp $175k plus equity") == 175_000
 
