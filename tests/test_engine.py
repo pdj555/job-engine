@@ -21,6 +21,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Senior ML Engineer", "$180k") == 180_000
     assert _guess_pay("Staff Engineer $150,000", "") == 150_000
     assert _guess_pay("Engineer", "$120k-$180k") == 180_000
+    assert _guess_pay("Engineer", "$143,000 to 197,000") == 197_000
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
@@ -632,6 +633,11 @@ def test_find_ranks_parsed_pay_above_unknown():
         ]
 
     engine._search_all = fake_search
+
+    async def no_page(_url: str) -> str:
+        return ""
+
+    engine._listing_text = no_page
     ranked = asyncio.run(engine.find("ml", limit=20))
     assert [o.title for o in ranked] == ["Priced", "Unknown pay"]
     assert ranked[0].score() == 45.0
@@ -653,6 +659,29 @@ def test_heuristic_range_and_imputed_hours():
     assert ranged.hours_per_week is None
     assert ranged.rate_is_imputed is True
     assert ranged.refined_rate == 90.0
+
+
+def test_enrich_pay_from_listing_html():
+    engine = Engine()
+
+    async def page(_url: str) -> str:
+        return "for this full-time position is $143,000 to 197,000."
+
+    engine._listing_text = page
+    opp = Opportunity(title="Senior ML Engineer", url="https://careers.example/x")
+    asyncio.run(engine._enrich_pay([opp]))
+    assert opp.pay_low == 143_000
+    assert opp.pay_high == 197_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 98.5
+
+
+def test_public_http_url_rejects_localhost():
+    from src.engine import _public_http_url
+
+    assert _public_http_url("https://careers.example/x") is True
+    assert _public_http_url("http://127.0.0.1/secret") is False
+    assert _public_http_url("javascript:alert(1)") is False
 
 
 def test_extract_batch_fills_rows_llm_omitted_and_dedupes_url_aliases():

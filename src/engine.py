@@ -39,10 +39,48 @@ class Engine:
 
         # Extract structured data
         opportunities = await self._extract_opportunities(raw_results, query)
-
-        # Rank by efficiency ($/hour)
+        await self._enrich_pay(opportunities)
         ranked = sorted(opportunities, key=lambda x: x.score(), reverse=True)
         return _dedupe_opportunities(ranked)[:limit]
+
+    async def _enrich_pay(self, opps: list[Opportunity]) -> None:
+        """Fill missing pay/hours from the listing page. Never invent."""
+        missing = [o for o in opps if o.pay is None]
+        if not missing:
+            return
+        texts = await asyncio.gather(
+            *(self._listing_text(o.url) for o in missing),
+            return_exceptions=True,
+        )
+        for o, text in zip(missing, texts):
+            if not isinstance(text, str) or not text:
+                continue
+            visible = _visible_text(text[:80_000])
+            hours = o.hours_per_week or _guess_hours(o.title, visible)
+            low, high = _parse_pay(visible, hours)
+            if not high and not low:
+                continue
+            o.pay_low = low
+            o.pay_high = high
+            if o.hours_per_week is None and hours:
+                o.hours_per_week = hours
+            o.efficiency = o.refined_rate
+
+    async def _listing_text(self, url: str) -> str:
+        if not _public_http_url(url):
+            return ""
+        try:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=8.0,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
+            ) as client:
+                resp = await client.get(url)
+                if resp.status_code >= 400:
+                    return ""
+                return resp.text
+        except Exception:
+            return ""
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
@@ -314,6 +352,18 @@ def _normalize_url(url: str) -> str:
     return url.strip().rstrip("/").casefold()
 
 
+def _public_http_url(url: str) -> bool:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").casefold()
+    if parsed.scheme not in ("http", "https") or not host:
+        return False
+    if host in ("localhost", "127.0.0.1", "::1") or host.endswith(".local"):
+        return False
+    if re.match(r"^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)", host):
+        return False
+    return True
+
+
 def _title_key(title: str) -> str:
     return re.sub(r"\W+", " ", title).casefold().strip()
 
@@ -522,7 +572,11 @@ _HOURLY_RE = re.compile(
     re.I,
 )
 _RANGE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*[-–—]\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    re.I,
+)
+_RANGE_FULL_RE = re.compile(
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b",
     re.I,
 )
 _ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b", re.I)
@@ -550,6 +604,11 @@ def _parse_pay(
     ranged = _RANGE_K_RE.search(text)
     if ranged:
         low, high = int(_money(ranged.group(1)) * 1000), int(_money(ranged.group(2)) * 1000)
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
+    ranged_full = _RANGE_FULL_RE.search(text)
+    if ranged_full:
+        low, high = int(_money(ranged_full.group(1))), int(_money(ranged_full.group(2)))
         if 10_000 <= low <= high <= 2_000_000:
             return low, high
     k = _ANNUAL_K_RE.search(text)
