@@ -651,6 +651,9 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "you will be based in Austin") is False
     assert _guess_remote("Engineer", "The job is based in Boston") is False
     assert _guess_remote("Engineer", "This role requires you to be in San Francisco") is False
+    assert _guess_remote("Engineer", "this role requires presence in our NYC hub") is False
+    assert _guess_remote("Engineer", "this role requires your presence in New York") is False
+    assert _guess_remote("Engineer", "This role requires presence in the US") is True
     assert _guess_remote("Engineer", "you must be located in New York") is False
     assert _guess_remote("Engineer", "candidates must be based in Seattle") is False
     assert _guess_remote("Engineer", "This role requires you to be in the US") is True
@@ -666,6 +669,9 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "work from home. work from the lab") is True
     assert _guess_remote(
         "Engineer", "work from home. This role requires you to be in San Francisco"
+    ) is True
+    assert _guess_remote(
+        "Engineer", "work from home. this role requires presence in our NYC hub"
     ) is True
     assert _guess_remote(
         "Engineer", "work from home. must commute to San Francisco"
@@ -697,6 +703,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert require.remote is False
     assert require.pay_high == 180_000
     assert require.score() == 0.7 * (180_000 / (40 * 50))
+    presence = Opportunity(title="Engineer", url="https://jobs.example/presence")
+    assert _apply_listing(
+        presence,
+        "<p>This role requires presence in our NYC hub. Salary $180,000</p>",
+    ) is True
+    assert presence.remote is False
+    assert presence.pay_high == 180_000
+    assert presence.score() == 0.7 * (180_000 / (40 * 50))
     located = Opportunity(title="Engineer", url="https://jobs.example/located")
     assert _apply_listing(
         located, "<p>You must be located in New York. Salary $180,000</p>"

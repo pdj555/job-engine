@@ -4901,6 +4901,8 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+requires\s+you\s+to\s+be\s+in"
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+requires\s+(?:your\s+)?presence\s+in"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"|you\s+will\s+be\s+(?:based|located)\s+in"
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"|(?:you|candidates)\s+must\s+be\s+(?:based|located)\s+in"
