@@ -738,7 +738,9 @@ _INDEX_URL_RE = re.compile(
     r"|lemon\.io/for-developers/"
     r"|magic\.lemon\.io/share/"
     r"|docs\.lemon\.io/"
-    r"|corptocorp\.org/)",
+    r"|corptocorp\.org/"
+    r"|karkidi\.com/"
+    r"|jobleads\.com/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
@@ -1195,15 +1197,15 @@ _HOURLY_RE = re.compile(
     re.I,
 )
 _RANGE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
     re.I,
 )
 _RANGE_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
     re.I,
 )
 _RANGE_USD_RE = re.compile(
-    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
 )
 _ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b", re.I)
 _ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")

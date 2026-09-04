@@ -26,6 +26,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     from src.engine import _parse_pay
     assert _parse_pay("**Salary:** USD 160,000–190,000") == (160_000, 190_000)
     assert _parse_pay("Base Salary: $126,000 - $180,000Diversity") == (126_000, 180_000)
+    assert _parse_pay("proposed band b/t US$175k and $250k annually") == (175_000, 250_000)
+    assert _parse_pay("$160,000 and $190,000") == (160_000, 190_000)
+    assert _parse_pay("$180,000 and $5,000 signing bonus") == (None, 180_000)
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
@@ -553,6 +556,26 @@ def test_index_pages_are_not_opportunities():
             {
                 "title": "Senior AI/ML Developer : Remote : Contract - Corp to Corp",
                 "url": "https://corptocorp.org/senior-ai-ml-developer-remote-contract/",
+                "description": "",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning (ML) Engineer - Freelance [Remote]",
+                "url": "https://www.karkidi.com/job-details/76760-senior-machine-learning-ml-engineer-freelance-remote-job",
+                "description": "Braintrust $80 - $100 / Hour. Posted on: 17 Apr 2024",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning (ML) Engineer - Freelance [Remote]",
+                "url": "https://www.jobleads.com/us/job/senior-machine-learning-ml-engineer-freelance-remote-job",
                 "description": "",
             }
         )
