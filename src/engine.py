@@ -4523,8 +4523,17 @@ def _country_from_label(label: str) -> Optional[str]:
 
 
 def _posting_countries(posting: dict) -> list[str]:
-    loc = posting.get("jobLocation") or posting.get("job_location")
-    rows = loc if isinstance(loc, list) else [loc]
+    rows: list = []
+    for key in (
+        "jobLocation",
+        "job_location",
+        "applicantLocationRequirements",
+        "applicant_location_requirements",
+    ):
+        raw = posting.get(key)
+        if raw is None:
+            continue
+        rows.extend(raw if isinstance(raw, list) else [raw])
     countries: list[str] = []
 
     def push(token: str) -> None:

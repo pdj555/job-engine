@@ -9097,6 +9097,53 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _apply_listing(snake_value, snake_value_de) is False
     assert snake_value.pay_high is None
     assert _foreign_salary(snake_value_de) is True
+    req_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "applicantLocationRequirements":{"@type":"Country","name":"Germany"},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    req_opp = Opportunity(title="Engineer", url="https://jobs.example/de-applicant")
+    assert _apply_listing(req_opp, req_de) is False
+    assert req_opp.pay_high is None
+    assert _foreign_salary(req_de) is True
+    req_snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "applicant_location_requirements":{"name":"Germany"},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    req_snake_opp = Opportunity(title="Engineer", url="https://jobs.example/de-applicant-snake")
+    assert _apply_listing(req_snake_opp, req_snake) is False
+    assert req_snake_opp.pay_high is None
+    assert _foreign_salary(req_snake) is True
+    org_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme",
+      "address":{"addressCountry":"Germany"}},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    org_opp = Opportunity(title="Engineer", url="https://jobs.example/org-de-hq")
+    assert _apply_listing(org_opp, org_de) is True
+    assert org_opp.pay_low == 180_000
+    assert org_opp.pay_high == 220_000
+    req_us = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "applicantLocationRequirements":{"@type":"Country","name":"United States"},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>All other: $100,000 - $120,000</p>
+    """
+    req_us_opp = Opportunity(title="Engineer", url="https://jobs.example/us-applicant", remote=True)
+    assert _apply_listing(req_us_opp, req_us) is True
+    assert req_us_opp.remote is True
+    assert req_us_opp.pay_high == 120_000
 
 
 def test_apply_listing_json_ld_amount_without_currency_reads_place_name():
