@@ -480,6 +480,10 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>CHF 91'052</p>") is True
     assert _parse_pay("Compensation: 150,000 CHF") == (None, None)
     assert _foreign_salary("<p>Compensation: 150,000 CHF</p>") is True
+    assert _parse_pay("CHF80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CHF80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("JPY80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>JPY80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
@@ -1510,6 +1514,28 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert scheduled.hours_per_week == 32
     assert scheduled.pay_high == 128_000
+    scheduled_hpw = Opportunity(title="Engineer", url="https://jobs.example/ld-scheduledHoursPerWeek")
+    assert _apply_listing(
+        scheduled_hpw,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"scheduledHoursPerWeek":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert scheduled_hpw.hours_per_week == 32
+    assert scheduled_hpw.pay_high == 128_000
+    weekly_count = Opportunity(title="Engineer", url="https://jobs.example/ld-weeklyHourCount")
+    assert _apply_listing(
+        weekly_count,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"weeklyHourCount":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert weekly_count.hours_per_week == 32
+    assert weekly_count.pay_high == 128_000
     snake_std = Opportunity(title="Engineer", url="https://jobs.example/ld-standard_weekly_hours")
     assert _apply_listing(
         snake_std,
@@ -10990,6 +11016,18 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This search concluded.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This opportunity has concluded.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role concluded.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting concluded.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We paused this search.</p><p>$180,000</p>"

@@ -4443,7 +4443,7 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\b(?:EUR|GBP)\s*\d{5,7}\b"
     r"|\b(?:EUR|GBP)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|(?:₹|¥)\s*\d"
-    r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\s+['’]?\d"
+    r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\s*['’]?\d"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{5,7}\s*(?:EUR|GBP)\b"
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP|euros?|pounds?)\b"
@@ -5298,8 +5298,16 @@ _HOUR_KEYS = (
     "weekly_hours",
     "standardWeeklyHours",
     "scheduledWeeklyHours",
+    "standardHoursPerWeek",
+    "scheduledHoursPerWeek",
     "standard_weekly_hours",
     "scheduled_weekly_hours",
+    "standard_hours_per_week",
+    "scheduled_hours_per_week",
+    "weeklyHourCount",
+    "weekly_hour_count",
+    "hoursWeek",
+    "hours_week",
     "minHoursPerWeek",
     "min_hours_per_week",
     "maxHoursPerWeek",
@@ -5588,6 +5596,9 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+closed\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?concluded\b"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"\s+(?:has\s+)?concluded\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+expired\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:paused|on\s+hold)\b"
     r"|we(?:'ve|\s+have)?\s+paused\s+this\s+search\b"
