@@ -835,12 +835,23 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert amgen is not None
-    from src.engine import _is_index_page
+    from src.engine import _html_is_index, _is_index_page
 
-    assert _is_index_page(
+    assert not _is_index_page(
         {
             "url": "https://job-boards.greenhouse.io/grafanalabs/jobs/1",
             "title": "Jobs at Grafana Labs",
+            "description": "",
+        }
+    )
+    assert _html_is_index(
+        "<title>Jobs at Grafana Labs</title><p>Current openings</p>",
+        "https://job-boards.greenhouse.io/grafanalabs/jobs/1",
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://job-boards.eu.greenhouse.io/overstory/jobs/4411330101",
+            "title": "Jobs at Overstory",
             "description": "",
         }
     )

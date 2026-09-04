@@ -1518,6 +1518,21 @@ _INDEX_PATH_RE = re.compile(
 )
 
 
+def _ats_job_url(url: str) -> bool:
+    """True when the URL is a specific ATS posting, not a board or catalog."""
+    return bool(
+        _greenhouse_ids(url)
+        or _lever_api_url(url)
+        or _ashby_ids(url)
+        or _workable_md_url(url)
+        or _workable_jobs_api_url(url)
+        or _smartrecruiters_ids(url)
+        or _workday_ids(url)
+        or _icims_ids(url)
+        or _jobvite_ids(url)
+    )
+
+
 def _is_index_page(raw: dict) -> bool:
     """True for search/board/home/category pages, not a single opportunity."""
     url = raw.get("url") or ""
@@ -1525,7 +1540,7 @@ def _is_index_page(raw: dict) -> bool:
     desc = raw.get("description") or ""
     if _INDEX_URL_RE.search(url):
         return True
-    if _icims_ids(url) or _jobvite_ids(url):
+    if _ats_job_url(url):
         return False
     if _title_is_index(title):
         return True
@@ -1826,8 +1841,13 @@ def _html_title(html: str) -> str:
 
 
 def _html_is_index(html: str, url: str) -> bool:
+    """Fetched board shells. ATS posting URLs still drop when the HTML title is a board."""
     title = _html_title(html)
-    return bool(title) and _is_index_page({"url": url, "title": title, "description": ""})
+    if not title:
+        return False
+    if _INDEX_URL_RE.search(url):
+        return True
+    return _title_is_index(title)
 
 
 def _ddg_result_url(href: str) -> str:
