@@ -1088,6 +1088,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salary: How Much Can You Make?",
+                "url": "https://www.coursera.org/articles/machine-learning-engineer-salary",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",

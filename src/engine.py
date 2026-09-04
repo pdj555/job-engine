@@ -1492,7 +1492,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|\bcompensation (?:guide|data|benchmarks?|for)\b"
     r"|\bh-?1b visa salary\b"
     r"|\bmedian pay\b"
-    r"|\bhow much do\b"
+    r"|\bhow much (?:do|can)\b"
     r"|salary 20\d{2}"
     r"|20\d{2}\b.{0,60}\bsalary\b"
 )
