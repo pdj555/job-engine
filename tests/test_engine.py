@@ -38,6 +38,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         157_000,
         200_000,
     )
+    assert _parse_pay("Base Pay Range: $160,000 USD - $240,000 USD") == (
+        160_000,
+        240_000,
+    )
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
@@ -821,7 +825,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/11" in [r["url"] for r in results]
+    assert "https://jobs.example/12" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -837,6 +841,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:jobs.workable.com",
         "senior ML engineer remote site:apply.workable.com",
         "senior ML engineer remote site:jobs.smartrecruiters.com",
+        "senior ML engineer remote site:myworkdayjobs.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -2151,6 +2156,7 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert _workplace_remote("Hybrid / Remote") is True
     assert _workplace_remote("Distributed; Hybrid") is True
     assert _workplace_remote("hybrid") is False
+    assert _workplace_remote("Flex") is False
     assert _workplace_remote("New York, NY (Hybrid)") is False
     assert _workplace_remote("Remote - United States") is True
     assert _workplace_remote("onsite only") is False
@@ -2863,6 +2869,136 @@ def test_listing_text_reads_smartrecruiters_api(monkeypatch):
     assert opp.company == "SOCOTEC"
     assert opp.pay_high == 200_000
     assert opp.remote is False
+
+
+def test_workday_api_url_from_job_link():
+    from src.engine import _is_index_page, _workday_api_url
+
+    assert _workday_api_url(
+        "https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/Machine-Learning-Engineer_JR-0106147"
+    ) == (
+        "https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/job/"
+        "Machine-Learning-Engineer_JR-0106147"
+    )
+    assert _workday_api_url(
+        "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/"
+        "US-CA-Santa-Clara/Machine-Learning-Engineer--AI-Safety_JR2021784-1"
+    ) == (
+        "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExternalCareerSite/job/"
+        "Machine-Learning-Engineer--AI-Safety_JR2021784-1"
+    )
+    assert _is_index_page(
+        {
+            "url": "https://workday.wd5.myworkdayjobs.com/en-US/Workday",
+            "title": "Workday Careers",
+            "description": "",
+        }
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/Machine-Learning-Engineer_JR-0106147",
+            "title": "Machine Learning Engineer III",
+            "description": "",
+        }
+    )
+    assert _workday_api_url("https://jobs.lever.co/acme/x") is None
+
+
+def test_workday_to_html_fills_company_pay_and_flex():
+    from src.engine import _apply_listing, _workday_to_html
+
+    html = _workday_to_html(
+        {
+            "hiringOrganization": {"name": "Workday, Inc."},
+            "jobPostingInfo": {
+                "title": "Machine Learning Engineer III",
+                "timeType": "Full Time",
+                "remoteType": "Flex",
+                "location": "USA, CA, Pleasanton",
+                "jobDescription": "<p>Base Pay Range: $160,000 USD - $240,000 USD</p>",
+            },
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/x_JR-1",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Workday, Inc."
+    assert opp.title == "Machine Learning Engineer III"
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 240_000
+    assert opp.remote is False
+    assert opp.hours_per_week == 40
+    assert opp.score() == 84.0
+
+
+def test_listing_text_reads_workday_cxs(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "/wday/cxs/" in url:
+            return json.dumps(
+                {
+                    "hiringOrganization": {"name": "Workday, Inc."},
+                    "jobPostingInfo": {
+                        "title": "Machine Learning Engineer III",
+                        "timeType": "Full Time",
+                        "remoteType": "Remote",
+                        "jobDescription": "<p>Base Pay Range: $160,000 USD - $240,000 USD</p>",
+                    },
+                }
+            )
+        return "<title>Jobs at Workday</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/Machine-Learning-Engineer_JR-0106147"
+        )
+    )
+    assert seen == [
+        "https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/job/"
+        "Machine-Learning-Engineer_JR-0106147"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/x")
+    _apply_listing(opp, html)
+    assert opp.company == "Workday, Inc."
+    assert opp.pay_high == 240_000
+    assert opp.remote is True
+    assert opp.score() == 120.0
+
+
+def test_listing_text_workday_cxs_404_falls_back_to_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "/wday/cxs/" in url:
+            return None
+        return (
+            "<title>Engineer at Motorola</title>"
+            "<p>This is a full-time remote role. $180,000 - $200,000</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://motorolasolutions.wd5.myworkdayjobs.com/en-US/Careers/job/Machine-Learning-Engineer_R64440"
+        )
+    )
+    assert seen[0].startswith("https://motorolasolutions.wd5.myworkdayjobs.com/wday/cxs/")
+    assert seen[1] == (
+        "https://motorolasolutions.wd5.myworkdayjobs.com/en-US/Careers/job/"
+        "Machine-Learning-Engineer_R64440"
+    )
+    assert html and "$180,000" in html
 
 
 def test_listing_plain_text_ignores_script_salaries():

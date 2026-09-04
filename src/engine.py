@@ -148,6 +148,16 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and (data.get("name") or data.get("id")):
                     return _smartrecruiters_to_html(data)
+        wd_api = _workday_api_url(url)
+        if wd_api:
+            raw = await fetch(wd_api)
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and isinstance(data.get("jobPostingInfo"), dict):
+                    return _workday_to_html(data)
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -778,6 +788,7 @@ def _search_angles(query: str) -> list[str]:
             "jobs.workable.com",
             "apply.workable.com",
             "jobs.smartrecruiters.com",
+            "myworkdayjobs.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -943,6 +954,8 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug.isdigit() or slug in {"jobs", "app"}:
             return None
+    elif host.endswith("myworkdayjobs.com"):
+        slug = host.split(".")[0]
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -971,6 +984,8 @@ def _ats_board_key(url: str) -> Optional[str]:
         return f"workable:{parts[0].casefold()}"
     if host.endswith("smartrecruiters.com"):
         return f"sr:{parts[0].casefold()}"
+    if host.endswith("myworkdayjobs.com"):
+        return f"wd:{(parsed.hostname or '').split('.')[0].casefold()}"
     return None
 
 
@@ -1311,6 +1326,82 @@ def _workable_to_html(md: str) -> str:
     )
 
 
+_WD_HOST_RE = re.compile(r"(?i)^([a-z0-9-]+)\.wd\d+\.myworkdayjobs\.com$")
+
+
+def _workday_ids(url: str) -> Optional[tuple[str, str, str, str]]:
+    """host, tenant, site, job slug for a myworkdayjobs.com posting."""
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    m = _WD_HOST_RE.match(host)
+    if not m:
+        return None
+    tenant = m.group(1)
+    parts = [p for p in parsed.path.split("/") if p]
+    if parts and re.match(r"(?i)^[a-z]{2}-[a-z]{2}$", parts[0]):
+        parts = parts[1:]
+    try:
+        ji = next(i for i, p in enumerate(parts) if p.casefold() == "job")
+    except StopIteration:
+        return None
+    if ji < 1 or ji + 1 >= len(parts):
+        return None
+    site = parts[0]
+    slug = parts[-1]
+    if not slug or slug.casefold() == "job":
+        return None
+    return host, tenant, site, slug
+
+
+def _workday_api_url(url: str) -> Optional[str]:
+    ids = _workday_ids(url)
+    if not ids:
+        return None
+    host, tenant, site, slug = ids
+    return f"https://{host}/wday/cxs/{tenant}/{site}/job/{slug}"
+
+
+def _workday_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not _WD_HOST_RE.match(host):
+        return False
+    return _workday_ids(url) is None
+
+
+def _workday_to_html(data: dict) -> str:
+    """Turn Workday CXS posting JSON into listing HTML. Never invent pay."""
+    info = data.get("jobPostingInfo") if isinstance(data.get("jobPostingInfo"), dict) else {}
+    title = str(info.get("title") or "").strip()
+    company = ""
+    org = data.get("hiringOrganization")
+    if isinstance(org, dict):
+        company = str(org.get("name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    time_type = str(info.get("timeType") or "").lower()
+    if "part" in time_type:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in time_type:
+        posting["employmentType"] = "FULL_TIME"
+    place = str(info.get("remoteType") or "").strip()
+    _apply_workplace(posting, place)
+    loc = str(info.get("location") or "").strip()
+    desc = str(info.get("jobDescription") or "")
+    page_title = f"{title} at {company}" if company else title
+    bits = []
+    if place:
+        bits.append(f"<p>{place}</p>")
+    if loc:
+        bits.append(f"<p>{loc}</p>")
+    bits.append(desc)
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(bits)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1339,6 +1430,8 @@ def _is_index_page(raw: dict) -> bool:
     if _workable_is_board(url):
         return True
     if _smartrecruiters_is_board(url):
+        return True
+    if _workday_is_board(url):
         return True
     return False
 
@@ -1708,7 +1801,9 @@ _RANGE_K_RE = re.compile(
     re.I,
 )
 _RANGE_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:USD|US\$)?"
+    r"\s*(?:to|-|–|—|and)\s*"
+    r"\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
     re.I,
 )
 _RANGE_SPACE_K_RE = re.compile(
@@ -1899,14 +1994,14 @@ def _workplace_remote(place: str) -> Optional[bool]:
         return False
     if re.search(r"\b(?:remote|offsite|off-site|telecommute|distributed)\b", p):
         return True
-    if re.search(r"\bhybrid\b", p):
+    if re.search(r"\bhybrid\b", p) or re.search(r"\bflex(?:ible)?\b", p):
         return False
     if re.search(r"\b(?:onsite|on-site|on site|in-office|in office)\b", p):
         return False
     compact = re.sub(r"[\s_-]+", "", p)
     if compact in {"remote", "offsite", "telecommute", "distributed"}:
         return True
-    if compact in {"hybrid", "onsite", "office", "inoffice"}:
+    if compact in {"hybrid", "onsite", "office", "inoffice", "flex", "flexible"}:
         return False
     return None
 
