@@ -8622,13 +8622,40 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     <p>DevOps Engineer ₹6L – ₹9L</p>
     <p>Renewals Manager $422,000 - $502,000</p>
     """
+    other = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Other Jobs</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    featured = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Featured Jobs</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    viewed = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>People also viewed</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
     glued = (
         "<title>IT Security Administrator at Bitwarden</title>"
         "<p>$115,000 - $145,000 a year.</p>"
         "<p>historySimilar JobsDrona Pay DevOps Engineer ₹6L – ₹9L Renewals Manager $422,000</p>"
     )
+    glued_other = (
+        "<title>Engineer</title>"
+        "<p>Great team. Apply now.</p>"
+        "<p>historyOther Jobs Account Executive $180,000 - $220,000</p>"
+    )
     assert _parse_pay(_listing_plain_text(html)) == (115_000, 145_000)
     assert _parse_pay(_listing_plain_text(glued)) == (115_000, 145_000)
+    assert _parse_pay(_listing_plain_text(other)) == (None, None)
+    assert _parse_pay(_listing_plain_text(featured)) == (None, None)
+    assert _parse_pay(_listing_plain_text(viewed)) == (None, None)
+    assert _parse_pay(_listing_plain_text(glued_other)) == (None, None)
     assert _foreign_salary(html) is False
     assert _foreign_salary(glued) is False
     opp = Opportunity(
@@ -8639,6 +8666,12 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     assert opp.pay_low == 115_000
     assert opp.pay_high == 145_000
     assert opp.company == "Bitwarden"
+    ghost = Opportunity(title="Engineer", url="https://jobs.example/other")
+    assert _apply_listing(ghost, other) is False
+    assert ghost.pay_high is None
+    feat = Opportunity(title="Engineer", url="https://jobs.example/featured")
+    assert _apply_listing(feat, featured) is False
+    assert feat.pay_high is None
 
 
 def test_apply_listing_ignores_related_jsonld_jobposting():
