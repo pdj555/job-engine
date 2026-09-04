@@ -7464,6 +7464,18 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_annual_pay, annual_pay) is True
     assert posting_annual_pay.pay_low == 180_000
     assert posting_annual_pay.pay_high == 220_000
+    yearly_pay = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "yearlyPay":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_yearly_pay = Opportunity(title="Engineer", url="https://jobs.example/ld-yearlyPay")
+    assert _apply_listing(posting_yearly_pay, yearly_pay) is True
+    assert posting_yearly_pay.pay_low == 180_000
+    assert posting_yearly_pay.pay_high == 220_000
     fromto = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
