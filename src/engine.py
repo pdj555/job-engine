@@ -78,17 +78,31 @@ class Engine:
         if not _public_http_url(url):
             return ""
         client = getattr(self, "_http_client", None)
-        if client is not None:
-            return await _http_get_text(client, url)
-        try:
-            async with httpx.AsyncClient(
-                follow_redirects=True,
-                timeout=8.0,
-                headers=_LISTING_HEADERS,
-            ) as owned:
-                return await _http_get_text(owned, url)
-        except Exception:
-            return ""
+
+        async def fetch(target: str) -> str:
+            if client is not None:
+                return await _http_get_text(client, target)
+            try:
+                async with httpx.AsyncClient(
+                    follow_redirects=True,
+                    timeout=8.0,
+                    headers=_LISTING_HEADERS,
+                ) as owned:
+                    return await _http_get_text(owned, target)
+            except Exception:
+                return ""
+
+        api = _greenhouse_api_url(url)
+        if api:
+            raw = await fetch(api)
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and not data.get("error"):
+                    return _greenhouse_to_html(data)
+        return await fetch(url)
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
@@ -520,6 +534,36 @@ _INDEX_URL_RE = re.compile(
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b(?!\.)|^hire a freelance\b")
+_GH_JOB_RE = re.compile(
+    r"(?i)https?://(?:job-boards(?:\.[a-z]+)?|boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)",
+)
+
+
+def _greenhouse_api_url(url: str) -> Optional[str]:
+    m = _GH_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return f"https://boards-api.greenhouse.io/v1/boards/{m.group(1)}/jobs/{m.group(2)}"
+
+
+def _greenhouse_to_html(data: dict) -> str:
+    """Turn Greenhouse job JSON into listing HTML. Never invent pay."""
+    company = str(data.get("company_name") or "").strip()
+    title = str(data.get("title") or "").strip()
+    loc = ""
+    location = data.get("location")
+    if isinstance(location, dict):
+        loc = str(location.get("name") or "")
+    content = unescape(data.get("content") or "")
+    posting = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"<p>{loc}</p>{content}"
+    )
 
 
 _INDEX_PATH_RE = re.compile(

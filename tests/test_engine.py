@@ -875,6 +875,73 @@ def test_enrich_drops_fetched_board_index_html():
     assert [o.title for o in opps] == ["Real"]
 
 
+def test_greenhouse_api_url_from_job_board_link():
+    from src.engine import _greenhouse_api_url
+
+    assert _greenhouse_api_url(
+        "https://job-boards.greenhouse.io/reddit/jobs/6960831"
+    ) == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    assert _greenhouse_api_url(
+        "https://job-boards.eu.greenhouse.io/jetbrains/jobs/4713663101"
+    ) == "https://boards-api.greenhouse.io/v1/boards/jetbrains/jobs/4713663101"
+    assert _greenhouse_api_url("https://jobs.lever.co/lyrahealth/abc") is None
+
+
+def test_greenhouse_api_html_fills_company_and_pay_range():
+    from src.engine import _apply_listing, _greenhouse_to_html
+
+    html = _greenhouse_to_html(
+        {
+            "company_name": "Reddit",
+            "title": "Senior Machine Learning Engineer",
+            "location": {"name": "Remote - United States"},
+            "content": (
+                "&lt;div class=&quot;pay-range&quot;&gt;"
+                "&lt;span&gt;$216,700&lt;/span&gt;&lt;span&gt;&amp;mdash;&lt;/span&gt;"
+                "&lt;span&gt;$303,400 USD&lt;/span&gt;&lt;/div&gt;"
+            ),
+        }
+    )
+    opp = Opportunity(
+        title="Senior Machine Learning Engineer, ML Efficiency",
+        url="https://job-boards.greenhouse.io/reddit/jobs/6960831",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Reddit"
+    assert opp.pay_low == 216_700
+    assert opp.pay_high == 303_400
+
+
+def test_listing_text_prefers_greenhouse_api_over_board_shell(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return json.dumps(
+                {
+                    "company_name": "Reddit",
+                    "title": "Senior ML",
+                    "content": "$180,000",
+                    "location": {"name": "Remote - United States"},
+                }
+            )
+        return "<title>Jobs at Reddit</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/6960831")
+    )
+    assert seen[0] == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://job-boards.greenhouse.io/reddit/jobs/6960831")
+    _apply_listing(opp, html)
+    assert opp.company == "Reddit"
+    assert opp.pay_high == 180_000
+
+
 def test_listing_plain_text_ignores_script_salaries():
     from src.engine import _listing_plain_text, _parse_pay, _visible_text
 
