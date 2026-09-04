@@ -7005,6 +7005,30 @@ def test_html_is_gone_removed_listing_banner():
         expired_ld.replace('"validThrough":"2020-01-01"', '"expires":"2020-01-15"')
     ) is True
     assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "January 15, 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Jan 15, 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15 January 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "January 15, 2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "01-15-2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15-01-2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "20200115")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace('"validThrough":"2020-01-01"', '"validThrough":{"@value":"2020-01-15"}')
+    ) is True
+    assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Applications for this position are closed.</p><p>$180,000</p>"
     ) is True

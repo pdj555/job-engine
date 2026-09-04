@@ -1,6 +1,7 @@
 """The engine. One class. Does everything."""
 
 import asyncio
+import calendar
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -4792,21 +4793,53 @@ _GONE_LISTING_RE = re.compile(
 )
 
 
-def _posting_date(raw) -> Optional[date]:
-    text = str(raw or "").strip()
-    m = re.match(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
-    if m:
-        try:
-            return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-        except ValueError:
-            return None
-    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
-    if not m:
-        return None
+_MONTH_NUM = {
+    name.lower(): i
+    for names in (calendar.month_name, calendar.month_abbr)
+    for i, name in enumerate(names)
+    if i and name
+}
+
+
+def _ymd(year: int, month: int, day: int) -> Optional[date]:
     try:
-        return date(int(m.group(3)), int(m.group(1)), int(m.group(2)))
+        return date(year, month, day)
     except ValueError:
         return None
+
+
+def _posting_date(raw) -> Optional[date]:
+    text = (_ld_text(raw) or "").strip()
+    if not text:
+        return None
+    m = re.match(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
+    if m:
+        return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
+    if m:
+        return _ymd(int(m.group(3)), int(m.group(1)), int(m.group(2)))
+    m = re.match(r"(\d{4})(\d{2})(\d{2})\b", text)
+    if m:
+        return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(1).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(2)))
+    m = re.match(r"(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(1)))
+    m = re.match(r"(\d{1,2})-(\d{1,2})-(\d{4})", text)
+    if not m:
+        return None
+    first, second, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if first > 12 >= second:
+        return _ymd(year, second, first)
+    if second > 12 >= first:
+        return _ymd(year, first, second)
+    return None
 
 
 def _posting_expired(posting: Optional[dict]) -> bool:
