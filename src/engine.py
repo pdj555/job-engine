@@ -3719,7 +3719,8 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\d{5,7}\s*(?:kr|zł)\b"
     r"|\b(?:kr|zł)\s+['’]?\d"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*:-"
-    r"|\bRs\.?\s*['’]?\d",
+    r"|\bRs\.?\s*['’]?\d"
+    r"|\d{1,2}(?:\.\d+)?\s*(?:[-–—]\s*\d{1,2}(?:\.\d+)?)?\s*(?:lpa|lacs?|lakhs?)\b",
     re.I,
 )
 _FOREIGN_DOLLAR_RE = re.compile(

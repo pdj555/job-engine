@@ -172,6 +172,9 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     assert _parse_pay("Rs. 12,00,000 or $90,000") == (None, None)
     assert _foreign_salary("<p>Rs. 15,00,000 a year</p>") is True
     assert _parse_pay("Rs 2400000") == (None, None)
+    assert _parse_pay("15 LPA. US equivalent $90,000") == (None, None)
+    assert _foreign_salary("<p>15-20 LPA. US equivalent $90,000</p>") is True
+    assert _parse_pay("CTC 18 lakhs") == (None, None)
     assert _parse_pay("US$ 180,000") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
@@ -179,6 +182,10 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     listed = _apply_listing(opp, "<p>R$ 180,000 a year. US equivalent $40,000</p>")
     assert listed is False
     assert opp.pay_high is None
+    lpa = Opportunity(title="Engineer", url="https://jobs.example/in")
+    listed = _apply_listing(lpa, "<p>15 LPA. US equivalent $90,000</p>")
+    assert listed is False
+    assert lpa.pay_high is None
 
 
 def test_guess_pay_annualizes_hourly():
