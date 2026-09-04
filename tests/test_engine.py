@@ -1031,6 +1031,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Remote Senior Machine Learning Engineer at Greenhouse",
+                "url": "https://remoteok.com/remote-jobs/remote-senior-machine-learning-engineer-greenhouse-1129790",
+                "description": "$80k – $150k",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff Software Engineer, Machine Learning at SmarterDx",
+                "url": "https://www.opentoworkremote.com/view/1470936",
+                "description": "$230,000 - $250,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff ML Engineer at Cloudbeds",
+                "url": "https://www.bilingualjobs.io/jobs/staff-ml-engineer-cloudbeds-greenhouse-cloud",
+                "description": "Greenhouse",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Software Engineer",
                 "url": "https://wellfound.com/role/l/software-engineer/united-states",
                 "description": "$185k – $218k",
@@ -1193,6 +1223,20 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<p>$312K/yr - $351K/yr</p>",
         "https://jobright.ai/jobs/info/6a96d484455eaf6a08c18b9a",
+    )
+    assert _html_is_index(
+        "<title>Remote Senior Machine Learning Engineer at Greenhouse</title>"
+        "<p>$80,000 – $150,000</p>",
+        "https://remoteok.com/remote-jobs/remote-senior-machine-learning-engineer-greenhouse-1129790",
+    )
+    assert _html_is_index(
+        "<title>Staff Software Engineer, Machine Learning at SmarterDx</title>"
+        "<p>$230,000 - $250,000</p>",
+        "https://www.opentoworkremote.com/view/1470936",
+    )
+    assert _html_is_index(
+        "<title>Staff ML Engineer at Cloudbeds</title><p>Remote</p>",
+        "https://www.bilingualjobs.io/jobs/staff-ml-engineer-cloudbeds-greenhouse-cloud",
     )
     assert _html_is_index(
         "<title>Software Engineer</title><p>$185k – $218k</p>",

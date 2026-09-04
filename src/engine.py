@@ -1486,7 +1486,10 @@ _INDEX_URL_RE = re.compile(
     r"|salarycube\.com/"
     r"|motionrecruitment\.com/it-salary"
     r"|hackerx\.org/[^\"'\s]*salary"
-    r"|greenhouse\.com/)",
+    r"|greenhouse\.com/"
+    r"|remoteok\.com/"
+    r"|opentoworkremote\.com/"
+    r"|bilingualjobs\.io/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
