@@ -3399,6 +3399,28 @@ def test_listing_text_workday_cxs_404_falls_back_to_html(monkeypatch):
     assert html and "$180,000" in html
 
 
+def test_listing_text_workday_empty_spa_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "/wday/cxs/" in url:
+            return ""
+        return "<!DOCTYPE html><html><head><title></title></head><body></body></html>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://shipt.wd1.myworkdayjobs.com/en-US/Shipt_External/job/"
+            "Staff-Machine-Learning-Engineer_R4230"
+        )
+    )
+    assert seen[0].endswith("/wday/cxs/shipt/Shipt_External/job/Staff-Machine-Learning-Engineer_R4230")
+    assert any("Shipt_External/job/Staff-Machine-Learning-Engineer_R4230" in u and "/wday/cxs/" not in u for u in seen)
+    assert html is None
+
+
 def test_icims_iframe_url_from_job_link():
     from src.engine import _icims_iframe_url, _is_index_page, _lever_job_url
 

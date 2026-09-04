@@ -168,6 +168,14 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and isinstance(data.get("jobPostingInfo"), dict):
                     return _workday_to_html(data)
+            html = await fetch(_lever_job_url(url))
+            if html is None:
+                return None
+            if not html:
+                return ""
+            if _html_title(html) or _job_posting(html):
+                return html
+            return None
         iframe = _icims_iframe_url(url)
         if iframe:
             raw = await fetch(iframe)
