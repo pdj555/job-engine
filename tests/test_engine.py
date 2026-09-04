@@ -5049,6 +5049,68 @@ def test_html_is_gone_removed_listing_banner():
         "<p>When this application is closed, recruiters will reach out.</p>"
         "<p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position is no longer available.</p>"
+        "<p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Job is no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Role is no longer active.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Listing is no longer posted.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Sorry, position is no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this position is no longer available, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This position has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>The role has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this role has ended, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role will end next quarter.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role ends on Friday.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The role ended up being remote.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Job closed.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position closed.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5173,6 +5235,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
     engine = Engine()
 
     async def page(url: str):
+        if "no-longer-avail" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Position is no longer available.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "role-ended" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This role has ended.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         if "is-expired" in url:
             return (
                 "<title>Senior ML Engineer</title>"
@@ -5309,6 +5383,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    no_longer_avail = Opportunity(
+        title="NoLongerAvail",
+        url="https://jobs.example/no-longer-avail",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    role_ended = Opportunity(
+        title="RoleEnded",
+        url="https://jobs.example/role-ended",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -5322,6 +5408,8 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         application_closed,
         applicants,
         deadline,
+        no_longer_avail,
+        role_ended,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
