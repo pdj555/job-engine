@@ -576,6 +576,22 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_twd is False
     assert twd.pay_high is None
+    assert _parse_pay("80,000 PHP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 PHP. Account Executive $220,000</p>") is True
+    assert _parse_pay("PHP80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>PHP80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 PHP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 PHP. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k PHP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k PHP. Account Executive $220,000</p>") is True
+    php = Opportunity(title="Engineer", url="https://jobs.example/ph")
+    listed_php = _apply_listing(
+        php, "<p>Salary 80,000 PHP. Account Executive $400,000</p>"
+    )
+    assert listed_php is False
+    assert php.pay_high is None
+    assert _parse_pay("Experience with PHP 8. Salary $180,000") == (None, 180_000)
+    assert _foreign_salary("<p>Experience with PHP 8. Salary $180,000</p>") is False
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
