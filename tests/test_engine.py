@@ -171,6 +171,32 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$180,000 gym in NYC") == (None, 180_000)
+    assert _parse_pay("$10,000 gym membership") == (None, None)
+    assert _parse_pay("$10,000 fitness membership") == (None, None)
+    assert _parse_pay("gym membership of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 gym membership") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$10,000 annual wellness") == (None, None)
+    assert _parse_pay("annual wellness of $10,000") == (None, None)
+    assert _parse_pay("$10,000 mental health benefit") == (None, None)
+    assert _parse_pay("mental health benefit of $10,000") == (None, None)
+    assert _parse_pay("$10,000 transit benefit") == (None, None)
+    assert _parse_pay("transit benefit of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 transit benefit") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 transit in NYC") == (None, 180_000)
+    assert _parse_pay("$10,000 HSA contribution") == (None, None)
+    assert _parse_pay("$10,000 FSA contribution") == (None, None)
+    assert _parse_pay("HSA contribution of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 HSA contribution") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 HSA in NYC") == (None, 180_000)
     assert _parse_pay("$10,000 monthly internet stipend") == (None, None)
     assert _parse_pay("$10,000 cell phone allowance") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 cell phone stipend") == (
@@ -498,6 +524,21 @@ def test_guess_pay_annualizes_hourly():
         commute_ben_sal, "<p>Salary $180,000 plus $10,000 commuter benefit</p>"
     ) is True
     assert commute_ben_sal.pay_high == 180_000
+    gym_mem = Opportunity(title="Engineer", url="https://jobs.example/gym-mem")
+    assert _apply_listing(
+        gym_mem, "<p>$10,000 gym membership. Great team.</p>"
+    ) is False
+    assert gym_mem.pay_high is None
+    hsa = Opportunity(title="Engineer", url="https://jobs.example/hsa")
+    assert _apply_listing(
+        hsa, "<p>$10,000 HSA contribution. Great team.</p>"
+    ) is False
+    assert hsa.pay_high is None
+    hsa_sal = Opportunity(title="Engineer", url="https://jobs.example/hsa-sal")
+    assert _apply_listing(
+        hsa_sal, "<p>Salary $180,000 plus $10,000 HSA contribution</p>"
+    ) is True
+    assert hsa_sal.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -951,6 +992,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "3 days a week in person") is False
     assert _guess_remote("Engineer", "hybrid 3 days a week in NYC") is False
     assert _guess_remote("Engineer", "hybrid 3 days a week in the US") is True
+    assert _guess_remote("Engineer", "office 3 days a week") is False
+    assert _guess_remote("Engineer", "3 days in Seattle per week") is False
+    assert _guess_remote("Engineer", "this role requires 3 days in Seattle") is False
+    assert _guess_remote("Engineer", "hybrid 3 days in NYC") is False
+    assert _guess_remote("Engineer", "hybrid 3 days in the US") is True
+    assert _guess_remote("Engineer", "hybrid 3 days in meetings") is True
+    assert _guess_remote("Engineer", "3 days in meetings per week") is True
+    assert _guess_remote("Engineer", "home office 3 days a week") is True
+    assert _guess_remote("Engineer", "Microsoft Office 3 days a week") is True
+    assert _guess_remote("Engineer", "this role requires 3 days in the US") is True
     assert _guess_remote("Engineer", "must work from Seattle 3 days a week") is False
     assert _guess_remote("Engineer", "must work in Seattle 3 days a week") is False
     assert _guess_remote("Engineer", "must work from home 3 days a week") is True
@@ -960,6 +1011,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert _guess_remote(
         "Engineer", "work from home. in-person 3 days a week"
+    ) is True
+    assert _guess_remote(
+        "Engineer", "work from home. office 3 days a week"
+    ) is True
+    assert _guess_remote(
+        "Engineer", "work from home. hybrid 3 days in NYC"
     ) is True
     assert _guess_remote("Engineer", "in-person interviews 3 days a week") is True
     assert _guess_remote(
@@ -1196,6 +1253,30 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert work_from_city.remote is False
     assert work_from_city.score() == 0.7 * (180_000 / (40 * 50))
+    office_days = Opportunity(title="Engineer", url="https://jobs.example/off-days")
+    assert _apply_listing(
+        office_days, "<p>Office 3 days a week. Salary $180,000</p>"
+    ) is True
+    assert office_days.remote is False
+    assert office_days.score() == 0.7 * (180_000 / (40 * 50))
+    city_week = Opportunity(title="Engineer", url="https://jobs.example/city-week")
+    assert _apply_listing(
+        city_week, "<p>3 days in Seattle per week. Salary $180,000</p>"
+    ) is True
+    assert city_week.remote is False
+    assert city_week.score() == 0.7 * (180_000 / (40 * 50))
+    hybrid_in = Opportunity(title="Engineer", url="https://jobs.example/hyb-in")
+    assert _apply_listing(
+        hybrid_in, "<p>Hybrid 3 days in NYC. Salary $180,000</p>"
+    ) is True
+    assert hybrid_in.remote is False
+    assert hybrid_in.score() == 0.7 * (180_000 / (40 * 50))
+    req_days = Opportunity(title="Engineer", url="https://jobs.example/req-days")
+    assert _apply_listing(
+        req_days, "<p>This role requires 3 days in Seattle. Salary $180,000</p>"
+    ) is True
+    assert req_days.remote is False
+    assert req_days.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
@@ -5656,6 +5737,23 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This posting is unpublished.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has been closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided not to fill this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job posting was taken down.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this search has been closed, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5856,6 +5954,24 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>This job is no longer published.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "search-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This search has been closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "not-fill" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>We've decided not to fill this role.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "taken-down" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This job posting was taken down.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -6072,6 +6188,24 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    search_closed = Opportunity(
+        title="SearchClosed",
+        url="https://jobs.example/search-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    not_fill = Opportunity(
+        title="NotFill",
+        url="https://jobs.example/not-fill",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    taken_down = Opportunity(
+        title="TakenDown",
+        url="https://jobs.example/taken-down",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -6098,6 +6232,9 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         new_apps,
         no_longer_pub,
         is_unpublished,
+        search_closed,
+        not_fill,
+        taken_down,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
