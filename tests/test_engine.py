@@ -1035,6 +1035,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "50-hour work week") == 50
     assert _guess_hours("Engineer", "45 hour work-week") == 45
     assert _guess_hours("Engineer", "40 hrs. per week") == 40
+    assert _guess_hours("Engineer", "40h/week") == 40
+    assert _guess_hours("Engineer", "40h per week") == 40
+    assert _guess_hours("Engineer", "Hours per week: 40") == 40
+    assert _guess_hours("Engineer", "Weekly hours: 32") == 32
+    assert _guess_hours("Engineer", "hours/week: 24") == 24
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
@@ -1070,6 +1075,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert opp.hours_per_week == 32
     assert opp.rate_is_imputed is False
     assert opp.score() == 100.0
+    compact = Opportunity(title="Engineer", url="https://jobs.example/40h")
+    assert _apply_listing(
+        compact, "<p>$160,000 a year. 40h/week.</p>"
+    ) is True
+    assert compact.hours_per_week == 40
+    assert compact.score() == 80.0
+    labeled = Opportunity(title="Engineer", url="https://jobs.example/hpw")
+    assert _apply_listing(
+        labeled, "<p>$160,000 a year. Hours per week: 32</p>"
+    ) is True
+    assert labeled.hours_per_week == 32
+    assert labeled.score() == 100.0
     frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
     assert _apply_listing(
         frac, "<p>$180,000 a year. 37.5 hours per week.</p>"

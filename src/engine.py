@@ -5798,10 +5798,12 @@ _NON_SALARY_MONEY_RE = re.compile(
     r")"
 )
 _HOURS_RE = re.compile(
-    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:hrs?|hours?)\.?\s*"
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:hours?|hrs?|h)\.?\s*"
     r"(?:/|\s*per\s*|\s+a\s+|\s+work[\s-]*|\s+of\s+work(?:\s+(?:a|per))?\s*)?\s*"
     r"(?:wk|week(?:ly)?|workweeks?)\b"
-    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s*(?:per|/)\s*(?:wk|weeks?|weekly)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|weekly\s+hours?\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
@@ -6070,9 +6072,11 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
     """Hours explicitly written as N hours/week. None if the listing does not say."""
     match = _HOURS_RE.search(f"{title} {description}")
     if match:
-        n = int(round(float(match.group(1))))
-        if 1 <= n <= 80:
-            return n
+        raw = next((g for g in match.groups() if g), None)
+        if raw:
+            n = int(round(float(raw)))
+            if 1 <= n <= 80:
+                return n
     return None
 
 
