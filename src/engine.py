@@ -899,6 +899,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
     loc = str(cats.get("location") or "").strip() if isinstance(cats, dict) else ""
     place = str(data.get("workplaceType") or "").strip()
     _apply_workplace(posting, place, loc)
+    _copy_hours(posting, data)
     for label in (place, loc):
         if label:
             parts.append(f"<p>{label}</p>")
@@ -1910,6 +1911,7 @@ def _greenhouse_to_html(data: dict) -> str:
                 break
     if n is not None and 1 <= n <= 80:
         posting["workHours"] = str(int(n))
+    _copy_hours(posting, data)
     time_type = str(meta.get("time type") or meta.get("employment type") or "").lower()
     if "part" in time_type:
         posting["employmentType"] = "PART_TIME"
@@ -2007,17 +2009,7 @@ def _workable_jobs_to_html(data: dict) -> str:
     pay = _workable_pay_ld(data)
     if pay:
         posting["baseSalary"] = pay
-    for key in (
-        "hoursPerWeek",
-        "weeklyHours",
-        "hours_per_week",
-        "weekly_hours",
-        "workHours",
-    ):
-        n = _hours_from_node(data.get(key))
-        if n:
-            posting["workHours"] = str(n)
-            break
+    _copy_hours(posting, data)
     page_title = f"{title} at {company}" if company else title
     _apply_workplace(posting, place)
     return (
@@ -2133,6 +2125,7 @@ def _smartrecruiters_to_html(data: dict) -> str:
     pay = _smartrecruiters_pay_ld(data)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, data)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -2563,9 +2556,11 @@ def _recruitee_to_html(data: dict) -> str:
         posting["employmentType"] = "PART_TIME"
     elif "full" in code:
         posting["employmentType"] = "FULL_TIME"
-    n = _num(data.get("min_hours_per_week")) or _num(data.get("hours_per_week"))
+    n = _num(data.get("min_hours_per_week"))
     if n is not None and 1 <= n <= 80:
         posting["workHours"] = str(int(n))
+    else:
+        _copy_hours(posting, data)
     if data.get("remote") is True:
         place = "remote"
     elif data.get("hybrid") is True:
@@ -2730,6 +2725,7 @@ def _rippling_to_html(post: dict, api: Optional[dict] = None) -> str:
     pay = _rippling_pay_ld(post)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, post)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -2856,6 +2852,7 @@ def _breezy_to_html(job: dict) -> str:
     pay = _breezy_pay_ld(job)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, job)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -2975,6 +2972,7 @@ def _pinpoint_to_html(job: dict, board: str = "") -> str:
     pay = _pinpoint_pay_ld(job)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, job)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -3205,6 +3203,7 @@ def _bamboohr_to_html(job: dict, board: str = "") -> str:
     pay = _bamboohr_pay_ld(job)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, job)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -3372,6 +3371,7 @@ def _dover_to_html(job: dict) -> str:
     pay = _dover_pay_ld(job)
     if pay:
         posting["baseSalary"] = pay
+    _copy_hours(posting, job)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -5023,14 +5023,28 @@ def _hours_from_node(work) -> Optional[int]:
     return None
 
 
+_HOUR_KEYS = (
+    "workHours",
+    "hoursPerWeek",
+    "weeklyHours",
+    "hours_per_week",
+    "weekly_hours",
+)
+
+
+def _copy_hours(posting: dict, raw: dict) -> None:
+    """Copy occupied hoursPerWeek aliases onto JobPosting.workHours."""
+    if posting.get("workHours") is not None or not isinstance(raw, dict):
+        return
+    for key in _HOUR_KEYS:
+        n = _hours_from_node(raw.get(key))
+        if n:
+            posting["workHours"] = str(n)
+            return
+
+
 def _posting_hours(posting: dict) -> Optional[int]:
-    for key in (
-        "workHours",
-        "hoursPerWeek",
-        "weeklyHours",
-        "hours_per_week",
-        "weekly_hours",
-    ):
+    for key in _HOUR_KEYS:
         n = _hours_from_node(posting.get(key))
         if n:
             return n

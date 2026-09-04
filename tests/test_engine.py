@@ -10636,6 +10636,26 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(period_row, period) is True
     assert period_row.pay_low == 75_000
     assert period_row.pay_high == 100_000
+    hours = _lever_to_html(
+        {
+            "text": "Engineer",
+            "hoursPerWeek": 32,
+            "salaryRange": {
+                "min": 80,
+                "max": 80,
+                "currency": "USD",
+                "interval": "per-hour",
+            },
+        },
+        "Acme",
+    )
+    hours_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-555555555555",
+    )
+    assert _apply_listing(hours_row, hours) is True
+    assert hours_row.hours_per_week == 32
+    assert hours_row.pay_high == 128_000
     described = _lever_to_html(
         {
             "text": "Engineer",
@@ -12224,6 +12244,35 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
         ),
     ) is True
     assert amount.pay_high == 180_000
+    hours = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354617",
+    )
+    assert _apply_listing(
+        hours,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "hoursPerWeek": 32,
+                "compensation": {
+                    "min": 80,
+                    "max": 80,
+                    "currency": "USD",
+                    "period": "HOUR",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office.</p>"}
+                    }
+                },
+            }
+        ),
+    ) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_high == 128_000
     text = Opportunity(
         title="x",
         url="https://jobs.smartrecruiters.com/Acme/744000147354613",
@@ -13518,6 +13567,34 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     ) is True
     assert interval.pay_low == 75_000
     assert interval.pay_high == 100_000
+    hours = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-222222222222",
+    )
+    assert _apply_listing(
+        hours,
+        _rippling_to_html(
+            {
+                "name": "Engineer",
+                "companyName": "Acme",
+                "employmentType": "FULL_TIME",
+                "workLocations": ["Austin, TX"],
+                "hoursPerWeek": 32,
+                "payRangeDetails": [
+                    {
+                        "currency": "USD",
+                        "frequency": "HOURLY",
+                        "rangeStart": 80,
+                        "rangeEnd": 80,
+                        "isRemote": False,
+                    }
+                ],
+                "description": {"role": "<p>Office.</p>"},
+            }
+        ),
+    ) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_high == 128_000
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
@@ -13862,6 +13939,22 @@ def test_breezy_foreign_salary_is_foreign():
     ) is True
     assert obj.pay_low == 180_000
     assert obj.pay_high == 220_000
+    hours = Opportunity(title="x", url="https://acme.breezy.hr/p/dddddddddddd")
+    assert _apply_listing(
+        hours,
+        _breezy_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "type": {"id": "fullTime"},
+                "location": {"is_remote": False, "name": "Austin"},
+                "hoursPerWeek": 32,
+                "salary": {"min": 80, "max": 80, "currency": "USD", "period": "hour"},
+            }
+        ),
+    ) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_high == 128_000
     year_sfx = Opportunity(title="x", url="https://acme.breezy.hr/p/cccccccccccc")
     assert _apply_listing(
         year_sfx,
@@ -14071,6 +14164,30 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     ) is True
     assert obj.pay_low == 75_000
     assert obj.pay_high == 100_000
+    hours = Opportunity(
+        title="x",
+        url="https://clearview.pinpointhq.com/postings/eeeeeeee-ffff-0000-1111-222222222222",
+    )
+    assert _apply_listing(
+        hours,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "hoursPerWeek": 32,
+                "compensation_minimum": 80,
+                "compensation_maximum": 80,
+                "compensation_currency": "USD",
+                "compensation_frequency": "hour",
+                "description": "<p>Office.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_high == 128_000
 
 
 def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):
