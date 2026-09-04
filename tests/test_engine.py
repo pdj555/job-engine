@@ -5514,6 +5514,27 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title><p>Job not found.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job has been unpublished.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting has been unpublished.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Applications for this role have closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is no longer accepting new applicants.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this job has been unpublished, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5684,6 +5705,24 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>The job you are looking for is no longer available.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "unpublished" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This posting has been unpublished.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "have-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Applications for this role have closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "new-apps" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This role is no longer accepting new applicants.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -5870,6 +5909,24 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    unpublished = Opportunity(
+        title="Unpublished",
+        url="https://jobs.example/unpublished",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    have_closed = Opportunity(
+        title="HaveClosed",
+        url="https://jobs.example/have-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    new_apps = Opportunity(
+        title="NewApps",
+        url="https://jobs.example/new-apps",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -5891,6 +5948,9 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         doesnt_exist,
         couldnt_find,
         looking_for,
+        unpublished,
+        have_closed,
+        new_apps,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
