@@ -9614,6 +9614,55 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<p>You can browse jobs on our careers page. Salary $180,000</p>",
     ) is True
     assert copy.pay_high == 180_000
+    open_pos = Opportunity(title="Engineer", url="https://jobs.example/open-pos")
+    assert _apply_listing(
+        open_pos,
+        "<title>Engineer</title><p>Great team. Apply now.</p>"
+        "<h2>Open positions</h2><p>Account Executive $180,000 - $220,000</p>",
+    ) is False
+    assert open_pos.pay_high is None
+    own_open = Opportunity(title="Engineer", url="https://jobs.example/own-open")
+    assert _apply_listing(
+        own_open,
+        "<title>Engineer</title><p>$115,000 - $145,000 a year.</p>"
+        "<h2>Open positions</h2><p>Account Executive $180,000 - $220,000</p>",
+    ) is True
+    assert own_open.pay_high == 145_000
+    rec = Opportunity(title="Engineer", url="https://jobs.example/rec-for-you")
+    assert _apply_listing(
+        rec,
+        "<title>Engineer</title><p>Great team. $180,000</p>"
+        "<h2>Recommended for you</h2><p>Account Executive $422,000</p>",
+    ) is True
+    assert rec.pay_high == 180_000
+    company_jobs = Opportunity(title="Engineer", url="https://jobs.example/co-jobs")
+    assert _apply_listing(
+        company_jobs,
+        "<title>Engineer</title><p>$115,000 - $145,000 a year.</p>"
+        "<h2>Jobs at this company</h2><p>Account Executive $220,000</p>",
+    ) is True
+    assert company_jobs.pay_high == 145_000
+    more_co = Opportunity(title="Engineer", url="https://jobs.example/more-co")
+    assert _apply_listing(
+        more_co,
+        "<title>Engineer</title><p>$115,000 a year.</p>"
+        "<h2>More from this company</h2><p>Account Executive $220,000</p>",
+    ) is True
+    assert more_co.pay_high == 115_000
+    open_copy = Opportunity(title="Engineer", url="https://jobs.example/open-copy")
+    assert _apply_listing(
+        open_copy,
+        "<title>Engineer</title>"
+        "<p>We have open positions across the company. Salary $180,000</p>",
+    ) is True
+    assert open_copy.pay_high == 180_000
+    nav_open = Opportunity(title="Engineer", url="https://jobs.example/nav-open")
+    assert _apply_listing(
+        nav_open,
+        "<header><h2>Open positions</h2></header>"
+        "<title>Engineer</title><p>Salary $180,000</p>",
+    ) is True
+    assert nav_open.pay_high == 180_000
 
 
 def test_apply_listing_ignores_related_jsonld_jobposting():

@@ -3644,7 +3644,11 @@ _RELATED_HEADING_RE = re.compile(
     r"|latest\s+jobs"
     r"|explore\s+jobs"
     r"|continue\s+browsing"
-    r"|more\s+opportunities)\s*"
+    r"|more\s+opportunities"
+    r"|open\s+positions"
+    r"|recommended\s+for\s+you"
+    r"|more\s+from\s+this\s+company"
+    r"|jobs\s+at\s+this\s+company)\s*"
     r"</\3>.*$"
 )
 
