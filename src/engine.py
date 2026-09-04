@@ -4262,6 +4262,15 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\b(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?)\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly))?"
+    r"\s+stipend\b"
+    r"|"
+    r"\b(?:monthly\s+)?stipend\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r")"
 )
 _HOURS_RE = re.compile(
