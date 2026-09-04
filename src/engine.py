@@ -3512,16 +3512,21 @@ def _compensation_from_raw(
     return _parse_pay(f"{title} {description}", hours)
 
 
+_RELATED_JOBS_RE = re.compile(
+    r"(?is)\b(?:similar|related|recommended)\s+jobs\b.*$"
+)
+
+
 def _visible_text(html: str) -> str:
     return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))).strip()
 
 
 def _listing_plain_text(html: str) -> str:
-    """Visible listing copy only — scripts/styles are not compensation."""
+    """Visible listing copy only — scripts, styles, and related-job cards are not pay."""
     html = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", html)
     html = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", html)
     html = re.sub(r"(?is)<noscript\b[^>]*>.*?</noscript>", " ", html)
-    return _visible_text(html)
+    return _RELATED_JOBS_RE.sub("", _visible_text(html))
 
 
 _LD_SCRIPT_RE = re.compile(
@@ -4228,7 +4233,6 @@ _HYBRID_WORKPLACE_RE = re.compile(
 _ONSITE_WORKPLACE_RE = re.compile(
     r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
 )
-_RELATED_JOBS_RE = re.compile(r"(?is)\bsimilar jobs\b.*$")
 
 
 def _guess_remote(title: str, description: str) -> bool:
