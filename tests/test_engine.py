@@ -117,6 +117,11 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>Compensation: 150,000 CHF</p>") is True
     assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
     assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
+    assert _parse_pay("SEK 800,000. US equivalent $90,000") == (None, None)
+    assert _foreign_salary("<p>SEK 800,000. US equivalent $90,000</p>") is True
+    assert _parse_pay("Compensation: 750,000 NOK") == (None, None)
+    assert _foreign_salary("<p>Compensation: 750,000 NOK</p>") is True
+    assert _parse_pay("PLN 240,000 or $180,000") == (None, None)
     assert _parse_pay("$15000 to $17000 gross Salary Monthly") == (None, None)
     assert _foreign_salary("<p>$15000 to $17000 gross Salary Monthly</p>") is True
 
