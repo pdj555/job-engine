@@ -921,6 +921,18 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "2-3 days a week in our NYC hub") is False
     assert _guess_remote("Engineer", "must be in the US 3 days a week") is True
     assert _guess_remote("Engineer", "3 days a week in meetings") is True
+    assert _guess_remote("Engineer", "this role is hybrid") is False
+    assert _guess_remote("Engineer", "this role is hybrid: 3 days in NYC") is False
+    assert _guess_remote("Engineer", "the position is hybrid") is False
+    assert _guess_remote("Engineer", "in-person 3 days a week") is False
+    assert _guess_remote("Engineer", "in person 3 days a week") is False
+    assert _guess_remote(
+        "Engineer", "work from home. this role is hybrid"
+    ) is True
+    assert _guess_remote(
+        "Engineer", "work from home. in-person 3 days a week"
+    ) is True
+    assert _guess_remote("Engineer", "in-person interviews 3 days a week") is True
     assert _guess_remote(
         "Engineer", "work from home. must be in Seattle 3 days a week"
     ) is True
@@ -1125,6 +1137,18 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert hub_days.remote is False
     assert hub_days.score() == 0.7 * (180_000 / (40 * 50))
+    role_hybrid = Opportunity(title="Engineer", url="https://jobs.example/role-hyb")
+    assert _apply_listing(
+        role_hybrid, "<p>This role is hybrid: 3 days in NYC. Salary $180,000</p>"
+    ) is True
+    assert role_hybrid.remote is False
+    assert role_hybrid.score() == 0.7 * (180_000 / (40 * 50))
+    inperson_days = Opportunity(title="Engineer", url="https://jobs.example/ip-days")
+    assert _apply_listing(
+        inperson_days, "<p>In-person 3 days a week. Salary $180,000</p>"
+    ) is True
+    assert inperson_days.remote is False
+    assert inperson_days.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True

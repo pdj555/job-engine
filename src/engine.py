@@ -4960,6 +4960,7 @@ _HYBRID_WORKPLACE_RE = re.compile(
     r"(?i)\bhybrid\s+(?:work(?:ing)?(?:\s+(?:environment|model|schedule|arrangement|approach))?|"
     r"role|position|schedule|workplace|environment|office|setup|approach)\b"
     r"|\bmust\s+be\s+hybrid\b"
+    r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+is\s+hybrid\b"
     r"|\(hybrid\)"
     r"|\[hybrid\]"
 )
@@ -5018,6 +5019,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
     r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\s+in\s+"
     r"(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|hub)\b"
+    r"|in[-\s]person\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
 )
 
 
