@@ -254,11 +254,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 monthly bonus") == (None, None)
     assert _parse_pay("$10,000 incentive bonus") == (None, None)
     assert _parse_pay("$10,000 sales bonus") == (None, None)
+    assert _parse_pay("$10,000 stay bonus") == (None, None)
+    assert _parse_pay("$10,000 anniversary bonus") == (None, None)
     assert _parse_pay("$20,000 bonus") == (None, 20_000)
     assert _parse_pay("Salary $180,000 plus $10,000 discretionary bonus") == (
         None,
         180_000,
     )
+    assert _parse_pay("$10,000 pet insurance") == (None, None)
+    assert _parse_pay("$10,000 vision insurance") == (None, None)
+    assert _parse_pay("$10,000 medical insurance") == (None, None)
+    assert _parse_pay("pet insurance of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 pet insurance") == (None, 180_000)
+    assert _parse_pay("$180,000 medical in NYC") == (None, 180_000)
+    assert _parse_pay("$10,000 pet") == (None, 10_000)
+    assert _parse_pay("$10,000 legal plan") == (None, None)
+    assert _parse_pay("$10,000 legal") == (None, 10_000)
+    assert _parse_pay("$10,000 adoption assistance") == (None, None)
+    assert _parse_pay("$10,000 HRA contribution") == (None, None)
+    assert _parse_pay("$10,000 HRA") == (None, 10_000)
+    assert _parse_pay("$10,000 WFH stipend") == (None, None)
+    assert _parse_pay("$10,000 work from home stipend") == (None, None)
+    assert _parse_pay("$10,000 equipment stipend") == (None, None)
+    assert _parse_pay("$10,000 laptop stipend") == (None, None)
+    assert _parse_pay("$10,000 vacation payout") == (None, None)
+    assert _parse_pay("vacation buyback of $10,000") == (None, None)
+    assert _parse_pay("$180,000 vacation in NYC") == (None, 180_000)
+    assert _parse_pay("$10,000 wellness") == (None, 10_000)
+    assert _parse_pay("$10,000 HSA") == (None, 10_000)
     assert _parse_pay("$10,000 monthly internet stipend") == (None, None)
     assert _parse_pay("$10,000 cell phone allowance") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 cell phone stipend") == (
@@ -636,6 +659,17 @@ def test_guess_pay_annualizes_hourly():
     sev = Opportunity(title="Engineer", url="https://jobs.example/sev")
     assert _apply_listing(sev, "<p>$10,000 severance. Apply now.</p>") is False
     assert sev.pay_high is None
+    pet = Opportunity(title="Engineer", url="https://jobs.example/pet")
+    assert _apply_listing(pet, "<p>$10,000 pet insurance. Great team.</p>") is False
+    assert pet.pay_high is None
+    wfh_stip = Opportunity(title="Engineer", url="https://jobs.example/wfh-stip")
+    assert _apply_listing(
+        wfh_stip, "<p>$10,000 WFH stipend. Apply now.</p>"
+    ) is False
+    assert wfh_stip.pay_high is None
+    vac = Opportunity(title="Engineer", url="https://jobs.example/vac")
+    assert _apply_listing(vac, "<p>$10,000 vacation payout. Great team.</p>") is False
+    assert vac.pay_high is None
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -1108,9 +1142,17 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "3 days on campus per week") is False
     assert _guess_remote("Engineer", "come into work 3 days a week") is False
     assert _guess_remote("Engineer", "come in to work 3 days a week") is False
+    assert _guess_remote("Engineer", "come to work 3 days a week") is False
     assert _guess_remote("Engineer", "campus 3 days a week") is False
     assert _guess_remote("Engineer", "3 days a week from campus") is False
+    assert _guess_remote("Engineer", "3 days each week from campus") is False
+    assert _guess_remote("Engineer", "3 days a week at the office") is False
+    assert _guess_remote("Engineer", "3 days a week at our campus") is False
+    assert _guess_remote("Engineer", "headquarters 3 days a week") is False
+    assert _guess_remote("Engineer", "3 days a week from HQ") is False
+    assert _guess_remote("Engineer", "report to HQ 3 days a week") is False
     assert _guess_remote("Engineer", "on-campus interviews 3 days a week") is True
+    assert _guess_remote("Engineer", "you will be in Seattle 3 days a week") is True
     assert _guess_remote("Engineer", "must work from Seattle 3 days a week") is False
     assert _guess_remote("Engineer", "must work in Seattle 3 days a week") is False
     assert _guess_remote("Engineer", "must work from home 3 days a week") is True
@@ -1413,6 +1455,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert come_work.remote is False
     assert come_work.score() == 0.7 * (180_000 / (40 * 50))
+    come_to = Opportunity(title="Engineer", url="https://jobs.example/come-to")
+    assert _apply_listing(
+        come_to, "<p>Come to work 3 days a week. Salary $180,000</p>"
+    ) is True
+    assert come_to.remote is False
+    at_off = Opportunity(title="Engineer", url="https://jobs.example/at-off")
+    assert _apply_listing(
+        at_off, "<p>3 days a week at the office. Salary $180,000</p>"
+    ) is True
+    assert at_off.remote is False
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
@@ -2600,6 +2652,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Newsroom | Acme",
+                "url": "https://acme.com/newsroom",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Investors | Acme",
+                "url": "https://acme.com/investors",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Investors Engineer",
+                "url": "https://jobs.example.com/job/investors-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -3641,6 +3723,26 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
         "https://acme.com/news/senior-engineer",
+    )
+    assert _html_is_index(
+        "<title>Newsroom | Acme</title><p>$180,000</p>",
+        "https://acme.com/newsroom",
+    )
+    assert _html_is_index(
+        "<title>Investors | Acme</title><p>$180,000</p>",
+        "https://acme.com/investors",
+    )
+    assert not _html_is_index(
+        "<title>Investors Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/investors-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/investors/senior-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/newsroom/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
@@ -6190,6 +6292,34 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This role is no longer open.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job has been unposted.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting has been deleted.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've removed this posting.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is archived.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not accepting applications for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Position filled.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This page has been removed.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -6801,6 +6931,10 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>FAQs | Acme</title><p>$180,000</p>"
         if url.rstrip("/").endswith("/news"):
             return "<title>News | Acme</title><p>$180,000 - $270,000</p>"
+        if url.rstrip("/").endswith("/newsroom"):
+            return "<title>Newsroom | Acme</title><p>$180,000 - $270,000</p>"
+        if url.rstrip("/").endswith("/investors"):
+            return "<title>Investors | Acme</title><p>$180,000</p>"
         return ""
 
     engine._listing_text = page
@@ -6904,7 +7038,17 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/news",
         pay_high=270_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news]
+    newsroom = Opportunity(
+        title="Newsroom | Acme",
+        url="https://acme.com/newsroom",
+        pay_high=270_000,
+    )
+    investors = Opportunity(
+        title="Investors | Acme",
+        url="https://acme.com/investors",
+        pay_high=180_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news, newsroom, investors]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
