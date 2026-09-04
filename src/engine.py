@@ -121,20 +121,27 @@ class Engine:
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
-        """Search all sources in parallel."""
-        searches = [self._search_brave(q) for q in _search_angles(query)]
-
+        """Search generic angles in parallel, then ATS site: queries one at a time."""
+        angles = _search_angles(query)
+        generic = [q for q in angles if "site:" not in q.casefold()]
+        sites = [q for q in angles if "site:" in q.casefold()]
+        searches = [self._search_brave(q) for q in generic]
         if self.perplexity_key:
             searches.append(self._search_perplexity(query))
-
-        results = await asyncio.gather(*searches, return_exceptions=True)
+        results = list(
+            await asyncio.gather(*searches, return_exceptions=True)
+        ) if searches else []
+        for q in sites:
+            try:
+                results.append(await self._search_brave(q))
+            except Exception as e:
+                results.append(e)
 
         all_results = []
         for r in results:
             if isinstance(r, list):
                 all_results.extend(r)
 
-        # Dedupe by URL (trailing slash / case are the same listing)
         seen = set()
         unique = []
         for r in all_results:
