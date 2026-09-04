@@ -227,6 +227,11 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("USD 80 per hour") == (None, 160_000)
     assert _parse_pay("$80–$100 an hour") == (160_000, 200_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $80/hr on-call") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $800/day travel") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $3,000 per week travel") == (None, 180_000)
+    assert _parse_pay("Base $200,000. $15,000 per month housing") == (None, 200_000)
+    assert _parse_pay("$80/hr") == (None, 160_000)
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -239,7 +244,9 @@ def test_parse_pay_annualizes_monthly_usd():
     assert _parse_pay("USD 15,000 per month") == (None, 180_000)
     assert _parse_pay("$15,000 monthly") == (None, 180_000)
     assert _parse_pay("$8,000-$10,000 per month") == (96_000, 120_000)
+    assert _parse_pay("$10,000-$15,000 per month") == (120_000, 180_000)
     assert _parse_pay("$8k–$12k/month") == (96_000, 144_000)
+    assert _parse_pay("$20k-$25k/month") == (240_000, 300_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     opp = Opportunity(title="Engineer", url="https://jobs.example/mo")

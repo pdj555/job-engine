@@ -4196,31 +4196,62 @@ _DAILY_RANGE_RE = re.compile(
 _DAILY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _DAY_TAIL
 )
+_NOT_PERIOD_UNIT = (
+    r"(?!"
+    + _HOUR_TAIL
+    + r"|"
+    + _DAY_TAIL
+    + r"|"
+    + _WEEK_TAIL
+    + r"|"
+    + _BIWEEK_TAIL
+    + r"|"
+    + _SEMIMONTH_TAIL
+    + r"|"
+    + _MONTH_TAIL
+    + r")"
+)
+_NOT_RANGE_CONT = r"(?!\s*(?:[-–—]|to|and)\s*\$?\s*\d)"
 _RANGE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)"
+    + _NOT_PERIOD_UNIT,
     re.I,
 )
 _RANGE_FULL_RE = re.compile(
     r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:USD|US\$)?"
     r"\s*(?:to|-|–|—|and)\s*"
-    r"\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
+    r"\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    + _NOT_PERIOD_UNIT,
     re.I,
 )
 _RANGE_SPACE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s+\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s+\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)"
+    + _NOT_PERIOD_UNIT,
     re.I,
 )
 _RANGE_SPACE_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s+\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s+\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    + _NOT_PERIOD_UNIT,
     re.I,
 )
 _RANGE_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    + _NOT_PERIOD_UNIT
 )
-_ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)", re.I)
-_ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")
+_ANNUAL_K_RE = re.compile(
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)" + _NOT_RANGE_CONT + _NOT_PERIOD_UNIT,
+    re.I,
+)
+_ANNUAL_FULL_RE = re.compile(
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+    + _NOT_RANGE_CONT
+    + _NOT_PERIOD_UNIT,
+    re.I,
+)
 _ANNUAL_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+    + _NOT_RANGE_CONT
+    + _NOT_PERIOD_UNIT
 )
 _NON_SALARY_MONEY_RE = re.compile(
     r"(?i)(?:"
@@ -4394,13 +4425,10 @@ def _remote_geo_pay(text: str) -> Optional[tuple[int, int]]:
     return None
 
 
-def _parse_pay(
-    text: str, hours: Optional[int] = None, *, remote: bool = False
+def _period_pay(
+    text: str, hours: Optional[int]
 ) -> tuple[Optional[int], Optional[int]]:
-    """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
-    text = _NON_SALARY_MONEY_RE.sub(" ", text or "")
-    if _FOREIGN_DOLLAR_RE.search(text) or _FOREIGN_PAY_RE.search(text):
-        return None, None
+    """Annual USD from hourly/daily/weekly/monthly units. (None, None) if none."""
     hourly_range = _HOURLY_RANGE_RE.search(text)
     if hourly_range:
         weeks = hours or 40
@@ -4412,12 +4440,7 @@ def _parse_pay(
     if hourly:
         rate = _money(hourly.group(1))
         if 10 <= rate <= 1000:
-            annual = int(rate * (hours or 40) * 50)
-            return None, annual
-    if remote:
-        geo = _remote_geo_pay(text)
-        if geo:
-            return geo
+            return None, int(rate * (hours or 40) * 50)
     daily_range = _DAILY_RANGE_RE.search(text)
     if daily_range:
         low = _day_annual(daily_range.group(1), daily_range.group(2))
@@ -4473,6 +4496,11 @@ def _parse_pay(
         annual = _month_annual(monthly.group(1), monthly.group(2))
         if annual:
             return None, annual
+    return None, None
+
+
+def _annual_pay(text: str) -> tuple[Optional[int], Optional[int]]:
+    """Annual USD from yearly amounts. (None, None) if none."""
     ranged = _RANGE_K_RE.search(text)
     if ranged:
         low, high = int(_money(ranged.group(1)) * 1000), int(_money(ranged.group(2)) * 1000)
@@ -4514,6 +4542,26 @@ def _parse_pay(
         if 10_000 <= annual <= 2_000_000:
             return None, annual
     return None, None
+
+
+def _parse_pay(
+    text: str, hours: Optional[int] = None, *, remote: bool = False
+) -> tuple[Optional[int], Optional[int]]:
+    """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown.
+
+    Stated yearly pay wins over on-call/travel period rates on the same page.
+    """
+    text = _NON_SALARY_MONEY_RE.sub(" ", text or "")
+    if _FOREIGN_DOLLAR_RE.search(text) or _FOREIGN_PAY_RE.search(text):
+        return None, None
+    if remote:
+        geo = _remote_geo_pay(text)
+        if geo:
+            return geo
+    yearly = _annual_pay(text)
+    if yearly[0] or yearly[1]:
+        return yearly
+    return _period_pay(text, hours)
 
 
 def _guess_pay(title: str, description: str, hours: Optional[int] = None) -> Optional[int]:
