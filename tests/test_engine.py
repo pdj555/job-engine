@@ -3186,6 +3186,52 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert hour.pay_high == 200_000
 
 
+def test_apply_listing_json_ld_monthly_and_weekly_thousands():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":15,"maxValue":18,"unitText":"MONTH"}}}
+    </script>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/ld-mo-k")
+    assert _apply_listing(opp, html) is True
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 216_000
+    full = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":15000,"unitText":"MONTH"}}}
+    </script>
+    """
+    dollars = Opportunity(title="Engineer", url="https://jobs.example/ld-mo")
+    assert _apply_listing(dollars, full) is True
+    assert dollars.pay_high == 180_000
+    week = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3,"unitText":"WEEK"}}}
+    </script>
+    """
+    wk = Opportunity(title="Engineer", url="https://jobs.example/ld-wk-k")
+    assert _apply_listing(wk, week) is True
+    assert wk.pay_high == 150_000
+    week_full = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3000,"unitText":"WEEK"}}}
+    </script>
+    """
+    wk_d = Opportunity(title="Engineer", url="https://jobs.example/ld-wk")
+    assert _apply_listing(wk_d, week_full) is True
+    assert wk_d.pay_high == 150_000
+
+
 def test_apply_listing_empty_json_ld_salary_falls_back_to_visible_text():
     from src.engine import _apply_listing
 
