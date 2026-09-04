@@ -1043,6 +1043,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "Hours a week: 32") == 32
     assert _guess_hours("Engineer", "Weekly hrs: 32") == 32
     assert _guess_hours("Engineer", "Hours: 32 per week") == 32
+    assert _guess_hours("Engineer", "Hours per week — 32") == 32
+    assert _guess_hours("Engineer", "Hours per week – 32") == 32
+    assert _guess_hours("Engineer", "Hours per week - 32") == 32
+    assert _guess_hours("Engineer", "Weekly hours — 32") == 32
+    assert _guess_hours("Engineer", "Hours — 32 per week") == 32
+    assert _guess_hours("Engineer", "hours/week — 24") == 24
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
@@ -1102,6 +1108,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert colon.hours_per_week == 32
     assert colon.score() == 100.0
+    dash = Opportunity(title="Engineer", url="https://jobs.example/hdash")
+    assert _apply_listing(
+        dash, "<p>$80/hour. Hours per week — 32</p>"
+    ) is True
+    assert dash.hours_per_week == 32
+    assert dash.pay_high == 128_000
     frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
     assert _apply_listing(
         frac, "<p>$180,000 a year. 37.5 hours per week.</p>"
