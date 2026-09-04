@@ -6507,6 +6507,35 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert listed.company == "Acme"
+    snake = Opportunity(title="x", url="https://jobs.example/ld-hiring-snake")
+    assert _apply_listing(
+        snake,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiring_organization":{"@type":"Organization","name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert snake.company == "Acme"
+    snake_str = Opportunity(title="x", url="https://jobs.example/ld-hiring-str")
+    assert _apply_listing(
+        snake_str,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","hiring_organization":"Acme",'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert snake_str.company == "Acme"
+    snake_place = Opportunity(title="x", url="https://jobs.example/ld-hiring-place")
+    assert _apply_listing(
+        snake_place,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiring_organization":{"name":"Remote"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert snake_place.company != "Remote"
 
 
 def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():

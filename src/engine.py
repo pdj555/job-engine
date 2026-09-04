@@ -5187,7 +5187,7 @@ def _posting_foreign(posting: Optional[dict]) -> bool:
 
 
 def _posting_company(posting: dict) -> Optional[str]:
-    org = posting.get("hiringOrganization")
+    org = posting.get("hiringOrganization") or posting.get("hiring_organization")
     if isinstance(org, list) and org:
         org = org[0]
     if isinstance(org, str):
