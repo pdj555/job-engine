@@ -1400,6 +1400,27 @@ def test_index_pages_are_not_opportunities():
             "description": "",
         }
     )
+    assert not _html_is_index(
+        "<title>Search Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/search-engineer",
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Search Engineer",
+                "url": "https://jobs.example.com/job/search-platform",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert _is_index_page(
+        {
+            "url": "https://jobs.example.com/en/search",
+            "title": "Search Engineer",
+            "description": "",
+        }
+    )
     assert not _is_index_page(
         {
             "url": "https://job-boards.eu.greenhouse.io/overstory/jobs/4411330101",

@@ -1482,6 +1482,7 @@ _INDEX_URL_RE = re.compile(
     r"|glassdoor\.com/Job/"
     r"|simplyhired\.com/search|/search\?q="
     r"|upwork\.com/freelance-jobs/apply/"
+    r"|grants\.gov/search"
     r"|lemon\.io/for-developers/"
     r"|magic\.lemon\.io/share/"
     r"|docs\.lemon\.io/"
@@ -3473,7 +3474,7 @@ def _apple_to_html(job: dict) -> str:
 
 
 _INDEX_PATH_RE = re.compile(
-    r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search"
+    r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search(?:/|$)"
     r"|^/(?:careers|jobs)/?$"
     r"|^/hire(?:/|$)"
     r"|/apply/?$",
