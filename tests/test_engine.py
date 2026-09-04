@@ -1019,6 +1019,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:ats.rippling.com",
         "senior ML engineer remote site:breezy.hr",
         "senior ML engineer remote site:pinpointhq.com",
+        "senior ML engineer remote site:comeet.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3953,6 +3954,101 @@ def test_pinpoint_gbp_pay_is_foreign():
     _apply_listing(opp, html)
     assert opp.pay_high is None
     assert _foreign_salary(html) is True
+
+
+def test_comeet_job_urls_are_not_boards():
+    from src.engine import _comeet_job_url, _is_index_page
+
+    job = (
+        "https://www.comeet.com/jobs/vastdata/43.001/"
+        "senior-software-engineer-platform/96.616"
+    )
+    assert _comeet_job_url(job) == job
+    assert not _is_index_page(
+        {"url": job, "title": "Jobs at VAST Data - Comeet", "description": ""}
+    )
+    assert not _is_index_page(
+        {
+            "url": (
+                "https://www.comeet.com/jobs/aspectiva/35.000/"
+                "senior-software-engineer/45.C50"
+            ),
+            "title": "Spark Hire Recruit Jobs | Spark Hire Recruit",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://www.comeet.com/jobs/vastdata/43.001",
+            "title": "Jobs at VAST Data - Comeet",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_comeet_api_not_referral_pay(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    page = '{"company_uid": "43.001", "token": "AABBCCDDEEFF00112233445566778899"}'
+    payload = {
+        "name": "Platform Senior Software Engineer",
+        "company_name": "VAST Data",
+        "employment_type": "Full-time",
+        "workplace_type": "Hybrid",
+        "location": {"name": "United States", "is_remote": True},
+        "company_referrals_reward": "$2,000",
+        "details": [
+            {"name": "Description", "value": "<p>Build AI infrastructure.</p>"},
+            {"name": "Referral reward", "value": "$2,000"},
+        ],
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "careers-api" in url:
+            assert "AABBCCDDEEFF00112233445566778899" in url
+            return json.dumps(payload)
+        return page
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://www.comeet.com/jobs/vastdata/43.001/"
+        "senior-software-engineer-platform/96.616"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    assert seen[0] == url
+    assert "careers-api/2.0/company/43.001/positions/96.616" in seen[1]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is False
+    assert opp.company == "VAST Data"
+    assert opp.remote is True
+    assert opp.pay_high is None
+    assert opp.hours_per_week == 40
+    assert "$2,000" not in text
+
+
+def test_listing_text_comeet_missing_position_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "careers-api" in url:
+            return None
+        return '{"token": "AABBCCDDEEFF00112233445566778899"}'
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://www.comeet.com/jobs/mentee_robotics/6A.002/"
+            "senior-software-engineer-ai-infra/01.852"
+        )
+    )
+    assert any("careers-api" in u for u in seen)
+    assert html is None
 
 
 def test_listing_plain_text_ignores_script_salaries():

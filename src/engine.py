@@ -232,6 +232,24 @@ class Engine:
                 if isinstance(rows, list):
                     return None
             return ""
+        cm = _comeet_ids(url)
+        if cm:
+            page = await fetch(_comeet_job_url(url))
+            if page is None:
+                return None
+            token = _comeet_token(page)
+            if token:
+                raw = await fetch(_comeet_api_url(cm, token))
+                if raw is None:
+                    return None
+                if raw:
+                    try:
+                        data = json.loads(raw)
+                    except json.JSONDecodeError:
+                        data = None
+                    if isinstance(data, dict) and (data.get("name") or data.get("uid")):
+                        return _comeet_to_html(data)
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -590,6 +608,9 @@ def _lever_job_url(url: str) -> str:
     pp = _pinpoint_job_url(url)
     if pp:
         return pp
+    cm = _comeet_job_url(url)
+    if cm:
+        return cm
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -890,6 +911,7 @@ def _search_angles(query: str) -> list[str]:
             "ats.rippling.com",
             "breezy.hr",
             "pinpointhq.com",
+            "comeet.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1077,6 +1099,11 @@ def _company_from_url(url: str) -> str | None:
         slug = host.split(".")[0]
         if slug in {"www", "app"}:
             return None
+    elif host.endswith("comeet.com"):
+        if len(parts) >= 2 and parts[0].casefold() == "jobs":
+            slug = parts[1]
+        else:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1132,6 +1159,10 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"www", "app"}:
             return None
         return f"pinpoint:{slug}"
+    if host.endswith("comeet.com"):
+        if len(parts) >= 2 and parts[0].casefold() == "jobs":
+            return f"comeet:{parts[1].casefold()}"
+        return None
     return None
 
 
@@ -2149,6 +2180,90 @@ def _pinpoint_to_html(job: dict, board: str = "") -> str:
     )
 
 
+_COMEET_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?comeet\.com/jobs/([^/]+)/([^/]+)/([^/]+)/([^/?#]+)"
+)
+_COMEET_TOKEN_RE = re.compile(r'"token"\s*:\s*"([A-Fa-f0-9]{20,})"')
+
+
+def _comeet_ids(url: str) -> Optional[tuple[str, str, str, str]]:
+    m = _COMEET_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2), m.group(3), m.group(4)
+
+
+def _comeet_job_url(url: str) -> Optional[str]:
+    ids = _comeet_ids(url)
+    if not ids:
+        return None
+    return f"https://www.comeet.com/jobs/{ids[0]}/{ids[1]}/{ids[2]}/{ids[3]}"
+
+
+def _comeet_api_url(ids: tuple[str, str, str, str], token: str) -> str:
+    return (
+        f"https://www.comeet.co/careers-api/2.0/company/{ids[1]}"
+        f"/positions/{ids[3]}?token={token}&details=true"
+    )
+
+
+def _comeet_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host not in {"comeet.com", "www.comeet.com"}:
+        return False
+    return _comeet_ids(url) is None
+
+
+def _comeet_token(html: str) -> Optional[str]:
+    m = _COMEET_TOKEN_RE.search(html or "")
+    return m.group(1) if m else None
+
+
+def _comeet_to_html(data: dict) -> str:
+    """Turn Comeet position JSON into listing HTML. Never invent pay.
+
+    Omit referral rewards — those are not listed compensation.
+    """
+    title = str(data.get("name") or "").strip()
+    company = str(data.get("company_name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = str(data.get("employment_type") or "")
+    lower = emp.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    loc = data.get("location") if isinstance(data.get("location"), dict) else {}
+    work = str(data.get("workplace_type") or "").strip()
+    if loc.get("is_remote") is True:
+        place = "remote"
+    elif work:
+        place = work
+    else:
+        place = str(loc.get("name") or "").strip()
+    _apply_workplace(posting, place)
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    for item in data.get("details") or []:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        if re.search(r"reward|referr", name, re.I):
+            continue
+        val = item.get("value")
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2173,6 +2288,7 @@ def _ats_job_url(url: str) -> bool:
         or _rippling_ids(url)
         or _breezy_ids(url)
         or _pinpoint_ids(url)
+        or _comeet_ids(url)
     )
 
 
@@ -2218,6 +2334,8 @@ def _is_index_page(raw: dict) -> bool:
     if _breezy_is_board(url):
         return True
     if _pinpoint_is_board(url):
+        return True
+    if _comeet_is_board(url):
         return True
     return False
 
