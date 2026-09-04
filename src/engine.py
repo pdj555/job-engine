@@ -3750,7 +3750,9 @@ _LD_SCRIPT_RE = re.compile(
     r'<script\b[^>]*\btype\s*=\s*["\']?application/ld\+json[^>]*>\s*(.*?)\s*</script>',
     re.I | re.S,
 )
-_LD_COMMENT_RE = re.compile(r"(?is)^\s*(?:<!--\s*|(?://\s*)?<!\[CDATA\[\s*|/\*.*?\*/\s*)")
+_LD_COMMENT_RE = re.compile(
+    r"(?is)^\s*(?:<!--\s*|(?://\s*)?<!\[CDATA\[\s*|//[^\n]*\n\s*|/\*.*?\*/\s*)"
+)
 _LD_COMMENT_TAIL_RE = re.compile(r"(?is)\s*(?:-->|(?://\s*)?\]\]>)\s*$")
 _PAY_UNITS = {
     "HOUR": "hour",
@@ -3821,6 +3823,19 @@ def _ld_title_hit(posting: dict, blob: str) -> int:
     return -1
 
 
+def _ld_json(text: str):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        cleaned = re.sub(r",(\s*[}\]])", r"\1", text)
+        if cleaned == text:
+            return None
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            return None
+
+
 def _ld_payload(raw: str):
     """Parse JSON-LD script text. CMS wrappers and HTML entities are not pay."""
     text = _LD_COMMENT_TAIL_RE.sub("", _LD_COMMENT_RE.sub("", raw or ""))
@@ -3828,10 +3843,9 @@ def _ld_payload(raw: str):
     if not text:
         return None
     for candidate in (text, unescape(text).lstrip("\ufeff").strip()):
-        try:
-            return json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
+        data = _ld_json(candidate)
+        if data is not None:
+            return data
     return None
 
 
@@ -4050,24 +4064,47 @@ def _posting_salary(posting: Optional[dict]):
     return None
 
 
-def _posting_foreign(posting: Optional[dict]) -> bool:
+def _currency_of(value) -> Optional[str]:
+    if isinstance(value, dict):
+        cur = value.get("currency")
+        if cur:
+            return str(cur)
+    return None
+
+
+def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
+    """MonetaryAmount.currency, else JobPosting.salaryCurrency, else any stated currency."""
+    cur = _currency_of(salary)
+    if cur:
+        return cur
     if not isinstance(posting, dict):
-        return False
-    salary = _posting_salary(posting)
-    currency = salary.get("currency") if isinstance(salary, dict) else None
-    if currency:
-        return not _usd(currency)
+        return None
+    stated = posting.get("salaryCurrency")
+    if stated:
+        return str(stated)
     if _salary_has_amount(salary):
-        countries = _posting_countries(posting)
-        return bool(countries) and all(not _US_COUNTRY_RE.fullmatch(c) for c in countries)
+        return None
     for key in ("baseSalary", "salary", "estimatedSalary"):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
         for item in items:
-            cur = item.get("currency") if isinstance(item, dict) else None
-            if cur and not _usd(cur):
-                return True
-    return False
+            cur = _currency_of(item)
+            if cur:
+                return cur
+    return None
+
+
+def _posting_foreign(posting: Optional[dict]) -> bool:
+    if not isinstance(posting, dict):
+        return False
+    salary = _posting_salary(posting)
+    currency = _posting_currency(posting, salary)
+    if currency:
+        return not _usd(currency)
+    if not _salary_has_amount(salary):
+        return False
+    countries = _posting_countries(posting)
+    return bool(countries) and all(not _US_COUNTRY_RE.fullmatch(c) for c in countries)
 
 
 def _posting_company(posting: dict) -> Optional[str]:
@@ -4176,7 +4213,7 @@ def _posting_pay(
         if annual and 10_000 <= annual <= 2_000_000:
             return None, annual
         return None, None
-    if not isinstance(salary, dict) or not _usd(salary.get("currency")):
+    if not isinstance(salary, dict) or not _usd(_posting_currency(posting, salary)):
         return None, None
     value = salary.get("value")
     unit = None

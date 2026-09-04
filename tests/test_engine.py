@@ -5698,6 +5698,18 @@ def test_apply_listing_json_ld_yearly_thousands():
         f'<title>Engineer</title><script type="application/ld+json">\ufeff{body}</script>',
     ) is True
     assert bom.pay_high == 220_000
+    comma = Opportunity(title="Engineer", url="https://jobs.example/ld-comma")
+    assert _apply_listing(
+        comma,
+        f'<title>Engineer</title><script type="application/ld+json">{body[:-1]},}}</script>',
+    ) is True
+    assert comma.pay_high == 220_000
+    commented = Opportunity(title="Engineer", url="https://jobs.example/ld-slash")
+    assert _apply_listing(
+        commented,
+        f'<title>Engineer</title><script type="application/ld+json">// JobPosting\n{body}</script>',
+    ) is True
+    assert commented.pay_high == 220_000
 
 
 def test_apply_listing_json_ld_monthly_and_weekly_thousands():
@@ -5827,6 +5839,37 @@ def test_apply_listing_ignores_non_usd_salary():
     skipped = Opportunity(title="Engineer", url="https://jobs.example/empty-usd-eur")
     _apply_listing(skipped, empty_eur)
     assert skipped.pay_high is None
+    currency = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR",
+     "baseSalary":{"@type":"QuantitativeValue","minValue":120000,"maxValue":180000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    qv = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-eur")
+    _apply_listing(qv, currency)
+    assert qv.pay_high is None
+    bare = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","baseSalary":180000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    number = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-n")
+    _apply_listing(number, bare)
+    assert number.pay_high is None
+    usd = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"USD",
+     "baseSalary":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}
+    </script>
+    """
+    ok = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-usd")
+    assert _apply_listing(ok, usd) is True
+    assert ok.pay_high == 220_000
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
