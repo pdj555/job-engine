@@ -1491,7 +1491,7 @@ _INDEX_URL_RE = re.compile(
     r"|jobleads\.com/"
     r"|remoterocketship\.com/"
     r"|migratemate\.co/"
-    r"|builtin\.com/(?!job/)"
+    r"|builtin[a-z]*\.com/(?!job/)"
     r"|ziprecruiter\.com/Jobs/"
     r"|ziprecruiter\.com/jobs-search"
     r"|lever\.co/jobgether/"

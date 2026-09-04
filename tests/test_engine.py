@@ -1232,6 +1232,25 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Machine Learning Engineer Salary in San Francisco",
+                "url": "https://www.builtinsf.com/salaries/us/san-francisco/machine-learning-engineer",
+                "description": "$151,800",
+            }
+        )
+        is None
+    )
+    kept_city = _heuristic_opportunity(
+        {
+            "title": "Staff Machine Learning Engineer",
+            "url": "https://www.builtinsf.com/job/staff-machine-learning-engineer/7823375",
+            "description": "$180k–$220k",
+        }
+    )
+    assert kept_city is not None
+    assert kept_city.pay_high == 220_000
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Machine Learning Engineer - Built In",
                 "url": "https://builtin.com/learn/careers/machine-learning-engineer",
                 "description": "Career guide",
