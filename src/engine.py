@@ -851,6 +851,10 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
                 "currency": str(rng.get("currency") or "USD").upper(),
                 "value": value,
             }
+    if "baseSalary" not in posting:
+        pay = _span_pay_ld(str(data.get("salaryDescription") or ""))
+        if pay:
+            posting["baseSalary"] = pay
     parts = []
     loc = str(cats.get("location") or "").strip() if isinstance(cats, dict) else ""
     place = str(data.get("workplaceType") or "").strip()
@@ -1774,6 +1778,19 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
             low = int(bound_low) if bound_low and 10_000 <= bound_low <= 2_000_000 else None
             high = int(bound_high) if bound_high and 10_000 <= bound_high <= 2_000_000 else None
         if not high and not low:
+            spanned = _span_pay_ld(
+                str(row.get("title") or row.get("label") or row.get("text") or "")
+            )
+            if not spanned:
+                continue
+            cur = str(row.get("currency_type") or "").upper() or str(
+                spanned.get("currency") or "USD"
+            )
+            spanned["currency"] = cur
+            if _usd(cur):
+                return spanned
+            if foreign is None:
+                foreign = spanned
             continue
         cur = str(row.get("currency_type") or "").upper() or "USD"
         value: dict = {"unitText": "YEAR"}
@@ -1869,8 +1886,12 @@ _WORKABLE_PAY_UNITS = (
 def _workable_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary from jobs.workable.com JSON."""
     raw = data.get("salary")
+    if isinstance(raw, str):
+        return _span_pay_ld(raw)
     if not isinstance(raw, dict):
         raw = data.get("salaryRange")
+    if isinstance(raw, str):
+        return _span_pay_ld(raw)
     if not isinstance(raw, dict):
         return None
     low, high = _bound_nums(raw)
@@ -3878,7 +3899,10 @@ _RELATED_HEADING_RE = re.compile(
     r"|available\s+openings"
     r"|matching\s+openings"
     r"|people\s+also\s+applied"
-    r"|applicants\s+also\s+applied)\s*"
+    r"|applicants\s+also\s+applied"
+    r"|related"
+    r"|similar"
+    r"|recommended)\s*"
     r"</\3>.*$"
 )
 
@@ -4119,9 +4143,15 @@ def _num(value) -> Optional[float]:
 
 
 def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
-    """min/max, from/to, minValue/maxValue, or minimum/maximum."""
+    """min/max, from/to, minValue/maxValue, minimum/maximum, or low/high."""
     low = high = None
-    for a, b in (("min", "max"), ("from", "to"), ("minValue", "maxValue"), ("minimum", "maximum")):
+    for a, b in (
+        ("min", "max"),
+        ("from", "to"),
+        ("minValue", "maxValue"),
+        ("minimum", "maximum"),
+        ("low", "high"),
+    ):
         if low is None:
             low = _num(raw.get(a))
         if high is None:
@@ -4314,6 +4344,39 @@ def _span_nums(text: str) -> list[float]:
     return []
 
 
+_UNIT_TEXT = {
+    "hour": "HOUR",
+    "day": "DAY",
+    "week": "WEEK",
+    "month": "MONTH",
+    "year": "YEAR",
+    "biweek": "BIWEEKLY",
+    "semimonth": "SEMIMONTHLY",
+}
+
+
+def _span_pay_ld(blob: str) -> Optional[dict]:
+    """JSON-LD baseSalary from a stated range string. Skip bare rates with no period."""
+    if not isinstance(blob, str) or not blob.strip():
+        return None
+    nums = _span_nums(blob)
+    if not nums:
+        return None
+    period = _unit_from_blob(blob)
+    if period is None and not any(n >= 10_000 for n in nums):
+        return None
+    value: dict = {"unitText": _UNIT_TEXT.get(period or "year", "YEAR")}
+    if len(nums) >= 2:
+        value["minValue"] = int(min(nums))
+        value["maxValue"] = int(max(nums))
+    else:
+        value["value"] = int(nums[0])
+    return {
+        "currency": "EUR" if _foreign_pay_text(blob) else "USD",
+        "value": value,
+    }
+
+
 def _salary_blob(salary) -> str:
     if isinstance(salary, str):
         return salary
@@ -4332,6 +4395,8 @@ def _salary_blob(salary) -> str:
                 "to",
                 "minimum",
                 "maximum",
+                "low",
+                "high",
             )
             if key in salary
         )
@@ -4367,6 +4432,8 @@ def _nums(value) -> list[float]:
             "to",
             "minimum",
             "maximum",
+            "low",
+            "high",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
