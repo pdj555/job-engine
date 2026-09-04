@@ -137,6 +137,24 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and (data.get("text") or data.get("id")):
                     return _lever_to_html(data)
+        ashby = _ashby_ids(url)
+        if ashby:
+            if client is not None:
+                posting = await _ashby_posting(client, *ashby)
+            else:
+                try:
+                    async with httpx.AsyncClient(
+                        follow_redirects=True,
+                        timeout=8.0,
+                        headers=_LISTING_HEADERS,
+                    ) as owned:
+                        posting = await _ashby_posting(owned, *ashby)
+                except Exception:
+                    posting = {}
+            if posting is None:
+                return None
+            if posting:
+                return _ashby_to_html(posting)
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
@@ -554,6 +572,95 @@ async def _http_get_text(client: httpx.AsyncClient, url: str) -> Optional[str]:
         return resp.text
     except Exception:
         return ""
+
+
+_ASHBY_JOB_RE = re.compile(
+    r"(?i)https?://jobs\.ashbyhq.com/([^/]+)/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+)
+_ASHBY_JOB_QUERY = """
+query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: String!) {
+  jobPosting(organizationHostedJobsPageName: $organizationHostedJobsPageName, jobPostingId: $jobPostingId) {
+    id
+    title
+    employmentType
+    workplaceType
+    descriptionHtml
+    compensationTierSummary
+    scrapeableCompensationSalarySummary
+  }
+}
+"""
+
+
+def _ashby_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _ASHBY_JOB_RE.search(_lever_job_url(url) or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+async def _ashby_posting(client: httpx.AsyncClient, board: str, jid: str) -> Optional[dict]:
+    """None if the posting is gone. Empty dict if the API failed."""
+    try:
+        resp = await client.post(
+            "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting",
+            json={
+                "operationName": "ApiJobPosting",
+                "variables": {
+                    "organizationHostedJobsPageName": board,
+                    "jobPostingId": jid,
+                },
+                "query": _ASHBY_JOB_QUERY,
+            },
+            headers=_LISTING_HEADERS,
+        )
+        if resp.status_code in (404, 410):
+            return None
+        if resp.status_code >= 400:
+            return {}
+        data = json.loads(resp.text)
+        if not isinstance(data, dict) or not isinstance(data.get("data"), dict):
+            return {}
+        posting = data["data"].get("jobPosting")
+        if posting is None and "jobPosting" in data["data"]:
+            return None
+        if isinstance(posting, dict) and posting:
+            return posting
+        return {}
+    except Exception:
+        return {}
+
+
+def _ashby_to_html(data: dict) -> str:
+    """Turn Ashby GraphQL posting into listing HTML. Never invent pay."""
+    title = str(data.get("title") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    emp = str(data.get("employmentType") or "")
+    if "part" in emp.lower():
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in emp.lower():
+        posting["employmentType"] = "FULL_TIME"
+    summary = str(
+        data.get("scrapeableCompensationSalarySummary")
+        or data.get("compensationTierSummary")
+        or ""
+    )
+    if summary and not _FOREIGN_PAY_RE.search(summary):
+        low, high = _parse_pay(summary)
+        if high or low:
+            value: dict = {"unitText": "YEAR"}
+            if low and high:
+                value["minValue"] = low
+                value["maxValue"] = high
+            else:
+                value["value"] = high or low
+            posting["baseSalary"] = {"currency": "USD", "value": value}
+    desc = str(data.get("descriptionHtml") or "")
+    return (
+        f"<title>{title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"<p>{summary}</p>{desc}"
+    )
 
 
 _ATS_TITLE_TAIL_RE = re.compile(

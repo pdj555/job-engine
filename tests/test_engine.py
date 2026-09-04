@@ -1632,6 +1632,180 @@ def test_listing_text_lever_api_404_is_gone(monkeypatch):
     assert html is None
 
 
+def test_ashby_ids_strips_application():
+    from src.engine import _ashby_ids
+
+    assert _ashby_ids(
+        "https://jobs.ashbyhq.com/quilter/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc/application"
+    ) == ("quilter", "9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc")
+    assert _ashby_ids("https://jobs.ashbyhq.com/quilter") is None
+
+
+def test_ashby_to_html_pay_from_scrapeable_summary():
+    from src.engine import _apply_listing, _ashby_to_html
+
+    html = _ashby_to_html(
+        {
+            "title": "Machine Learning Engineer",
+            "employmentType": "FullTime",
+            "workplaceType": "Remote",
+            "descriptionHtml": "<p>Build ML systems.</p>",
+            "scrapeableCompensationSalarySummary": "$180K - $200K",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/quilter/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+    )
+    _apply_listing(opp, html)
+    assert opp.title == "Machine Learning Engineer"
+    assert opp.company == "Quilter"
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 200_000
+    assert opp.hours_per_week == 40
+    assert opp.rate_is_imputed is False
+    assert opp.score() == 100
+
+
+def test_ashby_to_html_foreign_summary_is_not_usd():
+    from src.engine import _apply_listing, _ashby_to_html, _foreign_salary
+
+    html = _ashby_to_html(
+        {
+            "title": "Engineer",
+            "employmentType": "FullTime",
+            "scrapeableCompensationSalarySummary": "€60,000 - €80,000",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/acme/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+    )
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
+
+
+def test_ashby_posting_null_is_gone():
+    from src.engine import _ashby_posting
+
+    class _Resp:
+        status_code = 200
+        text = '{"data":{"jobPosting":null}}'
+
+    class _Client:
+        def __init__(self):
+            self.url = None
+            self.payload = None
+
+        async def post(self, url, **kwargs):
+            self.url = url
+            self.payload = kwargs.get("json")
+            return _Resp()
+
+    client = _Client()
+    jid = "23ce794a-4aa7-45a3-bcdc-cb156271057b"
+    assert asyncio.run(_ashby_posting(client, "azx", jid)) is None
+    assert client.url == "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting"
+    assert client.payload["variables"] == {
+        "organizationHostedJobsPageName": "azx",
+        "jobPostingId": jid,
+    }
+
+
+def test_ashby_posting_http_error_is_empty():
+    from src.engine import _ashby_posting
+
+    class _Resp:
+        status_code = 500
+        text = "nope"
+
+    class _Client:
+        async def post(self, _url, **_kwargs):
+            return _Resp()
+
+    assert asyncio.run(_ashby_posting(_Client(), "azx", "x")) == {}
+
+
+def test_listing_text_ashby_graphql_null_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[tuple[str, str]] = []
+
+    async def fake_ashby(_client, board: str, jid: str):
+        seen.append((board, jid))
+        return None
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("SPA HTML must not be fetched when GraphQL says gone")
+
+    monkeypatch.setattr("src.engine._ashby_posting", fake_ashby)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    jid = "23ce794a-4aa7-45a3-bcdc-cb156271057b"
+    html = asyncio.run(
+        engine._listing_text(f"https://jobs.ashbyhq.com/azx/{jid}/application")
+    )
+    assert html is None
+    assert seen == [("azx", jid)]
+
+
+def test_listing_text_ashby_graphql_timeout_falls_back_to_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_ashby(_client, _board: str, _jid: str):
+        return {}
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return (
+            "<html><script type='application/ld+json'>{"
+            '"@type":"JobPosting","title":"ML Engineer",'
+            '"hiringOrganization":{"name":"Quilter"},'
+            '"baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}'
+            "}</script></html>"
+        )
+
+    monkeypatch.setattr("src.engine._ashby_posting", fake_ashby)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://jobs.ashbyhq.com/quilter/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc"
+    html = asyncio.run(engine._listing_text(url))
+    assert seen == [url]
+    assert html and "JobPosting" in html
+
+
+def test_listing_text_ashby_graphql_pay_from_posting(monkeypatch):
+    engine = Engine()
+
+    async def fake_ashby(_client, board: str, jid: str):
+        assert (board, jid) == (
+            "quilter",
+            "9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+        )
+        return {
+            "title": "Machine Learning Engineer",
+            "employmentType": "FullTime",
+            "descriptionHtml": "<p>Build ML systems.</p>",
+            "compensationTierSummary": "$180K - $200K • Offsite",
+            "scrapeableCompensationSalarySummary": "$180K - $200K",
+        }
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("SPA HTML must not be fetched when GraphQL has the posting")
+
+    monkeypatch.setattr("src.engine._ashby_posting", fake_ashby)
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://jobs.ashbyhq.com/quilter/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc"
+    html = asyncio.run(engine._listing_text(url))
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 200_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 100
+
+
 def test_lever_eur_salary_range_is_foreign():
     from src.engine import _apply_listing, _foreign_salary, _lever_to_html
 
