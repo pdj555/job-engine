@@ -3959,6 +3959,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|current\s+(?:openings|roles|jobs)"
     r"|view(?:\s+all)?\s+(?:jobs|roles|openings)"
     r"|recommended\s+for\s+you"
+    r"|jobs\s+recommended\s+for\s+you"
     r"|more\s+from\s+this\s+company"
     r"|more\s+from\s+\S+"
     r"|jobs\s+at\s+this\s+company"
@@ -3992,7 +3993,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
-    r"|because\s+you\s+liked(?:\s+this(?:\s+job)?)?"
+    r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
     r"|because\s+you\s+saved(?:\s+this\s+job)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
@@ -4023,14 +4024,14 @@ _RELATED_HEADING_RE = re.compile(
     r"|you\s+recently\s+viewed"
     r"|recently\s+viewed(?:\s+jobs)?"
     r"|others\s+also\s+viewed"
-    r"|because\s+you\s+viewed"
+    r"|because\s+you\s+viewed(?:\s+this(?:\s+job)?)?"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+(?:jobs|roles))?"
-    r"|keep\s+exploring(?:\s+jobs)?"
-    r"|continue\s+exploring(?:\s+jobs)?"
+    r"|keep\s+exploring(?:\s+(?:jobs|roles))?"
+    r"|continue\s+exploring(?:\s+(?:jobs|roles))?"
     r"|based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
-    r"|recently\s+applied"
+    r"|recently\s+applied(?:\s+jobs)?"
     r"|similar\s+careers"
     r"|related\s+careers"
     r"|other\s+careers"
@@ -4320,6 +4321,9 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("pay_min", "pay_max"),
         ("salary_from", "salary_to"),
         ("compensationMin", "compensationMax"),
+        ("salary_min", "salary_max"),
+        ("compensation_min", "compensation_max"),
+        ("min_compensation", "max_compensation"),
         ("minAmount", "maxAmount"),
         ("rangeStart", "rangeEnd"),
         ("lower_bound", "upper_bound"),
@@ -4603,6 +4607,12 @@ def _salary_blob(salary) -> str:
                 "salary_to",
                 "compensationMin",
                 "compensationMax",
+                "salary_min",
+                "salary_max",
+                "compensation_min",
+                "compensation_max",
+                "min_compensation",
+                "max_compensation",
                 "amount",
                 "minAmount",
                 "maxAmount",
@@ -4675,6 +4685,12 @@ def _nums(value) -> list[float]:
             "salary_to",
             "compensationMin",
             "compensationMax",
+            "salary_min",
+            "salary_max",
+            "compensation_min",
+            "compensation_max",
+            "min_compensation",
+            "max_compensation",
             "amount",
             "minAmount",
             "maxAmount",
@@ -4825,6 +4841,9 @@ def _posting_salary(posting: Optional[dict]):
         ("pay_min", "pay_max"),
         ("salary_from", "salary_to"),
         ("compensationMin", "compensationMax"),
+        ("salary_min", "salary_max"),
+        ("compensation_min", "compensation_max"),
+        ("min_compensation", "max_compensation"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:
