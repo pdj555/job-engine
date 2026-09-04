@@ -2446,6 +2446,56 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Open Listings | Acme",
+                "url": "https://acme.com/open-listings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Open Opportunities | Acme",
+                "url": "https://acme.com/open-opportunities",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Open Opportunity: Software Engineer",
+                "url": "https://jobs.example.com/job/open-opportunity-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Available Roles",
+                "url": "https://acme.com/available-roles",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Current Positions | Acme",
+                "url": "https://acme.com/current-positions",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Career Opportunities | Acme",
                 "url": "https://acme.com/career-opportunities",
                 "description": "$180,000 - $270,000. Remote.",
@@ -4105,6 +4155,30 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
         "https://acme.com/open-positions/senior-engineer",
+    )
+    assert _html_is_index(
+        "<title>Open Listings | Acme</title><p>$180,000</p>",
+        "https://acme.com/open-listings",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$180,000</p>",
+        "https://acme.com/open-jobs",
+    )
+    assert _html_is_index(
+        "<title>Available Roles</title><p>$180,000</p>",
+        "https://acme.com/available-roles",
+    )
+    assert _html_is_index(
+        "<title>Current Positions | Acme</title><p>$180,000</p>",
+        "https://acme.com/current-positions",
+    )
+    assert not _html_is_index(
+        "<title>Open Opportunity: Software Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/open-opportunity-software-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/open-listings/senior-engineer",
     )
     assert _html_is_index(
         "<title>Career Opportunities | Acme</title><p>$180,000 - $270,000</p>",

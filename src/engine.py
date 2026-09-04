@@ -1596,8 +1596,8 @@ _INDEX_URL_RE = re.compile(
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
-    r"(?i)^hire\b|\bcurrent openings\b"
-    r"|\bopen (?:positions|roles)\b"
+    r"(?i)^hire\b|\bcurrent (?:openings|positions|roles|listings|opportunities)\b"
+    r"|\bopen (?:positions|roles|listings|opportunities)\b"
     r"|\bjob openings\b"
     r"|\ball openings\b"
     r"|\bcareer opportunities\b"
@@ -1610,7 +1610,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|^hiring(?:\s*[|\-–—].*)?$"
     r"|^explore careers\b"
     r"|\bjob vacancies\b"
-    r"|\bavailable positions\b"
+    r"|\bavailable (?:positions|roles|listings|opportunities)\b"
     r"|^life at\b"
     r"|^meet (?:the|our) team(?:\s*[|\-–—].*)?$"
     r"|^our (?:team|people)(?:\s*[|\-–—].*)?$"
@@ -3796,11 +3796,11 @@ _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search(?:/|$)"
     r"|^/(?:careers|jobs)/?$"
     r"|^/hire(?:/|$)"
-    r"|/(?:open[-_]?positions|open[-_]?roles|current[-_]?openings)/?$"
+    r"|/(?:open[-_]?(?:positions|roles|jobs|listings|opportunities)|current[-_]?(?:openings|positions|roles|listings|opportunities))/?$"
     r"|/(?:career[-_]?opportunities|job[-_]?openings|all[-_]?openings)/?$"
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
-    r"|/(?:job[-_]?vacancies|available[-_]?positions|vacancies|explore[-_]?careers|hiring)/?$"
+    r"|/(?:job[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities)|vacancies|explore[-_]?careers|hiring)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
