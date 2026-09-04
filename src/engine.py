@@ -3624,6 +3624,14 @@ _PAY_UNITS = {
     "MONTHLY": "month",
     "DAY": "day",
     "DAILY": "day",
+    "BIWEEKLY": "biweek",
+    "BI_WEEKLY": "biweek",
+    "BI-WEEKLY": "biweek",
+    "FORTNIGHT": "biweek",
+    "FORTNIGHTLY": "biweek",
+    "SEMIMONTHLY": "semimonth",
+    "SEMI_MONTHLY": "semimonth",
+    "SEMI-MONTHLY": "semimonth",
 }
 
 
@@ -3900,6 +3908,10 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
         return int(amount * 5 * 50)
     if unit == "week":
         return int(amount * 50)
+    if unit == "biweek":
+        return int(amount * 25)
+    if unit == "semimonth":
+        return int(amount * 24)
     if unit == "month":
         return int(amount * 12)
     if unit == "year" or (unit is None and 10_000 <= amount <= 2_000_000):
@@ -4141,6 +4153,26 @@ _WEEKLY_RANGE_RE = re.compile(
 _WEEKLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
 )
+_BIWEEK_TAIL = r"\s*(?:bi[-\s]?weekly|every\s+two\s+weeks|fortnightly)\b"
+_BIWEEKLY_RANGE_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    + _BIWEEK_TAIL
+)
+_BIWEEKLY_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _BIWEEK_TAIL
+)
+_SEMIMONTH_TAIL = r"\s*(?:semi[-\s]?monthly|twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
+_SEMIMONTHLY_RANGE_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    + _SEMIMONTH_TAIL
+)
+_SEMIMONTHLY_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _SEMIMONTH_TAIL
+)
 _DAY_TAIL = r"\s*(?:/\s*days?|(?:per|a)\s+days?|daily)\b"
 _DAILY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -4277,6 +4309,26 @@ def _week_annual(raw: str, k: Optional[str]) -> Optional[int]:
     return None
 
 
+def _biweek_annual(raw: str, k: Optional[str]) -> Optional[int]:
+    n = _money(raw)
+    if k:
+        n *= 1000
+    annual = int(n * 25)
+    if 10_000 <= annual <= 2_000_000:
+        return annual
+    return None
+
+
+def _semimonth_annual(raw: str, k: Optional[str]) -> Optional[int]:
+    n = _money(raw)
+    if k:
+        n *= 1000
+    annual = int(n * 24)
+    if 10_000 <= annual <= 2_000_000:
+        return annual
+    return None
+
+
 def _day_annual(raw: str, k: Optional[str]) -> Optional[int]:
     n = _money(raw)
     if k:
@@ -4356,6 +4408,28 @@ def _parse_pay(
     weekly = _WEEKLY_RE.search(text)
     if weekly:
         annual = _week_annual(weekly.group(1), weekly.group(2))
+        if annual:
+            return None, annual
+    biweekly_range = _BIWEEKLY_RANGE_RE.search(text)
+    if biweekly_range:
+        low = _biweek_annual(biweekly_range.group(1), biweekly_range.group(2))
+        high = _biweek_annual(biweekly_range.group(3), biweekly_range.group(4))
+        if low and high and low <= high:
+            return low, high
+    biweekly = _BIWEEKLY_RE.search(text)
+    if biweekly:
+        annual = _biweek_annual(biweekly.group(1), biweekly.group(2))
+        if annual:
+            return None, annual
+    semimonth_range = _SEMIMONTHLY_RANGE_RE.search(text)
+    if semimonth_range:
+        low = _semimonth_annual(semimonth_range.group(1), semimonth_range.group(2))
+        high = _semimonth_annual(semimonth_range.group(3), semimonth_range.group(4))
+        if low and high and low <= high:
+            return low, high
+    semimonth = _SEMIMONTHLY_RE.search(text)
+    if semimonth:
+        annual = _semimonth_annual(semimonth.group(1), semimonth.group(2))
         if annual:
             return None, annual
     monthly_range = _MONTHLY_RANGE_RE.search(text)

@@ -252,6 +252,41 @@ def test_parse_pay_annualizes_weekly_usd():
     assert opp.pay_high == 150_000
 
 
+def test_parse_pay_annualizes_biweekly_and_semimonthly_usd():
+    from src.engine import _apply_listing, _parse_pay
+
+    assert _parse_pay("$3,000 biweekly") == (None, 75_000)
+    assert _parse_pay("$3,000 bi-weekly") == (None, 75_000)
+    assert _parse_pay("$3,000 every two weeks") == (None, 75_000)
+    assert _parse_pay("$3,000 fortnightly") == (None, 75_000)
+    assert _parse_pay("$1,500-$2,000 biweekly") == (37_500, 50_000)
+    assert _parse_pay("$3,000 twice a month") == (None, 72_000)
+    assert _parse_pay("$3,000 semi-monthly") == (None, 72_000)
+    assert _parse_pay("$3,000 per week") == (None, 150_000)
+    assert _parse_pay("$15,000 per month") == (None, 180_000)
+    opp = Opportunity(title="Engineer", url="https://jobs.example/bi")
+    assert _apply_listing(opp, "<p>Pay $3,000 biweekly</p>") is True
+    assert opp.pay_high == 75_000
+    semi = Opportunity(title="Engineer", url="https://jobs.example/sm")
+    assert _apply_listing(semi, "<p>Pay $3,000 semi-monthly</p>") is True
+    assert semi.pay_high == 72_000
+
+
+def test_apply_listing_json_ld_biweekly_pay():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3000,"unitText":"BIWEEKLY"}}}
+    </script>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/ld-bi")
+    assert _apply_listing(opp, html) is True
+    assert opp.pay_high == 75_000
+
+
 def test_parse_pay_annualizes_daily_usd():
     from src.engine import _apply_listing, _parse_pay
 
