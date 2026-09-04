@@ -47,9 +47,8 @@ class Engine:
         return _dedupe_opportunities(ranked)[:limit]
 
     async def _enrich_pay(self, opps: list[Opportunity]) -> None:
-        """Fill missing pay/hours/company from the listing page. Never invent."""
-        missing = [o for o in opps if o.pay is None or not o.company]
-        if missing:
+        """Fill pay/hours/company from the listing page. Never invent."""
+        if opps:
             async with httpx.AsyncClient(
                 follow_redirects=True,
                 timeout=8.0,
@@ -58,13 +57,13 @@ class Engine:
                 self._http_client = client
                 try:
                     texts = await asyncio.gather(
-                        *(self._listing_text(o.url) for o in missing),
+                        *(self._listing_text(o.url) for o in opps),
                         return_exceptions=True,
                     )
                 finally:
                     self._http_client = None
             gone = []
-            for o, text in zip(missing, texts):
+            for o, text in zip(opps, texts):
                 if text is None:
                     gone.append(o)
                     continue
@@ -1381,8 +1380,9 @@ def _posting_pay(
 
 
 def _apply_listing(opp: Opportunity, html: str) -> None:
-    """Fill missing fields from JobPosting JSON-LD, then visible listing text."""
+    """Fill fields from JobPosting JSON-LD, then visible listing text. Listing wins."""
     posting = _job_posting(html)
+    listed_pay = False
     if posting:
         pt = str(posting.get("title") or "").strip()
         if pt:
@@ -1390,24 +1390,23 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
         name = _posting_company(posting)
         if name:
             opp.company = name
-        if opp.hours_per_week is None:
-            hours = _posting_hours(posting)
-            if hours:
-                opp.hours_per_week = hours
-        if opp.pay is None:
-            low, high = _posting_pay(posting, opp.hours_per_week)
-            if high or low:
-                opp.pay_low = low
-                opp.pay_high = high
+        hours = _posting_hours(posting)
+        if hours:
+            opp.hours_per_week = hours
+        low, high = _posting_pay(posting, opp.hours_per_week)
+        if high or low:
+            opp.pay_low = low
+            opp.pay_high = high
+            listed_pay = True
     if not opp.company:
         opp.company = _guess_company(_html_title(html), opp.url)
-    if opp.pay is None or opp.hours_per_week is None:
+    if not listed_pay or opp.hours_per_week is None:
         visible = _listing_plain_text(html)
         if opp.hours_per_week is None:
             hours = _guess_hours(opp.title, visible)
             if hours:
                 opp.hours_per_week = hours
-        if opp.pay is None:
+        if not listed_pay:
             low, high = _parse_pay(visible, opp.hours_per_week)
             if high or low:
                 opp.pay_low = low

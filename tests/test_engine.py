@@ -1471,6 +1471,58 @@ def test_enrich_fetches_when_company_missing_even_if_paid():
     assert opp.pay_high == 200_000
 
 
+def test_enrich_fetches_paid_named_listings_for_hours_and_gone_jobs():
+    engine = Engine()
+
+    async def page(url: str):
+        if "gone" in url:
+            return None
+        if "thin" in url:
+            return ""
+        return """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Senior ML Engineer",
+         "hiringOrganization":{"name":"Quilter"},
+         "employmentType":"FULL_TIME",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+        </script>
+        """
+
+    engine._listing_text = page
+    priced = Opportunity(
+        title="Senior ML Engineer @ Quilter",
+        url="https://jobs.ashbyhq.com/quilter/live",
+        company="Quilter",
+        pay_high=100_000,
+        hours_per_week=None,
+    )
+    ghost = Opportunity(
+        title="Expired",
+        url="https://jobs.ashbyhq.com/azx/gone",
+        company="AZX",
+        pay_high=140_000,
+        hours_per_week=40,
+    )
+    thin = Opportunity(
+        title="Timeout",
+        url="https://jobs.ashbyhq.com/weave/thin",
+        company="Weave",
+        pay_high=90_000,
+    )
+    opps = [priced, ghost, thin]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.url for o in opps] == [
+        "https://jobs.ashbyhq.com/quilter/live",
+        "https://jobs.ashbyhq.com/weave/thin",
+    ]
+    assert priced.pay_low == 180_000
+    assert priced.pay_high == 200_000
+    assert priced.hours_per_week == 40
+    assert priced.rate_is_imputed is False
+    assert thin.pay_high == 90_000
+    assert thin.hours_per_week is None
+
+
 def test_unify_board_companies_prefers_real_name_over_slug():
     from src.engine import _unify_board_companies
 
@@ -1497,6 +1549,11 @@ def test_unify_board_companies_prefers_real_name_over_slug():
 
 def test_enrich_unifies_slug_company_when_listings_already_priced():
     engine = Engine()
+
+    async def page(_url: str) -> str:
+        return ""
+
+    engine._listing_text = page
     named = Opportunity(
         title="Sword Health - Senior ML",
         url="https://jobs.lever.co/swordhealth/aaa",
@@ -1595,8 +1652,10 @@ def test_apply_listing_company_from_html_title():
 def test_enrich_drops_fetched_board_index_html():
     engine = Engine()
 
-    async def page(_url: str) -> str:
-        return "<title>Jobs at Grafana Labs</title><p>Current openings</p>"
+    async def page(url: str) -> str:
+        if "grafanalabs" in url:
+            return "<title>Jobs at Grafana Labs</title><p>Current openings</p>"
+        return ""
 
     engine._listing_text = page
     keep = Opportunity(title="Real", url="https://jobs.example/real", pay_high=100_000, company="Acme")
