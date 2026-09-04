@@ -292,6 +292,36 @@ def test_index_pages_are_not_opportunities():
     )
     assert kept is not None
     assert kept.pay_high == 200_000
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Home | Grants.gov",
+                "url": "https://www.grants.gov/",
+                "description": "Find grants",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "AI/ML federal funding",
+                "url": "https://nondilute.com/category/aiml/",
+                "description": "52 open in 2026",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Search | Simpler.Grants.gov",
+                "url": "https://www.grants.gov/search-grants/?keywords=intelligence",
+                "description": "",
+            }
+        )
+        is None
+    )
 
 
 def test_search_all_drops_index_pages():

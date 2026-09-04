@@ -5,6 +5,7 @@ import json
 import re
 from html import unescape
 from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 from openai import AsyncOpenAI
@@ -396,8 +397,14 @@ _INDEX_URL_RE = re.compile(
 _INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b")
 
 
+_INDEX_PATH_RE = re.compile(
+    r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
+    re.I,
+)
+
+
 def _is_index_page(raw: dict) -> bool:
-    """True for search/board index pages, not a single opportunity."""
+    """True for search/board/home/category pages, not a single opportunity."""
     url = raw.get("url") or ""
     title = raw.get("title") or ""
     desc = raw.get("description") or ""
@@ -406,6 +413,14 @@ def _is_index_page(raw: dict) -> bool:
     if _INDEX_TITLE_RE.search(title):
         return True
     if re.match(r"(?i)\s*browse\s+\d+", desc):
+        return True
+    if re.match(r"(?i)\s*home\s*[|\-–]", title):
+        return True
+    parsed = urlparse(url)
+    path = parsed.path.rstrip("/") or "/"
+    if path == "/":
+        return True
+    if _INDEX_PATH_RE.search(parsed.path):
         return True
     return False
 
