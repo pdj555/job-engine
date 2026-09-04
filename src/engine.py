@@ -468,6 +468,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
     url = raw.get("url")
     if not url or _is_index_page(raw):
         return None
+    url = _lever_job_url(url)
     title = raw.get("title") or "Unknown"
     desc = raw.get("description") or ""
     remote = raw.get("remote")
@@ -513,7 +514,7 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     opp = Opportunity(
         title=title,
         company=company,
-        url=raw["url"],
+        url=_lever_job_url(raw["url"]),
         description=desc,
         pay_low=pay_low,
         pay_high=pay_high,

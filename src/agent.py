@@ -19,6 +19,7 @@ from src.engine import (
     _company_from_title,
     _dedupe_opportunities,
     _is_index_page,
+    _lever_job_url,
     get_engine,
 )
 
@@ -68,6 +69,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         url = o.get("url") or ""
         if not _http_url(url) or _is_index_page(o):
             continue
+        url = _lever_job_url(url)
         opp = Opportunity(
             title=o.get("title", "Unknown"),
             url=url,

@@ -384,6 +384,17 @@ def test_index_pages_are_not_opportunities():
     )
 
 
+def test_heuristic_stores_lever_job_url_not_apply():
+    h = _heuristic_opportunity(
+        {
+            "title": "Provectus - Senior AI/ML Engineer (GenAI, AWS)",
+            "url": "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply",
+            "description": "",
+        }
+    )
+    assert h.url == "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
+
+
 def test_search_all_drops_index_pages():
     engine = Engine()
 

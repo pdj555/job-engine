@@ -92,6 +92,18 @@ def test_rank_skips_upwork_apply_gate():
     assert [o.title for o in ranked] == ["Real"]
 
 
+def test_rank_canonicalizes_lever_apply_url():
+    ranked = _rank(
+        [
+            {
+                "title": "Provectus ML",
+                "url": "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply",
+            }
+        ]
+    )
+    assert ranked[0].url == "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
+
+
 def test_rank_company_from_title_when_field_missing():
     ranked = _rank(
         [
