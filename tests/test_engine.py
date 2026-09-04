@@ -108,6 +108,15 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     mixed = "UK £45,000 – £60,000. US $240,000 - $500,000"
     assert _parse_pay(mixed) == (None, None)
     assert _foreign_salary(f"<p>{mixed}</p>") is True
+    chf = "The salary is CHF 150,000. US equivalent $180,000"
+    assert _parse_pay(chf) == (None, None)
+    assert _foreign_salary(f"<p>{chf}</p>") is True
+    assert _parse_pay("CHF 91'052") == (None, None)
+    assert _foreign_salary("<p>CHF 91'052</p>") is True
+    assert _parse_pay("Compensation: 150,000 CHF") == (None, None)
+    assert _foreign_salary("<p>Compensation: 150,000 CHF</p>") is True
+    assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
+    assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
     assert _parse_pay("$15000 to $17000 gross Salary Monthly") == (None, None)
     assert _foreign_salary("<p>$15000 to $17000 gross Salary Monthly</p>") is True
 
@@ -2249,6 +2258,31 @@ def test_enrich_drops_foreign_k_suffix_pay():
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Unknown"]
     assert unknown.pay_high is None
+
+
+def test_enrich_drops_chf_listing_even_when_usd_equivalent_is_stated():
+    engine = Engine()
+
+    async def page(url: str) -> str:
+        if "chf" in url:
+            return (
+                "<title>ML Engineer</title>"
+                "<p>The salary is CHF 150,000. US equivalent $180,000</p>"
+            )
+        return "<title>Engineer</title><p>Apply now. No salary listed.</p>"
+
+    engine._listing_text = page
+    chf = Opportunity(
+        title="CHF",
+        url="https://jobs.example/chf",
+        company="Acme",
+        pay_high=180_000,
+        hours_per_week=40,
+    )
+    unknown = Opportunity(title="Unknown", url="https://jobs.example/unknown", company="Acme")
+    opps = [chf, unknown]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Unknown"]
 
 
 def test_enrich_drops_salario_dollar_pay_even_when_snippet_has_dollars():

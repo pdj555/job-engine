@@ -3602,7 +3602,10 @@ _FOREIGN_PAY_RE = re.compile(
     r"|(?:€|£)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|\b(?:EUR|GBP)\s+\d{1,3}(?:,\d{3}){1,2}"
     r"|\b(?:EUR|GBP)\s+\d{5,7}\b"
-    r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b",
+    r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b"
+    r"|(?:₹|¥)\s*\d"
+    r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF)\s+['’]?\d"
+    r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF)\b",
     re.I,
 )
 _FOREIGN_DOLLAR_RE = re.compile(
