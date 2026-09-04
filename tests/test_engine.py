@@ -9705,6 +9705,35 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(desc, described) is True
     assert desc.pay_low == 180_000
     assert desc.pay_high == 220_000
+    ranged = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": "$180,000 - $220,000",
+            "description": "<p>Account Executive $400,000</p>",
+        },
+        "Acme",
+    )
+    range_str = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/dddddddd-eeee-ffff-0000-111111111111",
+    )
+    assert _apply_listing(range_str, ranged) is True
+    assert range_str.pay_low == 180_000
+    assert range_str.pay_high == 220_000
+    eur_str = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": "€120,000 - €180,000",
+            "description": "<p>Account Executive $220,000</p>",
+        },
+        "Acme",
+    )
+    skipped_str = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/eeeeeeee-ffff-0000-1111-222222222222",
+    )
+    _apply_listing(skipped_str, eur_str)
+    assert skipped_str.pay_high is None
 
 
 def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):
@@ -10103,6 +10132,43 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(title_row, titled)
     assert title_row.pay_low == 180_000
     assert title_row.pay_high == 220_000
+    meta_pay = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "metadata": [{"name": "Salary", "value": "$180,000 - $220,000"}],
+        }
+    )
+    meta_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/7")
+    _apply_listing(meta_row, meta_pay)
+    assert meta_row.pay_low == 180_000
+    assert meta_row.pay_high == 220_000
+    meta_eur = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $220,000</p>",
+            "metadata": [{"name": "Pay Range", "value": "€120,000 - €180,000"}],
+        }
+    )
+    skipped_meta = Opportunity(
+        title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/8"
+    )
+    _apply_listing(skipped_meta, meta_eur)
+    assert skipped_meta.pay_high is None
+    desired = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "metadata": [{"name": "Desired Salary", "value": "$180,000 - $220,000"}],
+        }
+    )
+    prompt = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/9")
+    _apply_listing(prompt, desired)
+    assert prompt.pay_high != 180_000
+    assert prompt.pay_high != 220_000
 
 
 def test_greenhouse_metadata_scheduled_hours_and_time_type():
@@ -10298,6 +10364,51 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(contract, hourly) is True
     assert contract.pay_low == 160_000
     assert contract.pay_high == 200_000
+    comp = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $400,000</p>",
+            "compensation": {
+                "min": 180000,
+                "max": 220000,
+                "currency": "USD",
+                "period": "year",
+            },
+        }
+    )
+    comp_row = Opportunity(title="x", url="https://jobs.workable.com/view/jkl/engineer")
+    assert _apply_listing(comp_row, comp) is True
+    assert comp_row.pay_low == 180_000
+    assert comp_row.pay_high == 220_000
+    empty_then = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $400,000</p>",
+            "salary": {},
+            "salaryRange": "$180,000 - $220,000",
+        }
+    )
+    skipped_empty = Opportunity(
+        title="x", url="https://jobs.workable.com/view/mno/engineer"
+    )
+    assert _apply_listing(skipped_empty, empty_then) is True
+    assert skipped_empty.pay_low == 180_000
+    assert skipped_empty.pay_high == 220_000
+    eur_comp = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $220,000</p>",
+            "compensation": {"min": 60000, "max": 85000, "currency": "EUR"},
+        }
+    )
+    skipped_comp = Opportunity(
+        title="x", url="https://jobs.workable.com/view/pqr/engineer"
+    )
+    _apply_listing(skipped_comp, eur_comp)
+    assert skipped_comp.pay_high is None
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
@@ -11947,6 +12058,29 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     ) is True
     assert short.pay_low == 180_000
     assert short.pay_high == 220_000
+    k = Opportunity(
+        title="x",
+        url="https://clearview.pinpointhq.com/postings/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+    )
+    assert _apply_listing(
+        k,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "compensation_minimum": "180k",
+                "compensation_maximum": "220k",
+                "compensation_currency": "USD",
+                "compensation_frequency": "year",
+                "description": "<p>Office. Account Executive $400,000</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert k.pay_low == 180_000
+    assert k.pay_high == 220_000
 
 
 def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):
@@ -13157,12 +13291,17 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "More like these",
         "Jobs like this",
         "You applied",
+        "You recently viewed",
         "Recently viewed",
+        "Others also viewed",
+        "Because you viewed",
+        "Jobs you viewed",
         "Keep browsing",
         "Similar careers",
         "Related careers",
         "Similar listings",
         "Similar job",
+        "Matching roles",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

@@ -832,7 +832,11 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
         elif "full" in commit:
             posting["employmentType"] = "FULL_TIME"
     rng = data.get("salaryRange")
-    if isinstance(rng, dict):
+    if isinstance(rng, str):
+        pay = _span_pay_ld(rng)
+        if pay:
+            posting["baseSalary"] = pay
+    elif isinstance(rng, dict):
         low, high = _bound_nums(rng)
         if low or high:
             interval = str(rng.get("interval") or "").lower()
@@ -1765,6 +1769,11 @@ def _cents_to_annual(cents) -> Optional[int]:
     return None
 
 
+_GH_PAY_META_RE = re.compile(
+    r"(?i)^(?:base\s+)?(?:salary|compensation|pay)(?:\s+range)?$"
+)
+
+
 def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
     """Listed baseSalary from pay_input_ranges. Prefer USD; keep stated foreign currency."""
     foreign = None
@@ -1804,6 +1813,20 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
             return blob
         if foreign is None:
             foreign = blob
+    if foreign:
+        return foreign
+    for item in data.get("metadata") or []:
+        if not isinstance(item, dict):
+            continue
+        if not _GH_PAY_META_RE.fullmatch(str(item.get("name") or "").strip()):
+            continue
+        spanned = _span_pay_ld(str(item.get("value") or ""))
+        if not spanned:
+            continue
+        if _usd(spanned.get("currency")):
+            return spanned
+        if foreign is None:
+            foreign = spanned
     return foreign
 
 
@@ -1885,34 +1908,35 @@ _WORKABLE_PAY_UNITS = (
 
 def _workable_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary from jobs.workable.com JSON."""
-    raw = data.get("salary")
-    if isinstance(raw, str):
-        return _span_pay_ld(raw)
-    if not isinstance(raw, dict):
-        raw = data.get("salaryRange")
-    if isinstance(raw, str):
-        return _span_pay_ld(raw)
-    if not isinstance(raw, dict):
-        return None
-    low, high = _bound_nums(raw)
-    if low is None and high is None:
-        return None
-    period = str(raw.get("period") or raw.get("interval") or "").lower()
-    unit = "YEAR"
-    for needle, name in _WORKABLE_PAY_UNITS:
-        if needle in period:
-            unit = name
-            break
-    value: dict = {"unitText": unit}
-    if low is not None and high is not None:
-        value["minValue"] = low
-        value["maxValue"] = high
-    else:
-        value["value"] = high or low
-    return {
-        "currency": str(raw.get("currency") or "USD").upper(),
-        "value": value,
-    }
+    for key in ("salary", "salaryRange", "compensation"):
+        raw = data.get(key)
+        if isinstance(raw, str):
+            pay = _span_pay_ld(raw)
+            if pay:
+                return pay
+            continue
+        if not isinstance(raw, dict):
+            continue
+        low, high = _bound_nums(raw)
+        if low is None and high is None:
+            continue
+        period = str(raw.get("period") or raw.get("interval") or "").lower()
+        unit = "YEAR"
+        for needle, name in _WORKABLE_PAY_UNITS:
+            if needle in period:
+                unit = name
+                break
+        value: dict = {"unitText": unit}
+        if low is not None and high is not None:
+            value["minValue"] = low
+            value["maxValue"] = high
+        else:
+            value["value"] = high or low
+        return {
+            "currency": str(raw.get("currency") or "USD").upper(),
+            "value": value,
+        }
+    return None
 
 
 def _workable_jobs_to_html(data: dict) -> str:
@@ -2884,18 +2908,22 @@ def _pinpoint_job(rows, uuid: str) -> Optional[dict]:
 
 
 def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
-    low = _num(job.get("compensation_minimum"))
-    if low is None:
-        low = _num(job.get("compensation_min"))
-    high = _num(job.get("compensation_maximum"))
-    if high is None:
-        high = _num(job.get("compensation_max"))
-    if low is None and high is None:
+    nums = (
+        _nums(job.get("compensation_minimum"))
+        or _nums(job.get("compensation_min"))
+    ) + (
+        _nums(job.get("compensation_maximum"))
+        or _nums(job.get("compensation_max"))
+    )
+    if nums:
+        low, high = min(nums), max(nums)
+    else:
         raw = job.get("compensation")
+        low = high = None
         if isinstance(raw, dict):
             low, high = _bound_nums(raw)
-    if low is None and high is None:
-        return None
+        if low is None and high is None:
+            return None
     cur = str(job.get("compensation_currency") or "").upper() or "USD"
     freq = str(job.get("compensation_frequency") or "").lower()
     value: dict = {}
@@ -3911,12 +3939,17 @@ _RELATED_HEADING_RE = re.compile(
     r"|more\s+like\s+these"
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
+    r"|you\s+recently\s+viewed"
     r"|recently\s+viewed"
+    r"|others\s+also\s+viewed"
+    r"|because\s+you\s+viewed"
+    r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing"
     r"|similar\s+careers"
     r"|related\s+careers"
     r"|similar\s+listings"
     r"|similar\s+job"
+    r"|matching\s+roles"
     r"|related"
     r"|similar"
     r"|recommended)\s*"
