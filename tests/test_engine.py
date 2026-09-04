@@ -582,6 +582,11 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "This is an office-based role") is False
     assert _guess_remote("Engineer", "This is a site-based role") is False
     assert _guess_remote("Engineer", "This is a campus-based position") is False
+    assert _guess_remote("Engineer", "This is an on-campus role") is False
+    assert _guess_remote("Engineer", "must work on campus") is False
+    assert _guess_remote("Engineer", "work from our campus in Boston") is False
+    assert _guess_remote("Engineer", "must report to our NYC office") is False
+    assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
     assert _guess_remote("Engineer", "lab-based role in South San Francisco") is False
     assert _guess_remote("Engineer", "field-based sales role") is False
@@ -604,6 +609,7 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
     assert _guess_remote("Engineer", "work from home") is True
     assert _guess_remote("Engineer", "work from home. This is a site-based role") is True
+    assert _guess_remote("Engineer", "work from home. This is an on-campus role") is True
     office = Opportunity(title="Engineer", url="https://jobs.example/off")
     assert _apply_listing(
         office, "<p>Work from our office in NYC. Salary $180,000</p>"
@@ -636,6 +642,19 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert campus.remote is False
     assert campus.score() == 0.7 * (180_000 / (40 * 50))
+    oncampus = Opportunity(title="Engineer", url="https://jobs.example/oncampus")
+    assert _apply_listing(
+        oncampus, "<p>This is an on-campus role. Salary $180,000</p>"
+    ) is True
+    assert oncampus.remote is False
+    assert oncampus.pay_high == 180_000
+    assert oncampus.score() == 0.7 * (180_000 / (40 * 50))
+    report = Opportunity(title="Engineer", url="https://jobs.example/report")
+    assert _apply_listing(
+        report, "<p>Must report to our NYC office. Salary $180,000</p>"
+    ) is True
+    assert report.remote is False
+    assert report.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
@@ -4876,7 +4895,9 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert _workplace_remote("Field-Based") is False
     assert _workplace_remote("HQ-based") is False
     assert _workplace_remote("Laboratory-based") is False
+    assert _workplace_remote("On-Campus") is False
     assert _workplace_remote("Remote, field-based") is True
+    assert _workplace_remote("Remote, on-campus") is True
 
     html = _greenhouse_to_html(
         {

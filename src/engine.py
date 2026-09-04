@@ -4758,6 +4758,8 @@ def _workplace_remote(place: str) -> Optional[bool]:
         r"\b(?:site|campus|lab(?:oratory)?|field|headquarters|hq)[-\s]?based\b", p
     ):
         return False
+    if re.search(r"\bon[-\s]?campus\b", p):
+        return False
     compact = re.sub(r"[\s_-]+", "", p)
     if compact in {"remote", "offsite", "telecommute", "distributed"}:
         return True
@@ -4778,6 +4780,7 @@ def _workplace_remote(place: str) -> Optional[bool]:
         "fieldbased",
         "headquartersbased",
         "hqbased",
+        "oncampus",
     }:
         return False
     return None
@@ -4864,7 +4867,10 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
     r"|office[-\s]based\b"
     r"|\b(?:site|campus|lab(?:oratory)?|field|headquarters|hq)[-\s]based\b"
-    r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?office\b"
+    r"|on[-\s]campus\s+(?:role|position|job)\b"
+    r"|work\s+on[-\s]campus\b"
+    r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?(?:office|campus)\b"
+    r"|report\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|in(?:to)?\s+the\s+offices?\b"
     r"|in\s+our\s+(?:\S+\s+){0,4}offices?\b"
     r"|in[-\s]person\s+(?:role|position|job)\b"
