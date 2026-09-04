@@ -4436,14 +4436,14 @@ _FOREIGN_PAY_RE = re.compile(
     r"(?:€|£)\s*\d{1,3}(?:,\d{3}){1,2}"
     r"|(?:€|£)\s*\d{5,7}\b"
     r"|(?:€|£)\s*\d{2,3}(?:\.\d+)?\s*k\b"
-    r"|\b(?:EUR|GBP)\s+\d{1,3}(?:,\d{3}){1,2}"
-    r"|\b(?:EUR|GBP)\s+\d{5,7}\b"
-    r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b"
+    r"|\b(?:EUR|GBP)\s*\d{1,3}(?:,\d{3}){1,2}"
+    r"|\b(?:EUR|GBP)\s*\d{5,7}\b"
+    r"|\b(?:EUR|GBP)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|(?:₹|¥)\s*\d"
     r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\s+['’]?\d"
     r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{5,7}\s*(?:EUR|GBP)\b"
-    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP)\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:kr|zł)\b"
     r"|\d{5,7}\s*(?:kr|zł)\b"
@@ -4461,7 +4461,10 @@ _FOREIGN_DOLLAR_RE = re.compile(
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"
     r"(?:\s*[—–-]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?)?"
     r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b"
-    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD)\)",
+    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD)\)"
+    r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
+    r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b",
     re.I | re.S,
 )
 
@@ -5604,6 +5607,10 @@ _GONE_LISTING_RE = re.compile(
     r"|we\s+took\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+(?:down|offline)\b"
+    r"|we\s+took\s+down\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"|we(?:'ve|\s+have)?\s+(?:closed|cancelled|canceled)\s+this\s+search\b"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:cancelled|canceled)\b"
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+is\s+no\s+longer\s+being\s+(?:recruited|advertised)\b"
@@ -6640,23 +6647,25 @@ def _jsonld_place(posting: dict) -> str:
 
 
 def _remote_from_posting(posting: dict) -> Optional[bool]:
-    types = {
-        t.upper().replace("-", "_")
-        for t in _ld_types(
-            posting.get("jobLocationType")
-            or posting.get("job_location_type")
-            or posting.get("workplaceType")
-            or posting.get("workplace_type")
-            or posting.get("locationType")
-            or posting.get("location_type")
-        )
-    }
+    raw = (
+        posting.get("jobLocationType")
+        or posting.get("job_location_type")
+        or posting.get("workplaceType")
+        or posting.get("workplace_type")
+        or posting.get("locationType")
+        or posting.get("location_type")
+    )
+    types = {t.upper().replace("-", "_") for t in _ld_types(raw)}
     if any("TELECOMMUTE" in t for t in types):
         return True
     if any("ON_SITE" in t or t == "ONSITE" for t in types):
         return False
     if any("HYBRID" in t or t == "FLEX" for t in types):
         return False
+    for t in _ld_types(raw):
+        flag = _workplace_remote(t)
+        if flag is not None:
+            return flag
     place = _jsonld_place(posting)
     if not place:
         return None

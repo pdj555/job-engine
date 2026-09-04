@@ -431,7 +431,7 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     for blob in ("£60k", "£60K - £80K", "€85k", "GBP 60k", "EUR 85k"):
         assert _parse_pay(blob) == (None, None)
         assert _foreign_salary(f"<p>{blob} a year</p>") is True
-    for blob in ("80,000 EUR", "80000 GBP", "80k EUR", "80,000 euros"):
+    for blob in ("80,000 EUR", "80000 GBP", "80k EUR", "80,000 euros", "80k euros", "EUR80,000"):
         assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
         assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
     assert _parse_pay("$180,000") == (None, 180_000)
@@ -466,6 +466,9 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>CHF 91'052</p>") is True
     assert _parse_pay("Compensation: 150,000 CHF") == (None, None)
     assert _foreign_salary("<p>Compensation: 150,000 CHF</p>") is True
+    assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
+    assert _parse_pay("$90,000 AUD") == (None, None)
     assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
     assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
     assert _parse_pay("SEK 800,000. US equivalent $90,000") == (None, None)
@@ -10795,6 +10798,30 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We took down this job.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We took down this comment.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We closed this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've closed this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We canceled this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We closed this ticket.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We are no longer filling this role.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
@@ -12394,6 +12421,35 @@ def test_jsonld_city_location_is_office_when_type_missing():
     assert workplace_hybrid.remote is False
     assert workplace_hybrid.pay_low == 180_000
     assert workplace_hybrid.pay_high == 220_000
+    office = Opportunity(title="x", url="https://jobs.example/in-office", remote=True)
+    _apply_listing(
+        office,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","locationType":"IN_OFFICE",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert office.remote is False
+    assert office.pay_low == 180_000
+    assert office.pay_high == 220_000
+    workplace_remote = Opportunity(title="x", url="https://jobs.example/wp-remote")
+    _apply_listing(
+        workplace_remote,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","workplaceType":"REMOTE",
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert workplace_remote.remote is True
+    assert workplace_remote.pay_low == 100_000
+    assert workplace_remote.pay_high == 120_000
 
     country = Opportunity(title="x", url="https://jobs.example/y", remote=True)
     _apply_listing(
