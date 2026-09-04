@@ -6812,6 +6812,33 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     assert opp.company == "Bitwarden"
 
 
+def test_apply_listing_ignores_related_jsonld_jobposting():
+    from src.engine import _apply_listing
+
+    html = """
+    <title>IT Security Administrator at Bitwarden</title>
+    <script type="application/ld+json">
+    {"@graph": [
+      {"@type":"ItemList","itemListElement":[
+        {"@type":"JobPosting","title":"Renewals Manager",
+         "baseSalary":{"currency":"USD","value":{"minValue":422000,"maxValue":502000,"unitText":"YEAR"}}}
+      ]},
+      {"@type":"JobPosting","title":"IT Security Administrator",
+       "hiringOrganization":{"name":"Bitwarden"},
+       "baseSalary":{"currency":"USD","value":{"minValue":115000,"maxValue":145000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    """
+    opp = Opportunity(
+        title="IT Security Administrator",
+        url="https://wellfound.com/jobs/4335648-it-security-administrator",
+    )
+    _apply_listing(opp, html)
+    assert opp.pay_low == 115_000
+    assert opp.pay_high == 145_000
+    assert opp.company == "Bitwarden"
+
+
 def test_listing_plain_text_ignores_script_salaries():
     from src.engine import _listing_plain_text, _parse_pay, _visible_text
 

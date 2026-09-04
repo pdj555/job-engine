@@ -3645,15 +3645,33 @@ def _walk_ld(obj):
 
 
 def _job_posting(html: str) -> Optional[dict]:
+    """The listing's JobPosting. Related-job JSON-LD in an ItemList is not pay."""
+    posts: list[dict] = []
+    seen: set[int] = set()
     for raw in _LD_SCRIPT_RE.findall(html or ""):
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
             continue
         for obj in _walk_ld(data):
-            if "JobPosting" in _ld_types(obj.get("@type")):
-                return obj
-    return None
+            if "JobPosting" not in _ld_types(obj.get("@type")):
+                continue
+            ident = id(obj)
+            if ident in seen:
+                continue
+            seen.add(ident)
+            posts.append(obj)
+    if not posts:
+        return None
+    if len(posts) == 1:
+        return posts[0]
+    title = _html_title(html).casefold()
+    if title:
+        for posting in posts:
+            pt = str(posting.get("title") or "").strip().casefold()
+            if pt and (pt in title or title.startswith(pt)):
+                return posting
+    return posts[0]
 
 
 def _num(value) -> Optional[float]:
