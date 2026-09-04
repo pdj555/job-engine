@@ -13,6 +13,8 @@ from openai import AsyncOpenAI
 from src.models import Opportunity
 from config.settings import settings
 
+_LISTING_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"}
+
 
 class Engine:
     """
@@ -48,10 +50,19 @@ class Engine:
         missing = [o for o in opps if o.pay is None]
         if not missing:
             return
-        texts = await asyncio.gather(
-            *(self._listing_text(o.url) for o in missing),
-            return_exceptions=True,
-        )
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=8.0,
+            headers=_LISTING_HEADERS,
+        ) as client:
+            self._http_client = client
+            try:
+                texts = await asyncio.gather(
+                    *(self._listing_text(o.url) for o in missing),
+                    return_exceptions=True,
+                )
+            finally:
+                self._http_client = None
         for o, text in zip(missing, texts):
             if not isinstance(text, str) or not text:
                 continue
@@ -69,16 +80,16 @@ class Engine:
     async def _listing_text(self, url: str) -> str:
         if not _public_http_url(url):
             return ""
+        client = getattr(self, "_http_client", None)
+        if client is not None:
+            return await _http_get_text(client, url)
         try:
             async with httpx.AsyncClient(
                 follow_redirects=True,
                 timeout=8.0,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
-            ) as client:
-                resp = await client.get(url)
-                if resp.status_code >= 400:
-                    return ""
-                return resp.text
+                headers=_LISTING_HEADERS,
+            ) as owned:
+                return await _http_get_text(owned, url)
         except Exception:
             return ""
 
@@ -362,6 +373,16 @@ def _public_http_url(url: str) -> bool:
     if re.match(r"^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)", host):
         return False
     return True
+
+
+async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
+    try:
+        resp = await client.get(url)
+        if resp.status_code >= 400:
+            return ""
+        return resp.text
+    except Exception:
+        return ""
 
 
 def _title_key(title: str) -> str:
