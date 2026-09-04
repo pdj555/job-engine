@@ -1934,14 +1934,17 @@ def _workday_to_html(data: dict) -> str:
         posting["employmentType"] = "FULL_TIME"
     place = str(info.get("remoteType") or "").strip()
     loc = str(info.get("location") or "").strip()
-    _apply_workplace(posting, place, loc)
+    extras = []
+    raw_extras = info.get("additionalLocations")
+    if isinstance(raw_extras, list):
+        extras = [str(x).strip() for x in raw_extras if str(x).strip()]
+    _apply_workplace(posting, place, *extras, loc)
     desc = str(info.get("jobDescription") or "")
     page_title = f"{title} at {company}" if company else title
     bits = []
-    if place:
-        bits.append(f"<p>{place}</p>")
-    if loc:
-        bits.append(f"<p>{loc}</p>")
+    for label in (place, loc, *extras):
+        if label:
+            bits.append(f"<p>{label}</p>")
     bits.append(desc)
     return (
         f"<title>{page_title}</title>"

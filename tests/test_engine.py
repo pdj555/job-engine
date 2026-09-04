@@ -3974,6 +3974,60 @@ def test_workday_to_html_fills_company_pay_and_flex():
     assert country.pay_high == 251_576
 
 
+def test_workday_additional_us_remote_is_remote():
+    from src.engine import _apply_listing, _workday_to_html
+
+    remote = Opportunity(
+        title="x",
+        url="https://capitalone.wd12.myworkdayjobs.com/en-US/Capital_One/job/x_R1",
+        remote=True,
+    )
+    _apply_listing(
+        remote,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "Capital One"},
+                "jobPostingInfo": {
+                    "title": "Sr. Staff Machine Learning Engineer (Remote-Eligible)",
+                    "timeType": "Full time",
+                    "location": "McLean, VA",
+                    "additionalLocations": ["US Remote"],
+                    "jobDescription": (
+                        "<p>Capital One is open to hiring a Remote Employee.</p>"
+                        "<p>Remote (Regardless of Location): $286,200 - $326,700</p>"
+                    ),
+                },
+            }
+        ),
+    )
+    assert remote.remote is True
+    assert remote.pay_low == 286_200
+    assert remote.pay_high == 326_700
+
+    flex = Opportunity(
+        title="x",
+        url="https://workday.wd5.myworkdayjobs.com/en-US/Workday/job/x_JR-1",
+        remote=True,
+    )
+    _apply_listing(
+        flex,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "Workday, Inc."},
+                "jobPostingInfo": {
+                    "title": "Machine Learning Engineer III",
+                    "timeType": "Full Time",
+                    "remoteType": "Flex",
+                    "location": "USA, CA, Pleasanton",
+                    "additionalLocations": ["USA, CA, San Francisco"],
+                    "jobDescription": "<p>Base Pay Range: $160,000 USD - $240,000 USD</p>",
+                },
+            }
+        ),
+    )
+    assert flex.remote is False
+
+
 def test_listing_text_reads_workday_cxs(monkeypatch):
     engine = Engine()
     seen: list[str] = []
