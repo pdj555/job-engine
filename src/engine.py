@@ -5023,6 +5023,13 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\s+in\s+"
     r"(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|hub)\b"
     r"|in[-\s]person\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
+    r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\s+in[-\s]person\b"
+    r"|hybrid\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\s+in\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?)\b)"
+    r"|must\s+work\s+(?:from|in)\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|home|meetings?|standups?)\b)"
+    r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
+    r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+(?:a|per)\s+week\b"
 )
 
 
