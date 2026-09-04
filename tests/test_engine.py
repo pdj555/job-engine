@@ -6367,7 +6367,7 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     glued = (
         "<title>IT Security Administrator at Bitwarden</title>"
         "<p>$115,000 - $145,000 a year.</p>"
-        "<p>Similar JobsDrona Pay DevOps Engineer ₹6L – ₹9L Renewals Manager $422,000</p>"
+        "<p>historySimilar JobsDrona Pay DevOps Engineer ₹6L – ₹9L Renewals Manager $422,000</p>"
     )
     assert _parse_pay(_listing_plain_text(html)) == (115_000, 145_000)
     assert _parse_pay(_listing_plain_text(glued)) == (115_000, 145_000)
