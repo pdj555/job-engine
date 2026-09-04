@@ -102,7 +102,7 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and not data.get("error"):
                     return _greenhouse_to_html(data)
-        return await fetch(url)
+        return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
@@ -371,7 +371,18 @@ Be direct. No fluff."""
 
 
 def _normalize_url(url: str) -> str:
-    return url.strip().rstrip("/").casefold()
+    return _lever_job_url(url).strip().rstrip("/").casefold()
+
+
+def _lever_job_url(url: str) -> str:
+    """Lever /apply is a form, not the posting. Fetch the job page."""
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    path = parsed.path.rstrip("/")
+    if host.endswith("lever.co") and path.casefold().endswith("/apply"):
+        path = path[: -len("/apply")] or "/"
+        return parsed._replace(path=path, query="", fragment="").geturl()
+    return url
 
 
 def _public_http_url(url: str) -> bool:
@@ -791,7 +802,7 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
     if not opp.company:
         opp.company = _company_from_title(_html_title(html))
     if opp.pay is None:
-        visible = _listing_plain_text(html[:80_000])
+        visible = _listing_plain_text(html)
         hours = opp.hours_per_week or _guess_hours(opp.title, visible)
         low, high = _parse_pay(visible, hours)
         if high or low:

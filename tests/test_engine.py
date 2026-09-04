@@ -172,6 +172,32 @@ def test_search_all_dedupes_normalized_urls():
     assert [r["url"] for r in results] == ["https://a.com/x/", "https://b.com/y"]
 
 
+def test_search_all_dedupes_lever_apply_to_job_url():
+    engine = Engine()
+
+    async def fake_brave(_query: str):
+        return [
+            {
+                "title": "Apply",
+                "url": "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply",
+            },
+            {
+                "title": "Job",
+                "url": "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff",
+            },
+        ]
+
+    async def fake_perplexity(_query: str):
+        return []
+
+    engine._search_brave = fake_brave
+    engine._search_perplexity = fake_perplexity
+    results = asyncio.run(engine._search_all("ml"))
+    assert [r["url"] for r in results] == [
+        "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply"
+    ]
+
+
 def test_search_all_drops_failed_sources():
     engine = Engine()
 
@@ -847,6 +873,38 @@ def test_apply_listing_reads_json_ld_past_first_80k():
     opp = Opportunity(title="Senior ML Engineer", url="https://jobs.lever.co/swordhealth/1")
     _apply_listing(opp, html)
     assert opp.company == "Sword Health"
+
+
+def test_apply_listing_pay_not_blocked_by_css_dollar_prefix():
+    from src.engine import _apply_listing
+
+    html = (
+        "<style>" + ("$iconThumbnailMarginX;" * 5000) + "</style>"
+        "<p>for this full-time position is $143,000 to 197,000.</p>"
+    )
+    opp = Opportunity(title="Senior ML Engineer", url="https://jobs.lever.co/lyrahealth/x")
+    _apply_listing(opp, html)
+    assert opp.pay_low == 143_000
+    assert opp.pay_high == 197_000
+
+
+def test_listing_text_fetches_lever_job_not_apply_form(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        return "<title>Provectus - Senior ML</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    asyncio.run(
+        engine._listing_text(
+            "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply"
+        )
+    )
+    assert seen == [
+        "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
+    ]
 
 
 def test_apply_listing_company_from_html_title():
