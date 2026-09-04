@@ -2470,7 +2470,7 @@ def _personio_to_html(pos: dict) -> str:
     return (
         f"<title>{page_title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
-        f"{''.join(parts)}"
+        f"{' '.join(parts)}"
     )
 
 
@@ -3087,7 +3087,7 @@ def _comeet_to_html(data: dict) -> str:
     return (
         f"<title>{page_title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
-        f"{''.join(parts)}"
+        f"{' '.join(parts)}"
     )
 
 
