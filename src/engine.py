@@ -3999,10 +3999,30 @@ def _salary_has_amount(salary) -> bool:
     return any(_num(salary.get(k)) for k in ("minValue", "maxValue"))
 
 
+def _posting_salary(posting: Optional[dict]):
+    """baseSalary, then salary, then estimatedSalary. Lists take the first amount."""
+    if not isinstance(posting, dict):
+        return None
+    for key in ("baseSalary", "salary", "estimatedSalary"):
+        raw = posting.get(key)
+        if isinstance(raw, list):
+            for item in raw:
+                if isinstance(item, (dict, int, float)):
+                    return item
+                if isinstance(item, str) and item.strip():
+                    return item
+            continue
+        if isinstance(raw, (dict, int, float)):
+            return raw
+        if isinstance(raw, str) and raw.strip():
+            return raw
+    return None
+
+
 def _posting_foreign(posting: Optional[dict]) -> bool:
     if not isinstance(posting, dict):
         return False
-    salary = posting.get("baseSalary") or posting.get("salary")
+    salary = _posting_salary(posting)
     currency = salary.get("currency") if isinstance(salary, dict) else None
     if currency:
         return not _usd(currency)
@@ -4110,7 +4130,7 @@ def _posting_pay(
 ) -> tuple[Optional[int], Optional[int]]:
     if _posting_foreign(posting):
         return None, None
-    salary = posting.get("baseSalary") or posting.get("salary")
+    salary = _posting_salary(posting)
     if salary is None:
         return None, None
     if isinstance(salary, (int, float, str)):
@@ -4128,6 +4148,11 @@ def _posting_pay(
         low, high = _num(value.get("minValue")), _num(value.get("maxValue"))
         if high is None:
             high = _num(value.get("value"))
+    elif salary.get("minValue") is not None or salary.get("maxValue") is not None:
+        unit = _PAY_UNITS.get(str(salary.get("unitText") or "").upper())
+        low, high = _num(salary.get("minValue")), _num(salary.get("maxValue"))
+        if high is None:
+            high = _num(salary.get("value"))
     else:
         high = _num(value)
         unit = _PAY_UNITS.get(str(salary.get("unitText") or "").upper())
@@ -4193,7 +4218,7 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
         listed_pay
         and posting
         and not _posting_foreign(posting)
-        and _salary_unit(posting.get("baseSalary") or posting.get("salary"))
+        and _salary_unit(_posting_salary(posting))
         in {"hour", "day", "week", "biweek", "semimonth", "month"}
     ):
         text = _NON_SALARY_MONEY_RE.sub(" ", visible or "")

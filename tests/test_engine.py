@@ -5539,6 +5539,49 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(hour, hourly) is True
     assert hour.pay_low == 160_000
     assert hour.pay_high == 200_000
+    estimated = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "estimatedSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":150000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    """
+    est = Opportunity(title="Engineer", url="https://jobs.example/ld-est")
+    assert _apply_listing(est, estimated) is True
+    assert est.pay_low == 150_000
+    assert est.pay_high == 180_000
+    listed = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":180000,"unitText":"YEAR"}},
+     "estimatedSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":250000,"unitText":"YEAR"}}}
+    </script>
+    """
+    base = Opportunity(title="Engineer", url="https://jobs.example/ld-base-est")
+    assert _apply_listing(base, listed) is True
+    assert base.pay_high == 180_000
+    qv = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "estimatedSalary":{"@type":"QuantitativeValue","minValue":150000,"maxValue":180000,"unitText":"YEAR"}}
+    </script>
+    """
+    direct = Opportunity(title="Engineer", url="https://jobs.example/ld-est-qv")
+    assert _apply_listing(direct, qv) is True
+    assert direct.pay_low == 150_000
+    assert direct.pay_high == 180_000
+    day_est = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "estimatedSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":400,"unitText":"DAY"}}}
+    </script>
+    """
+    diem = Opportunity(title="Engineer", url="https://jobs.example/ld-est-day")
+    assert _apply_listing(diem, day_est) is True
+    assert diem.pay_high == 100_000
 
 
 def test_apply_listing_json_ld_monthly_and_weekly_thousands():
@@ -5647,6 +5690,16 @@ def test_apply_listing_ignores_non_usd_salary():
     _apply_listing(opp, html)
     assert opp.company == "Acme"
     assert opp.pay_high is None
+    estimated = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "estimatedSalary":{"currency":"EUR","value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    est = Opportunity(title="Engineer", url="https://jobs.example/est-eur")
+    _apply_listing(est, estimated)
+    assert est.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
