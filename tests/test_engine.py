@@ -1016,6 +1016,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:personio.com",
         "senior ML engineer remote site:personio.de",
         "senior ML engineer remote site:recruitee.com",
+        "senior ML engineer remote site:ats.rippling.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3526,6 +3527,175 @@ def test_listing_text_recruitee_api_404_is_gone(monkeypatch):
     assert seen == [
         "https://nucsai.recruitee.com/api/offers/"
         "senior-research-engineer-large-language-models"
+    ]
+    assert html is None
+
+
+def test_rippling_job_urls_are_not_boards():
+    from src.engine import _is_index_page, _lever_job_url, _rippling_job_url
+
+    apply = (
+        "https://ats.rippling.com/button/jobs/"
+        "d16f6e6a-1a1b-4ac6-a98d-2648b88e83f1/apply"
+    )
+    canonical = (
+        "https://ats.rippling.com/button/jobs/"
+        "d16f6e6a-1a1b-4ac6-a98d-2648b88e83f1"
+    )
+    assert _rippling_job_url(apply) == canonical
+    assert _lever_job_url(apply) == canonical
+    assert not _is_index_page(
+        {"url": apply, "title": "Jobs at Button", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://ats.rippling.com/button",
+            "title": "Join us at Button",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://www.rippling.com/careers",
+            "title": "Rippling Careers | Work Will Never Be the Same",
+            "description": "",
+        }
+    )
+
+
+def _rippling_next_html(job_post=None, **api):
+    data = {"jobBoard": {"companyName": "Button"}, **api}
+    if job_post is not None:
+        data["jobPost"] = job_post
+    payload = {"props": {"pageProps": {"apiData": data}}}
+    return f'<script id="__NEXT_DATA__">{json.dumps(payload)}</script>'
+
+
+def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    html = _rippling_next_html(
+        {
+            "uuid": "d4d59ed8-4cc1-4fcf-ba37-b8273654bdf4",
+            "name": "Senior Machine Learning Engineer – GeoAI Platform",
+            "companyName": "Wherobots",
+            "employmentType": {"label": "SALARIED_FT", "id": "Salaried, full-time"},
+            "workLocations": ["Bellevue, WA", "San Francisco, CA"],
+            "payRangeDetails": [
+                {
+                    "location": "SF, Seattle, Remote",
+                    "currency": "USD",
+                    "frequency": "YEAR",
+                    "rangeStart": 185000,
+                    "rangeEnd": 275000,
+                    "isRemote": True,
+                }
+            ],
+            "description": {"company": "<p>Geospatial.</p>", "role": "<p>Build GeoAI.</p>"},
+        }
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return html
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://ats.rippling.com/wherobots/jobs/"
+        "d4d59ed8-4cc1-4fcf-ba37-b8273654bdf4"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == [url]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is True
+    assert opp.company == "Wherobots"
+    assert opp.pay_low == 185_000
+    assert opp.pay_high == 275_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 137.5
+
+
+def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
+    engine = Engine()
+    html = _rippling_next_html(
+        {
+            "uuid": "d16f6e6a-1a1b-4ac6-a98d-2648b88e83f1",
+            "name": "Senior Machine Learning Engineer",
+            "companyName": "Button",
+            "employmentType": {"label": "SALARIED_FT", "id": "Salaried, full-time"},
+            "workLocations": ["Remote (United States)"],
+            "payRangeDetails": [],
+            "description": {
+                "role": "<p>The salary range for this role is expected to be between $153,000 - $198,000</p>"
+            },
+        }
+    )
+
+    async def fake_get(_client, url: str):
+        return html
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://ats.rippling.com/button/jobs/"
+        "d16f6e6a-1a1b-4ac6-a98d-2648b88e83f1"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is True
+    assert opp.company == "Button"
+    assert opp.remote is True
+    assert opp.pay_low == 153_000
+    assert opp.pay_high == 198_000
+
+
+def test_rippling_cad_pay_range_is_foreign():
+    from src.engine import _apply_listing, _foreign_salary, _rippling_to_html
+
+    html = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "payRangeDetails": [
+                {
+                    "currency": "CAD",
+                    "frequency": "YEAR",
+                    "rangeStart": 160000,
+                    "rangeEnd": 180000,
+                }
+            ],
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    )
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
+
+
+def test_listing_text_rippling_missing_job_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return _rippling_next_html()
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://ats.rippling.com/button/jobs/"
+            "00000000-0000-0000-0000-000000000000"
+        )
+    )
+    assert seen == [
+        "https://ats.rippling.com/button/jobs/"
+        "00000000-0000-0000-0000-000000000000"
     ]
     assert html is None
 

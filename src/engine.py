@@ -188,6 +188,17 @@ class Engine:
                 if isinstance(data, dict) and data.get("error"):
                     return None
             return ""
+        if _rippling_ids(url):
+            raw = await fetch(_rippling_job_url(url))
+            if raw is None:
+                return None
+            if raw:
+                parsed = _rippling_from_next(raw)
+                if parsed is None:
+                    return None
+                if parsed:
+                    return parsed
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -537,6 +548,9 @@ def _lever_job_url(url: str) -> str:
     rt = _recruitee_job_url(url)
     if rt:
         return rt
+    rp = _rippling_job_url(url)
+    if rp:
+        return rp
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -834,6 +848,7 @@ def _search_angles(query: str) -> list[str]:
             "personio.com",
             "personio.de",
             "recruitee.com",
+            "ats.rippling.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1009,6 +1024,10 @@ def _company_from_url(url: str) -> str | None:
         slug = host.split(".")[0]
         if slug in {"www", "app", "careers"}:
             return None
+    elif host == "ats.rippling.com":
+        slug = parts[0]
+        if slug in {"jobs", "apply"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1049,6 +1068,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"www", "app", "careers"}:
             return None
         return f"recruitee:{slug}"
+    if host == "ats.rippling.com":
+        slug = parts[0].casefold()
+        if slug in {"jobs", "apply"}:
+            return None
+        return f"rippling:{slug}"
     return None
 
 
@@ -1701,6 +1725,158 @@ def _recruitee_to_html(data: dict) -> str:
     )
 
 
+_RIPPLING_JOB_RE = re.compile(
+    r"(?i)https?://ats\.rippling\.com/([^/]+)/jobs/"
+    r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+)
+_NEXT_DATA_RE = re.compile(
+    r'(?is)<script id="__NEXT_DATA__"[^>]*>(.*?)</script>'
+)
+_RIPPLING_PAY_UNITS = {
+    "YEAR": "YEAR",
+    "ANNUAL": "YEAR",
+    "MONTH": "MONTH",
+    "HOUR": "HOUR",
+    "WEEK": "WEEK",
+}
+
+
+def _rippling_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _RIPPLING_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+def _rippling_job_url(url: str) -> Optional[str]:
+    ids = _rippling_ids(url)
+    if not ids:
+        return None
+    return f"https://ats.rippling.com/{ids[0]}/jobs/{ids[1]}"
+
+
+def _rippling_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host in {"rippling.com", "www.rippling.com"}:
+        return True
+    if host != "ats.rippling.com":
+        return False
+    return _rippling_ids(url) is None
+
+
+def _rippling_from_next(html: str) -> Optional[str]:
+    """Listing HTML from Rippling NEXT_DATA. None if the job UUID is gone."""
+    m = _NEXT_DATA_RE.search(html or "")
+    if not m:
+        return html
+    try:
+        data = json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return html
+    api = ((data.get("props") or {}).get("pageProps") or {}).get("apiData")
+    if not isinstance(api, dict):
+        return html
+    post = api.get("jobPost")
+    if isinstance(post, dict) and (post.get("name") or post.get("uuid")):
+        return _rippling_to_html(post, api)
+    return None
+
+
+def _rippling_place(post: dict) -> str:
+    locs = post.get("workLocations") or []
+    names = []
+    if isinstance(locs, list):
+        for loc in locs:
+            if isinstance(loc, str) and loc.strip():
+                names.append(loc.strip())
+            elif isinstance(loc, dict):
+                label = str(loc.get("name") or loc.get("workplaceType") or "").strip()
+                if label:
+                    names.append(label)
+    if any(_workplace_remote(n) is True for n in names):
+        return "remote"
+    return ", ".join(names)
+
+
+def _rippling_pay_ld(post: dict) -> Optional[dict]:
+    rows = post.get("payRangeDetails")
+    if not isinstance(rows, list):
+        return None
+    foreign = None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        low, high = _num(row.get("rangeStart")), _num(row.get("rangeEnd"))
+        if low is None and high is None:
+            continue
+        cur = str(row.get("currency") or "").upper() or "USD"
+        freq = str(row.get("frequency") or "").upper()
+        value: dict = {}
+        unit = _RIPPLING_PAY_UNITS.get(freq)
+        if unit:
+            value["unitText"] = unit
+        if low is not None and high is not None:
+            value["minValue"] = int(low) if low == int(low) else low
+            value["maxValue"] = int(high) if high == int(high) else high
+        else:
+            amount = high if high is not None else low
+            value["value"] = int(amount) if amount == int(amount) else amount
+        blob = {"currency": cur, "value": value}
+        if _usd(cur):
+            return blob
+        if foreign is None:
+            foreign = blob
+    return foreign
+
+
+def _rippling_to_html(post: dict, api: Optional[dict] = None) -> str:
+    """Turn Rippling jobPost JSON into listing HTML. Never invent pay."""
+    title = str(post.get("name") or "").strip()
+    company = str(post.get("companyName") or "").strip()
+    if not company:
+        board = post.get("board") if isinstance(post.get("board"), dict) else None
+        if board:
+            company = str(board.get("companyName") or "").strip()
+        elif isinstance(api, dict) and isinstance(api.get("jobBoard"), dict):
+            company = str(api["jobBoard"].get("companyName") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = post.get("employmentType")
+    label = ""
+    if isinstance(emp, dict):
+        label = str(emp.get("id") or emp.get("label") or "")
+    elif isinstance(emp, str):
+        label = emp
+    lower = label.lower()
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower or "salaried_ft" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    place = _rippling_place(post)
+    _apply_workplace(posting, place)
+    pay = _rippling_pay_ld(post)
+    if pay:
+        posting["baseSalary"] = pay
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    desc = post.get("description")
+    if isinstance(desc, dict):
+        for key in ("company", "role"):
+            val = desc.get(key)
+            if isinstance(val, str) and val.strip():
+                parts.append(val)
+    elif isinstance(desc, str) and desc.strip():
+        parts.append(desc)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1722,6 +1898,7 @@ def _ats_job_url(url: str) -> bool:
         or _teamtailor_ids(url)
         or _personio_ids(url)
         or _recruitee_ids(url)
+        or _rippling_ids(url)
     )
 
 
@@ -1761,6 +1938,8 @@ def _is_index_page(raw: dict) -> bool:
     if _personio_is_board(url):
         return True
     if _recruitee_is_board(url):
+        return True
+    if _rippling_is_board(url):
         return True
     return False
 
