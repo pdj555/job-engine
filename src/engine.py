@@ -3843,6 +3843,7 @@ _RELATED_JOBS_RE = re.compile(
     r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
     r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
     r"|(?:similar|related|recommended|other)\s+opportunities.*$"
+    r"|(?:similar|related|recommended|featured|suggested|matching)\s*:?\s*\$.*$"
 )
 _RELATED_HEADING_RE = re.compile(
     r"(?is)(</(?:p|h1|article|section|div|ul|ol|li|main)>)(\s*)"

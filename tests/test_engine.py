@@ -12752,6 +12752,27 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<title>Engineer</title><p>We offer more opportunities for growth. Salary $180,000</p>",
     ) is True
     assert growth.pay_high == 180_000
+    related_dollar = (
+        "<title>Engineer</title><p>Great team. Apply now.</p><p>Related $400,000</p>"
+    )
+    assert _parse_pay(_listing_plain_text(related_dollar)) == (None, None)
+    rec = Opportunity(title="Engineer", url="https://jobs.example/related-dollar")
+    assert _apply_listing(rec, related_dollar) is False
+    assert rec.pay_high is None
+    recommended = (
+        "<title>Engineer</title><p>Great team. Apply now.</p><p>Recommended: $400,000</p>"
+    )
+    assert _parse_pay(_listing_plain_text(recommended)) == (None, None)
+    similar_dollar = (
+        "<title>Engineer</title><p>Great team. Apply now.</p><p>Similar $400,000</p>"
+    )
+    assert _parse_pay(_listing_plain_text(similar_dollar)) == (None, None)
+    kept_related = Opportunity(title="Engineer", url="https://jobs.example/kept-related")
+    assert _apply_listing(
+        kept_related,
+        "<title>Engineer</title><p>$180,000 a year.</p><p>Related $400,000</p>",
+    ) is True
+    assert kept_related.pay_high == 180_000
     browse = Opportunity(title="Engineer", url="https://jobs.example/browse")
     assert _apply_listing(
         browse,
