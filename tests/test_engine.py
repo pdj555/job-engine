@@ -750,6 +750,10 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "work from the lab") is False
     assert _guess_remote("Engineer", "work from our laboratory") is False
     assert _guess_remote("Engineer", "this is a field role") is False
+    assert _guess_remote("Engineer", "this is an office role") is False
+    assert _guess_remote("Engineer", "this is an office position") is False
+    assert _guess_remote("Engineer", "this is an office job") is False
+    assert _guess_remote("Engineer", "work from home. this is an office role") is True
     assert _guess_remote("Engineer", "this is a headquarters role") is False
     assert _guess_remote("Engineer", "this is an HQ role") is False
     assert _guess_remote("Engineer", "must work from headquarters") is False
@@ -918,6 +922,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert field.remote is False
     assert field.pay_high == 180_000
     assert field.score() == 0.7 * (180_000 / (40 * 50))
+    office_role = Opportunity(title="Engineer", url="https://jobs.example/office-role")
+    assert _apply_listing(
+        office_role, "<p>This is an office role. Salary $180,000</p>"
+    ) is True
+    assert office_role.remote is False
+    assert office_role.pay_high == 180_000
+    assert office_role.score() == 0.7 * (180_000 / (40 * 50))
     hq = Opportunity(title="Engineer", url="https://jobs.example/hq")
     assert _apply_listing(
         hq, "<p>Must work from headquarters. Salary $180,000</p>"

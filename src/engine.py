@@ -4941,7 +4941,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|field(?!\s+of\b))\b"
     r"|work\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|field(?!\s+of\b))\b"
     r"|based\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq)\b"
-    r"|\b(?:lab(?:oratory)?|field|headquarters|hq)\s+(?:role|position|job)\b"
+    r"|\b(?:lab(?:oratory)?|field|headquarters|hq|office)\s+(?:role|position|job)\b"
     r"|report\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|commute\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|in(?:to)?\s+the\s+offices?\b"
