@@ -869,8 +869,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
     elif isinstance(rng, dict):
         low, high = _bound_nums(rng)
         if low or high:
-            interval = str(rng.get("interval") or "").lower()
-            unit = _period_unit(interval) or "YEAR"
+            unit = _period_unit(_ats_period(rng)) or "YEAR"
             value: dict = {"unitText": unit}
             if low is not None and high is not None:
                 value["minValue"] = low
@@ -1998,6 +1997,17 @@ def _workable_jobs_to_html(data: dict) -> str:
     pay = _workable_pay_ld(data)
     if pay:
         posting["baseSalary"] = pay
+    for key in (
+        "hoursPerWeek",
+        "weeklyHours",
+        "hours_per_week",
+        "weekly_hours",
+        "workHours",
+    ):
+        n = _hours_from_node(data.get(key))
+        if n:
+            posting["workHours"] = str(n)
+            break
     page_title = f"{title} at {company}" if company else title
     _apply_workplace(posting, place)
     return (
@@ -2664,7 +2674,7 @@ def _rippling_pay_ld(post: dict) -> Optional[dict]:
             continue
         cur = str(row.get("currency") or "").upper() or "USD"
         value: dict = {}
-        unit = _period_unit(row.get("frequency") or "")
+        unit = _period_unit(_ats_period(row))
         if unit:
             value["unitText"] = unit
         if low is not None and high is not None:
@@ -3314,7 +3324,7 @@ def _dover_pay_ld(job: dict) -> Optional[dict]:
         return None
     cur = str(comp.get("currency_code") or "").upper() or "USD"
     value: dict = {}
-    unit = _period_unit(comp.get("salary_range_type") or "")
+    unit = _period_unit(comp.get("salary_range_type") or _ats_period(comp))
     if unit:
         value["unitText"] = unit
     if low is not None and high is not None:

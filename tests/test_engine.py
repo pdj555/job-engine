@@ -10591,6 +10591,44 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(two, two_weeks) is True
     assert two.pay_low == 75_000
     assert two.pay_high == 100_000
+    freq = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "frequency": "every two weeks",
+            },
+        },
+        "Acme",
+    )
+    freq_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-333333333333",
+    )
+    assert _apply_listing(freq_row, freq) is True
+    assert freq_row.pay_low == 75_000
+    assert freq_row.pay_high == 100_000
+    period = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "period": "every two weeks",
+            },
+        },
+        "Acme",
+    )
+    period_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-444444444444",
+    )
+    assert _apply_listing(period_row, period) is True
+    assert period_row.pay_low == 75_000
+    assert period_row.pay_high == 100_000
     described = _lever_to_html(
         {
             "text": "Engineer",
@@ -11486,6 +11524,19 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(listed, structured) is True
     assert listed.pay_low == 160_000
     assert listed.pay_high == 190_000
+    hours = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "employmentType": "Full-time",
+            "description": "<p>$80/hour. Office.</p>",
+            "hoursPerWeek": 32,
+        }
+    )
+    hpw = Opportunity(title="x", url="https://jobs.workable.com/view/hrs/engineer")
+    assert _apply_listing(hpw, hours) is True
+    assert hpw.hours_per_week == 32
+    assert hpw.pay_high == 128_000
     year_sfx = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -13382,6 +13433,33 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     ) is True
     assert two_weeks.pay_low == 75_000
     assert two_weeks.pay_high == 100_000
+    interval = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-111111111111",
+    )
+    assert _apply_listing(
+        interval,
+        _rippling_to_html(
+            {
+                "name": "Engineer",
+                "companyName": "Acme",
+                "employmentType": "FULL_TIME",
+                "workLocations": ["Austin, TX"],
+                "payRangeDetails": [
+                    {
+                        "currency": "USD",
+                        "interval": "every-two-weeks",
+                        "rangeStart": 3000,
+                        "rangeEnd": 4000,
+                        "isRemote": False,
+                    }
+                ],
+                "description": {"role": "<p>Office. Full time.</p>"},
+            }
+        ),
+    ) is True
+    assert interval.pay_low == 75_000
+    assert interval.pay_high == 100_000
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
@@ -14650,6 +14728,28 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert two_weeks.pay_low == 75_000
     assert two_weeks.pay_high == 100_000
+    freq = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/ffffffff-ffff-ffff-ffff-111111111111"
+    )
+    assert _apply_listing(
+        freq,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "lower_bound": 3000,
+                    "upper_bound": 4000,
+                    "currency_code": "USD",
+                    "frequency": "every two weeks",
+                },
+                "user_provided_description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert freq.pay_low == 75_000
+    assert freq.pay_high == 100_000
     twice = Opportunity(
         title="x", url="https://app.dover.com/apply/Acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
     )
