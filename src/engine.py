@@ -5218,6 +5218,24 @@ def _posting_company(posting: dict) -> Optional[str]:
     return name
 
 
+_HOUR_KEYS = (
+    "workHours",
+    "work_hours",
+    "hoursPerWeek",
+    "weeklyHours",
+    "hours_per_week",
+    "weekly_hours",
+    "standardWeeklyHours",
+    "scheduledWeeklyHours",
+    "standard_weekly_hours",
+    "scheduled_weekly_hours",
+    "minHoursPerWeek",
+    "min_hours_per_week",
+    "maxHoursPerWeek",
+    "max_hours_per_week",
+)
+
+
 def _hours_from_node(work) -> Optional[int]:
     n = _num(work)
     if n is None and isinstance(work, dict):
@@ -5240,6 +5258,13 @@ def _hours_from_node(work) -> Optional[int]:
             or _num(work.get("range_end"))
         )
         if n is None:
+            for key in _HOUR_KEYS:
+                if key in ("workHours", "work_hours"):
+                    continue
+                n = _num(work.get(key))
+                if n is not None:
+                    break
+        if n is None:
             work = _ld_text(work)
     if n is None and isinstance(work, str):
         stated = _stated_hours("", work)
@@ -5250,24 +5275,6 @@ def _hours_from_node(work) -> Optional[int]:
     if n is not None and 1 <= n <= 80:
         return int(round(n))
     return None
-
-
-_HOUR_KEYS = (
-    "workHours",
-    "work_hours",
-    "hoursPerWeek",
-    "weeklyHours",
-    "hours_per_week",
-    "weekly_hours",
-    "standardWeeklyHours",
-    "scheduledWeeklyHours",
-    "standard_weekly_hours",
-    "scheduled_weekly_hours",
-    "minHoursPerWeek",
-    "min_hours_per_week",
-    "maxHoursPerWeek",
-    "max_hours_per_week",
-)
 
 
 def _copy_hours(posting: dict, raw: dict) -> None:
