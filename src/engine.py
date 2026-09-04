@@ -109,6 +109,8 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and not data.get("error"):
                     return _greenhouse_to_html(data)
+        if _greenhouse_is_board(url):
+            return None
         hosted = _greenhouse_hosted_ids(url)
         if hosted:
             raw = await fetch(_greenhouse_boards_api_url(hosted))
@@ -373,6 +375,8 @@ class Engine:
                 return None
             if posting:
                 return _ashby_to_html(posting)
+        if _ashby_is_board(url):
+            return None
         html = await fetch(_lever_job_url(url))
         if html is None:
             return None
@@ -926,6 +930,13 @@ def _ashby_ids(url: str) -> Optional[tuple[str, str]]:
     return m.group(1), m.group(2)
 
 
+def _ashby_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith("ashbyhq.com"):
+        return False
+    return _ashby_ids(url) is None
+
+
 async def _ashby_posting(client: httpx.AsyncClient, board: str, jid: str) -> Optional[dict]:
     """None if the posting is gone. Empty dict if the API failed."""
     try:
@@ -1473,6 +1484,13 @@ def _greenhouse_ids(url: str) -> Optional[tuple[str, str]]:
     if board and jid.isdigit() and ("/embed/" in path or q.get("token") or q.get("gh_jid")):
         return board, jid
     return None
+
+
+def _greenhouse_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith("greenhouse.io"):
+        return False
+    return _greenhouse_ids(url) is None
 
 
 def _greenhouse_api_url(url: str) -> Optional[str]:
@@ -3268,6 +3286,10 @@ def _is_index_page(raw: dict) -> bool:
     if _INDEX_PATH_RE.search(parsed.path):
         return True
     if _lever_is_board(url):
+        return True
+    if _greenhouse_is_board(url):
+        return True
+    if _ashby_is_board(url):
         return True
     if _workable_is_board(url):
         return True

@@ -941,6 +941,23 @@ def test_index_pages_are_not_opportunities():
     assert _is_index_page(
         {"url": "https://jobs.ashbyhq.com/acme", "title": "Jobs", "description": ""}
     )
+    assert _is_index_page(
+        {"url": "https://jobs.ashbyhq.com/webai", "title": "webAI", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://job-boards.greenhouse.io/reddit",
+            "title": "Reddit",
+            "description": "",
+        }
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://job-boards.greenhouse.io/reddit/jobs/7747244",
+            "title": "Staff Machine Learning Engineer",
+            "description": "",
+        }
+    )
     yelp = _heuristic_opportunity(
         {
             "title": "Careers at Yelp | Yelp Jobs",
@@ -2202,6 +2219,21 @@ def test_listing_text_lever_board_is_gone(monkeypatch):
     monkeypatch.setattr("src.engine._http_get_text", fake_get)
     assert asyncio.run(engine._listing_text("https://jobs.eu.lever.co/tomtom")) is None
     assert asyncio.run(engine._listing_text("https://jobs.lever.co/spotify")) is None
+
+
+def test_listing_text_greenhouse_and_ashby_boards_are_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("ATS board HTML must not be fetched")
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    assert (
+        asyncio.run(engine._listing_text("https://job-boards.greenhouse.io/reddit"))
+        is None
+    )
+    assert asyncio.run(engine._listing_text("https://boards.greenhouse.io/figma")) is None
+    assert asyncio.run(engine._listing_text("https://jobs.ashbyhq.com/webai")) is None
 
 
 def test_listing_text_reads_lever_eu_api(monkeypatch):

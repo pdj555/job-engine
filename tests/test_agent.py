@@ -41,14 +41,14 @@ def test_rank_keeps_same_title_at_different_companies():
         [
             {
                 "title": "Senior ML Engineer",
-                "url": "https://jobs.ashbyhq.com/quilter/aaa",
+                "url": "https://jobs.ashbyhq.com/quilter/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
                 "company": "Quilter",
                 "pay": 200_000,
                 "hours_per_week": 40,
             },
             {
                 "title": "Senior ML Engineer",
-                "url": "https://jobs.ashbyhq.com/coralai/bbb",
+                "url": "https://jobs.ashbyhq.com/coralai/ffffffff-1111-2222-3333-444444444444",
                 "company": "Coral AI",
                 "pay": 150_000,
                 "hours_per_week": 40,
