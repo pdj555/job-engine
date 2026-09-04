@@ -101,6 +101,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 wellness benefit") == (None, None)
     assert _parse_pay("$15,000 parental leave") == (None, None)
     assert _parse_pay("$10,000 fertility benefit") == (None, None)
+    assert _parse_pay("$10,000 childcare benefit") == (None, None)
+    assert _parse_pay("$10,000 child care benefit") == (None, None)
+    assert _parse_pay("$10,000 dependent care benefit") == (None, None)
+    assert _parse_pay("$10,000 childcare stipend") == (None, None)
+    assert _parse_pay("childcare benefit of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 childcare benefit") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 childcare in NYC") == (None, 180_000)
     assert _parse_pay("conference budget of $10,000") == (None, None)
     assert _parse_pay("parental leave of $15,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 conference budget") == (
@@ -415,6 +425,16 @@ def test_guess_pay_annualizes_hourly():
         leave, "<p>$15,000 parental leave. Great team.</p>"
     ) is False
     assert leave.pay_high is None
+    care = Opportunity(title="Engineer", url="https://jobs.example/childcare")
+    assert _apply_listing(
+        care, "<p>$10,000 childcare benefit. Great team.</p>"
+    ) is False
+    assert care.pay_high is None
+    care_sal = Opportunity(title="Engineer", url="https://jobs.example/childcare-sal")
+    assert _apply_listing(
+        care_sal, "<p>Salary $180,000 plus $10,000 childcare benefit</p>"
+    ) is True
+    assert care_sal.pay_high == 180_000
     phone = Opportunity(title="Engineer", url="https://jobs.example/phone")
     assert _apply_listing(
         phone, "<p>$10,000 monthly internet stipend. Great team.</p>"
