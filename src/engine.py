@@ -6136,18 +6136,18 @@ _NON_SALARY_MONEY_RE = re.compile(
     r")"
 )
 _HOURS_RE = re.compile(
-    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:working[\s-]+)?(?:hours?|hrs?|h)\.?\s*"
-    r"(?:/|\s*per\s*|\s+a\s+|\s+worked(?:\s+(?:per|/|a))?|\s+working(?:\s+(?:per|/|a))?|\s+scheduled(?:\s+(?:per|/|a))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?work(?:ing)?(?:\s+(?:a|per))?\s*)?\s*"
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:(?:working|scheduled)[\s-]+)?(?:hours?|hrs?|h)\.?\s*"
+    r"(?:/|\s*per\s*|\s+a\s+|\s+worked(?:\s+(?:per|/|a))?|\s+working(?:\s+(?:per|/|a))?|\s+scheduled(?:\s+(?:per|/|a))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)(?:\s+(?:a|per))?\s*)?\s*"
     r"(?:work[\s-]*weeks?|workweeks?|week(?:ly)?|wk)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:(?:worked|working|scheduled)\s+)?(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|weekly\s+(?:(?:scheduled|work(?:ing)?)\s+)?(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|weekly\s+(?:(?:scheduled|work(?:ing)?)\s+)?(?:hours?|hrs?)\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:work(?:ing)?[\s-]+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:worked\s*)?[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
-    r"|(?:hours?|hrs?)\s+of\s+(?:the\s+)?work(?:ing)?\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
+    r"|(?:hours?|hrs?)\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(

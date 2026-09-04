@@ -1060,7 +1060,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "32 hours scheduled per week") == 32
     assert _guess_hours("Engineer", "Weekly scheduled hours: 32") == 32
     assert _guess_hours("Engineer", "Hours of the working week: 32") == 32
+    assert _guess_hours("Engineer", "32 scheduled hours per week") == 32
+    assert _guess_hours("Engineer", "Hours of the scheduled week: 32") == 32
+    assert _guess_hours("Engineer", "Weekly hours scheduled: 32") == 32
     assert _guess_hours("Engineer", "Scheduled hours: 32") is None
+    assert _guess_hours("Engineer", "32 scheduled hours") is None
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
@@ -1234,6 +1238,24 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert of_the.hours_per_week == 32
     assert of_the.pay_high == 128_000
+    n_sched_first = Opportunity(title="Engineer", url="https://jobs.example/nschedfirst")
+    assert _apply_listing(
+        n_sched_first, "<p>$80/hour. 32 scheduled hours per week.</p>"
+    ) is True
+    assert n_sched_first.hours_per_week == 32
+    assert n_sched_first.pay_high == 128_000
+    of_sched = Opportunity(title="Engineer", url="https://jobs.example/ofschedweek")
+    assert _apply_listing(
+        of_sched, "<p>$80/hour. Hours of the scheduled week: 32</p>"
+    ) is True
+    assert of_sched.hours_per_week == 32
+    assert of_sched.pay_high == 128_000
+    weekly_hrs_sched = Opportunity(title="Engineer", url="https://jobs.example/wkhressched")
+    assert _apply_listing(
+        weekly_hrs_sched, "<p>$80/hour. Weekly hours scheduled: 32</p>"
+    ) is True
+    assert weekly_hrs_sched.hours_per_week == 32
+    assert weekly_hrs_sched.pay_high == 128_000
     workweek = Opportunity(title="Engineer", url="https://jobs.example/hworkweek")
     assert _apply_listing(
         workweek, "<p>$80/hour. Workweek: 32 hours</p>"
