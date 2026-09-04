@@ -1362,6 +1362,17 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert qv_amount.hours_per_week == 32
     assert qv_amount.pay_high == 128_000
+    max_week = Opportunity(title="Engineer", url="https://jobs.example/ld-maxHoursPerWeek")
+    assert _apply_listing(
+        max_week,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"maxHoursPerWeek":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert max_week.hours_per_week == 32
+    assert max_week.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -7454,6 +7465,16 @@ def test_apply_listing_ignores_non_usd_salary():
     nested_eur = Opportunity(title="Engineer", url="https://jobs.example/salary-salaryCurrency-eur")
     _apply_listing(nested_eur, nested_cur)
     assert nested_eur.pay_high is None
+    amount_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"amount":{"currency":"EUR","value":80000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    amount_cur = Opportunity(title="Engineer", url="https://jobs.example/amount-currency-eur")
+    _apply_listing(amount_cur, amount_eur)
+    assert amount_cur.pay_high is None
     snake_empty = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -14008,6 +14029,27 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert hours.hours_per_week == 32
     assert hours.pay_high == 128_000
+    max_hours = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-max-hours")
+    assert _apply_listing(
+        max_hours,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "max_hours_per_week": 32,
+                "salary": {
+                    "min": 80,
+                    "max": 80,
+                    "period": "hour",
+                    "currency": "USD",
+                },
+                "description": "<p>Office.</p>",
+            }
+        ),
+    ) is True
+    assert max_hours.hours_per_week == 32
+    assert max_hours.pay_high == 128_000
     year_sfx = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-year")
     assert _apply_listing(
         year_sfx,

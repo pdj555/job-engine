@@ -5061,9 +5061,12 @@ def _currency_of(value) -> Optional[str]:
     )
     if cur:
         return cur
-    nested = value.get("value")
-    if isinstance(nested, dict) and nested is not value:
-        return _currency_of(nested)
+    for key in ("value", "amount"):
+        nested = value.get(key)
+        if isinstance(nested, dict) and nested is not value:
+            cur = _currency_of(nested)
+            if cur:
+                return cur
     return None
 
 
@@ -5191,6 +5194,8 @@ _HOUR_KEYS = (
     "scheduled_weekly_hours",
     "minHoursPerWeek",
     "min_hours_per_week",
+    "maxHoursPerWeek",
+    "max_hours_per_week",
 )
 
 
