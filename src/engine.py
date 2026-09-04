@@ -4127,6 +4127,16 @@ _MONTHLY_RANGE_RE = re.compile(
 _MONTHLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _MONTH_TAIL
 )
+_WEEK_TAIL = r"\s*(?:/\s*w(?:ee)?ks?|(?:per|a)\s+w(?:ee)?ks?|weekly)\b"
+_WEEKLY_RANGE_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    + _WEEK_TAIL
+)
+_WEEKLY_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
+)
 _RANGE_K_RE = re.compile(
     r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
     re.I,
@@ -4235,6 +4245,16 @@ def _month_annual(raw: str, k: Optional[str]) -> Optional[int]:
     return None
 
 
+def _week_annual(raw: str, k: Optional[str]) -> Optional[int]:
+    n = _money(raw)
+    if k:
+        n *= 1000
+    annual = int(n * 50)
+    if 10_000 <= annual <= 2_000_000:
+        return annual
+    return None
+
+
 def _labeled_range(
     low_raw: str, low_k: Optional[str], high_raw: str, high_k: Optional[str]
 ) -> Optional[tuple[int, int]]:
@@ -4284,6 +4304,17 @@ def _parse_pay(
         geo = _remote_geo_pay(text)
         if geo:
             return geo
+    weekly_range = _WEEKLY_RANGE_RE.search(text)
+    if weekly_range:
+        low = _week_annual(weekly_range.group(1), weekly_range.group(2))
+        high = _week_annual(weekly_range.group(3), weekly_range.group(4))
+        if low and high and low <= high:
+            return low, high
+    weekly = _WEEKLY_RE.search(text)
+    if weekly:
+        annual = _week_annual(weekly.group(1), weekly.group(2))
+        if annual:
+            return None, annual
     monthly_range = _MONTHLY_RANGE_RE.search(text)
     if monthly_range:
         low = _month_annual(monthly_range.group(1), monthly_range.group(2))
