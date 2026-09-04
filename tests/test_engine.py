@@ -9913,6 +9913,34 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
         }
     )
     assert _foreign_salary(eur_html) is True
+    fromto = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354612",
+    )
+    _apply_listing(
+        fromto,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "compensation": {
+                    "from": 180000,
+                    "to": 220000,
+                    "currency": "USD",
+                    "period": "YEARLY",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office. Account Executive $400,000</p>"}
+                    }
+                },
+            }
+        ),
+    )
+    assert fromto.pay_low == 180_000
+    assert fromto.pay_high == 220_000
 
 
 def test_listing_text_reads_smartrecruiters_api(monkeypatch):
@@ -10675,6 +10703,28 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     assert opp.pay_high == 190_000
     assert opp.hours_per_week == 40
     assert opp.score() == 95.0
+    from src.engine import _recruitee_to_html
+
+    span = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-from")
+    assert _apply_listing(
+        span,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "from": 180000,
+                    "to": 220000,
+                    "period": "year",
+                    "currency": "USD",
+                },
+                "description": "<p>Office. Account Executive $400,000</p>",
+            }
+        ),
+    ) is True
+    assert span.pay_low == 180_000
+    assert span.pay_high == 220_000
 
 
 def test_recruitee_zar_salary_is_foreign():
@@ -10812,6 +10862,35 @@ def test_listing_text_reads_rippling_next_data_pay(monkeypatch):
     assert opp.hours_per_week == 40
     assert opp.remote is True
     assert opp.score() == 137.5
+    from src.engine import _rippling_to_html
+
+    hourly = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    )
+    assert _apply_listing(
+        hourly,
+        _rippling_to_html(
+            {
+                "name": "Engineer",
+                "companyName": "Acme",
+                "employmentType": "FULL_TIME",
+                "workLocations": ["Austin, TX"],
+                "payRangeDetails": [
+                    {
+                        "currency": "USD",
+                        "frequency": "HOURLY",
+                        "rangeStart": 80,
+                        "rangeEnd": 100,
+                        "isRemote": False,
+                    }
+                ],
+                "description": {"role": "<p>Office. Full time.</p>"},
+            }
+        ),
+    ) is True
+    assert hourly.pay_low == 160_000
+    assert hourly.pay_high == 200_000
 
 
 def test_listing_text_rippling_fills_company_without_inventing_pay(monkeypatch):
@@ -11347,6 +11426,30 @@ def test_listing_text_reads_bamboohr_detail_not_form_pay(monkeypatch):
     assert opp.pay_high == 220_000
     assert opp.hours_per_week == 40
     assert "$17,500" not in text
+    from src.engine import _bamboohr_to_html
+
+    obj = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/158")
+    assert _apply_listing(
+        obj,
+        _bamboohr_to_html(
+            {
+                "jobOpeningName": "Engineer",
+                "employmentStatusLabel": "Full-Time",
+                "locationType": 0,
+                "compensation": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency": "USD",
+                    "period": "year",
+                },
+                "description": "<p>Office. Account Executive $400,000</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert obj.pay_low == 180_000
+    assert obj.pay_high == 220_000
+    assert obj.remote is False
 
 
 def test_listing_text_bamboohr_hybrid_is_office_and_remote_type(monkeypatch):

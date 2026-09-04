@@ -832,7 +832,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
             posting["employmentType"] = "FULL_TIME"
     rng = data.get("salaryRange")
     if isinstance(rng, dict):
-        low, high = _num(rng.get("min")), _num(rng.get("max"))
+        low, high = _bound_nums(rng)
         if low or high:
             interval = str(rng.get("interval") or "").lower()
             unit = "YEAR"
@@ -1868,8 +1868,7 @@ def _workable_pay_ld(data: dict) -> Optional[dict]:
         raw = data.get("salaryRange")
     if not isinstance(raw, dict):
         return None
-    low = _num(raw.get("min") if raw.get("min") is not None else raw.get("from"))
-    high = _num(raw.get("max") if raw.get("max") is not None else raw.get("to"))
+    low, high = _bound_nums(raw)
     if low is None and high is None:
         return None
     period = str(raw.get("period") or raw.get("interval") or "").lower()
@@ -1983,7 +1982,7 @@ def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
     comp = data.get("compensation")
     if not isinstance(comp, dict):
         return None
-    low, high = _num(comp.get("min")), _num(comp.get("max"))
+    low, high = _bound_nums(comp)
     if low is None and high is None:
         return None
     period = str(comp.get("period") or "").lower()
@@ -2414,7 +2413,7 @@ def _recruitee_pay_ld(data: dict) -> Optional[dict]:
     sal = data.get("salary")
     if not isinstance(sal, dict):
         return None
-    low, high = _num(sal.get("min")), _num(sal.get("max"))
+    low, high = _bound_nums(sal)
     if low is None and high is None:
         return None
     period = str(sal.get("period") or "").lower()
@@ -2491,9 +2490,14 @@ _NEXT_DATA_RE = re.compile(
 _RIPPLING_PAY_UNITS = {
     "YEAR": "YEAR",
     "ANNUAL": "YEAR",
+    "ANNUALLY": "YEAR",
+    "YEARLY": "YEAR",
     "MONTH": "MONTH",
+    "MONTHLY": "MONTH",
     "HOUR": "HOUR",
+    "HOURLY": "HOUR",
     "WEEK": "WEEK",
+    "WEEKLY": "WEEK",
 }
 
 
@@ -2746,9 +2750,14 @@ _PINPOINT_JOB_RE = re.compile(
 _PINPOINT_PAY_UNITS = {
     "year": "YEAR",
     "annual": "YEAR",
+    "annually": "YEAR",
+    "yearly": "YEAR",
     "month": "MONTH",
+    "monthly": "MONTH",
     "hour": "HOUR",
+    "hourly": "HOUR",
     "week": "WEEK",
+    "weekly": "WEEK",
 }
 
 
@@ -3016,6 +3025,39 @@ def _bamboohr_place(job: dict) -> str:
     return ", ".join(p for p in parts if p)
 
 
+def _bamboohr_pay_ld(job: dict) -> Optional[dict]:
+    """USD or stated foreign salary from a compensation object. Strings stay HTML."""
+    raw = job.get("compensation")
+    if not isinstance(raw, dict):
+        return None
+    low, high = _bound_nums(raw)
+    if low is None and high is None:
+        return None
+    period = str(raw.get("period") or raw.get("frequency") or "").lower()
+    unit = None
+    for needle, name in (
+        ("hour", "HOUR"),
+        ("month", "MONTH"),
+        ("week", "WEEK"),
+        ("year", "YEAR"),
+        ("annual", "YEAR"),
+    ):
+        if needle in period:
+            unit = name
+            break
+    value: dict = {}
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    currency = str(raw.get("currency") or "").upper() or "USD"
+    return {"currency": currency, "value": value}
+
+
 def _bamboohr_to_html(job: dict, board: str = "") -> str:
     """Turn BambooHR detail JSON into listing HTML. Never invent pay.
 
@@ -3034,6 +3076,9 @@ def _bamboohr_to_html(job: dict, board: str = "") -> str:
         posting["employmentType"] = "FULL_TIME"
     place = _bamboohr_place(job)
     _apply_workplace(posting, place)
+    pay = _bamboohr_pay_ld(job)
+    if pay:
+        posting["baseSalary"] = pay
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -3990,6 +4035,17 @@ def _num(value) -> Optional[float]:
         except ValueError:
             return None
     return None
+
+
+def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
+    """min/max, from/to, minValue/maxValue, or minimum/maximum."""
+    low = high = None
+    for a, b in (("min", "max"), ("from", "to"), ("minValue", "maxValue"), ("minimum", "maximum")):
+        if low is None:
+            low = _num(raw.get(a))
+        if high is None:
+            high = _num(raw.get(b))
+    return low, high
 
 
 def _pay_unit(raw) -> Optional[str]:
