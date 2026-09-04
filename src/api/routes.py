@@ -37,6 +37,8 @@ def _payload(results: list[Opportunity]) -> dict:
                 "company": o.company,
                 "url": o.url,
                 "pay": o.pay,
+                "pay_low": o.pay_low,
+                "pay_high": o.pay_high,
                 "hours_per_week": o.hours_per_week,
                 "dollars_per_hour": o.dollars_per_hour,
                 "refined_rate": o.refined_rate,

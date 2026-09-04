@@ -1,7 +1,7 @@
 "use client";
 
 import type { Opportunity } from "@/lib/types";
-import { formatPay, formatRate } from "@/lib/format";
+import { formatPayRange, formatRate } from "@/lib/format";
 import { Panel } from "./panel";
 
 export function ResultsList({
@@ -45,7 +45,9 @@ export function ResultsList({
                       </a>
                       <p className="hint mt-1 truncate">
                         {opp.company ?? "—"} · {opp.remote ? "remote" : "onsite"} ·{" "}
-                        {opp.pay != null ? `${formatPay(opp.pay)}/yr` : "—"}
+                        {opp.pay != null || opp.pay_low != null || opp.pay_high != null
+                          ? `${formatPayRange(opp.pay_low, opp.pay_high ?? opp.pay)}/yr`
+                          : "—"}
                       </p>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">

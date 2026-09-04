@@ -51,6 +51,14 @@ def find(
     asyncio.run(run())
 
 
+def _pay_label(opp: Opportunity) -> str:
+    if opp.pay_low and opp.pay_high and opp.pay_low != opp.pay_high:
+        return f"${opp.pay_low:,}–${opp.pay_high:,}"
+    if opp.pay:
+        return f"${opp.pay:,}"
+    return "?"
+
+
 def display(opportunities: list[Opportunity]):
     """Show results."""
     table = Table(show_header=True, header_style="bold", box=None)
@@ -63,7 +71,7 @@ def display(opportunities: list[Opportunity]):
     table.add_column("$/hr", style="bold magenta", justify="right")
 
     for i, opp in enumerate(opportunities, 1):
-        pay = f"${opp.pay:,}" if opp.pay else "?"
+        pay = _pay_label(opp)
         hours = str(opp.hours_per_week) if opp.hours_per_week else "?"
         if opp.refined_rate is None:
             efficiency = "?"

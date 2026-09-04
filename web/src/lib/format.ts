@@ -10,3 +10,10 @@ export function formatPay(n: number | null): string {
   if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
   return `$${n}`;
 }
+
+export function formatPayRange(low: number | null, high: number | null): string {
+  if (low != null && high != null && low !== high) {
+    return `${formatPay(low)}–${formatPay(high)}`;
+  }
+  return formatPay(high ?? low);
+}

@@ -14,6 +14,14 @@ def test_payload_exposes_refined_rate_when_hours_missing():
     assert row["score"] == 50.0
 
 
+def test_payload_exposes_pay_range():
+    opp = Opportunity(title="x", url="https://u", pay_low=143_000, pay_high=197_000)
+    row = _payload([opp])["results"][0]
+    assert row["pay"] == 197_000
+    assert row["pay_low"] == 143_000
+    assert row["pay_high"] == 197_000
+
+
 def test_payload_known_rate_is_not_imputed():
     opp = Opportunity(title="x", url="https://u", pay_high=100_000, hours_per_week=20, remote=False)
     row = _payload([opp])["results"][0]

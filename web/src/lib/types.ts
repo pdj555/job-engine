@@ -3,6 +3,8 @@ export type Opportunity = {
   company: string | null;
   url: string;
   pay: number | null;
+  pay_low: number | null;
+  pay_high: number | null;
   hours_per_week: number | null;
   dollars_per_hour: number | null;
   refined_rate: number | null;
