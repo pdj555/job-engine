@@ -792,13 +792,17 @@ _LEVER_JOB_RE = re.compile(
     r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 )
 _PERIOD_NEEDLES = (
+    ("every two week", "BIWEEKLY"),
+    ("every 2 week", "BIWEEKLY"),
+    ("every other week", "BIWEEKLY"),
     ("bi week", "BIWEEKLY"),
     ("biweek", "BIWEEKLY"),
     ("fortnight", "BIWEEKLY"),
+    ("twice a month", "SEMIMONTHLY"),
+    ("twice per month", "SEMIMONTHLY"),
+    ("twice monthly", "SEMIMONTHLY"),
     ("semi month", "SEMIMONTHLY"),
     ("semimonth", "SEMIMONTHLY"),
-    ("twice a month", "SEMIMONTHLY"),
-    ("twice monthly", "SEMIMONTHLY"),
     ("hour", "HOUR"),
     ("day", "DAY"),
     ("month", "MONTH"),
@@ -3978,7 +3982,8 @@ _RELATED_HEADING_RE = re.compile(
     r"|jobs\s+nearby"
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
-    r"|because\s+you\s+searched(?:\s+for(?:\s+this)?)?"
+    r"|opportunities\s+near\s+you"
+    r"|because\s+you\s+searched(?:\s+for(?:\s+this(?:\s+job)?)?)?"
     r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+job)?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
     r"|because\s+you\s+saved(?:\s+this(?:\s+job)?)?"
@@ -4005,12 +4010,12 @@ _RELATED_HEADING_RE = re.compile(
     r"|hiring\s+nearby"
     r"|hiring\s+near\s+you"
     r"|top\s+picks"
-    r"|more\s+like\s+this"
+    r"|more\s+like\s+this(?:\s+job)?"
     r"|more\s+like\s+these"
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
-    r"|recently\s+viewed(?:\s+(?:jobs|roles))?"
+    r"|recently\s+viewed(?:\s+(?:jobs|roles|positions))?"
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed(?:\s+this(?:\s+job)?)?"
     r"|jobs\s+you\s+viewed"
@@ -4502,6 +4507,13 @@ _BLOB_UNIT_RE = re.compile(
 
 
 def _unit_from_blob(text: str) -> Optional[str]:
+    blob = (text or "").lower().replace("_", " ").replace("-", " ")
+    if re.search(r"(?i)every\s+(?:two|2|other)\s+weeks?|bi[-\s]?weekly|fortnight", blob):
+        return "biweek"
+    if re.search(
+        r"(?i)semi[-\s]?monthly|twice\s+(?:a|per)\s+month|twice\s+monthly", blob
+    ):
+        return "semimonth"
     m = _BLOB_UNIT_RE.search(text or "")
     return _pay_unit(m.group(1) if m else None)
 

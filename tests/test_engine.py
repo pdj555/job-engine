@@ -10351,6 +10351,25 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(bi, biweekly) is True
     assert bi.pay_low == 75_000
     assert bi.pay_high == 100_000
+    two_weeks = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "interval": "every-two-weeks",
+            },
+        },
+        "Acme",
+    )
+    two = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-222222222222",
+    )
+    assert _apply_listing(two, two_weeks) is True
+    assert two.pay_low == 75_000
+    assert two.pay_high == 100_000
     described = _lever_to_html(
         {
             "text": "Engineer",
@@ -11346,6 +11365,52 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(semi_row, semi) is True
     assert semi_row.pay_low == 72_000
     assert semi_row.pay_high == 96_000
+    two_weeks = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "period": "every two weeks",
+            },
+        }
+    )
+    two_row = Opportunity(title="x", url="https://jobs.workable.com/view/hij/engineer")
+    assert _apply_listing(two_row, two_weeks) is True
+    assert two_row.pay_low == 75_000
+    assert two_row.pay_high == 100_000
+    two_str = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": "$3,000 - $4,000 every two weeks",
+        }
+    )
+    two_srow = Opportunity(title="x", url="https://jobs.workable.com/view/klm/engineer")
+    assert _apply_listing(two_srow, two_str) is True
+    assert two_srow.pay_low == 75_000
+    assert two_srow.pay_high == 100_000
+    twice = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 3000,
+                "max": 4000,
+                "currency": "USD",
+                "period": "twice per month",
+            },
+        }
+    )
+    twice_row = Opportunity(title="x", url="https://jobs.workable.com/view/nop/engineer")
+    assert _apply_listing(twice_row, twice) is True
+    assert twice_row.pay_low == 72_000
+    assert twice_row.pay_high == 96_000
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
@@ -14775,6 +14840,10 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Hiring near you",
         "Roles in your area",
         "Opportunities for you",
+        "Because you searched for this job",
+        "Recently viewed positions",
+        "More like this job",
+        "Opportunities near you",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
