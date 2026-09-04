@@ -5870,6 +5870,18 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_offered, offered) is True
     assert posting_offered.pay_low == 180_000
     assert posting_offered.pay_high == 220_000
+    annual = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "annualSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_annual = Opportunity(title="Engineer", url="https://jobs.example/ld-annualSalary")
+    assert _apply_listing(posting_annual, annual) is True
+    assert posting_annual.pay_low == 180_000
+    assert posting_annual.pay_high == 220_000
     fromto = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -5916,6 +5928,30 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_nested_from, nested_from) is True
     assert posting_nested_from.pay_low == 180_000
     assert posting_nested_from.pay_high == 220_000
+    min_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "minCompensation":180000,"maxCompensation":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_mc = Opportunity(title="Engineer", url="https://jobs.example/ld-minCompensation")
+    assert _apply_listing(posting_mc, min_comp) is True
+    assert posting_mc.pay_low == 180_000
+    assert posting_mc.pay_high == 220_000
+    nested_mc = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","minCompensation":180000,"maxCompensation":220000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_nested_mc = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-minCompensation"
+    )
+    assert _apply_listing(posting_nested_mc, nested_mc) is True
+    assert posting_nested_mc.pay_low == 180_000
+    assert posting_nested_mc.pay_high == 220_000
     min_k = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6650,6 +6686,17 @@ def test_apply_listing_ignores_non_usd_salary():
     offered_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-offeredSalary-eur")
     _apply_listing(offered_eur, eur_offered)
     assert offered_eur.pay_high is None
+    eur_annual = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "annualSalary":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    annual_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-annualSalary-eur")
+    _apply_listing(annual_eur, eur_annual)
+    assert annual_eur.pay_high is None
     eur_from = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -7538,6 +7585,18 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "2029 Jan 15")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15, January 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "January, 15, 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15. Jan 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15, January 2029")
     ) is False
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "01-15-2020")
@@ -9842,6 +9901,36 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(range_str, ranged) is True
     assert range_str.pay_low == 180_000
     assert range_str.pay_high == 220_000
+    listed_lists = _lever_to_html(
+        {
+            "text": "Engineer",
+            "categories": {"commitment": "Full-time"},
+            "description": "<p>Account Executive $400,000 - $500,000</p>",
+            "lists": [{"text": "Salary", "content": "$180,000 - $220,000"}],
+        },
+        "Acme",
+    )
+    from_list = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/eeeeeeee-ffff-0000-1111-222222222222",
+    )
+    assert _apply_listing(from_list, listed_lists) is True
+    assert from_list.pay_low == 180_000
+    assert from_list.pay_high == 220_000
+    eur_list = _lever_to_html(
+        {
+            "text": "Engineer",
+            "description": "<p>Account Executive $220,000</p>",
+            "lists": [{"text": "Compensation", "content": "€120,000 - €180,000"}],
+        },
+        "Acme",
+    )
+    skipped_list = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/ffffffff-0000-1111-2222-333333333333",
+    )
+    _apply_listing(skipped_list, eur_list)
+    assert skipped_list.pay_high is None
     eur_str = _lever_to_html(
         {
             "text": "Engineer",
@@ -13631,6 +13720,8 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Current jobs",
         "Keep exploring jobs",
         "Continue exploring jobs",
+        "See more",
+        "Discover more",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
@@ -13663,6 +13754,13 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<p>Salary $180,000</p>",
     ) is True
     assert benefits.pay_high == 180_000
+    see_more = Opportunity(title="Engineer", url="https://jobs.example/see-more-benefits")
+    assert _apply_listing(
+        see_more,
+        "<title>Engineer</title><h2>See more of our benefits</h2>"
+        "<p>Salary $180,000</p>",
+    ) is True
+    assert see_more.pay_high == 180_000
     applied_copy = Opportunity(title="Engineer", url="https://jobs.example/applied-copy")
     assert _apply_listing(
         applied_copy,

@@ -859,6 +859,17 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
         pay = _span_pay_ld(str(data.get("salaryDescription") or ""))
         if pay:
             posting["baseSalary"] = pay
+    if "baseSalary" not in posting:
+        for item in data.get("lists") or []:
+            if not isinstance(item, dict):
+                continue
+            head = str(item.get("text") or "").strip()
+            if not _GH_PAY_META_RE.fullmatch(head):
+                continue
+            pay = _span_pay_ld(str(item.get("content") or ""))
+            if pay:
+                posting["baseSalary"] = pay
+                break
     parts = []
     loc = str(cats.get("location") or "").strip() if isinstance(cats, dict) else ""
     place = str(data.get("workplaceType") or "").strip()
@@ -3917,6 +3928,8 @@ _RELATED_HEADING_RE = re.compile(
     r"|browse(?:\s+all)?\s+roles"
     r"|new\s+(?:jobs|roles)"
     r"|see\s+also"
+    r"|see\s+more"
+    r"|discover\s+more"
     r"|hot\s+(?:jobs|roles)"
     r"|latest\s+(?:jobs|roles)"
     r"|explore(?:\s+all)?\s+(?:jobs|roles|openings)"
@@ -4238,6 +4251,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("low", "high"),
         ("minSalary", "maxSalary"),
         ("salaryFrom", "salaryTo"),
+        ("minCompensation", "maxCompensation"),
     ):
         if low is None:
             low = _num(raw.get(a))
@@ -4488,6 +4502,8 @@ def _salary_blob(salary) -> str:
                 "maxSalary",
                 "salaryFrom",
                 "salaryTo",
+                "minCompensation",
+                "maxCompensation",
             )
             if key in salary
         )
@@ -4529,6 +4545,8 @@ def _nums(value) -> list[float]:
             "maxSalary",
             "salaryFrom",
             "salaryTo",
+            "minCompensation",
+            "maxCompensation",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
@@ -4644,6 +4662,7 @@ def _posting_salary(posting: Optional[dict]):
         "payRange",
         "jobCompensation",
         "offeredSalary",
+        "annualSalary",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4661,6 +4680,7 @@ def _posting_salary(posting: Optional[dict]):
         ("salaryRangeMin", "salaryRangeMax"),
         ("min_salary", "max_salary"),
         ("salaryFrom", "salaryTo"),
+        ("minCompensation", "maxCompensation"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:
@@ -4709,6 +4729,7 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "payRange",
         "jobCompensation",
         "offeredSalary",
+        "annualSalary",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -5118,7 +5139,7 @@ def _posting_date(raw) -> Optional[date]:
     if m:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     m = re.match(
-        r"(?:[A-Za-z]+,\s+)?([A-Za-z]+)\.?\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
+        r"(?:[A-Za-z]+,\s+)?([A-Za-z]+)\.?,?\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
         text,
     )
     if m:
@@ -5126,7 +5147,7 @@ def _posting_date(raw) -> Optional[date]:
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
     m = re.match(
-        r"(?:[A-Za-z]+,\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?,?\s+(\d{4})",
+        r"(?:[A-Za-z]+,\s+)?(\d{1,2})(?:st|nd|rd|th)?[.,]?\s+([A-Za-z]+)\.?,?\s+(\d{4})",
         text,
     )
     if m:
