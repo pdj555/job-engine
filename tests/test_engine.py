@@ -5508,6 +5508,27 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
     assert opp.pay_high == 200_000
     assert opp.hours_per_week == 40
     assert opp.score() == 100.0
+    typed = Opportunity(title="x", url="https://jobs.example/ld-typed-name")
+    assert _apply_listing(
+        typed,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":{"@value":"Staff Engineer"},'
+        '"hiringOrganization":{"@type":"Organization","name":{"@value":"Acme"}},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert typed.title == "Staff Engineer"
+    assert typed.company == "Acme"
+    listed = Opportunity(title="x", url="https://jobs.example/ld-name-list")
+    assert _apply_listing(
+        listed,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"name":["Acme"]},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert listed.company == "Acme"
 
 
 def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
@@ -5636,6 +5657,17 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
     assert _apply_listing(phrased, per_hour) is True
     assert phrased.pay_low == 160_000
     assert phrased.pay_high == 200_000
+    usd_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"USD per hour"}}}
+    </script>
+    """
+    prefixed = Opportunity(title="Engineer", url="https://jobs.example/ld-usd-per-hour")
+    assert _apply_listing(prefixed, usd_hour) is True
+    assert prefixed.pay_low == 160_000
+    assert prefixed.pay_high == 200_000
 
 
 def test_apply_listing_json_ld_yearly_thousands():
@@ -7136,6 +7168,18 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         expired_ld.replace('"validThrough":"2020-01-01"', '"validThrough":{"@value":"2020-01-15"}')
     ) is True
+    assert _html_is_gone(
+        expired_ld.replace('"validThrough":"2020-01-01"', '"validThrough":1577836800')
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15.01.2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "01.15.2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace('"validThrough":"2020-01-01"', '"validThrough":1893456000')
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Applications for this position are closed.</p><p>$180,000</p>"

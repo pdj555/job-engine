@@ -5,7 +5,7 @@ import calendar
 import json
 import re
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, datetime, timezone
 from html import unescape
 from typing import Optional
 from urllib.parse import parse_qs, unquote, urlparse
@@ -4021,7 +4021,7 @@ def _ld_resolve(value, index: dict, stack: frozenset = frozenset()):
 
 def _ld_title_hit(posting: dict, blob: str) -> int:
     """Length of posting title if blob names that role, else -1."""
-    pt = str(posting.get("title") or "").strip().casefold()
+    pt = (_ld_text(posting.get("title")) or "").strip().casefold()
     if not pt or not (blob or "").strip():
         return -1
     title = blob.casefold().strip()
@@ -4130,6 +4130,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
 
 def _pay_unit(raw) -> Optional[str]:
     token = str(raw or "").rsplit("/", 1)[-1].upper().replace("-", "_").strip()
+    token = re.sub(r"^(?:USD|US\$|US|\$)\s*", "", token).strip()
     return _PAY_UNITS.get(token) or _PAY_UNITS.get(token.replace("_", " "))
 
 
@@ -4532,7 +4533,7 @@ def _posting_company(posting: dict) -> Optional[str]:
     if isinstance(org, str):
         name = org.strip()
     elif isinstance(org, dict):
-        name = str(org.get("name") or "").strip()
+        name = (_ld_text(org.get("name")) or "").strip()
     else:
         return None
     if not name or _PLACE_RE.search(name):
@@ -4654,7 +4655,7 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
     posting = _job_posting(html, opp.title)
     listed_pay = False
     if posting:
-        pt = str(posting.get("title") or "").strip()
+        pt = (_ld_text(posting.get("title")) or "").strip()
         if pt:
             opp.title = _role_title(pt)
         name = _posting_company(posting)
@@ -4876,10 +4877,29 @@ def _ymd(year: int, month: int, day: int) -> Optional[date]:
         return None
 
 
+def _unix_date(raw) -> Optional[date]:
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        return None
+    ts = float(raw)
+    if ts > 1e12:
+        ts /= 1000.0
+    if not (1_000_000_000 <= ts < 4_000_000_000):
+        return None
+    try:
+        return datetime.fromtimestamp(ts, timezone.utc).date()
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
 def _posting_date(raw) -> Optional[date]:
+    unix = _unix_date(raw)
+    if unix:
+        return unix
     text = (_ld_text(raw) or "").strip()
     if not text:
         return None
+    if re.fullmatch(r"\d{10,13}", text):
+        return _unix_date(int(text))
     m = re.match(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
     if m:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
@@ -4899,7 +4919,7 @@ def _posting_date(raw) -> Optional[date]:
         month = _MONTH_NUM.get(m.group(2).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(1)))
-    m = re.match(r"(\d{1,2})-(\d{1,2})-(\d{4})", text)
+    m = re.match(r"(\d{1,2})[-.](\d{1,2})[-.](\d{4})", text)
     if not m:
         return None
     first, second, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
