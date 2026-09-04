@@ -648,6 +648,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_uah is False
     assert uah.pay_high is None
+    assert _parse_pay("80,000 ISK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 ISK. Account Executive $220,000</p>") is True
+    assert _parse_pay("ISK80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>ISK80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 ISK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 ISK. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k ISK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k ISK. Account Executive $220,000</p>") is True
+    isk = Opportunity(title="Engineer", url="https://jobs.example/is")
+    listed_isk = _apply_listing(
+        isk, "<p>Salary 80,000 ISK. Account Executive $400,000</p>"
+    )
+    assert listed_isk is False
+    assert isk.pay_high is None
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
