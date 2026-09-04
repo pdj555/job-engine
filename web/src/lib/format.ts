@@ -17,3 +17,7 @@ export function formatPayRange(low: number | null, high: number | null): string 
   }
   return formatPay(high ?? low);
 }
+
+export function formatHours(n: number | null): string {
+  return n != null ? `${n}h/wk` : "?h/wk";
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Opportunity } from "@/lib/types";
-import { formatPayRange, formatRate } from "@/lib/format";
+import { formatHours, formatPayRange, formatRate } from "@/lib/format";
 import { Panel } from "./panel";
 
 export function ResultsList({
@@ -48,14 +48,15 @@ export function ResultsList({
                         {opp.pay != null || opp.pay_low != null || opp.pay_high != null
                           ? `${formatPayRange(opp.pay_low, opp.pay_high ?? opp.pay)}/yr`
                           : "—"}
-                        {" · "}
-                        {opp.hours_per_week != null ? `${opp.hours_per_week}h/wk` : "?"}
                       </p>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
-                      <span className="stat-value">
-                        {formatRate(opp.refined_rate ?? opp.dollars_per_hour, opp.rate_imputed)}
-                      </span>
+                      <div className="text-right">
+                        <span className="stat-value">
+                          {formatRate(opp.refined_rate ?? opp.dollars_per_hour, opp.rate_imputed)}
+                        </span>
+                        <p className="hint mt-0.5">{formatHours(opp.hours_per_week)}</p>
+                      </div>
                       <button type="button" onClick={() => onAdd(opp)} className="btn">
                         + pipeline
                       </button>
