@@ -9229,6 +9229,38 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     assert _apply_listing(cad, cad_html) is False
     assert cad.pay_high is None
     assert cad.remote is True
+    strings = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Apply now. No figures in the body.</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": "18000000",
+                    "max_cents": "22000000",
+                    "currency_type": "USD",
+                }
+            ],
+        }
+    )
+    listed = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/2")
+    _apply_listing(listed, strings)
+    assert listed.pay_low == 180_000
+    assert listed.pay_high == 220_000
+    eur_str = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $220,000</p>",
+            "pay_input_ranges": [
+                {"min_cents": "12000000", "max_cents": "18000000", "currency_type": "EUR"}
+            ],
+        }
+    )
+    skipped_str = Opportunity(title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/3")
+    _apply_listing(skipped_str, eur_str)
+    assert skipped_str.pay_high is None
+    assert _foreign_salary(eur_str) is True
 
 
 def test_greenhouse_metadata_scheduled_hours_and_time_type():

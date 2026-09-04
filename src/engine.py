@@ -1751,9 +1751,10 @@ def _greenhouse_hosted_ids(url: str, html: str = "") -> Optional[tuple[str, str]
 
 
 def _cents_to_annual(cents) -> Optional[int]:
-    if not isinstance(cents, (int, float)):
+    n = _num(cents)
+    if n is None:
         return None
-    annual = int(cents) // 100
+    annual = int(n) // 100
     if 10_000 <= annual <= 2_000_000:
         return annual
     return None
