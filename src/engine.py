@@ -5728,7 +5728,11 @@ def _posting_expired(posting: Optional[dict]) -> bool:
     """True when JobPosting.validThrough (or expires) is a date before today."""
     if not isinstance(posting, dict):
         return False
-    through = _posting_date(posting.get("validThrough") or posting.get("expires"))
+    through = _posting_date(
+        posting.get("validThrough")
+        or posting.get("valid_through")
+        or posting.get("expires")
+    )
     return through is not None and through < date.today()
 
 
