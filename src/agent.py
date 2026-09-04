@@ -16,8 +16,8 @@ from openai import AsyncOpenAI
 from config.settings import settings
 from src.models import Opportunity
 from src.engine import (
-    _company_from_title,
     _dedupe_opportunities,
+    _guess_company,
     _is_index_page,
     _lever_job_url,
     get_engine,
@@ -73,7 +73,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         opp = Opportunity(
             title=o.get("title", "Unknown"),
             url=url,
-            company=o.get("company") or _company_from_title(o.get("title") or "", url),
+            company=o.get("company") or _guess_company(o.get("title") or "", url),
             pay_high=o.get("pay"),
             hours_per_week=o.get("hours_per_week"),
             remote=o.get("remote", True),

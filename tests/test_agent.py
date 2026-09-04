@@ -125,6 +125,18 @@ def test_rank_canonicalizes_lever_apply_url():
     assert ranked[0].url == "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
 
 
+def test_rank_company_from_lever_slug():
+    ranked = _rank(
+        [
+            {
+                "title": "Senior ML Engineer (Portugal Based Remote/Hybrid)",
+                "url": "https://jobs.lever.co/swordhealth/770e2ca0-a6a4-4ca9-9c0f-ce419284ddbe",
+            }
+        ]
+    )
+    assert ranked[0].company == "Swordhealth"
+
+
 def test_rank_company_from_title_when_field_missing():
     ranked = _rank(
         [

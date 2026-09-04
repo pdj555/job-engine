@@ -518,6 +518,28 @@ def test_heuristic_company_from_lever_prefix():
     assert h.company == "Lyra Health"
 
 
+def test_heuristic_company_from_lever_slug():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior ML Engineer (Portugal Based Remote/Hybrid)",
+            "url": "https://jobs.lever.co/swordhealth/770e2ca0-a6a4-4ca9-9c0f-ce419284ddbe",
+            "description": "",
+        }
+    )
+    assert h.company == "Swordhealth"
+
+
+def test_heuristic_title_company_wins_over_url_slug():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior, ML Engineer - VLM at Torc Robotics",
+            "url": "https://job-boards.greenhouse.io/torcrobotics/jobs/8572505002",
+            "description": "",
+        }
+    )
+    assert h.company == "Torc Robotics"
+
+
 def test_find_dedupes_same_role_across_boards():
     engine = Engine()
     engine.openai = None

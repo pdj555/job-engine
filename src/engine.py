@@ -491,7 +491,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
         title=title,
         url=url,
         description=desc,
-        company=raw.get("company") or _company_from_title(title, url),
+        company=raw.get("company") or _guess_company(title, url),
         pay_low=pay_low,
         pay_high=pay_high,
         hours_per_week=hours,
@@ -507,8 +507,11 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     desc = item.get("description") or raw.get("description") or ""
     company = item.get("company") if item.get("company") is not None else raw.get("company")
     if not company:
-        company = _company_from_title(title, raw.get("url") or "") or _company_from_title(
-            raw.get("title") or "", raw.get("url") or ""
+        url = raw.get("url") or ""
+        company = (
+            _company_from_title(title, url)
+            or _company_from_title(raw.get("title") or "", url)
+            or _company_from_url(url)
         )
     guess_title = raw.get("title") or title
     guess_desc = raw.get("description") or desc
@@ -560,6 +563,31 @@ def _company_from_title(title: str, url: str = "") -> str | None:
             if name and not _PLACE_RE.search(name) and not _ROLE_START_RE.search(name):
                 return name
     return None
+
+
+def _company_from_url(url: str) -> str | None:
+    """Board slug when the title has no employer: jobs.lever.co/swordhealth/…"""
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    parts = [p for p in parsed.path.split("/") if p]
+    if not parts:
+        return None
+    if host.endswith("greenhouse.io"):
+        slug = parts[0]
+        if slug in {"jobs", "embed"}:
+            return None
+    elif host.endswith("lever.co"):
+        slug = parts[0]
+    else:
+        return None
+    name = slug.replace("-", " ").replace("_", " ").strip()
+    if not name or _PLACE_RE.search(name):
+        return None
+    return name.title()
+
+
+def _guess_company(title: str, url: str = "") -> str | None:
+    return _company_from_title(title, url) or _company_from_url(url)
 
 
 _INDEX_URL_RE = re.compile(
@@ -824,7 +852,7 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
                 opp.pay_low = low
                 opp.pay_high = high
     if not opp.company:
-        opp.company = _company_from_title(_html_title(html), opp.url)
+        opp.company = _guess_company(_html_title(html), opp.url)
     if opp.pay is None:
         visible = _listing_plain_text(html)
         hours = opp.hours_per_week or _guess_hours(opp.title, visible)
