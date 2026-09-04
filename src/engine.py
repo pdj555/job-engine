@@ -1420,6 +1420,7 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             listed_pay = True
     if not opp.company:
         opp.company = _guess_company(_html_title(html), opp.url)
+    visible = None
     if not listed_pay or opp.hours_per_week is None:
         visible = _listing_plain_text(html)
         if opp.hours_per_week is None:
@@ -1427,11 +1428,18 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             if hours:
                 opp.hours_per_week = hours
         if not listed_pay:
-            low, high = _parse_pay(visible, opp.hours_per_week)
+            low, high = _parse_pay(visible, opp.hours_per_week, remote=opp.remote)
             if high or low:
                 opp.pay_low = low
                 opp.pay_high = high
                 listed_pay = True
+    if opp.remote:
+        if visible is None:
+            visible = _listing_plain_text(html)
+        geo = _remote_geo_pay(visible)
+        if geo:
+            opp.pay_low, opp.pay_high = geo
+            listed_pay = True
     opp.title = _role_title(opp.title)
     opp.efficiency = opp.refined_rate
     return listed_pay
@@ -1558,14 +1566,69 @@ _HOURS_RE = re.compile(
     r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*)?\s*(?:wk|week)\b",
     re.I,
 )
+_GEO_PAREN_RANGE_RE = re.compile(
+    r"(?is)\(([^)]{0,120})\)\s*:\s*"
+    r"\$\s*([\d,]+(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"\$?\s*([\d,]+(?:\.\d+)?)\s*(k\b)?"
+)
+_GEO_NAMED_RANGE_RE = re.compile(
+    r"(?i)\b("
+    r"(?:us\s*[-–]\s*)?all other|"
+    r"remote(?:\s+(?:us|usa|united states))?|"
+    r"nationwide|"
+    r"rest of(?: the)? (?:us|usa|united states)|"
+    r"anywhere in (?:the )?(?:us|usa|united states)"
+    r")\s*:\s*"
+    r"\$\s*([\d,]+(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"\$?\s*([\d,]+(?:\.\d+)?)\s*(k\b)?"
+)
+_REMOTE_BAND_RE = re.compile(
+    r"(?i)\b(?:all other|remote|nationwide|"
+    r"rest of(?: the)? (?:us|usa|united states)|"
+    r"anywhere in (?:the )?(?:us|usa|united states))\b"
+)
 
 
 def _money(raw: str) -> float:
     return float(raw.replace(",", ""))
 
 
+def _labeled_annual(raw: str, k: Optional[str]) -> int:
+    n = _money(raw)
+    if k or ("," not in raw and n < 1000):
+        n *= 1000
+    return int(n)
+
+
+def _labeled_range(
+    low_raw: str, low_k: Optional[str], high_raw: str, high_k: Optional[str]
+) -> Optional[tuple[int, int]]:
+    low, high = _labeled_annual(low_raw, low_k), _labeled_annual(high_raw, high_k)
+    if 10_000 <= low <= high <= 2_000_000:
+        return low, high
+    return None
+
+
+def _remote_geo_pay(text: str) -> Optional[tuple[int, int]]:
+    """Remote / rest-of-US band when a listing posts geo-labeled USD ranges."""
+    blob = text or ""
+    for match in _GEO_PAREN_RANGE_RE.finditer(blob):
+        if not _REMOTE_BAND_RE.search(match.group(1)):
+            continue
+        pair = _labeled_range(match.group(2), match.group(3), match.group(4), match.group(5))
+        if pair:
+            return pair
+    for match in _GEO_NAMED_RANGE_RE.finditer(blob):
+        pair = _labeled_range(match.group(2), match.group(3), match.group(4), match.group(5))
+        if pair:
+            return pair
+    return None
+
+
 def _parse_pay(
-    text: str, hours: Optional[int] = None
+    text: str, hours: Optional[int] = None, *, remote: bool = False
 ) -> tuple[Optional[int], Optional[int]]:
     """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
     hourly_range = _HOURLY_RANGE_RE.search(text)
@@ -1581,6 +1644,10 @@ def _parse_pay(
         if 10 <= rate <= 1000:
             annual = int(rate * (hours or 40) * 50)
             return None, annual
+    if remote:
+        geo = _remote_geo_pay(text)
+        if geo:
+            return geo
     ranged = _RANGE_K_RE.search(text)
     if ranged:
         low, high = int(_money(ranged.group(1)) * 1000), int(_money(ranged.group(2)) * 1000)

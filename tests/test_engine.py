@@ -38,6 +38,33 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
 
+_SIGNIFYD_GEO_PAY = """
+Tier 1 (NYC/SF Bay Area/Seattle): $160,000 - $190,000
+Tier 2 (DC Metro/Austin/Boston/Los Angeles): $150,000 - $180,000
+Tier 3 (US - All Other): $140,000 - $170,000
+"""
+
+
+def test_parse_pay_prefers_remote_geo_band():
+    from src.engine import _parse_pay, _remote_geo_pay
+
+    assert _parse_pay(_SIGNIFYD_GEO_PAY) == (160_000, 190_000)
+    assert _parse_pay(_SIGNIFYD_GEO_PAY, remote=False) == (160_000, 190_000)
+    assert _parse_pay(_SIGNIFYD_GEO_PAY, remote=True) == (140_000, 170_000)
+    assert _remote_geo_pay(_SIGNIFYD_GEO_PAY) == (140_000, 170_000)
+    assert _parse_pay("Tier 3 (US - All Other): $140k - $170k", remote=True) == (
+        140_000,
+        170_000,
+    )
+    assert _parse_pay(
+        "NYC: $160,000 - $190,000\nRemote: $140,000 - $170,000", remote=True
+    ) == (140_000, 170_000)
+    assert _parse_pay(
+        "We're a remote company. Salary: $160,000 - $190,000", remote=True
+    ) == (160_000, 190_000)
+    assert _parse_pay("$80 - $100 / Hour", remote=True) == (160_000, 200_000)
+
+
 def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     from src.engine import _foreign_salary, _parse_pay
 
@@ -2191,6 +2218,56 @@ def test_greenhouse_metadata_scheduled_hours_and_time_type():
     assert opp.hours_per_week == 40
     assert opp.rate_is_imputed is False
     assert opp.score() == 151.7
+
+
+def test_apply_listing_prefers_remote_geo_band_over_json_ld():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","value":{"minValue":160000,"maxValue":190000,"unitText":"YEAR"}}}
+    </script>
+    <p>Tier 1 (NYC/SF Bay Area/Seattle): $160,000 - $190,000</p>
+    <p>Tier 2 (DC Metro/Austin/Boston/Los Angeles): $150,000 - $180,000</p>
+    <p>Tier 3 (US - All Other): $140,000 - $170,000</p>
+    """
+    remote = Opportunity(title="x", url="https://jobs.example/x", remote=True)
+    _apply_listing(remote, html)
+    assert remote.pay_low == 140_000
+    assert remote.pay_high == 170_000
+
+    office = Opportunity(title="x", url="https://jobs.example/x", remote=False)
+    _apply_listing(office, html)
+    assert office.pay_low == 160_000
+    assert office.pay_high == 190_000
+
+
+def test_greenhouse_geo_bands_use_all_other_when_remote():
+    from src.engine import _apply_listing, _greenhouse_to_html
+
+    html = _greenhouse_to_html(
+        {
+            "company_name": "Signifyd",
+            "title": "Senior Machine Learning Engineer",
+            "location": {"name": "Remote, USA"},
+            "content": (
+                "<p>Tier 1 (NYC/SF Bay Area/Seattle): $160,000 - $190,000</p>"
+                "<p>Tier 2 (DC Metro/Austin/Boston/Los Angeles): $150,000 - $180,000</p>"
+                "<p>Tier 3 (US - All Other): $140,000 - $170,000</p>"
+            ),
+        }
+    )
+    opp = Opportunity(
+        title="Senior Machine Learning Engineer",
+        url="https://job-boards.greenhouse.io/signifyd/jobs/1",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Signifyd"
+    assert opp.pay_low == 140_000
+    assert opp.pay_high == 170_000
+    assert opp.score() == 85.0
 
 
 def test_apply_listing_guesses_hours_when_json_ld_already_has_pay():
