@@ -3991,13 +3991,18 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
-    r"|because\s+you\s+saved"
-    r"|your\s+applications"
+    r"|because\s+you\s+saved(?:\s+this\s+job)?"
+    r"|your\s+(?:recent\s+)?applications"
+    r"|your\s+saved\s+searches"
     r"|recently\s+saved"
     r"|jobs\s+you\s+saved"
     r"|keep\s+scrolling"
     r"|continue\s+looking"
-    r"|explore\s+similar"
+    r"|explore\s+(?:similar|related)"
+    r"|(?:discover|see|browse)\s+similar"
+    r"|others\s+also\s+applied(?:\s+for)?"
+    r"|based\s+on\s+your\s+search"
+    r"|jobs\s+based\s+on\s+your\s+search"
     r"|trending\s+(?:jobs|roles)"
     r"|(?:your\s+)?saved\s+jobs"
     r"|applied\s+jobs"
@@ -4009,7 +4014,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
-    r"|recently\s+viewed"
+    r"|recently\s+viewed(?:\s+jobs)?"
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed"
     r"|jobs\s+you\s+viewed"
@@ -4294,8 +4299,15 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minimum", "maximum"),
         ("low", "high"),
         ("minSalary", "maxSalary"),
+        ("salaryMin", "salaryMax"),
+        ("salaryMinimum", "salaryMaximum"),
+        ("minimumSalary", "maximumSalary"),
         ("salaryFrom", "salaryTo"),
         ("minCompensation", "maxCompensation"),
+        ("salaryRangeMin", "salaryRangeMax"),
+        ("min_salary", "max_salary"),
+        ("minPay", "maxPay"),
+        ("payMin", "payMax"),
         ("minAmount", "maxAmount"),
     ):
         a_nums = _nums(raw.get(a))
@@ -4551,10 +4563,24 @@ def _salary_blob(salary) -> str:
                 "high",
                 "minSalary",
                 "maxSalary",
+                "salaryMin",
+                "salaryMax",
+                "salaryMinimum",
+                "salaryMaximum",
+                "minimumSalary",
+                "maximumSalary",
                 "salaryFrom",
                 "salaryTo",
                 "minCompensation",
                 "maxCompensation",
+                "salaryRangeMin",
+                "salaryRangeMax",
+                "min_salary",
+                "max_salary",
+                "minPay",
+                "maxPay",
+                "payMin",
+                "payMax",
                 "amount",
                 "minAmount",
                 "maxAmount",
@@ -4597,10 +4623,24 @@ def _nums(value) -> list[float]:
             "high",
             "minSalary",
             "maxSalary",
+            "salaryMin",
+            "salaryMax",
+            "salaryMinimum",
+            "salaryMaximum",
+            "minimumSalary",
+            "maximumSalary",
             "salaryFrom",
             "salaryTo",
             "minCompensation",
             "maxCompensation",
+            "salaryRangeMin",
+            "salaryRangeMax",
+            "min_salary",
+            "max_salary",
+            "minPay",
+            "maxPay",
+            "payMin",
+            "payMax",
             "amount",
             "minAmount",
             "maxAmount",
@@ -4740,6 +4780,9 @@ def _posting_salary(posting: Optional[dict]):
         ("min_salary", "max_salary"),
         ("salaryFrom", "salaryTo"),
         ("minCompensation", "maxCompensation"),
+        ("minPay", "maxPay"),
+        ("payMin", "payMax"),
+        ("minimumSalary", "maximumSalary"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:
@@ -5018,10 +5061,10 @@ _GONE_LISTING_RE = re.compile(
     r"\s+is\s+no\s+longer\s+(?:available|active|posted|listed|live|published)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
-    r"\s+no\s+longer\s+available\b"
+    r"\s+no\s+longer\s+(?:available|active|posted|listed|live|published)\b"
     r"|(?<!once )(?<!after )(?<!when )(?<!this )(?<!the )(?<!a )(?:sorry,\s+)?"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
-    r"\s+no\s+longer\s+available\b"
+    r"\s+no\s+longer\s+(?:available|active|posted|listed|live|published)\b"
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+does(?:n['’]t|\s+not)\s+exist"
