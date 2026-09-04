@@ -13546,6 +13546,15 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Because you applied",
         "People also applied for",
         "Nearby jobs",
+        "Trending jobs",
+        "Saved jobs",
+        "Your saved jobs",
+        "Applied jobs",
+        "Keep looking",
+        "Hiring nearby",
+        "Top picks",
+        "Continue browsing jobs",
+        "Keep browsing jobs",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
