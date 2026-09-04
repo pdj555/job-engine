@@ -3190,6 +3190,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Browse Careers | Acme",
+                "url": "https://acme.com/browse-careers",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Browse Career: Software Engineer",
+                "url": "https://jobs.example.com/job/browse-career-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://acme.com/browse-careers/senior-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Hiring Manager",
                 "url": "https://jobs.example.com/job/hiring-manager",
                 "description": "$180,000",
