@@ -1035,8 +1035,8 @@ def _role_title(title: str) -> str:
     return t or (title or "Unknown").strip() or "Unknown"
 
 
-def _title_key(title: str, company: Optional[str] = None) -> str:
-    """Role identity across boards: same employer + role, after stripping wrappers."""
+def _title_parts(title: str, company: Optional[str] = None) -> tuple[str, str]:
+    """Employer + role tokens after stripping board wrappers and company suffixes."""
     t = _strip_ats_title(title)
     org = re.sub(r"\s+", " ", (company or "").strip())
     if org:
@@ -1047,20 +1047,57 @@ def _title_key(title: str, company: Optional[str] = None) -> str:
         t = re.sub(rf"(?i)\s*[|\-–—]\s*{c}\s*$", "", t)
     t = re.sub(r"(?i)\s+in remote\b.*$", "", t)
     role = re.sub(r"\W+", " ", t).casefold().strip()
-    if org:
-        return f"{org.casefold()}\t{role}"
-    return role
+    return org.casefold(), role
+
+
+def _title_key(title: str, company: Optional[str] = None) -> str:
+    """Role identity across boards: same employer + role, after stripping wrappers."""
+    org, role = _title_parts(title, company)
+    return f"{org}\t{role}" if org else role
+
+
+_ROLE_CHANGE_RE = re.compile(
+    r"(?i)\b(?:senior|staff|principal|lead|jr|junior|intern|manager|director|"
+    r"head|scientist|engineer|analyst|architect|specialist|i{1,3}|iv|v)\b"
+)
+
+
+def _same_role(a: str, b: str) -> bool:
+    """True when titles are the same job; team suffixes match, seniority changes do not."""
+    if a == b:
+        return True
+    if not a or not b:
+        return False
+    short, long = (a, b) if len(a) <= len(b) else (b, a)
+    if not long.startswith(short + " "):
+        return False
+    extra = long[len(short) :].strip()
+    return bool(extra) and not _ROLE_CHANGE_RE.search(extra)
 
 
 def _dedupe_opportunities(opps: list) -> list:
     """Keep the first of each employer+role. Call after sorting so the best score wins."""
-    seen: set[str] = set()
-    unique = []
+    seen: list[tuple[str, str]] = []
+    unique: list = []
     for o in opps:
-        key = _title_key(o.title, o.company)
-        if not key or key in seen:
+        org, role = _title_parts(o.title, o.company)
+        if not org and not role:
             continue
-        seen.add(key)
+        dup = False
+        for i, (s_org, s_role) in enumerate(seen):
+            if org != s_org:
+                continue
+            match = _same_role(s_role, role) if org else s_role == role
+            if not match:
+                continue
+            if o.score() == unique[i].score() and len(role) > len(s_role):
+                unique[i] = o
+                seen[i] = (org, role)
+            dup = True
+            break
+        if dup:
+            continue
+        seen.append((org, role))
         unique.append(o)
     return unique
 

@@ -1749,6 +1749,47 @@ def test_dedupe_keeps_same_title_at_different_companies():
     assert out[0].pay_high == 200_000
 
 
+def test_dedupe_collapses_team_suffix_syndication():
+    from src.engine import _dedupe_opportunities
+
+    ats = Opportunity(
+        title="Staff Machine Learning Engineer - Edge AI",
+        company="Samsara",
+        url="https://www.samsara.com/company/careers/roles/7266357?gh_jid=7266357",
+        pay_high=319_000,
+        hours_per_week=40,
+    )
+    builtin = Opportunity(
+        title="Staff Machine Learning Engineer - Samsara",
+        company="Samsara",
+        url="https://www.builtin.com/job/staff-machine-learning-engineer/7823375",
+        pay_high=319_000,
+        hours_per_week=40,
+    )
+    ads = Opportunity(
+        title="Staff Machine Learning Engineer, Ads",
+        company="Samsara",
+        url="https://jobs.example/ads",
+        pay_high=300_000,
+        hours_per_week=40,
+    )
+    manager = Opportunity(
+        title="Staff Machine Learning Engineer Manager",
+        company="Samsara",
+        url="https://jobs.example/mgr",
+        pay_high=400_000,
+        hours_per_week=40,
+    )
+    out = _dedupe_opportunities(
+        sorted([builtin, ats, ads, manager], key=lambda o: o.score(), reverse=True)
+    )
+    urls = [o.url for o in out]
+    assert urls[0] == manager.url
+    assert ats.url in urls
+    assert builtin.url not in urls
+    assert ads.url in urls
+
+
 def test_heuristic_company_from_lever_prefix():
     h = _heuristic_opportunity(
         {
