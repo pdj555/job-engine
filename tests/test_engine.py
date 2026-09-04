@@ -1047,6 +1047,9 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "Hours a week: 32") == 32
     assert _guess_hours("Engineer", "Weekly hrs: 32") == 32
     assert _guess_hours("Engineer", "Hours: 32 per week") == 32
+    assert _guess_hours("Engineer", "Workweek: 32 hours") == 32
+    assert _guess_hours("Engineer", "Work week: 32 hours") == 32
+    assert _guess_hours("Engineer", "hours of work per week: 32") == 32
     assert _guess_hours("Engineer", "Hours per week — 32") == 32
     assert _guess_hours("Engineer", "Hours per week – 32") == 32
     assert _guess_hours("Engineer", "Hours per week - 32") == 32
@@ -1130,6 +1133,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert hours_weekly.hours_per_week == 32
     assert hours_weekly.pay_high == 128_000
+    workweek = Opportunity(title="Engineer", url="https://jobs.example/hworkweek")
+    assert _apply_listing(
+        workweek, "<p>$80/hour. Workweek: 32 hours</p>"
+    ) is True
+    assert workweek.hours_per_week == 32
+    assert workweek.pay_high == 128_000
     frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
     assert _apply_listing(
         frac, "<p>$180,000 a year. 37.5 hours per week.</p>"
@@ -1331,6 +1340,28 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert min_week.hours_per_week == 32
     assert min_week.pay_high == 128_000
+    qv_max = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-maxValue")
+    assert _apply_listing(
+        qv_max,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"@type":"QuantitativeValue","maxValue":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert qv_max.hours_per_week == 32
+    assert qv_max.pay_high == 128_000
+    qv_amount = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-amount")
+    assert _apply_listing(
+        qv_amount,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"amount":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert qv_amount.hours_per_week == 32
+    assert qv_amount.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -2561,6 +2592,36 @@ def test_index_pages_are_not_opportunities():
             {
                 "title": "Job Openings | Stripe",
                 "url": "https://acme.com/teams/job-openings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Listing Openings | Acme",
+                "url": "https://acme.com/listing-openings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Role Vacancies | Acme",
+                "url": "https://acme.com/role-vacancies",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Career Listings | Acme",
+                "url": "https://acme.com/career-listings",
                 "description": "$180,000",
             }
         )
@@ -4252,6 +4313,18 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Software Engineer</title><p>$180,000</p>",
         "https://acme.com/job-openings",
+    )
+    assert _html_is_index(
+        "<title>Listing Openings | Acme</title><p>$180,000</p>",
+        "https://acme.com/listing-openings",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$180,000</p>",
+        "https://acme.com/role-vacancies",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/listing-openings/senior-engineer",
     )
     assert _html_is_index(
         "<title>Careers at Acme</title><p>$200,000</p>",

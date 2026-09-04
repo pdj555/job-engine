@@ -1608,9 +1608,9 @@ _INDEX_URL_RE = re.compile(
 _INDEX_TITLE_RE = re.compile(
     r"(?i)^hire\b|\bcurrent (?:openings|positions|roles|listings|opportunities)\b"
     r"|\bopen (?:positions|roles|listings|opportunities)\b"
-    r"|\bjob openings\b"
+    r"|\b(?:job|role|position|listing) openings\b"
     r"|\ball (?:openings|positions|roles|listings|opportunities)\b"
-    r"|\bcareer opportunities\b"
+    r"|\bcareer (?:opportunities|listings|roles|positions)\b"
     r"|^careers at\b"
     r"|^join our team(?:\s*[|\-–—].*)?$"
     r"|^work with us(?:\s*[|\-–—].*)?$"
@@ -1619,7 +1619,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|^vacancies(?:\s*[|\-–—].*)?$"
     r"|^hiring(?:\s*[|\-–—].*)?$"
     r"|^explore careers\b"
-    r"|\bjob vacancies\b"
+    r"|\b(?:job|role|position|listing) vacancies\b"
     r"|\bavailable (?:positions|roles|listings|opportunities)\b"
     r"|^life at\b"
     r"|^meet (?:the|our) team(?:\s*[|\-–—].*)?$"
@@ -3807,10 +3807,10 @@ _INDEX_PATH_RE = re.compile(
     r"|^/(?:careers|jobs)/?$"
     r"|^/hire(?:/|$)"
     r"|/(?:open[-_]?(?:positions|roles|jobs|listings|opportunities)|current[-_]?(?:openings|positions|roles|listings|opportunities))/?$"
-    r"|/(?:career[-_]?opportunities|job[-_]?openings|all[-_]?(?:openings|positions|roles|listings|opportunities|jobs))/?$"
+    r"|/(?:career[-_]?(?:opportunities|listings|roles|positions)|(?:job|role|position|listing)[-_]?openings|all[-_]?(?:openings|positions|roles|listings|opportunities|jobs))/?$"
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
-    r"|/(?:job[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities)|vacancies|explore[-_]?careers|hiring)/?$"
+    r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities)|vacancies|explore[-_]?careers|hiring)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
@@ -5156,6 +5156,14 @@ def _hours_from_node(work) -> Optional[int]:
             or _num(work.get("lower_bound"))
             or _num(work.get("rangeStart"))
             or _num(work.get("range_start"))
+            or _num(work.get("amount"))
+            or _num(work.get("maxValue"))
+            or _num(work.get("max_value"))
+            or _num(work.get("max"))
+            or _num(work.get("upperBound"))
+            or _num(work.get("upper_bound"))
+            or _num(work.get("rangeEnd"))
+            or _num(work.get("range_end"))
         )
         if n is None:
             work = _ld_text(work)
@@ -6029,7 +6037,9 @@ _HOURS_RE = re.compile(
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b",
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
+    r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
+    r"|(?:hours?|hrs?)\s+of\s+work\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
