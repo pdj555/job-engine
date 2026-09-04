@@ -13,25 +13,32 @@ from src.engine import (
 from src.models import Opportunity
 
 
-# --- heuristic guessers -------------------------------------------------
+# --- compensation from listing text (never invented) --------------------
 
 
-def test_guess_pay_seniority_tiers():
-    assert _guess_pay("Senior ML Engineer", "") == 180_000
-    assert _guess_pay("Staff Engineer", "") == 180_000
-    assert _guess_pay("Junior Developer", "") == 90_000
-    assert _guess_pay("Freelance Designer", "") == 130_000
-    assert _guess_pay("Software Engineer", "") == 120_000  # default
+def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
+    assert _guess_pay("Senior ML Engineer", "$180k") == 180_000
+    assert _guess_pay("Staff Engineer $150,000", "") == 150_000
+    assert _guess_pay("Engineer", "$120k-$180k") == 180_000
+    assert _guess_pay("Software Engineer", "") is None
+    assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
+
+
+def test_guess_pay_annualizes_hourly():
+    assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
+    assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
 
 
 def test_guess_pay_reads_description_not_just_title():
-    assert _guess_pay("Engineer", "principal level role") == 180_000
+    assert _guess_pay("Engineer", "comp $175k plus equity") == 175_000
 
 
-def test_guess_hours_part_time_vs_full():
-    assert _guess_hours("Contract Engineer", "") == 30
-    assert _guess_hours("Part-time role", "") == 30
-    assert _guess_hours("Engineer", "") == 40  # default full-time
+def test_guess_hours_from_text_not_job_type():
+    assert _guess_hours("Engineer", "20 hrs/week") == 20
+    assert _guess_hours("Part-time role", "") == 20
+    assert _guess_hours("Full-time Engineer", "") == 40
+    assert _guess_hours("Contract Engineer", "") is None
+    assert _guess_hours("Engineer", "") is None
 
 
 def test_guess_remote_penalizes_onsite_signals():
@@ -165,15 +172,29 @@ def test_heuristic_opportunity_prefers_raw_then_guesses():
 
     guessed = _heuristic_opportunity(
         {
-            "title": "Senior ML Engineer",
+            "title": "Senior ML Engineer $180k",
             "url": "https://example.com/senior",
+            "description": "must be onsite, 20 hrs/week",
+            "source": "ddg",
+        }
+    )
+    assert guessed.pay_high == 180_000
+    assert guessed.hours_per_week == 20
+    assert guessed.remote is False
+    assert guessed.rate_is_imputed is False
+
+    thin = _heuristic_opportunity(
+        {
+            "title": "Senior ML Engineer",
+            "url": "https://example.com/thin",
             "description": "must be onsite",
             "source": "ddg",
         }
     )
-    assert guessed.pay_high == _guess_pay("Senior ML Engineer", "must be onsite") == 180_000
-    assert guessed.hours_per_week == 40
-    assert guessed.remote is False
+    assert thin.pay_high is None
+    assert thin.hours_per_week is None
+    assert thin.score() == 0
+    assert thin.remote is False
 
 
 def test_find_ranks_and_limits_without_llm():
@@ -251,8 +272,8 @@ def test_find_llm_grounds_urls_and_drops_hallucinations():
 
     async def fake_search(_query: str):
         return [
-            {"title": "Raw A", "url": "https://jobs.example/a", "description": "a"},
-            {"title": "Raw B", "url": "https://jobs.example/b", "description": "b"},
+            {"title": "Raw A", "url": "https://jobs.example/a", "description": "$100k"},
+            {"title": "Raw B", "url": "https://jobs.example/b", "description": "$200k, 20 hrs/week"},
         ]
 
     engine._search_all = fake_search
@@ -272,6 +293,7 @@ def test_extract_batch_prompt_asks_for_opportunities_object():
     prompt = captured["messages"][0]["content"]
     assert "opportunities" in prompt
     assert "ai engineer" in prompt
+    assert "Do not estimate pay or hours" in prompt
 
 
 def test_extract_batch_keeps_raw_then_heuristics_when_llm_pay_hours_missing():
@@ -308,8 +330,9 @@ def test_extract_batch_keeps_raw_then_heuristics_when_llm_pay_hours_missing():
     assert kept.hours_per_week == 20
     assert kept.efficiency == 160.0
     guessed = out["https://guess.example/b"]
-    assert guessed.pay_high == 90_000
-    assert guessed.hours_per_week == 40
+    assert guessed.pay_high is None
+    assert guessed.hours_per_week is None
+    assert guessed.score() == 0
     assert guessed.remote is False
 
 
@@ -324,8 +347,9 @@ def test_extract_batch_falls_back_on_error_or_ungrounded_llm():
         }
     ]
     failed = asyncio.run(boom._extract_batch(batch, "q"))
-    assert failed[0].pay_high == 180_000
-    assert failed[0].hours_per_week == 30
+    assert failed[0].pay_high is None
+    assert failed[0].hours_per_week is None
+    assert failed[0].score() == 0
     assert failed[0].efficiency == failed[0].refined_rate
 
     ghost = Engine()
@@ -362,6 +386,82 @@ def test_extract_batch_falls_back_on_error_or_ungrounded_llm():
     assert grounded[0].pay_high == 180_000
 
 
+def test_extract_ignores_llm_invented_pay_and_hours():
+    engine = Engine()
+    engine.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {
+                        "title": "Inflated",
+                        "url": "https://jobs.example/a",
+                        "pay_high": 9_999_999,
+                        "hours_per_week": 1,
+                    }
+                ]
+            }
+        )
+    )
+    out = asyncio.run(
+        engine._extract_batch(
+            [
+                {
+                    "title": "Engineer",
+                    "url": "https://jobs.example/a",
+                    "description": "no compensation listed",
+                }
+            ],
+            "q",
+        )
+    )
+    assert out[0].title == "Inflated"
+    assert out[0].pay_high is None
+    assert out[0].hours_per_week is None
+    assert out[0].score() == 0
+
+
+def test_find_ranks_parsed_pay_above_unknown():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Unknown pay",
+                "url": "https://a.example/thin",
+                "description": "Senior staff role",
+            },
+            {
+                "title": "Priced",
+                "url": "https://a.example/paid",
+                "description": "$90k",
+            },
+        ]
+
+    engine._search_all = fake_search
+    ranked = asyncio.run(engine.find("ml", limit=20))
+    assert [o.title for o in ranked] == ["Priced", "Unknown pay"]
+    assert ranked[0].score() == 45.0
+    assert ranked[0].rate_is_imputed is True
+    assert ranked[1].score() == 0
+
+
+def test_heuristic_range_and_imputed_hours():
+    ranged = _heuristic_opportunity(
+        {
+            "title": "Eng $120k-$180k",
+            "url": "https://example.com/range",
+            "description": "",
+        }
+    )
+    assert ranged.pay_low == 120_000
+    assert ranged.pay_high == 180_000
+    assert ranged.pay == 180_000
+    assert ranged.hours_per_week is None
+    assert ranged.rate_is_imputed is True
+    assert ranged.refined_rate == 90.0
+
+
 def test_extract_batch_fills_rows_llm_omitted_and_dedupes_url_aliases():
     engine = Engine()
     engine.openai = _fake_client(
@@ -391,6 +491,8 @@ def test_extract_batch_fills_rows_llm_omitted_and_dedupes_url_aliases():
     out = asyncio.run(engine._extract_batch(batch, "q"))
     assert [o.url for o in out] == ["https://jobs.example/a", "https://jobs.example/b"]
     assert out[0].title == "From LLM"
-    assert out[0].pay_high == 200_000
+    assert out[0].pay_high == 90_000
+    assert out[0].hours_per_week == 40
     assert out[1].title == "Junior Developer"
-    assert out[1].pay_high == 90_000
+    assert out[1].pay_high is None
+    assert out[1].score() == 0

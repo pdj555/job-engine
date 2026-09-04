@@ -45,7 +45,7 @@ export function ResultsList({
                       </a>
                       <p className="hint mt-1 truncate">
                         {opp.company ?? "—"} · {opp.remote ? "remote" : "onsite"} ·{" "}
-                        {formatPay(opp.pay)}/yr
+                        {opp.pay != null ? `${formatPay(opp.pay)}/yr` : "—"}
                       </p>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">

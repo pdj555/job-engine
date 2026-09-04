@@ -241,14 +241,10 @@ For each result, extract:
 - title
 - company (if mentioned)
 - url (must be copied exactly from the result above)
-- pay_low (annual USD estimate, null if unknown)
-- pay_high (annual USD estimate, null if unknown)
-- hours_per_week (estimate, null if unknown)
 - remote (true/false, assume true if not specified)
 
+Do not estimate pay or hours — those are parsed from the listing text in code.
 Return a JSON object {{"opportunities": [...]}}.
-Be aggressive estimating pay/hours from context clues.
-If it looks like full-time, assume 40hrs. If senior role, estimate $150k+.
 Only include urls that appear in the results."""
 
         try:
@@ -341,13 +337,18 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
     remote = raw.get("remote")
     if remote is None:
         remote = _guess_remote(title, desc)
+    hours = raw.get("hours")
+    if hours is None:
+        hours = _guess_hours(title, desc)
+    pay_low, pay_high = _compensation_from_raw(raw, title, desc, hours)
     opp = Opportunity(
         title=title,
         url=url,
         description=desc,
         company=raw.get("company"),
-        pay_high=raw.get("pay") or _guess_pay(title, desc),
-        hours_per_week=raw.get("hours") or _guess_hours(title, desc),
+        pay_low=pay_low,
+        pay_high=pay_high,
+        hours_per_week=hours,
         remote=remote,
         source=raw.get("source") or "",
     )
@@ -361,13 +362,10 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     company = item.get("company") if item.get("company") is not None else raw.get("company")
     guess_title = raw.get("title") or title
     guess_desc = raw.get("description") or desc
-    pay_high = item.get("pay_high")
-    pay_low = item.get("pay_low")
-    if pay_high is None and pay_low is None:
-        pay_high = raw.get("pay") or _guess_pay(guess_title, guess_desc)
-    hours = item.get("hours_per_week")
+    hours = raw.get("hours")
     if hours is None:
-        hours = raw.get("hours") or _guess_hours(guess_title, guess_desc)
+        hours = _guess_hours(guess_title, guess_desc)
+    pay_low, pay_high = _compensation_from_raw(raw, guess_title, guess_desc, hours)
     if item.get("remote") is not None:
         remote = bool(item["remote"])
     elif "remote" in raw:
@@ -387,6 +385,15 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     )
     opp.efficiency = opp.refined_rate
     return opp
+
+
+def _compensation_from_raw(
+    raw: dict, title: str, description: str, hours: Optional[int]
+) -> tuple[Optional[int], Optional[int]]:
+    """Structured source pay wins; otherwise parse listing text. Never invent."""
+    if raw.get("pay") is not None:
+        return None, raw["pay"]
+    return _parse_pay(f"{title} {description}", hours)
 
 
 def _parse_ddg_html(html: str) -> list[dict]:
@@ -427,22 +434,74 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
-def _guess_pay(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("senior", "staff", "principal", "lead")):
-        return 180_000
-    if any(w in text for w in ("junior", "entry", "intern")):
-        return 90_000
-    if any(w in text for w in ("contract", "freelance", "consultant")):
-        return 130_000
-    return 120_000
+_HOURLY_RE = re.compile(
+    r"\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:/|\s+per\s+)\s*h(?:r|our)s?\b",
+    re.I,
+)
+_RANGE_K_RE = re.compile(
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*[-–—]\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    re.I,
+)
+_ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b", re.I)
+_ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")
+_HOURS_RE = re.compile(
+    r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*)?\s*(?:wk|week)\b",
+    re.I,
+)
 
 
-def _guess_hours(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("contract", "freelance", "part-time", "part time")):
-        return 30
-    return 40
+def _money(raw: str) -> float:
+    return float(raw.replace(",", ""))
+
+
+def _parse_pay(
+    text: str, hours: Optional[int] = None
+) -> tuple[Optional[int], Optional[int]]:
+    """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
+    hourly = _HOURLY_RE.search(text)
+    if hourly:
+        rate = _money(hourly.group(1))
+        if 10 <= rate <= 1000:
+            annual = int(rate * (hours or 40) * 50)
+            return None, annual
+    ranged = _RANGE_K_RE.search(text)
+    if ranged:
+        low, high = int(_money(ranged.group(1)) * 1000), int(_money(ranged.group(2)) * 1000)
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
+    k = _ANNUAL_K_RE.search(text)
+    if k:
+        annual = int(_money(k.group(1)) * 1000)
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    full = _ANNUAL_FULL_RE.search(text)
+    if full:
+        annual = int(_money(full.group(1)))
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    return None, None
+
+
+def _guess_pay(title: str, description: str, hours: Optional[int] = None) -> Optional[int]:
+    """Best annual pay in the listing text, or None. Does not invent a number."""
+    low, high = _parse_pay(f"{title} {description}", hours)
+    return high or low
+
+
+def _guess_hours(title: str, description: str) -> Optional[int]:
+    """Hours from the listing text, or None. Does not assume full-time."""
+    text = f"{title} {description}"
+    match = _HOURS_RE.search(text)
+    if match:
+        n = int(match.group(1))
+        if 1 <= n <= 80:
+            return n
+    lower = text.lower()
+    if "part-time" in lower or "part time" in lower:
+        return 20
+    if "full-time" in lower or "full time" in lower:
+        return 40
+    return None
 
 
 def _guess_remote(title: str, description: str) -> bool:
