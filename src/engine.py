@@ -4126,13 +4126,54 @@ def _posting_countries(posting: dict) -> list[str]:
     return countries
 
 
+_SALARY_TOKEN_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)?\s*(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(\s*k)?\b"
+)
+
+
+def _span_nums(text: str) -> list[float]:
+    """Stated range amounts from a salary string. Ignore years-of-experience."""
+    out: list[float] = []
+    for m in _SALARY_TOKEN_RE.finditer(text or ""):
+        n = float(m.group(1).replace(",", ""))
+        if m.group(2):
+            n *= 1000
+        out.append(n)
+    yearly = [n for n in out if n >= 10_000]
+    rate = [n for n in out if 10 <= n <= 1000]
+    if yearly:
+        return yearly
+    if len(rate) >= 2 and not re.search(r"(?i)\byears?\b", text or ""):
+        return rate
+    return []
+
+
+def _salary_blob(salary) -> str:
+    if isinstance(salary, str):
+        return salary
+    if isinstance(salary, list):
+        return " ".join(_salary_blob(item) for item in salary)
+    if isinstance(salary, dict):
+        return " ".join(
+            _salary_blob(salary.get(key))
+            for key in ("minValue", "maxValue", "value", "min", "max", "from", "to")
+            if key in salary
+        )
+    return ""
+
+
 def _nums(value) -> list[float]:
     """Numbers from a salary node. QuantitativeValue.value may be [min, max]."""
     if isinstance(value, bool) or value is None:
         return []
-    if isinstance(value, (int, float, str)):
+    if isinstance(value, (int, float)):
         n = _num(value)
         return [n] if n is not None else []
+    if isinstance(value, str):
+        n = _num(value)
+        if n is not None:
+            return [n]
+        return _span_nums(value)
     if isinstance(value, list):
         out: list[float] = []
         for item in value:
@@ -4250,6 +4291,8 @@ def _posting_foreign(posting: Optional[dict]) -> bool:
     currency = _posting_currency(posting, salary)
     if currency:
         return not _usd(currency)
+    if _foreign_pay_text(_salary_blob(salary)):
+        return True
     if not _salary_has_amount(salary):
         return False
     countries = _posting_countries(posting)
