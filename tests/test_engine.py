@@ -7726,6 +7726,21 @@ def test_html_is_gone_removed_listing_banner():
         expired_ld.replace("2020-01-01", "01/15/2020")
     ) is True
     assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15/01/2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15/01/2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Mon Jan 15 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Wednesday January 15 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Mon Jan 15 2029")
+    ) is False
+    assert _html_is_gone(
         expired_ld.replace("2020-01-01", "2020/01/15")
     ) is True
     assert _html_is_gone(
@@ -10678,6 +10693,42 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(band_row, band_pay)
     assert band_row.pay_low == 180_000
     assert band_row.pay_high == 220_000
+    pay_rate = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000 - $500,000</p>",
+            "metadata": [{"name": "Pay Rate", "value": "$180,000 - $220,000"}],
+        }
+    )
+    rate_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/14")
+    _apply_listing(rate_row, pay_rate)
+    assert rate_row.pay_low == 180_000
+    assert rate_row.pay_high == 220_000
+    hourly_rate = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000 - $500,000</p>",
+            "metadata": [{"name": "Hourly Rate", "value": "$180,000 - $220,000"}],
+        }
+    )
+    hourly_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/15")
+    _apply_listing(hourly_row, hourly_rate)
+    assert hourly_row.pay_low == 180_000
+    assert hourly_row.pay_high == 220_000
+    monthly_sal = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000 - $500,000</p>",
+            "metadata": [{"name": "Monthly Salary", "value": "$180,000 - $220,000"}],
+        }
+    )
+    monthly_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/16")
+    _apply_listing(monthly_row, monthly_sal)
+    assert monthly_row.pay_low == 180_000
+    assert monthly_row.pay_high == 220_000
     meta_eur = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -14238,6 +14289,9 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "See similar",
         "Browse similar",
         "Explore related",
+        "Because you liked",
+        "Continue browsing roles",
+        "Keep browsing roles",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

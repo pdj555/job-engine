@@ -1781,7 +1781,8 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:(?:base|annual|yearly|hourly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band))?$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
+    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly)\s+)+rate$"
 )
 
 
@@ -3952,7 +3953,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|hot\s+(?:jobs|roles)"
     r"|latest\s+(?:jobs|roles)"
     r"|explore(?:\s+all)?\s+(?:jobs|roles|openings)"
-    r"|continue\s+browsing(?:\s+jobs)?"
+    r"|continue\s+browsing(?:\s+(?:jobs|roles))?"
     r"|more\s+opportunities"
     r"|open\s+(?:positions|roles|jobs)"
     r"|current\s+(?:openings|roles|jobs)"
@@ -3991,6 +3992,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
+    r"|because\s+you\s+liked"
     r"|because\s+you\s+saved(?:\s+this\s+job)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
@@ -4018,7 +4020,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed"
     r"|jobs\s+you\s+viewed"
-    r"|keep\s+browsing(?:\s+jobs)?"
+    r"|keep\s+browsing(?:\s+(?:jobs|roles))?"
     r"|keep\s+exploring(?:\s+jobs)?"
     r"|continue\s+exploring(?:\s+jobs)?"
     r"|based\s+on\s+your\s+activity"
@@ -5245,12 +5247,17 @@ def _posting_date(raw) -> Optional[date]:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
     if m:
-        return _ymd(int(m.group(3)), int(m.group(1)), int(m.group(2)))
+        first, second, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if first > 12 >= second:
+            return _ymd(year, second, first)
+        parsed = _ymd(year, first, second)
+        if parsed:
+            return parsed
     m = re.match(r"(\d{4})(\d{2})(\d{2})\b", text)
     if m:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     m = re.match(
-        r"(?:[A-Za-z]+,\s+)?([A-Za-z]+)\.?,?\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
+        r"(?:[A-Za-z]+,?\s+)?([A-Za-z]+)\.?,?\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
         text,
     )
     if m:
@@ -5258,7 +5265,7 @@ def _posting_date(raw) -> Optional[date]:
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
     m = re.match(
-        r"(?:[A-Za-z]+,\s+)?(\d{1,2})(?:st|nd|rd|th)?[.,]?\s+([A-Za-z]+)\.?,?\s+(\d{4})",
+        r"(?:[A-Za-z]+,?\s+)?(\d{1,2})(?:st|nd|rd|th)?[.,]?\s+([A-Za-z]+)\.?,?\s+(\d{4})",
         text,
     )
     if m:
