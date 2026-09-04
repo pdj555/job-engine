@@ -1497,6 +1497,7 @@ _INDEX_URL_RE = re.compile(
 )
 _INDEX_TITLE_RE = re.compile(
     r"(?i)^hire\b|\bcurrent openings\b"
+    r"|\bfreelancers\b"
     r"|\bsalary guide\b"
     r"|\bsalary data\b"
     r"|\bcompensation (?:guide|data|benchmarks?|for)\b"
@@ -3435,7 +3436,8 @@ def _apple_to_html(job: dict) -> str:
 
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search"
-    r"|^/(?:careers|jobs)/?$",
+    r"|^/(?:careers|jobs)/?$"
+    r"|^/hire(?:/|$)",
     re.I,
 )
 

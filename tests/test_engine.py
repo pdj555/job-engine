@@ -791,6 +791,16 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Machine Learning Engineering freelancers - contra.com",
+                "url": "https://contra.com/hire/ml-engineers",
+                "description": "$35-$100/hr",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "ML Engineer - Lemon.io",
                 "url": "https://lemon.io/for-developers/ml-engineer-jobs/",
                 "description": "ML Engineer on an oncology KOL analytics backend $35-$100/hr",
@@ -1351,6 +1361,15 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Staff Software Engineer</title>",
         "https://www.lever.co/careers",
+    )
+    assert _html_is_index(
+        "<title>Machine Learning Engineering freelancers</title>"
+        "<p>$50,000</p>",
+        "https://contra.com/hire/ml-engineers",
+    )
+    assert not _html_is_index(
+        "<title>Senior Machine Learning Engineer - Freelance</title>",
+        "https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     )
     assert not _html_is_index(
         "<title>Staff Machine Learning Engineer</title>",
