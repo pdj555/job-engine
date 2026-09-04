@@ -476,6 +476,26 @@ def test_apply_listing_json_ld_biweekly_pay():
     opp = Opportunity(title="Engineer", url="https://jobs.example/ld-bi")
     assert _apply_listing(opp, html) is True
     assert opp.pay_high == 75_000
+    thousands = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3,"unitText":"BIWEEKLY"}}}
+    </script>
+    """
+    k = Opportunity(title="Engineer", url="https://jobs.example/ld-bi-k")
+    assert _apply_listing(k, thousands) is True
+    assert k.pay_high == 75_000
+    semi_k = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3,"unitText":"SEMI-MONTHLY"}}}
+    </script>
+    """
+    sm = Opportunity(title="Engineer", url="https://jobs.example/ld-sm-k")
+    assert _apply_listing(sm, semi_k) is True
+    assert sm.pay_high == 72_000
 
 
 def test_parse_pay_annualizes_daily_usd():
@@ -524,6 +544,16 @@ def test_apply_listing_json_ld_daily_pay():
     per = Opportunity(title="Engineer", url="https://jobs.example/ld-diem")
     assert _apply_listing(per, diem) is True
     assert per.pay_high == 100_000
+    forty = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":40,"unitText":"DAY"}}}
+    </script>
+    """
+    day_rate = Opportunity(title="Engineer", url="https://jobs.example/ld-day-40")
+    assert _apply_listing(day_rate, forty) is True
+    assert day_rate.pay_high == 10_000
 
 
 def test_guess_pay_reads_description_not_just_title():
@@ -3958,6 +3988,36 @@ def test_apply_listing_json_ld_monthly_and_weekly_thousands():
     wk_d = Opportunity(title="Engineer", url="https://jobs.example/ld-wk")
     assert _apply_listing(wk_d, week_full) is True
     assert wk_d.pay_high == 150_000
+    biweek = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3,"unitText":"BIWEEKLY"}}}
+    </script>
+    """
+    bi = Opportunity(title="Engineer", url="https://jobs.example/ld-bi-thou")
+    assert _apply_listing(bi, biweek) is True
+    assert bi.pay_high == 75_000
+    bi_full = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3000,"unitText":"BIWEEKLY"}}}
+    </script>
+    """
+    bi_d = Opportunity(title="Engineer", url="https://jobs.example/ld-bi-full")
+    assert _apply_listing(bi_d, bi_full) is True
+    assert bi_d.pay_high == 75_000
+    semi = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":3,"unitText":"SEMIMONTHLY"}}}
+    </script>
+    """
+    sm = Opportunity(title="Engineer", url="https://jobs.example/ld-sm-thou")
+    assert _apply_listing(sm, semi) is True
+    assert sm.pay_high == 72_000
 
 
 def test_apply_listing_empty_json_ld_salary_falls_back_to_visible_text():

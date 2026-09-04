@@ -3958,9 +3958,19 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
             return annual
         return None
     if unit == "biweek":
-        return int(amount * 25)
+        if amount < 100:
+            amount *= 1000
+        annual = int(amount * 25)
+        if 10_000 <= annual <= 2_000_000:
+            return annual
+        return None
     if unit == "semimonth":
-        return int(amount * 24)
+        if amount < 100:
+            amount *= 1000
+        annual = int(amount * 24)
+        if 10_000 <= annual <= 2_000_000:
+            return annual
+        return None
     if unit == "month":
         if amount < 1000:
             amount *= 1000
