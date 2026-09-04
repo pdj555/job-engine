@@ -86,6 +86,41 @@ def test_parse_ddg_empty_input():
     assert _parse_ddg_html("") == []
 
 
+DDG_LIVE_SHAPE = """
+<a class="result__a" href="https://www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html">Flexible Ml Engineer Remote $150,000 Jobs - Indeed</a>
+<div class="result__extras">
+  <a rel="nofollow" href="https://www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html">
+    <img class="result__icon__img" width="16" height="16" alt="" src="//external-content.duckduckgo.com/ip3/www.indeed.com.ico" />
+  </a>
+  <a class="result__url" href="https://www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html">
+    www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html
+  </a>
+</div>
+<a class="result__snippet" href="https://www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html">Browse 568 <b>Ml</b> <b>Engineer</b> <b>Remote</b> $150,000 job openings. Discover flexible, work-from-home opportunities.</a>
+<a class="result__a" href="https://jobs.example/onsite">Office Role</a>
+<a class="result__snippet" href="https://jobs.example/onsite">Must be <b>hybrid</b>, $80/hr, 20 hrs/week</a>
+"""
+
+
+def test_parse_ddg_strips_bold_and_does_not_need_a_tiny_window():
+    results = _parse_ddg_html(DDG_LIVE_SHAPE)
+    assert len(results) == 2
+    assert results[0]["description"] == (
+        "Browse 568 Ml Engineer Remote $150,000 job openings. "
+        "Discover flexible, work-from-home opportunities."
+    )
+    assert results[1]["description"] == "Must be hybrid, $80/hr, 20 hrs/week"
+
+
+def test_heuristic_uses_ddg_snippet_pay_hours_and_remote():
+    results = _parse_ddg_html(DDG_LIVE_SHAPE)
+    office = _heuristic_opportunity(results[1])
+    assert office.pay_high == 80_000
+    assert office.hours_per_week == 20
+    assert office.remote is False
+    assert office.score() == 56.0  # 80k / (20*50) * 0.7 office
+
+
 # --- search aggregation -------------------------------------------------
 
 
@@ -109,6 +144,26 @@ def test_search_all_dedupes_by_url():
     urls = [r["url"] for r in results]
 
     assert urls == ["https://a.com/x", "https://b.com/y"]
+
+
+def test_search_all_dedupes_normalized_urls():
+    engine = Engine()
+
+    async def fake_brave(_query: str):
+        return [
+            {"url": "https://a.com/x/", "title": "A slash"},
+            {"url": "HTTPS://A.COM/X", "title": "A case"},
+            {"url": "https://b.com/y", "title": "B"},
+        ]
+
+    async def fake_perplexity(_query: str):
+        return []
+
+    engine._search_brave = fake_brave
+    engine._search_perplexity = fake_perplexity
+
+    results = asyncio.run(engine._search_all("anything"))
+    assert [r["url"] for r in results] == ["https://a.com/x/", "https://b.com/y"]
 
 
 def test_search_all_drops_failed_sources():

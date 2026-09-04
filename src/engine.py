@@ -63,13 +63,13 @@ class Engine:
             if isinstance(r, list):
                 all_results.extend(r)
 
-        # Dedupe by URL
+        # Dedupe by URL (trailing slash / case are the same listing)
         seen = set()
         unique = []
         for r in all_results:
-            url = r.get("url", "")
-            if url and url not in seen:
-                seen.add(url)
+            key = _normalize_url(r.get("url") or "")
+            if key and key not in seen:
+                seen.add(key)
                 unique.append(r)
 
         return unique
@@ -396,40 +396,49 @@ def _compensation_from_raw(
     return _parse_pay(f"{title} {description}", hours)
 
 
+def _visible_text(html: str) -> str:
+    return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))).strip()
+
+
 def _parse_ddg_html(html: str) -> list[dict]:
     """Parse DuckDuckGo HTML results."""
-    results: list[dict] = []
+    snippets: dict[str, str] = {}
     for match in re.finditer(
-        r'class="result__a"\s+href="([^"]+)"[^>]*>([^<]+)</a>',
+        r'class="result__snippet"\s+href="([^"]+)"[^>]*>(.*?)</a>',
         html,
+        re.DOTALL,
+    ):
+        key = _normalize_url(unescape(match.group(1)))
+        if key and key not in snippets:
+            snippets[key] = _visible_text(match.group(2))
+
+    results: list[dict] = []
+    seen: set[str] = set()
+    for match in re.finditer(
+        r'class="result__a"\s+href="([^"]+)"[^>]*>(.*?)</a>',
+        html,
+        re.DOTALL,
     ):
         url = unescape(match.group(1))
-        title = unescape(re.sub(r"\s+", " ", match.group(2)).strip())
+        title = _visible_text(match.group(2))
         if not url or not title:
             continue
         if "duckduckgo.com/y.js" in url or "bing.com/aclick" in url:
             continue
         if url.startswith("//"):
             url = f"https:{url}"
+        key = _normalize_url(url)
+        if not key or key in seen:
+            continue
+        seen.add(key)
         results.append(
             {
                 "title": title,
                 "url": url,
-                "description": "",
+                "description": snippets.get(key, ""),
                 "source": "duckduckgo",
             }
         )
-
-    for item in results:
-        idx = html.find(item["url"])
-        if idx < 0:
-            continue
-        snippet = re.search(
-            r'class="result__snippet"[^>]*>([^<]+)',
-            html[idx : idx + 1200],
-        )
-        if snippet:
-            item["description"] = unescape(re.sub(r"\s+", " ", snippet.group(1)).strip())
 
     return results[:20]
 
