@@ -349,14 +349,14 @@ def test_search_all_drops_index_pages():
 def test_search_angles_omit_grants_and_equity_unless_asked():
     job = _search_angles("senior ML engineer remote")
     assert job == [
-        "senior ML engineer remote remote job hiring",
+        "senior ML engineer remote job hiring",
         "senior ML engineer remote freelance contract",
     ]
     grant = _search_angles("AI grant funding")
-    assert any("grant funding opportunity" in q for q in grant)
+    assert "AI grant funding opportunity" in grant
     assert any("hiring" in q for q in grant)
     equity = _search_angles("startup cofounder")
-    assert any("startup equity cofounder" in q for q in equity)
+    assert "startup cofounder equity" in equity
 
 
 def test_find_ranks_and_limits_without_llm():

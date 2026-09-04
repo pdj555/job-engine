@@ -315,14 +315,23 @@ def _normalize_url(url: str) -> str:
     return url.strip().rstrip("/").casefold()
 
 
+def _with_terms(query: str, *terms: str) -> str:
+    have = query.casefold()
+    extra = [t for t in terms if t.casefold() not in have]
+    return f"{query} {' '.join(extra)}".strip() if extra else query
+
+
 def _search_angles(query: str) -> list[str]:
     """Web queries for this goal. Grants and equity only when the user asked."""
     text = query.casefold()
-    angles = [f"{query} remote job hiring", f"{query} freelance contract"]
+    angles = [
+        _with_terms(query, "remote", "job", "hiring"),
+        _with_terms(query, "freelance", "contract"),
+    ]
     if any(w in text for w in ("grant", "funding", "fellowship", "scholarship")):
-        angles.append(f"{query} grant funding opportunity")
+        angles.append(_with_terms(query, "grant", "funding", "opportunity"))
     if any(w in text for w in ("equity", "cofounder", "co-founder", "startup")):
-        angles.append(f"{query} startup equity cofounder")
+        angles.append(_with_terms(query, "startup", "equity", "cofounder"))
     return angles
 
 
