@@ -855,11 +855,9 @@ def _ats_period(raw: dict) -> str:
     )
     if text:
         return text
-    duration = raw.get("duration")
-    if isinstance(duration, dict):
-        duration = _ld_text(duration)
+    duration = _ld_text(raw.get("duration"))
     if duration:
-        return _duration_unit(str(duration)) or ""
+        return _duration_unit(duration) or ""
     return ""
 
 

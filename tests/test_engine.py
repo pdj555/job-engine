@@ -11864,6 +11864,44 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(duration_row, duration) is True
     assert duration_row.pay_low == 160_000
     assert duration_row.pay_high == 200_000
+    duration_list = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "duration": ["PT1H"],
+            },
+        },
+        "Acme",
+    )
+    duration_list_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-cccccccccccccccc",
+    )
+    assert _apply_listing(duration_list_row, duration_list) is True
+    assert duration_list_row.pay_low == 160_000
+    assert duration_list_row.pay_high == 200_000
+    duration_typed = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "duration": [{"@value": "PT1H"}],
+            },
+        },
+        "Acme",
+    )
+    duration_typed_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-dddddddddddd",
+    )
+    assert _apply_listing(duration_typed_row, duration_typed) is True
+    assert duration_typed_row.pay_low == 160_000
+    assert duration_typed_row.pay_high == 200_000
     hur = _lever_to_html(
         {
             "text": "Engineer",
@@ -13112,6 +13150,39 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(duration_row, duration) is True
     assert duration_row.pay_low == 160_000
     assert duration_row.pay_high == 200_000
+    duration_list = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "duration": ["PT1H"]},
+        }
+    )
+    duration_list_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/duration-list/engineer",
+    )
+    assert _apply_listing(duration_list_row, duration_list) is True
+    assert duration_list_row.pay_low == 160_000
+    assert duration_list_row.pay_high == 200_000
+    duration_typed = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {
+                "min": 80,
+                "max": 100,
+                "currency": "USD",
+                "duration": [{"@value": "PT1H"}],
+            },
+        }
+    )
+    duration_typed_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/duration-typed/engineer",
+    )
+    assert _apply_listing(duration_typed_row, duration_typed) is True
+    assert duration_typed_row.pay_low == 160_000
+    assert duration_typed_row.pay_high == 200_000
     comp = _workable_jobs_to_html(
         {
             "title": "Engineer",
