@@ -3747,6 +3747,19 @@ def _foreign_salary(html: str) -> bool:
 _US_COUNTRY_RE = re.compile(
     r"(?i)^(?:the\s+)?(?:united states(?:\s+of\s+america)?|usa|u\.s\.a?\.?|us)$"
 )
+_US_PLACE_RE = re.compile(
+    r"(?i)(?:^|,\s*)(?:the\s+)?(?:united states(?:\s+of\s+america)?|usa|u\.s\.a?\.?|us)$"
+)
+_NON_US_PLACE_RE = re.compile(
+    r"(?i)(?:^|,\s*)(?:the\s+)?(?:"
+    r"canada|mexico|united kingdom|great britain|uk|"
+    r"australia|new zealand|germany|france|spain|italy|netherlands|"
+    r"sweden|norway|denmark|finland|ireland|switzerland|"
+    r"india|japan|china|singapore|brazil|"
+    r"emea|europe|apac|asia(?:[-\s]pacific)?|"
+    r"european union|eu|south america"
+    r")$"
+)
 
 
 def _country_label(value) -> str:
@@ -3755,23 +3768,58 @@ def _country_label(value) -> str:
     return str(value or "").strip()
 
 
+def _country_from_label(label: str) -> Optional[str]:
+    s = re.sub(r"\s+", " ", (label or "").strip())
+    if not s:
+        return None
+    if _US_COUNTRY_RE.fullmatch(s) or _US_PLACE_RE.search(s):
+        return "US"
+    m = _NON_US_PLACE_RE.search(s)
+    if not m:
+        return None
+    return re.sub(r"^,\s*", "", m.group(0)).strip()
+
+
 def _posting_countries(posting: dict) -> list[str]:
     loc = posting.get("jobLocation")
     rows = loc if isinstance(loc, list) else [loc]
     countries: list[str] = []
+
+    def push(token: str) -> None:
+        t = token.strip()
+        if t and t not in countries:
+            countries.append(t)
+
+    def add_label(raw: str) -> None:
+        inferred = _country_from_label(raw)
+        if inferred:
+            push(inferred)
+
     for row in rows:
+        if isinstance(row, str):
+            add_label(row)
+            continue
         if not isinstance(row, dict):
             continue
+        add_label(str(row.get("name") or ""))
         addr = row.get("address")
         addrs = addr if isinstance(addr, list) else [addr]
         for item in addrs:
+            if isinstance(item, str):
+                add_label(item)
+                continue
             if not isinstance(item, dict):
                 continue
             raw = item.get("addressCountry")
             for val in raw if isinstance(raw, list) else [raw]:
                 name = _country_label(val)
                 if name:
-                    countries.append(name)
+                    push(name)
+                    add_label(name)
+            city = str(item.get("addressLocality") or "").strip()
+            region = str(item.get("addressRegion") or "").strip()
+            country = _country_label(item.get("addressCountry"))
+            add_label(", ".join(p for p in (city, region, country) if p))
     return countries
 
 

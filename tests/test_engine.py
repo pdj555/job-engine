@@ -2716,6 +2716,60 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _foreign_salary(usd_se) is False
 
 
+def test_apply_listing_json_ld_amount_without_currency_reads_place_name():
+    from src.engine import _apply_listing, _foreign_salary
+
+    se = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Spotify"},
+     "jobLocation":{"@type":"Place","name":"Stockholm, Sweden"},
+     "baseSalary":{"value":{"minValue":800000,"maxValue":900000,"unitText":"YEAR"}}}
+    </script>
+    <p>US equivalent $90,000 a year</p>
+    """
+    se_opp = Opportunity(title="Engineer", url="https://jobs.example/sthlm")
+    assert _apply_listing(se_opp, se) is False
+    assert se_opp.pay_high is None
+    assert _foreign_salary(se) is True
+
+    uk = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":"London, UK",
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    """
+    uk_opp = Opportunity(title="Engineer", url="https://jobs.example/uk")
+    assert _apply_listing(uk_opp, uk) is False
+    assert uk_opp.pay_high is None
+    assert _foreign_salary(uk) is True
+
+    us = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"@type":"Place","name":"Austin, TX, United States"},
+     "baseSalary":{"value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+    </script>
+    """
+    us_opp = Opportunity(title="Engineer", url="https://jobs.example/austin")
+    assert _apply_listing(us_opp, us) is True
+    assert us_opp.pay_high == 200_000
+    assert _foreign_salary(us) is False
+
+    empty = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Klarna"},
+     "jobLocation":{"@type":"Place","name":"Stockholm, Sweden"},
+     "baseSalary":{"currency":"","value":{"unitText":""}}}
+    </script>
+    <p>$180,000 a year</p>
+    """
+    empty_opp = Opportunity(title="Engineer", url="https://jobs.example/empty-sthlm")
+    assert _apply_listing(empty_opp, empty) is True
+    assert empty_opp.pay_high == 180_000
+    assert _foreign_salary(empty) is False
+
+
 def test_apply_listing_empty_json_ld_salary_non_us_falls_back_to_visible_text():
     from src.engine import _apply_listing, _foreign_salary
 
