@@ -662,7 +662,7 @@ def _ashby_to_html(data: dict) -> str:
         or data.get("compensationTierSummary")
         or ""
     )
-    if summary and not _FOREIGN_PAY_RE.search(summary):
+    if summary and not _foreign_pay_text(summary):
         low, high = _parse_pay(summary)
         if high or low:
             value: dict = {"unitText": "YEAR"}
@@ -1306,6 +1306,19 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b",
     re.I,
 )
+_FOREIGN_DOLLAR_RE = re.compile(
+    r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b\s*\$?\s*\d"
+    r"|(?<![A-Za-z])(?:C|A)\$\s*\d"
+    r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
+    r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?\s*"
+    r"(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b",
+    re.I | re.S,
+)
+
+
+def _foreign_pay_text(text: str) -> bool:
+    blob = text or ""
+    return bool(_FOREIGN_PAY_RE.search(blob) or _FOREIGN_DOLLAR_RE.search(blob))
 
 
 def _foreign_salary(html: str) -> bool:
@@ -1315,7 +1328,7 @@ def _foreign_salary(html: str) -> bool:
         salary = posting.get("baseSalary") or posting.get("salary")
         if isinstance(salary, dict) and salary.get("currency") and not _usd(salary.get("currency")):
             return True
-    return bool(_FOREIGN_PAY_RE.search(_listing_plain_text(html)))
+    return _foreign_pay_text(_listing_plain_text(html))
 
 
 def _posting_company(posting: dict) -> Optional[str]:
@@ -1635,6 +1648,8 @@ def _parse_pay(
     text: str, hours: Optional[int] = None, *, remote: bool = False
 ) -> tuple[Optional[int], Optional[int]]:
     """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
+    if _FOREIGN_DOLLAR_RE.search(text):
+        return None, None
     hourly_range = _HOURLY_RANGE_RE.search(text)
     if hourly_range:
         weeks = hours or 40

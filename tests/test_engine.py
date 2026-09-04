@@ -75,6 +75,20 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     assert _foreign_salary("<p>Apply now. No salary listed.</p>") is False
 
 
+def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
+    from src.engine import _foreign_salary, _parse_pay
+
+    mx = "Salario bruto mensual entre $20,000 y $25,000"
+    assert _parse_pay(mx) == (None, None)
+    assert _foreign_salary(f"<p>{mx}</p>") is True
+    assert _parse_pay("CAD $160,000 - $180,000") == (None, None)
+    assert _foreign_salary("<p>CAD $160,000 - $180,000</p>") is True
+    assert _parse_pay("C$90,000") == (None, None)
+    assert _foreign_salary("<p>Pay is $180,000 CAD a year</p>") is True
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
+    assert _foreign_salary("<p>$180,000 a year</p>") is False
+
+
 def test_guess_pay_annualizes_hourly():
     assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
     assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
@@ -1568,6 +1582,31 @@ def test_enrich_drops_foreign_k_suffix_pay():
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Unknown"]
     assert unknown.pay_high is None
+
+
+def test_enrich_drops_salario_dollar_pay_even_when_snippet_has_dollars():
+    engine = Engine()
+
+    async def page(url: str) -> str:
+        if "mx" in url:
+            return (
+                "<title>Account Manager Lead</title>"
+                "<p>Salario bruto mensual entre $20,000 y $25,000</p>"
+            )
+        return "<title>Engineer</title><p>Apply now. No salary listed.</p>"
+
+    engine._listing_text = page
+    mx = Opportunity(
+        title="MX",
+        url="https://jobs.example/mx",
+        company="Lyra",
+        pay_high=180_000,
+        hours_per_week=40,
+    )
+    unknown = Opportunity(title="Unknown", url="https://jobs.example/unknown", company="Lyra")
+    opps = [mx, unknown]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Unknown"]
 
 
 def test_enrich_fetches_when_company_missing_even_if_paid():
