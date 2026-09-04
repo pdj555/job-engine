@@ -497,6 +497,12 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _parse_pay("$90,000 AUD") == (None, None)
     assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
     assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
+    assert _parse_pay("80000 Rs. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 Rs. Account Executive $220,000</p>") is True
+    assert _parse_pay("80,000 Rs. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 Rs. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k Rs. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k Rs. Account Executive $220,000</p>") is True
     assert _parse_pay("SEK 800,000. US equivalent $90,000") == (None, None)
     assert _foreign_salary("<p>SEK 800,000. US equivalent $90,000</p>") is True
     assert _parse_pay("Compensation: 750,000 NOK") == (None, None)
@@ -6839,6 +6845,16 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert headline.title == "Staff Engineer"
+    role_name = Opportunity(title="x", url="https://jobs.example/ld-roleName")
+    assert _apply_listing(
+        role_name,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","roleName":"Staff Engineer",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert role_name.title == "Staff Engineer"
     titled = Opportunity(title="x", url="https://jobs.example/ld-title-wins")
     assert _apply_listing(
         titled,
@@ -11208,6 +11224,18 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>We filled this role.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We filled this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've filled this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We filled this form.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Hiring has closed for this role.</p><p>$180,000</p>"

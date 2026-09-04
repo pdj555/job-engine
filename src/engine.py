@@ -4456,6 +4456,9 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:kr|zł)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*:-"
     r"|\bRs\.?\s*['’]?\d"
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*Rs\.?\b"
+    r"|\d{5,7}\s*Rs\.?\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*Rs\.?\b"
     r"|\d{1,2}(?:\.\d+)?\s*(?:[-–—]\s*\d{1,2}(?:\.\d+)?)?\s*(?:lpa|lacs?|lakhs?)\b",
     re.I,
 )
@@ -5504,6 +5507,8 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             or _ld_text(posting.get("jobTitle"))
             or _ld_text(posting.get("job_title"))
             or _ld_text(posting.get("headline"))
+            or _ld_text(posting.get("roleName"))
+            or _ld_text(posting.get("role_name"))
             or ""
         ).strip()
         if pt:
@@ -5616,9 +5621,9 @@ _GONE_LISTING_RE = re.compile(
     r"|we(?:'ve|\s+have)?\s+(?:ended|stopped)\s+this\s+search\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?(?:wrapped\s+up|stopped)\b"
     r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued|pulled)\s+this\s+"
-    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we\s+filled\s+this\s+"
-    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+(?:is|has\s+been)\s+(?:closed|expired)"
