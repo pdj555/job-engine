@@ -4792,6 +4792,8 @@ def _workplace_remote(place: str) -> Optional[bool]:
         return False
     if re.search(r"\b(?:onsite|on-site|on site|in-office|in office|in the office|into the office)\b", p):
         return False
+    if re.search(r"\boffice[-\s]?first\b(?!\s+aid)", p):
+        return False
     if re.search(
         r"\b(?:site|campus|lab(?:oratory)?|field|headquarters|hq)[-\s]?based\b", p
     ):
@@ -4811,6 +4813,7 @@ def _workplace_remote(place: str) -> Optional[bool]:
         "flex",
         "flexible",
         "officebased",
+        "officefirst",
         "sitebased",
         "campusbased",
         "labbased",
@@ -4904,6 +4907,7 @@ _HYBRID_WORKPLACE_RE = re.compile(
 _ONSITE_WORKPLACE_RE = re.compile(
     r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
     r"|office[-\s]based\b"
+    r"|office(?:-|\s+)?first\b(?!\s+aid)"
     r"|\b(?:site|campus|lab(?:oratory)?|field|headquarters|hq)[-\s]based\b"
     r"|on[-\s]campus\s+(?:role|position|job)\b"
     r"|work\s+on[-\s]campus\b"

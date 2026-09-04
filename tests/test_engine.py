@@ -640,6 +640,11 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must work on site") is False
     assert _guess_remote("Engineer", "Work from our office in NYC") is False
     assert _guess_remote("Engineer", "This is an office-based role") is False
+    assert _guess_remote("Engineer", "this role is office first") is False
+    assert _guess_remote("Engineer", "office-first role") is False
+    assert _guess_remote("Engineer", "office first role") is False
+    assert _guess_remote("Engineer", "office first aid training required") is True
+    assert _guess_remote("Engineer", "remote-first role") is True
     assert _guess_remote("Engineer", "This is a site-based role") is False
     assert _guess_remote("Engineer", "This is a campus-based position") is False
     assert _guess_remote("Engineer", "This is an on-campus role") is False
@@ -695,6 +700,7 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "We're based in New York. Great team.") is True
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
     assert _guess_remote("Engineer", "work from home") is True
+    assert _guess_remote("Engineer", "work from home. office-first role") is True
     assert _guess_remote("Engineer", "work from home. This is a site-based role") is True
     assert _guess_remote("Engineer", "work from home. This is an on-campus role") is True
     assert _guess_remote("Engineer", "work from home. this is a lab role") is True
@@ -717,6 +723,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert office.remote is False
     assert office.pay_high == 180_000
     assert office.score() == 0.7 * (180_000 / (40 * 50))
+    ofirst = Opportunity(title="Engineer", url="https://jobs.example/ofirst")
+    assert _apply_listing(
+        ofirst, "<p>This is an office-first role. Salary $180,000</p>"
+    ) is True
+    assert ofirst.remote is False
+    assert ofirst.pay_high == 180_000
+    assert ofirst.score() == 0.7 * (180_000 / (40 * 50))
     days = Opportunity(title="Engineer", url="https://jobs.example/days")
     assert _apply_listing(
         days, "<p>5 days a week in the office. Salary $180,000</p>"
@@ -5431,6 +5444,9 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert _workplace_remote("Remote - United States") is True
     assert _workplace_remote("onsite only") is False
     assert _workplace_remote("Office-based") is False
+    assert _workplace_remote("Office-first") is False
+    assert _workplace_remote("office first") is False
+    assert _workplace_remote("Remote, office-first") is True
     assert _workplace_remote("Site-based") is False
     assert _workplace_remote("Campus-Based") is False
     assert _workplace_remote("Field-Based") is False
