@@ -15823,6 +15823,21 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Opportunities similar to this",
         "Recently viewed opportunity",
         "Jobs similar to this position",
+        "Jobs similar to this listing",
+        "Roles similar to this listing",
+        "Positions similar to this listing",
+        "Opportunities similar to this listing",
+        "Listings similar to this listing",
+        "Jobs similar to this opportunity",
+        "Roles similar to this opportunity",
+        "Because you viewed this listing",
+        "Because you searched this listing",
+        "Because you viewed this opportunity",
+        "Because you applied to this listing",
+        "Because you saved this listing",
+        "Because you liked this listing",
+        "More like this listing",
+        "More like this opportunity",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
