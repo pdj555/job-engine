@@ -805,8 +805,13 @@ def test_parse_pay_annualizes_biweekly_and_semimonthly_usd():
     assert _parse_pay("$3,000 biweekly") == (None, 75_000)
     assert _parse_pay("$3,000 bi-weekly") == (None, 75_000)
     assert _parse_pay("$3,000 every two weeks") == (None, 75_000)
+    assert _parse_pay("$3,000 every other week") == (None, 75_000)
+    assert _parse_pay("$3,000 every 2 weeks") == (None, 75_000)
+    assert _parse_pay("$3,000 every-two-weeks") == (None, 75_000)
+    assert _parse_pay("$3,000 per fortnight") == (None, 75_000)
     assert _parse_pay("$3,000 fortnightly") == (None, 75_000)
     assert _parse_pay("$1,500-$2,000 biweekly") == (37_500, 50_000)
+    assert _parse_pay("$1,500-$2,000 every other week") == (37_500, 50_000)
     assert _parse_pay("$3,000 twice a month") == (None, 72_000)
     assert _parse_pay("$3,000 semi-monthly") == (None, 72_000)
     assert _parse_pay("$3,000 per week") == (None, 150_000)
@@ -814,6 +819,12 @@ def test_parse_pay_annualizes_biweekly_and_semimonthly_usd():
     opp = Opportunity(title="Engineer", url="https://jobs.example/bi")
     assert _apply_listing(opp, "<p>Pay $3,000 biweekly</p>") is True
     assert opp.pay_high == 75_000
+    other = Opportunity(title="Engineer", url="https://jobs.example/other-week")
+    assert _apply_listing(other, "<p>Pay $3,000 every other week</p>") is True
+    assert other.pay_high == 75_000
+    fortnight = Opportunity(title="Engineer", url="https://jobs.example/fortnight")
+    assert _apply_listing(fortnight, "<p>Pay $3,000 per fortnight</p>") is True
+    assert fortnight.pay_high == 75_000
     semi = Opportunity(title="Engineer", url="https://jobs.example/sm")
     assert _apply_listing(semi, "<p>Pay $3,000 semi-monthly</p>") is True
     assert semi.pay_high == 72_000

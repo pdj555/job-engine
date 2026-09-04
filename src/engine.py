@@ -5550,7 +5550,12 @@ _WEEKLY_RANGE_RE = re.compile(
 _WEEKLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
 )
-_BIWEEK_TAIL = r"\s*(?:bi[-\s]?weekly|every\s+two\s+weeks|fortnightly)\b"
+_BIWEEK_TAIL = (
+    r"\s*(?:bi[-\s]?weekly|"
+    r"every[-\s]+(?:two|2|other)[-\s]+weeks?|"
+    r"(?:per|a)\s+fortnight|"
+    r"fortnightly)\b"
+)
 _BIWEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
