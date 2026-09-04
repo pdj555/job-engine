@@ -845,6 +845,14 @@ def test_index_pages_are_not_opportunities():
     assert _is_index_page(
         {"url": "https://jobs.ashbyhq.com/acme", "title": "Jobs", "description": ""}
     )
+    yelp = _heuristic_opportunity(
+        {
+            "title": "Careers at Yelp | Yelp Jobs",
+            "url": "https://uscareers-yelp.icims.com/jobs/13815/senior-machine-learning-engineer/job",
+            "description": "Remote United States",
+        }
+    )
+    assert yelp is not None
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
@@ -932,7 +940,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/12" in [r["url"] for r in results]
+    assert "https://jobs.example/13" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -949,6 +957,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:apply.workable.com",
         "senior ML engineer remote site:jobs.smartrecruiters.com",
         "senior ML engineer remote site:myworkdayjobs.com",
+        "senior ML engineer remote site:icims.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3106,6 +3115,84 @@ def test_listing_text_workday_cxs_404_falls_back_to_html(monkeypatch):
         "Machine-Learning-Engineer_R64440"
     )
     assert html and "$180,000" in html
+
+
+def test_icims_iframe_url_from_job_link():
+    from src.engine import _icims_iframe_url, _is_index_page, _lever_job_url
+
+    pretty = (
+        "https://uscareers-yelp.icims.com/jobs/13815/"
+        "senior-machine-learning-engineer---content/job"
+    )
+    assert (
+        _icims_iframe_url(pretty)
+        == "https://uscareers-yelp.icims.com/jobs/13815/job?in_iframe=1"
+    )
+    assert _lever_job_url(pretty) == "https://uscareers-yelp.icims.com/jobs/13815/job"
+    assert not _is_index_page(
+        {"url": pretty, "title": "Careers at Yelp | Yelp Jobs", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://careers-mci.icims.com/jobs/intro",
+            "title": "Careers Center | Welcome",
+            "description": "",
+        }
+    )
+    assert _icims_iframe_url("https://jobs.lever.co/acme/x") is None
+
+
+def test_listing_text_reads_icims_iframe(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    iframe_html = (
+        "<title>Senior ML Engineer</title>"
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Senior ML Engineer",'
+        '"hiringOrganization":{"name":"Yelp, Inc"},'
+        '"jobLocationType":"TELECOMMUTE"}'
+        "</script>"
+        "<p>Compensation range for this role to be between $112,000 and $269,000.</p>"
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "in_iframe=1" in url:
+            return iframe_html
+        return "<title>Careers at Yelp | Yelp Jobs</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://uscareers-yelp.icims.com/jobs/13815/senior-machine-learning-engineer/job"
+        )
+    )
+    assert seen == ["https://uscareers-yelp.icims.com/jobs/13815/job?in_iframe=1"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://uscareers-yelp.icims.com/jobs/13815/job")
+    _apply_listing(opp, html)
+    assert opp.company == "Yelp, Inc"
+    assert opp.pay_high == 269_000
+    assert opp.remote is True
+
+
+def test_listing_text_icims_410_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "in_iframe=1" in url:
+            return None
+        return "<title>Careers at Acme | Acme Jobs</title><p>Search jobs</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://careers-americas.icims.com/jobs/26849/principal-ml/job")
+    )
+    assert seen == ["https://careers-americas.icims.com/jobs/26849/job?in_iframe=1"]
+    assert html is None
 
 
 def test_listing_plain_text_ignores_script_salaries():

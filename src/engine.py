@@ -158,6 +158,12 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and isinstance(data.get("jobPostingInfo"), dict):
                     return _workday_to_html(data)
+        iframe = _icims_iframe_url(url)
+        if iframe:
+            raw = await fetch(iframe)
+            if raw is None:
+                return None
+            return raw or ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -498,6 +504,9 @@ def _lever_job_url(url: str) -> str:
     sr = _smartrecruiters_ids(url)
     if sr:
         return f"https://jobs.smartrecruiters.com/{sr[0]}/{sr[1]}"
+    icims = _icims_ids(url)
+    if icims:
+        return f"https://{icims[0]}/jobs/{icims[1]}/job"
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -789,6 +798,7 @@ def _search_angles(query: str) -> list[str]:
             "apply.workable.com",
             "jobs.smartrecruiters.com",
             "myworkdayjobs.com",
+            "icims.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1420,6 +1430,36 @@ def _workday_to_html(data: dict) -> str:
     )
 
 
+_ICIMS_JOB_RE = re.compile(r"(?i)/jobs/(\d+)(?:/|$)")
+
+
+def _icims_ids(url: str) -> Optional[tuple[str, str]]:
+    """Host and numeric job id from careers-*.icims.com/jobs/{id}/..."""
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    if not host.endswith("icims.com"):
+        return None
+    m = _ICIMS_JOB_RE.search(parsed.path or "")
+    if not m:
+        return None
+    return host, m.group(1)
+
+
+def _icims_iframe_url(url: str) -> Optional[str]:
+    ids = _icims_ids(url)
+    if not ids:
+        return None
+    host, jid = ids
+    return f"https://{host}/jobs/{jid}/job?in_iframe=1"
+
+
+def _icims_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith("icims.com"):
+        return False
+    return _icims_ids(url) is None
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1433,6 +1473,8 @@ def _is_index_page(raw: dict) -> bool:
     desc = raw.get("description") or ""
     if _INDEX_URL_RE.search(url):
         return True
+    if _icims_ids(url):
+        return False
     if _title_is_index(title):
         return True
     if re.match(r"(?i)\s*browse\s+\d+", desc):
@@ -1450,6 +1492,8 @@ def _is_index_page(raw: dict) -> bool:
     if _smartrecruiters_is_board(url):
         return True
     if _workday_is_board(url):
+        return True
+    if _icims_is_board(url):
         return True
     return False
 
