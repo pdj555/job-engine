@@ -866,6 +866,24 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert yelp is not None
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Jobgether - Senior Machine Learning Engineer",
+                "url": "https://jobs.lever.co/jobgether/dd9c2026-60c2-4c5f-b507-dc9d22cc68b9",
+                "description": "This position is listed on behalf of a partner company.",
+            }
+        )
+        is None
+    )
+    qonto = _heuristic_opportunity(
+        {
+            "title": "Qonto - Senior Machine Learning Engineer for AI Product",
+            "url": "https://jobs.lever.co/qonto/471e0021-d630-4cd1-81c3-2fb2e9dc253c",
+            "description": "",
+        }
+    )
+    assert qonto is not None
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
@@ -907,6 +925,10 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Senior Machine Learning Engineer",
                 "url": "https://www.ziprecruiter.com/jobs-search?search=ml",
+            },
+            {
+                "title": "Jobgether - Senior Machine Learning Engineer",
+                "url": "https://jobs.lever.co/jobgether/dd9c2026-60c2-4c5f-b507-dc9d22cc68b9",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]

@@ -1055,7 +1055,9 @@ _INDEX_URL_RE = re.compile(
     r"|migratemate\.co/"
     r"|builtin\.com/jobs"
     r"|ziprecruiter\.com/Jobs/"
-    r"|ziprecruiter\.com/jobs-search)",
+    r"|ziprecruiter\.com/jobs-search"
+    r"|lever\.co/jobgether/"
+    r"|jobgether\.com/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
