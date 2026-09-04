@@ -4311,11 +4311,37 @@ def _salary_has_amount(salary) -> bool:
     return any(n > 0 for n in _nums(salary))
 
 
+_DURATION_UNITS = {
+    "PT1H": "HOUR",
+    "PT60M": "HOUR",
+    "P1D": "DAY",
+    "P1W": "WEEK",
+    "P7D": "WEEK",
+    "P2W": "BIWEEKLY",
+    "P14D": "BIWEEKLY",
+    "P1M": "MONTH",
+    "P1Y": "YEAR",
+}
+
+
+def _duration_unit(raw: str) -> Optional[str]:
+    token = raw.strip().upper().rsplit("/", 1)[-1]
+    token = re.sub(r"(?<!\d)0+[YMDHS]", "", token)
+    if token.endswith("T"):
+        token = token[:-1]
+    return _DURATION_UNITS.get(token)
+
+
 def _unit_raw(node) -> Optional[str]:
     if not isinstance(node, dict):
         return None
     raw = node.get("unitText") or node.get("unitCode")
-    return str(raw) if raw else None
+    if raw:
+        return str(raw)
+    duration = node.get("duration")
+    if isinstance(duration, str) and duration.strip():
+        return _duration_unit(duration)
+    return None
 
 
 def _unit_text(salary) -> Optional[str]:
