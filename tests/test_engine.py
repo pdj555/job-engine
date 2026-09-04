@@ -1018,6 +1018,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:recruitee.com",
         "senior ML engineer remote site:ats.rippling.com",
         "senior ML engineer remote site:breezy.hr",
+        "senior ML engineer remote site:pinpointhq.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3813,6 +3814,142 @@ def test_breezy_foreign_salary_is_foreign():
         }
     )
     opp = Opportunity(title="x", url="https://acme.breezy.hr/p/aaaaaaaaaaaa")
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
+
+
+def test_pinpoint_job_urls_are_not_boards():
+    from src.engine import _is_index_page, _lever_job_url, _pinpoint_json_url
+
+    localized = (
+        "https://clearview.pinpointhq.com/en/postings/"
+        "39dd4d7c-064e-400b-9857-06ae28cb6441"
+    )
+    canonical = (
+        "https://clearview.pinpointhq.com/postings/"
+        "39dd4d7c-064e-400b-9857-06ae28cb6441"
+    )
+    assert _lever_job_url(localized) == canonical
+    assert _pinpoint_json_url(localized) == (
+        "https://clearview.pinpointhq.com/postings.json"
+    )
+    assert not _is_index_page(
+        {"url": localized, "title": "Jobs at Clearview AI", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://rowdentech.pinpointhq.com/",
+            "title": "Jobs at Rowden | Rowden Careers",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = {
+        "data": [
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": (
+                    "https://clearview.pinpointhq.com/en/postings/"
+                    "39dd4d7c-064e-400b-9857-06ae28cb6441"
+                ),
+                "path": "/en/postings/39dd4d7c-064e-400b-9857-06ae28cb6441",
+                "employment_type": "full_time",
+                "workplace_type": "hybrid",
+                "compensation": "$180,000 - $250,000 / year",
+                "compensation_minimum": 180000.0,
+                "compensation_maximum": 250000.0,
+                "compensation_currency": "USD",
+                "compensation_frequency": "year",
+                "location": {"name": "Remote USA"},
+            }
+        ]
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if url.endswith("/postings.json"):
+            return json.dumps(payload)
+        return "<title>Jobs at Clearview AI</title><p>Current openings</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = (
+        "https://clearview.pinpointhq.com/postings/"
+        "39dd4d7c-064e-400b-9857-06ae28cb6441"
+    )
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://clearview.pinpointhq.com/postings.json"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is True
+    assert opp.company == "Clearview"
+    assert opp.remote is False
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 250_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 87.5
+
+
+def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if url.endswith("/postings.json"):
+            return json.dumps(
+                {
+                    "data": [
+                        {
+                            "title": "Other role",
+                            "url": "https://emumba.pinpointhq.com/en/postings/"
+                            "9d53ced8-835e-436b-8c63-6085d0495d4d",
+                            "compensation": "$100,000 - $110,000 / year",
+                            "compensation_minimum": 100000,
+                            "compensation_maximum": 110000,
+                            "compensation_currency": "USD",
+                        }
+                    ]
+                }
+            )
+        return "<title>Jobs at Emumba</title><p>$100,000 - $110,000</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://emumba.pinpointhq.com/postings/"
+            "edeb914d-2763-4d7c-99fa-46de8deb76f1"
+        )
+    )
+    assert seen == ["https://emumba.pinpointhq.com/postings.json"]
+    assert html is None
+
+
+def test_pinpoint_gbp_pay_is_foreign():
+    from src.engine import _apply_listing, _foreign_salary, _pinpoint_to_html
+
+    html = _pinpoint_to_html(
+        {
+            "title": "Software Engineer",
+            "workplace_type": "hybrid",
+            "compensation": "£40,000 - £75,000 / year",
+            "compensation_minimum": 40000,
+            "compensation_maximum": 75000,
+            "compensation_currency": "GBP",
+            "compensation_frequency": "year",
+        },
+        "rowdentech",
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://rowdentech.pinpointhq.com/postings/"
+        "759d475f-0d95-4a1c-bda0-d8e3eba9f570",
+    )
     _apply_listing(opp, html)
     assert opp.pay_high is None
     assert _foreign_salary(html) is True

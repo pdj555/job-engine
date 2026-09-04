@@ -215,6 +215,23 @@ class Engine:
                         return _breezy_to_html(job)
                     return None
             return ""
+        pp = _pinpoint_ids(url)
+        if pp:
+            raw = await fetch(_pinpoint_json_url(url))
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                rows = data.get("data") if isinstance(data, dict) else data
+                job = _pinpoint_job(rows, pp[1])
+                if job:
+                    return _pinpoint_to_html(job, pp[0])
+                if isinstance(rows, list):
+                    return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -570,6 +587,9 @@ def _lever_job_url(url: str) -> str:
     bz = _breezy_job_url(url)
     if bz:
         return bz
+    pp = _pinpoint_job_url(url)
+    if pp:
+        return pp
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -869,6 +889,7 @@ def _search_angles(query: str) -> list[str]:
             "recruitee.com",
             "ats.rippling.com",
             "breezy.hr",
+            "pinpointhq.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1052,6 +1073,10 @@ def _company_from_url(url: str) -> str | None:
         slug = host.split(".")[0]
         if slug in {"www", "app"}:
             return None
+    elif host.endswith(".pinpointhq.com"):
+        slug = host.split(".")[0]
+        if slug in {"www", "app"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1102,6 +1127,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"www", "app"}:
             return None
         return f"breezy:{slug}"
+    if host.endswith(".pinpointhq.com"):
+        slug = host.split(".")[0].casefold()
+        if slug in {"www", "app"}:
+            return None
+        return f"pinpoint:{slug}"
     return None
 
 
@@ -2002,6 +2032,123 @@ def _breezy_to_html(job: dict) -> str:
     )
 
 
+_PINPOINT_JOB_RE = re.compile(
+    r"(?i)https?://([a-z0-9-]+)\.pinpointhq\.com/(?:en/)?postings/"
+    r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+)
+_PINPOINT_PAY_UNITS = {
+    "year": "YEAR",
+    "annual": "YEAR",
+    "month": "MONTH",
+    "hour": "HOUR",
+    "week": "WEEK",
+}
+
+
+def _pinpoint_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _PINPOINT_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1).casefold()
+    if board in {"www", "app"}:
+        return None
+    return board, m.group(2).casefold()
+
+
+def _pinpoint_job_url(url: str) -> Optional[str]:
+    ids = _pinpoint_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.pinpointhq.com/postings/{ids[1]}"
+
+
+def _pinpoint_json_url(url: str) -> Optional[str]:
+    ids = _pinpoint_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.pinpointhq.com/postings.json"
+
+
+def _pinpoint_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith(".pinpointhq.com") and host != "pinpointhq.com":
+        return False
+    return _pinpoint_ids(url) is None
+
+
+def _pinpoint_job(rows, uuid: str) -> Optional[dict]:
+    if not isinstance(rows, list):
+        return None
+    needle = (uuid or "").casefold()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        blob = f"{row.get('url') or ''} {row.get('path') or ''}".casefold()
+        if needle and needle in blob:
+            return row
+    return None
+
+
+def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
+    low, high = _num(job.get("compensation_minimum")), _num(job.get("compensation_maximum"))
+    if low is None and high is None:
+        return None
+    cur = str(job.get("compensation_currency") or "").upper() or "USD"
+    freq = str(job.get("compensation_frequency") or "").lower()
+    value: dict = {}
+    unit = _PINPOINT_PAY_UNITS.get(freq)
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    return {"currency": cur, "value": value}
+
+
+def _pinpoint_to_html(job: dict, board: str = "") -> str:
+    """Turn a Pinpoint postings.json row into listing HTML. Never invent pay."""
+    title = str(job.get("title") or "").strip()
+    company = board.replace("-", " ").replace("_", " ").strip().title() if board else ""
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = str(job.get("employment_type") or job.get("employment_type_text") or "")
+    lower = emp.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    work = str(job.get("workplace_type") or job.get("workplace_type_text") or "").strip()
+    if work:
+        place = work.replace("_", " ")
+    else:
+        loc = job.get("location") if isinstance(job.get("location"), dict) else {}
+        place = str(loc.get("name") or "").strip()
+    _apply_workplace(posting, place)
+    pay = _pinpoint_pay_ld(job)
+    if pay:
+        posting["baseSalary"] = pay
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    comp = str(job.get("compensation") or "").strip()
+    if comp:
+        parts.append(f"<p>{comp}</p>")
+    for key in ("description", "key_responsibilities"):
+        val = job.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2025,6 +2172,7 @@ def _ats_job_url(url: str) -> bool:
         or _recruitee_ids(url)
         or _rippling_ids(url)
         or _breezy_ids(url)
+        or _pinpoint_ids(url)
     )
 
 
@@ -2068,6 +2216,8 @@ def _is_index_page(raw: dict) -> bool:
     if _rippling_is_board(url):
         return True
     if _breezy_is_board(url):
+        return True
+    if _pinpoint_is_board(url):
         return True
     return False
 
