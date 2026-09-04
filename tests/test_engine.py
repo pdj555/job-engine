@@ -2052,6 +2052,16 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Job Search | Acme",
+                "url": "https://acme.com/job-search",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -2997,6 +3007,18 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Graduate Programs | Acme</title><p>$180,000</p>",
         "https://acme.com/graduate-programs",
+    )
+    assert _html_is_index(
+        "<title>Job Search | Acme</title><p>$180,000</p>",
+        "https://acme.com/job-search",
+    )
+    assert not _html_is_index(
+        "<title>Search Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/search-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/job-search/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Early Career Software Engineer</title><p>$180,000</p>",
@@ -5817,6 +5839,8 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Campus Recruiting | Acme</title><p>$180,000 - $270,000</p>"
         if "early-careers" in url:
             return "<title>Early Careers | Acme</title><p>$180,000</p>"
+        if "job-search" in url:
+            return "<title>Job Search | Acme</title><p>$180,000 - $270,000</p>"
         return ""
 
     engine._listing_text = page
@@ -5855,7 +5879,12 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/early-careers",
         pay_high=180_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet, campus, early]
+    job_search = Opportunity(
+        title="Job Search | Acme",
+        url="https://acme.com/job-search",
+        pay_high=270_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
