@@ -146,6 +146,8 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and (data.get("text") or data.get("id")):
                     return _lever_to_html(data, _company_from_url(url))
+        if _lever_is_board(url):
+            return None
         sr_api = _smartrecruiters_api_url(url)
         if sr_api:
             raw = await fetch(sr_api)
@@ -789,6 +791,13 @@ def _lever_api_url(url: str) -> Optional[str]:
     else:
         api = f"api.{host.split('.', 1)[1]}.lever.co"
     return f"https://{api}/v0/postings/{board}/{jid}"
+
+
+def _lever_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.startswith("jobs") or not host.endswith("lever.co"):
+        return False
+    return _lever_api_url(url) is None
 
 
 def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
@@ -3257,6 +3266,8 @@ def _is_index_page(raw: dict) -> bool:
     if path == "/":
         return True
     if _INDEX_PATH_RE.search(parsed.path):
+        return True
+    if _lever_is_board(url):
         return True
     if _workable_is_board(url):
         return True

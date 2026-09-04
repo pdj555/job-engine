@@ -1464,12 +1464,12 @@ def test_find_dedupes_same_role_across_boards():
             },
             {
                 "title": "Lyra Health - Senior ML Engineer (ML/AI) - jobs.lever.co",
-                "url": "https://jobs.lever.co/lyrahealth/abc",
+                "url": "https://jobs.lever.co/lyrahealth/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
                 "description": "$100k",
             },
             {
                 "title": "Lyra Health - Sr. ML Engineer (MLOps)",
-                "url": "https://jobs.lever.co/lyrahealth/def",
+                "url": "https://jobs.lever.co/lyrahealth/ffffffff-1111-2222-3333-444444444444",
                 "description": "$90k",
             },
         ]
@@ -1483,7 +1483,7 @@ def test_find_dedupes_same_role_across_boards():
     ranked = asyncio.run(engine.find("ml", limit=20))
     assert [o.url for o in ranked] == [
         "https://careers.example/lyra",
-        "https://jobs.lever.co/lyrahealth/def",
+        "https://jobs.lever.co/lyrahealth/ffffffff-1111-2222-3333-444444444444",
     ]
 
 
@@ -2162,6 +2162,46 @@ def test_lever_api_url_uses_eu_host():
         "https://jobs.eu.lever.co/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7/apply"
     ) == "https://api.eu.lever.co/v0/postings/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7"
     assert _lever_api_url("https://jobs.eu.lever.co/prima") is None
+
+
+def test_lever_company_board_is_not_a_job():
+    from src.engine import _heuristic_opportunity, _is_index_page, _lever_is_board
+
+    board = "https://jobs.eu.lever.co/tomtom"
+    posting = (
+        "https://jobs.eu.lever.co/tomtom/ca7ff74f-4ebb-4e10-91ca-096d7faa89b7"
+    )
+    assert _lever_is_board(board) is True
+    assert _lever_is_board("https://jobs.lever.co/spotify") is True
+    assert _lever_is_board(posting) is False
+    assert _lever_is_board(posting + "/apply") is False
+    assert _is_index_page(
+        {"url": board, "title": "TomTom - Lever", "description": ""}
+    )
+    assert not _is_index_page(
+        {
+            "url": posting,
+            "title": "Machine Learning Staff Engineer – ADAS Online",
+            "description": "",
+        }
+    )
+    assert (
+        _heuristic_opportunity(
+            {"url": board, "title": "TomTom - Lever", "description": ""}
+        )
+        is None
+    )
+
+
+def test_listing_text_lever_board_is_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, _url: str):
+        raise AssertionError("Lever board HTML must not be fetched")
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    assert asyncio.run(engine._listing_text("https://jobs.eu.lever.co/tomtom")) is None
+    assert asyncio.run(engine._listing_text("https://jobs.lever.co/spotify")) is None
 
 
 def test_listing_text_reads_lever_eu_api(monkeypatch):
