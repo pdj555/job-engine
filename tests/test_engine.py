@@ -1555,7 +1555,7 @@ def test_listing_text_none_when_canonical_page_is_gone(monkeypatch):
     assert html is None
 
 
-def test_listing_text_greenhouse_api_404_falls_back_to_html(monkeypatch):
+def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):
     engine = Engine()
     seen: list[str] = []
 
@@ -1563,6 +1563,24 @@ def test_listing_text_greenhouse_api_404_falls_back_to_html(monkeypatch):
         seen.append(url)
         if "boards-api.greenhouse.io" in url:
             return None
+        return "<title>Jobs at Reddit</title><p>Current openings</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/8084032")
+    )
+    assert seen == ["https://boards-api.greenhouse.io/v1/boards/reddit/jobs/8084032"]
+    assert html is None
+
+
+def test_listing_text_greenhouse_api_timeout_falls_back_to_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return ""
         return "<title>Senior ML at Reddit</title><p>$180,000</p>"
 
     monkeypatch.setattr("src.engine._http_get_text", fake_get)

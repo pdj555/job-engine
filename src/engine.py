@@ -99,6 +99,8 @@ class Engine:
         api = _greenhouse_api_url(url)
         if api:
             raw = await fetch(api)
+            if raw is None:
+                return None
             if raw:
                 try:
                     data = json.loads(raw)
