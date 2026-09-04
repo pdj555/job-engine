@@ -556,6 +556,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "5 days a week in the office") is False
     assert _guess_remote("Engineer", "must come into the office") is False
     assert _guess_remote("Engineer", "you will be based in our San Francisco office") is False
+    assert _guess_remote("Engineer", "This role is based in New York") is False
+    assert _guess_remote("Engineer", "This position is located in Seattle") is False
+    assert _guess_remote("Engineer", "you will be based in Austin") is False
+    assert _guess_remote("Engineer", "The job is based in Boston") is False
+    assert _guess_remote("Engineer", "This role is based in the US") is True
+    assert _guess_remote("Engineer", "We're based in New York. Great team.") is True
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
     assert _guess_remote("Engineer", "work from home") is True
     office = Opportunity(title="Engineer", url="https://jobs.example/off")
@@ -571,6 +577,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert days.remote is False
     assert days.score() == 0.7 * (180_000 / (40 * 50))
+    based = Opportunity(title="Engineer", url="https://jobs.example/based")
+    assert _apply_listing(
+        based, "<p>This role is based in New York. Salary $180,000</p>"
+    ) is True
+    assert based.remote is False
+    assert based.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True

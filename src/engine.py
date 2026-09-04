@@ -4826,6 +4826,10 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|in[-\s]person\s+(?:role|position|job)\b"
     r"|work\s+in[-\s]person\b"
     r"|in[-\s]person\s+in\b"
+    r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+is\s+(?:based|located)\s+in"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"|you\s+will\s+be\s+(?:based|located)\s+in"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
 )
 
 
