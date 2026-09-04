@@ -1427,7 +1427,7 @@ _INDEX_URL_RE = re.compile(
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
-    r"(?i)^hire a freelance\b|\bcurrent openings\b"
+    r"(?i)^hire\b|\bcurrent openings\b"
 )
 _JOBS_WORD_RE = re.compile(r"(?i)\bjobs\b(?!\.)(?! by workable)")
 _ROLE_JOBS_AT_RE = re.compile(r"(?i).+\bjobs at \S")
@@ -3697,6 +3697,16 @@ _ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")
 _ANNUAL_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
 )
+_NON_SALARY_MONEY_RE = re.compile(
+    r"(?i)(?:"
+    r"\b(?:without|no|not|nor|except(?:\s+for)?|excluding|instead\s+of|rather\s+than|versus|vs\.?)\s+"
+    r"(?:a\s+|an\s+|any\s+|the\s+)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*\$?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"\bup\s+to\s+(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?\+"
+    r")"
+)
 _HOURS_RE = re.compile(
     r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week)\b",
     re.I,
@@ -3772,6 +3782,7 @@ def _parse_pay(
     text: str, hours: Optional[int] = None, *, remote: bool = False
 ) -> tuple[Optional[int], Optional[int]]:
     """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
+    text = _NON_SALARY_MONEY_RE.sub(" ", text or "")
     if _FOREIGN_DOLLAR_RE.search(text):
         return None, None
     hourly_range = _HOURLY_RANGE_RE.search(text)

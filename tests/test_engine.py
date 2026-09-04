@@ -44,6 +44,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
+    assert _parse_pay("without $500K comp") == (None, None)
+    assert _parse_pay(
+        "Top performing radiologists can expect to earn up to $950,000+."
+    ) == (None, None)
+    assert _parse_pay("Salary $180k without $500K bonus") == (None, 180_000)
+    assert _parse_pay("Compensation up to $180,000") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -733,6 +739,16 @@ def test_index_pages_are_not_opportunities():
                 "title": "Hire a Freelance Machine Learning Engineer — No Agency Fees",
                 "url": "https://remoteai.io/v2/freelance/machine-learning-engineers",
                 "description": "Browse freelance ML engineers.",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Hire Machine Learning Engineers — Contract & C2C | Gain America",
+                "url": "https://gainam.com/hire-machine-learning-engineers",
+                "description": "without $500K comp",
             }
         )
         is None
