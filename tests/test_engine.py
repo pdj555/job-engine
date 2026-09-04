@@ -155,6 +155,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$180,000 fitness in NYC") == (None, 180_000)
+    assert _parse_pay("$10,000 commuter benefit") == (None, None)
+    assert _parse_pay("$10,000 parking benefit") == (None, None)
+    assert _parse_pay("$10,000 phone benefit") == (None, None)
+    assert _parse_pay("$10,000 internet benefit") == (None, None)
+    assert _parse_pay("commuter benefit of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 commuter benefit") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 commuter in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 phone in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $10,000 gym stipend") == (
         None,
         180_000,
@@ -477,6 +488,16 @@ def test_guess_pay_annualizes_hourly():
         fitness_sal, "<p>Salary $180,000 plus $10,000 fitness reimbursement</p>"
     ) is True
     assert fitness_sal.pay_high == 180_000
+    commute_ben = Opportunity(title="Engineer", url="https://jobs.example/commute-ben")
+    assert _apply_listing(
+        commute_ben, "<p>$10,000 commuter benefit. Great team.</p>"
+    ) is False
+    assert commute_ben.pay_high is None
+    commute_ben_sal = Opportunity(title="Engineer", url="https://jobs.example/commute-ben-sal")
+    assert _apply_listing(
+        commute_ben_sal, "<p>Salary $180,000 plus $10,000 commuter benefit</p>"
+    ) is True
+    assert commute_ben_sal.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -5627,6 +5648,14 @@ def test_html_is_gone_removed_listing_banner():
         "<p>Once this job has been unpublished, we will archive it.</p>"
         "<p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job is no longer published.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is unpublished.</p><p>$180,000</p>"
+    ) is True
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5799,6 +5828,12 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
                 "<p>The job you are looking for is no longer available.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
+        if "is-unpublished" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This posting is unpublished.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         if "unpublished" in url:
             return (
                 "<title>Senior ML Engineer</title>"
@@ -5815,6 +5850,12 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>This role is no longer accepting new applicants.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "no-longer-pub" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This job is no longer published.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -6019,6 +6060,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    no_longer_pub = Opportunity(
+        title="NoLongerPub",
+        url="https://jobs.example/no-longer-pub",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    is_unpublished = Opportunity(
+        title="IsUnpublished",
+        url="https://jobs.example/is-unpublished",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -6043,6 +6096,8 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         unpublished,
         have_closed,
         new_apps,
+        no_longer_pub,
+        is_unpublished,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
