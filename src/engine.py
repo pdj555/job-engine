@@ -319,6 +319,19 @@ class Engine:
             if posting:
                 return _gem_to_html(posting, gem[0])
             return ""
+        wm = _walmart_ids(url)
+        if wm:
+            raw = await fetch(_walmart_job_url(url))
+            if raw is None:
+                return None
+            if raw:
+                job = _walmart_details(raw, wm)
+                if job is None:
+                    return None
+                if job:
+                    return _walmart_to_html(job)
+                return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -705,6 +718,9 @@ def _lever_job_url(url: str) -> str:
     gm = _gem_job_url(url)
     if gm:
         return gm
+    wm = _walmart_job_url(url)
+    if wm:
+        return wm
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -1010,6 +1026,7 @@ def _search_angles(query: str) -> list[str]:
             "applytojob.com",
             "app.dover.com",
             "jobs.gem.com",
+            "careers.walmart.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1224,6 +1241,8 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug.casefold() in {"jobs", "apply", "application"}:
             return None
+    elif host in {"careers.walmart.com", "www.careers.walmart.com"}:
+        slug = "walmart"
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -2878,6 +2897,157 @@ def _gem_to_html(post: dict, board: str = "") -> str:
     )
 
 
+_WALMART_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?careers\.walmart\.com/(?:[a-z]{2}/[a-z]{2}/)?jobs/(R-\d+)"
+)
+_NEXT_DATA_RE = re.compile(
+    r'<script[^>]*\bid=["\']?__NEXT_DATA__["\']?[^>]*>(.*?)</script>',
+    re.I | re.S,
+)
+
+
+def _walmart_ids(url: str) -> Optional[str]:
+    m = _WALMART_JOB_RE.search(url or "")
+    return m.group(1) if m else None
+
+
+def _walmart_job_url(url: str) -> Optional[str]:
+    jid = _walmart_ids(url)
+    if not jid:
+        return None
+    return f"https://careers.walmart.com/us/en/jobs/{jid}"
+
+
+def _walmart_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host not in {"careers.walmart.com", "www.careers.walmart.com"}:
+        return False
+    return _walmart_ids(url) is None
+
+
+def _walmart_details(html: str, jid: str) -> Optional[dict]:
+    """Open jobDetails. None if gone. Empty dict if the page is unusable."""
+    m = _NEXT_DATA_RE.search(html or "")
+    if not m:
+        return {}
+    try:
+        data = json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    props = data.get("props")
+    pp = props.get("pageProps") if isinstance(props, dict) else None
+    if not isinstance(pp, dict):
+        return {}
+    details = pp.get("jobDetails")
+    if details is None:
+        return None
+    if not isinstance(details, dict):
+        return {}
+    if not (details.get("title") or details.get("jobPostingTitle")):
+        return {}
+    page_id = str(pp.get("jobId") or details.get("jobId") or "").strip()
+    if page_id and page_id.casefold() != jid.casefold():
+        return None
+    if details.get("active") is False:
+        return None
+    if details.get("positionAvailable") == 0:
+        return None
+    return details
+
+
+def _walmart_place(details: dict) -> str:
+    names = []
+    primary = details.get("primaryLocation")
+    if isinstance(primary, dict):
+        city = str(primary.get("city") or "").strip().title()
+        state = str(primary.get("stateCode") or "").strip()
+        names.append(", ".join(p for p in (city, state) if p))
+    for row in details.get("additionalLocations") or []:
+        if not isinstance(row, dict):
+            continue
+        city = str(row.get("city") or "").strip().title()
+        state = str(row.get("stateCode") or "").strip()
+        names.append(", ".join(p for p in (city, state) if p) or str(row.get("locationName") or ""))
+    blob = " ".join(names)
+    if re.search(r"(?i)\bremote\b", blob):
+        return "Remote"
+    if names:
+        return f"{names[0]} onsite"
+    return "onsite"
+
+
+def _walmart_currency(details: dict) -> str:
+    plan = details.get("payPlanData")
+    if not isinstance(plan, dict):
+        return ""
+    cref = plan.get("currencyReference")
+    if not isinstance(cref, dict):
+        return ""
+    return str(cref.get("currencyId") or "").strip()
+
+
+def _walmart_to_html(details: dict) -> str:
+    """Turn Walmart careers jobDetails into listing HTML. Never invent pay.
+
+    Omit questionnaires — those are applicant prompts, not listed pay.
+    """
+    company = str(details.get("brand") or "").strip()
+    title = str(details.get("jobPostingTitle") or details.get("title") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    place = _walmart_place(details)
+    _apply_workplace(posting, place)
+    currency = _walmart_currency(details)
+    usd = _usd(currency) if currency else True
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    first = None
+    if usd:
+        for row in details.get("payRange") or []:
+            if not isinstance(row, dict):
+                continue
+            low = _num(row.get("min"))
+            high = _num(row.get("max"))
+            loc = str(row.get("location") or "").strip()
+            if not (low or high):
+                continue
+            lo = int(low) if low and 10_000 <= low <= 2_000_000 else None
+            hi = int(high) if high and 10_000 <= high <= 2_000_000 else None
+            if not (lo or hi):
+                continue
+            if first is None:
+                first = (lo, hi)
+            band = " - ".join(f"${n:,}" for n in (lo, hi) if n)
+            parts.append(f"<p>{loc}: {band}</p>" if loc else f"<p>{band}</p>")
+        if first:
+            value: dict = {"unitText": "YEAR"}
+            lo, hi = first
+            if lo and hi:
+                value["minValue"] = lo
+                value["maxValue"] = hi
+            else:
+                value["value"] = hi or lo
+            posting["baseSalary"] = {"currency": "USD", "value": value}
+    elif currency:
+        posting["baseSalary"] = {"currency": currency, "value": {"unitText": "YEAR"}}
+        parts.append(f"<p>{currency}</p>")
+    for key in ("jobPostingDescription", "description"):
+        val = details.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(unescape(val))
+            break
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2908,6 +3078,7 @@ def _ats_job_url(url: str) -> bool:
         or _jazzhr_ids(url)
         or _dover_ids(url)
         or _gem_ids(url)
+        or _walmart_ids(url)
     )
 
 
@@ -2963,6 +3134,8 @@ def _is_index_page(raw: dict) -> bool:
     if _dover_is_board(url):
         return True
     if _gem_is_board(url):
+        return True
+    if _walmart_is_board(url):
         return True
     return False
 

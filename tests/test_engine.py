@@ -1103,6 +1103,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:applytojob.com",
         "senior ML engineer remote site:app.dover.com",
         "senior ML engineer remote site:jobs.gem.com",
+        "senior ML engineer remote site:careers.walmart.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4788,6 +4789,168 @@ def test_listing_text_gem_graphql_timeout_is_empty(monkeypatch):
         )
     )
     assert html == ""
+
+
+def test_walmart_ids_and_board():
+    from src.engine import (
+        _ats_job_url,
+        _company_from_url,
+        _is_index_page,
+        _walmart_ids,
+        _walmart_is_board,
+        _walmart_job_url,
+    )
+
+    url = "https://careers.walmart.com/us/en/jobs/R-2395925"
+    assert _walmart_ids(url) == "R-2395925"
+    assert _walmart_job_url(url + "?foo=1") == url
+    assert _ats_job_url(url)
+    assert _company_from_url(url) == "Walmart"
+    assert not _walmart_is_board(url)
+    assert _walmart_is_board("https://careers.walmart.com/us/en")
+    assert _is_index_page(
+        {"url": "https://careers.walmart.com/us/en", "title": "Careers", "description": ""}
+    )
+    assert not _is_index_page(
+        {"url": url, "title": "Jobs at Walmart", "description": ""}
+    )
+
+
+def _walmart_next_html(details: dict, job_id: str = "R-1") -> str:
+    payload = {"props": {"pageProps": {"jobId": job_id, "jobDetails": details}}}
+    return f'<script id=__NEXT_DATA__ type="application/json">{json.dumps(payload)}</script>'
+
+
+def test_walmart_details_inactive_is_gone():
+    from src.engine import _walmart_details
+
+    html = _walmart_next_html(
+        {
+            "title": "Staff, Machine Learning Engineer",
+            "brand": "Walmart",
+            "active": False,
+            "positionAvailable": 0,
+            "payRange": [{"location": "Bentonville, Arkansas", "min": "130000.00", "max": "260000.00"}],
+        },
+        "R-2395925",
+    )
+    assert _walmart_details(html, "R-2395925") is None
+    open_html = _walmart_next_html(
+        {
+            "title": "Staff ML",
+            "brand": "Walmart",
+            "active": True,
+            "positionAvailable": 1,
+            "primaryLocation": {"city": "BENTONVILLE", "stateCode": "AR"},
+            "payRange": [{"location": "Bentonville, Arkansas", "min": "130000.00", "max": "260000.00"}],
+            "payPlanData": {"currencyReference": {"currencyId": "USD"}},
+        },
+        "R-1",
+    )
+    job = _walmart_details(open_html, "R-1")
+    assert job and job["brand"] == "Walmart"
+
+
+def test_walmart_to_html_fills_company_office_pay():
+    from src.engine import _apply_listing, _foreign_salary, _walmart_to_html
+
+    html = _walmart_to_html(
+        {
+            "title": "Staff, Machine Learning Engineer",
+            "jobPostingTitle": "Staff, Machine Learning Engineer",
+            "brand": "Walmart",
+            "primaryLocation": {"city": "BENTONVILLE", "stateCode": "AR"},
+            "additionalLocations": [{"city": "Sunnyvale", "stateCode": "CA"}],
+            "payRange": [
+                {"location": "Bentonville, Arkansas", "min": "130000.00", "max": "260000.00"},
+                {"location": "Sunnyvale, California", "min": "169000.00", "max": "338000.00"},
+            ],
+            "payPlanData": {"currencyReference": {"currencyId": "USD"}},
+            "description": "<p>Build models onsite.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://careers.walmart.com/us/en/jobs/R-1",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Walmart"
+    assert opp.title == "Staff, Machine Learning Engineer"
+    assert opp.remote is False
+    assert opp.pay_low == 130_000
+    assert opp.pay_high == 260_000
+    assert opp.score() == 91.0
+    assert _foreign_salary(html) is False
+
+
+def test_walmart_to_html_foreign_currency_is_not_usd():
+    from src.engine import _apply_listing, _foreign_salary, _walmart_to_html
+
+    html = _walmart_to_html(
+        {
+            "title": "Engineer",
+            "brand": "Walmart",
+            "primaryLocation": {"city": "Mexico City", "stateCode": ""},
+            "payRange": [{"min": "500000.00", "max": "700000.00"}],
+            "payPlanData": {"currencyReference": {"currencyId": "MXN"}},
+        }
+    )
+    opp = Opportunity(title="x", url="https://careers.walmart.com/us/en/jobs/R-2")
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
+
+
+def test_listing_text_walmart_inactive_is_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        assert "careers.walmart.com" in url
+        return _walmart_next_html(
+            {
+                "title": "Staff, Machine Learning Engineer",
+                "brand": "Walmart",
+                "active": False,
+                "positionAvailable": 0,
+                "payRange": [{"min": "130000.00", "max": "260000.00"}],
+            },
+            "R-2395925",
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://careers.walmart.com/us/en/jobs/R-2395925")
+    )
+    assert html is None
+
+
+def test_listing_text_walmart_open_reads_next_data(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        return _walmart_next_html(
+            {
+                "title": "Staff ML",
+                "brand": "Walmart",
+                "active": True,
+                "positionAvailable": 2,
+                "primaryLocation": {"city": "BENTONVILLE", "stateCode": "AR"},
+                "payRange": [{"location": "Bentonville, Arkansas", "min": "130000.00", "max": "260000.00"}],
+                "payPlanData": {"currencyReference": {"currencyId": "USD"}},
+            },
+            "R-9",
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://careers.walmart.com/us/en/jobs/R-9"
+    html = asyncio.run(engine._listing_text(url))
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.company == "Walmart"
+    assert opp.pay_high == 260_000
+    assert opp.remote is False
 
 
 def test_listing_plain_text_ignores_script_salaries():
