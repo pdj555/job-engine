@@ -4867,6 +4867,9 @@ def _posting_salary(posting: Optional[dict]):
         ("salary_min", "salary_max"),
         ("compensation_min", "compensation_max"),
         ("min_compensation", "max_compensation"),
+        ("minAmount", "maxAmount"),
+        ("rangeStart", "rangeEnd"),
+        ("lower_bound", "upper_bound"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:

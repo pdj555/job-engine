@@ -6288,6 +6288,39 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_rnm, range_minmax) is True
     assert posting_rnm.pay_low == 180_000
     assert posting_rnm.pay_high == 220_000
+    posting_amt = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "minAmount":180000,"maxAmount":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_ma = Opportunity(title="Engineer", url="https://jobs.example/ld-post-minAmount")
+    assert _apply_listing(posting_ma, posting_amt) is True
+    assert posting_ma.pay_low == 180_000
+    assert posting_ma.pay_high == 220_000
+    posting_rs = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "rangeStart":180000,"rangeEnd":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_range = Opportunity(title="Engineer", url="https://jobs.example/ld-post-rangeStart")
+    assert _apply_listing(posting_range, posting_rs) is True
+    assert posting_range.pay_low == 180_000
+    assert posting_range.pay_high == 220_000
+    posting_lb = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "lower_bound":180000,"upper_bound":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_bound = Opportunity(title="Engineer", url="https://jobs.example/ld-post-lower_bound")
+    assert _apply_listing(posting_bound, posting_lb) is True
+    assert posting_bound.pay_low == 180_000
+    assert posting_bound.pay_high == 220_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6912,6 +6945,16 @@ def test_apply_listing_ignores_non_usd_salary():
     min_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryMin-eur")
     _apply_listing(min_eur, eur_min)
     assert min_eur.pay_high is None
+    eur_amt = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","minAmount":80000,"maxAmount":100000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    amt_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-minAmount-eur")
+    _apply_listing(amt_eur, eur_amt)
+    assert amt_eur.pay_high is None
     eur_comp = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
