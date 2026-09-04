@@ -250,6 +250,21 @@ class Engine:
                     if isinstance(data, dict) and (data.get("name") or data.get("uid")):
                         return _comeet_to_html(data)
             return ""
+        bb = _bamboohr_ids(url)
+        if bb:
+            raw = await fetch(_bamboohr_detail_url(url))
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    return None
+                job = _bamboohr_opening(data)
+                if job:
+                    return _bamboohr_to_html(job, bb[0])
+                return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -611,6 +626,9 @@ def _lever_job_url(url: str) -> str:
     cm = _comeet_job_url(url)
     if cm:
         return cm
+    bb = _bamboohr_job_url(url)
+    if bb:
+        return bb
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -912,6 +930,7 @@ def _search_angles(query: str) -> list[str]:
             "breezy.hr",
             "pinpointhq.com",
             "comeet.com",
+            "bamboohr.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1104,6 +1123,13 @@ def _company_from_url(url: str) -> str | None:
             slug = parts[1]
         else:
             return None
+    elif host.endswith(".bamboohr.com"):
+        labels = host.split(".")
+        slug = labels[0]
+        if slug == "www" and len(labels) > 3:
+            slug = labels[1]
+        if slug in {"www", "app", "careers"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1163,6 +1189,14 @@ def _ats_board_key(url: str) -> Optional[str]:
         if len(parts) >= 2 and parts[0].casefold() == "jobs":
             return f"comeet:{parts[1].casefold()}"
         return None
+    if host.endswith(".bamboohr.com"):
+        labels = host.split(".")
+        slug = labels[0].casefold()
+        if slug == "www" and len(labels) > 3:
+            slug = labels[1].casefold()
+        if slug in {"www", "app", "careers"}:
+            return None
+        return f"bamboohr:{slug}"
     return None
 
 
@@ -2264,6 +2298,120 @@ def _comeet_to_html(data: dict) -> str:
     )
 
 
+_BAMBOOHR_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?([a-z0-9-]+)\.bamboohr\.com/careers/(\d+)"
+)
+
+
+def _bamboohr_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _BAMBOOHR_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1).casefold()
+    if board in {"www", "app", "careers"}:
+        return None
+    return board, m.group(2)
+
+
+def _bamboohr_job_url(url: str) -> Optional[str]:
+    ids = _bamboohr_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.bamboohr.com/careers/{ids[1]}"
+
+
+def _bamboohr_detail_url(url: str) -> Optional[str]:
+    ids = _bamboohr_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.bamboohr.com/careers/{ids[1]}/detail"
+
+
+def _bamboohr_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host in {"bamboohr.com", "www.bamboohr.com"}:
+        return True
+    if not host.endswith(".bamboohr.com"):
+        return False
+    return _bamboohr_ids(url) is None
+
+
+def _bamboohr_opening(data: dict) -> Optional[dict]:
+    if not isinstance(data, dict):
+        return None
+    result = data.get("result")
+    if isinstance(result, dict) and isinstance(result.get("jobOpening"), dict):
+        job = result["jobOpening"]
+    elif isinstance(data.get("jobOpening"), dict):
+        job = data["jobOpening"]
+    elif data.get("jobOpeningName"):
+        job = data
+    else:
+        return None
+    if job.get("jobOpeningName") or job.get("description"):
+        return job
+    return None
+
+
+def _bamboohr_place(job: dict) -> str:
+    lt = job.get("locationType")
+    try:
+        n = int(lt)
+    except (TypeError, ValueError):
+        n = None
+    if n == 1:
+        return "remote"
+    if n == 2:
+        return "hybrid"
+    if n == 0:
+        return "onsite"
+    if isinstance(lt, str) and lt.strip():
+        return lt.strip()
+    loc = job.get("location") if isinstance(job.get("location"), dict) else {}
+    ats = job.get("atsLocation") if isinstance(job.get("atsLocation"), dict) else {}
+    parts = [
+        str(loc.get("city") or ats.get("city") or "").strip(),
+        str(loc.get("state") or ats.get("state") or "").strip(),
+        str(loc.get("addressCountry") or ats.get("country") or "").strip(),
+    ]
+    return ", ".join(p for p in parts if p)
+
+
+def _bamboohr_to_html(job: dict, board: str = "") -> str:
+    """Turn BambooHR detail JSON into listing HTML. Never invent pay.
+
+    Omit formFields — desiredPay is an applicant prompt, not listed compensation.
+    """
+    title = str(job.get("jobOpeningName") or "").strip()
+    company = board.replace("-", " ").replace("_", " ").strip().title() if board else ""
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = str(job.get("employmentStatusLabel") or job.get("employmentType") or "")
+    lower = emp.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    place = _bamboohr_place(job)
+    _apply_workplace(posting, place)
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    comp = job.get("compensation")
+    if isinstance(comp, str) and comp.strip():
+        parts.append(f"<p>{comp.strip()}</p>")
+    desc = job.get("description")
+    if isinstance(desc, str) and desc.strip():
+        parts.append(desc)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2289,6 +2437,7 @@ def _ats_job_url(url: str) -> bool:
         or _breezy_ids(url)
         or _pinpoint_ids(url)
         or _comeet_ids(url)
+        or _bamboohr_ids(url)
     )
 
 
@@ -2336,6 +2485,8 @@ def _is_index_page(raw: dict) -> bool:
     if _pinpoint_is_board(url):
         return True
     if _comeet_is_board(url):
+        return True
+    if _bamboohr_is_board(url):
         return True
     return False
 

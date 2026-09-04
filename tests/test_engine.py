@@ -1020,6 +1020,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:breezy.hr",
         "senior ML engineer remote site:pinpointhq.com",
         "senior ML engineer remote site:comeet.com",
+        "senior ML engineer remote site:bamboohr.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4048,6 +4049,157 @@ def test_listing_text_comeet_missing_position_is_gone(monkeypatch):
         )
     )
     assert any("careers-api" in u for u in seen)
+    assert html is None
+
+
+def test_bamboohr_job_urls_are_not_boards():
+    from src.engine import _bamboohr_detail_url, _is_index_page, _lever_job_url
+
+    job = "https://selectorsoftware.bamboohr.com/careers/157/detail"
+    assert _lever_job_url(job) == "https://selectorsoftware.bamboohr.com/careers/157"
+    assert _bamboohr_detail_url(job) == (
+        "https://selectorsoftware.bamboohr.com/careers/157/detail"
+    )
+    assert not _is_index_page(
+        {"url": job, "title": "selectorsoftware.bamboohr.com", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://sixworks.bamboohr.com/careers/list",
+            "title": "sixworks.bamboohr.com",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://www.bamboohr.com/careers/engineering-it-team",
+            "title": "Engineering & IT Careers | BambooHR",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_bamboohr_detail_not_form_pay(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = {
+        "result": {
+            "jobOpening": {
+                "jobOpeningName": "Product Manager – AIOps",
+                "employmentStatusLabel": "Full-Time",
+                "locationType": 0,
+                "location": {
+                    "city": "Santa Clara",
+                    "state": "California",
+                    "addressCountry": "United States",
+                },
+                "compensation": "$180,000 - $220,000",
+                "description": "<p>Build AIOps products.</p>",
+            },
+            "formFields": {
+                "desiredPay": {
+                    "isRequired": False,
+                    "value": "$17,500",
+                    "label": "Desired Pay",
+                }
+            },
+        }
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return json.dumps(payload)
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://selectorsoftware.bamboohr.com/careers/157"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://selectorsoftware.bamboohr.com/careers/157/detail"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is True
+    assert opp.company == "Selectorsoftware"
+    assert opp.remote is False
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 220_000
+    assert opp.hours_per_week == 40
+    assert "$17,500" not in text
+
+
+def test_listing_text_bamboohr_hybrid_is_office_and_remote_type(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        if url.endswith("/112/detail"):
+            return json.dumps(
+                {
+                    "result": {
+                        "jobOpening": {
+                            "jobOpeningName": "Customer Success Manager",
+                            "employmentStatusLabel": "Full-Time",
+                            "locationType": 2,
+                            "location": {"city": "Santa Clara", "state": "California"},
+                            "compensation": "$130K to $170K",
+                            "description": "<p>Hybrid CSM role.</p>",
+                        }
+                    }
+                }
+            )
+        return json.dumps(
+            {
+                "result": {
+                    "jobOpening": {
+                        "jobOpeningName": "Channel Account Manager",
+                        "employmentStatusLabel": "Full-Time",
+                        "locationType": 1,
+                        "atsLocation": {
+                            "country": "United States",
+                            "state": "New York",
+                            "city": "New York",
+                        },
+                        "compensation": "$225,000 - $260,000",
+                        "description": "<p>Remote, field-based.</p>",
+                    }
+                }
+            }
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    from src.engine import _apply_listing
+
+    hybrid = Opportunity(
+        title="x", url="https://selectorsoftware.bamboohr.com/careers/112"
+    )
+    _apply_listing(
+        hybrid,
+        asyncio.run(engine._listing_text(hybrid.url)),
+    )
+    assert hybrid.remote is False
+    assert hybrid.pay_low == 130_000
+    assert hybrid.pay_high == 170_000
+
+    remote = Opportunity(title="x", url="https://alkira.bamboohr.com/careers/234")
+    _apply_listing(remote, asyncio.run(engine._listing_text(remote.url)))
+    assert remote.remote is True
+    assert remote.pay_low == 225_000
+    assert remote.pay_high == 260_000
+    assert remote.company == "Alkira"
+
+
+def test_listing_text_bamboohr_missing_id_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return None
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://lawsonlundell.bamboohr.com/careers/244")
+    )
+    assert seen == ["https://lawsonlundell.bamboohr.com/careers/244/detail"]
     assert html is None
 
 
