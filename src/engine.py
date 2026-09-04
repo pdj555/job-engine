@@ -863,14 +863,30 @@ def _public_http_url(url: str) -> bool:
     return True
 
 
+_CF_CHALLENGE_RE = re.compile(
+    r"(?is)<title[^>]*>\s*just a moment\.\.\.\s*</title>"
+    r"|cdn-cgi/challenge"
+    r"|cf-browser-verification"
+    r"|cf-challenge-running"
+)
+
+
+def _cloudflare_challenge(html: str) -> bool:
+    """True for a Cloudflare interstitial, not a job listing."""
+    return bool(html and _CF_CHALLENGE_RE.search(html[:8000]))
+
+
 async def _http_get_text(client: httpx.AsyncClient, url: str) -> Optional[str]:
     try:
         resp = await client.get(url)
         if resp.status_code in (404, 410):
             return None
+        text = resp.text
+        if _cloudflare_challenge(text):
+            return None
         if resp.status_code >= 400:
             return ""
-        return resp.text
+        return text
     except Exception:
         return ""
 
@@ -3554,6 +3570,8 @@ def _html_title(html: str) -> str:
 
 def _html_is_index(html: str, url: str) -> bool:
     """Fetched board shells. ATS posting URLs still drop when the HTML title is a board."""
+    if _cloudflare_challenge(html):
+        return True
     title = _html_title(html)
     if not title:
         return False

@@ -2244,6 +2244,49 @@ def test_http_get_text_none_on_404_empty_on_403():
     assert asyncio.run(_http_get_text(_Client(403), "https://jobs.lever.co/x")) == ""
 
 
+def test_http_get_text_cloudflare_challenge_is_gone():
+    from src.engine import _cloudflare_challenge, _html_is_index, _http_get_text
+
+    cf = (
+        "<!DOCTYPE html><html lang=\"en-US\"><head>"
+        "<title>Just a moment...</title></head><body>"
+        "<script src=\"/cdn-cgi/challenge-platform/h/b/orchestrate/jsch/v1\"></script>"
+        "</body></html>"
+    )
+    assert _cloudflare_challenge(cf) is True
+    assert _html_is_index(cf, "https://jobs.uber.com/en/jobs/145860/") is True
+
+    class _Resp:
+        def __init__(self, status: int, body: str):
+            self.status_code = status
+            self.text = body
+
+    class _Client:
+        def __init__(self, status: int, body: str):
+            self.status = status
+            self.body = body
+
+        async def get(self, _url: str):
+            return _Resp(self.status, self.body)
+
+    assert (
+        asyncio.run(_http_get_text(_Client(403, cf), "https://jobs.uber.com/en/jobs/145860/"))
+        is None
+    )
+    assert (
+        asyncio.run(_http_get_text(_Client(200, cf), "https://jobs.uber.com/en/jobs/145860/"))
+        is None
+    )
+    denied = '{"errorCode":"S22","httpStatus":403,"message":"permission denied"}'
+    assert _cloudflare_challenge(denied) is False
+    assert (
+        asyncio.run(
+            _http_get_text(_Client(403, denied), "https://shipt.wd1.myworkdayjobs.com/wday/cxs/x")
+        )
+        == ""
+    )
+
+
 def test_listing_text_none_when_canonical_page_is_gone(monkeypatch):
     engine = Engine()
 
