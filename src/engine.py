@@ -1564,24 +1564,28 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
-    """USD baseSalary from pay_input_ranges. Ignore other currencies."""
+    """Listed baseSalary from pay_input_ranges. Prefer USD; keep stated foreign currency."""
+    foreign = None
     for row in data.get("pay_input_ranges") or []:
         if not isinstance(row, dict):
-            continue
-        if str(row.get("currency_type") or "").upper() not in {"USD", "US", "USA"}:
             continue
         low = _cents_to_annual(row.get("min_cents"))
         high = _cents_to_annual(row.get("max_cents"))
         if not high and not low:
             continue
+        cur = str(row.get("currency_type") or "").upper() or "USD"
         value: dict = {"unitText": "YEAR"}
         if low and high:
             value["minValue"] = low
             value["maxValue"] = high
         else:
             value["value"] = high or low
-        return {"currency": "USD", "value": value}
-    return None
+        blob = {"currency": cur, "value": value}
+        if _usd(cur):
+            return blob
+        if foreign is None:
+            foreign = blob
+    return foreign
 
 
 def _greenhouse_to_html(data: dict) -> str:
@@ -3484,8 +3488,9 @@ _FOREIGN_DOLLAR_RE = re.compile(
     r"|(?<![A-Za-z])(?:C|A)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
-    r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?\s*"
-    r"(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b"
+    r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"
+    r"(?:\s*[—–-]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?)?"
+    r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b"
     r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD)\)",
     re.I | re.S,
 )

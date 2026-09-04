@@ -101,6 +101,8 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>Pay is $180,000 CAD a year</p>") is True
     assert _parse_pay("$160,000 - 200,000 (CAD)") == (None, None)
     assert _foreign_salary("<p>The salary range for this role is $160,000 - 200,000 (CAD)</p>") is True
+    assert _parse_pay("$196,000—$269,500 CAD") == (None, None)
+    assert _foreign_salary("<p>Annual Base Salary$196,000—$269,500 CAD</p>") is True
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
     assert _parse_pay("$15000 to $17000 gross Salary Monthly") == (None, None)
@@ -3349,7 +3351,7 @@ def test_greenhouse_api_html_fills_company_and_pay_range():
 
 
 def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
-    from src.engine import _apply_listing, _greenhouse_to_html
+    from src.engine import _apply_listing, _foreign_salary, _greenhouse_to_html
 
     html = _greenhouse_to_html(
         {
@@ -3390,6 +3392,33 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     skipped = Opportunity(title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/1")
     _apply_listing(skipped, eur_only)
     assert skipped.pay_high is None
+    assert _foreign_salary(eur_only) is True
+
+    cad = Opportunity(
+        title="x",
+        url="https://job-boards.greenhouse.io/samsara/jobs/7746586",
+        remote=True,
+    )
+    cad_html = _greenhouse_to_html(
+        {
+            "company_name": "Samsara",
+            "title": "Lead Machine Learning Engineer - ML Infrastructure",
+            "location": {"name": "Remote - Canada"},
+            "content": "<p>Annual Base Salary$196,000—$269,500 CAD</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 19600000,
+                    "max_cents": 26950000,
+                    "currency_type": "CAD",
+                    "title": "Annual Base Salary",
+                }
+            ],
+        }
+    )
+    assert _foreign_salary(cad_html) is True
+    assert _apply_listing(cad, cad_html) is False
+    assert cad.pay_high is None
+    assert cad.remote is True
 
 
 def test_greenhouse_metadata_scheduled_hours_and_time_type():
