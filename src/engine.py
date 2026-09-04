@@ -373,7 +373,7 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     elif "remote" in raw:
         remote = bool(raw["remote"])
     else:
-        remote = _guess_remote(title, desc)
+        remote = _guess_remote(guess_title, guess_desc)
     opp = Opportunity(
         title=title,
         company=company,
