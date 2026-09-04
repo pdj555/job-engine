@@ -1042,6 +1042,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "hours/week: 24") == 24
     assert _guess_hours("Engineer", "Hours a week: 32") == 32
     assert _guess_hours("Engineer", "Weekly hrs: 32") == 32
+    assert _guess_hours("Engineer", "Hours: 32 per week") == 32
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
@@ -1095,6 +1096,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert a_week.hours_per_week == 32
     assert a_week.score() == 100.0
+    colon = Opportunity(title="Engineer", url="https://jobs.example/hcolon")
+    assert _apply_listing(
+        colon, "<p>$160,000 a year. Hours: 32 per week</p>"
+    ) is True
+    assert colon.hours_per_week == 32
+    assert colon.score() == 100.0
     frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
     assert _apply_listing(
         frac, "<p>$180,000 a year. 37.5 hours per week.</p>"
@@ -11091,6 +11098,57 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(dollar_row, dollars)
     assert dollar_row.pay_low == 180_000
     assert dollar_row.pay_high == 220_000
+    biweek = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "pay_input_ranges": [
+                {
+                    "min": 3000,
+                    "max": 4000,
+                    "currency_type": "USD",
+                    "frequency": "every two weeks",
+                }
+            ],
+        }
+    )
+    biweek_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/25")
+    assert _apply_listing(biweek_row, biweek) is True
+    assert biweek_row.pay_low == 75_000
+    assert biweek_row.pay_high == 100_000
+    cents_bi = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 300000,
+                    "max_cents": 400000,
+                    "currency_type": "USD",
+                    "interval": "every-two-weeks",
+                }
+            ],
+        }
+    )
+    cents_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/26")
+    assert _apply_listing(cents_row, cents_bi) is True
+    assert cents_row.pay_low == 75_000
+    assert cents_row.pay_high == 100_000
+    bare = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "pay_input_ranges": [
+                {"min": 3000, "max": 4000, "currency_type": "USD"}
+            ],
+        }
+    )
+    bare_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/27")
+    _apply_listing(bare_row, bare)
+    assert bare_row.pay_high is None
     year_suffix = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -13988,6 +14046,31 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     ) is True
     assert two.pay_low == 75_000
     assert two.pay_high == 100_000
+    obj = Opportunity(
+        title="x",
+        url="https://clearview.pinpointhq.com/postings/dddddddd-eeee-ffff-0000-111111111111",
+    )
+    assert _apply_listing(
+        obj,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "compensation": {
+                    "min": 3000,
+                    "max": 4000,
+                    "frequency": "every two weeks",
+                },
+                "compensation_currency": "USD",
+                "description": "<p>Office. Full time.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert obj.pay_low == 75_000
+    assert obj.pay_high == 100_000
 
 
 def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):

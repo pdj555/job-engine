@@ -1819,10 +1819,20 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
             continue
         low = _cents_to_annual(row.get("min_cents"))
         high = _cents_to_annual(row.get("max_cents"))
+        unit = None
         if not high and not low:
+            unit = _period_unit(_ats_period(row))
             bound_low, bound_high = _bound_nums(row)
-            low = int(bound_low) if bound_low and 10_000 <= bound_low <= 2_000_000 else None
-            high = int(bound_high) if bound_high and 10_000 <= bound_high <= 2_000_000 else None
+            if bound_low is None and bound_high is None and unit:
+                cents_low, cents_high = _num(row.get("min_cents")), _num(row.get("max_cents"))
+                bound_low = cents_low / 100 if cents_low is not None else None
+                bound_high = cents_high / 100 if cents_high is not None else None
+            if unit:
+                low = int(bound_low) if bound_low else None
+                high = int(bound_high) if bound_high else None
+            else:
+                low = int(bound_low) if bound_low and 10_000 <= bound_low <= 2_000_000 else None
+                high = int(bound_high) if bound_high and 10_000 <= bound_high <= 2_000_000 else None
         if not high and not low:
             spanned = _span_pay_ld(
                 str(row.get("title") or row.get("label") or row.get("text") or "")
@@ -1839,7 +1849,7 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
                 foreign = spanned
             continue
         cur = str(row.get("currency_type") or "").upper() or "USD"
-        value: dict = {"unitText": "YEAR"}
+        value: dict = {"unitText": unit or "YEAR"}
         if low and high:
             value["minValue"] = low
             value["maxValue"] = high
@@ -2911,6 +2921,7 @@ def _pinpoint_job(rows, uuid: str) -> Optional[dict]:
 
 
 def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
+    raw = job.get("compensation")
     nums = (
         _nums(job.get("compensation_minimum"))
         or _nums(job.get("compensation_min"))
@@ -2921,7 +2932,6 @@ def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
     if nums:
         low, high = min(nums), max(nums)
     else:
-        raw = job.get("compensation")
         low = high = None
         if isinstance(raw, dict):
             low, high = _bound_nums(raw)
@@ -2929,7 +2939,10 @@ def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
             return None
     cur = str(job.get("compensation_currency") or "").upper() or "USD"
     value: dict = {}
-    unit = _period_unit(job.get("compensation_frequency") or "")
+    unit = _period_unit(
+        job.get("compensation_frequency")
+        or (_ats_period(raw) if isinstance(raw, dict) else "")
+    )
     if unit:
         value["unitText"] = unit
     if low is not None and high is not None:
@@ -5844,7 +5857,8 @@ _HOURS_RE = re.compile(
     r"(?:wk|week(?:ly)?|workweeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|weekly\s+(?:hours?|hrs?)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)",
+    r"|weekly\s+(?:hours?|hrs?)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|(?:hours?|hrs?)\s*[:=]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
