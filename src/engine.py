@@ -3956,13 +3956,50 @@ def _apply_workplace(posting: dict, place: str) -> None:
         posting["jobLocationType"] = "ON_SITE"
 
 
+def _jsonld_place(posting: dict) -> str:
+    """Workplace label from JobPosting jobLocation. Empty if the posting omits one."""
+    loc = posting.get("jobLocation")
+    rows = loc if isinstance(loc, list) else [loc]
+    names = []
+    for row in rows:
+        if isinstance(row, str) and row.strip():
+            names.append(row.strip())
+            continue
+        if not isinstance(row, dict):
+            continue
+        label = str(row.get("name") or "").strip()
+        addr = row.get("address")
+        if isinstance(addr, list) and addr:
+            addr = addr[0]
+        if isinstance(addr, dict):
+            city = str(addr.get("addressLocality") or "").strip()
+            region = str(addr.get("addressRegion") or "").strip()
+            country = str(addr.get("addressCountry") or "").strip()
+            label = label or ", ".join(p for p in (city, region) if p) or country
+        elif isinstance(addr, str) and addr.strip():
+            label = label or addr.strip()
+        if label:
+            names.append(label)
+    if any(_workplace_remote(n) is True for n in names):
+        return "remote"
+    return next((n for n in names if n), "")
+
+
 def _remote_from_posting(posting: dict) -> Optional[bool]:
     jlt = str(posting.get("jobLocationType") or "").upper().replace("-", "_")
     if "TELECOMMUTE" in jlt:
         return True
     if "ON_SITE" in jlt or "ONSITE" in jlt:
         return False
-    return None
+    place = _jsonld_place(posting)
+    if not place:
+        return None
+    flag = _workplace_remote(place)
+    if flag is not None:
+        return flag
+    if _COUNTRY_ONLY_RE.fullmatch(place.strip()):
+        return None
+    return False
 
 
 _REMOTE_OPTION_RE = re.compile(

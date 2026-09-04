@@ -2677,6 +2677,53 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert country.remote is True
 
 
+def test_jsonld_city_location_is_office_when_type_missing():
+    from src.engine import _apply_listing
+
+    html = """
+    <title>Engineer</title>
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Staff Machine Learning Engineer",
+     "jobLocation":{"@type":"Place","address":{"addressLocality":"Mountain View","addressRegion":"California"}}}
+    </script>
+    <p>Build ML systems. $202,500 - $274,000</p>
+    """
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.intuit.com/job/mountain-view/staff-machine-learning-engineer/27595/87369441616",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.remote is False
+    assert opp.pay_high == 274_000
+
+    remote = Opportunity(title="x", url="https://jobs.example/x")
+    _apply_listing(
+        remote,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":"TELECOMMUTE",
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}}}
+        </script>
+        <p>Build systems. $180,000 - $200,000</p>
+        """,
+    )
+    assert remote.remote is True
+
+    country = Opportunity(title="x", url="https://jobs.example/y", remote=True)
+    _apply_listing(
+        country,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "jobLocation":{"@type":"Place","address":{"addressCountry":"United States"}}}
+        </script>
+        <p>Build systems. $180,000 - $200,000</p>
+        """,
+    )
+    assert country.remote is True
+
+
 def test_ashby_to_html_foreign_summary_is_not_usd():
     from src.engine import _apply_listing, _ashby_to_html, _foreign_salary
 
