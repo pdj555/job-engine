@@ -1446,6 +1446,51 @@ def test_enrich_drops_foreign_salary_keeps_unknown_usd():
     assert unknown.pay_high is None
 
 
+def test_enrich_drops_foreign_listing_even_when_snippet_has_dollars():
+    engine = Engine()
+
+    async def page(url: str) -> str:
+        if "eur" in url:
+            return """
+            <title>Senior ML Engineer</title>
+            <p>€60,000 - €85,000 a year</p>
+            """
+        if "jsonld" in url:
+            return """
+            <script type="application/ld+json">
+            {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+             "baseSalary":{"currency":"EUR","value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+            </script>
+            """
+        return "<title>Staff Engineer</title><p>Apply now. No salary listed.</p>"
+
+    engine._listing_text = page
+    eur = Opportunity(
+        title="EUR",
+        url="https://jobs.example/eur",
+        company="Acme",
+        pay_high=180_000,
+        hours_per_week=40,
+    )
+    jsonld = Opportunity(
+        title="JSON",
+        url="https://jobs.example/jsonld",
+        company="Acme",
+        pay_high=180_000,
+        hours_per_week=40,
+    )
+    unknown = Opportunity(
+        title="Unknown",
+        url="https://jobs.example/unknown",
+        company="Acme",
+        pay_high=90_000,
+    )
+    opps = [eur, jsonld, unknown]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Unknown"]
+    assert unknown.pay_high == 90_000
+
+
 def test_enrich_fetches_when_company_missing_even_if_paid():
     engine = Engine()
     captured: list[str] = []

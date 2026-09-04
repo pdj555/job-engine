@@ -72,8 +72,8 @@ class Engine:
                 if _html_is_index(text, o.url):
                     gone.append(o)
                     continue
-                _apply_listing(o, text)
-                if o.pay is None and _foreign_salary(text):
+                listed = _apply_listing(o, text)
+                if _foreign_salary(text) and not listed:
                     gone.append(o)
             if gone:
                 opps[:] = [o for o in opps if o not in gone]
@@ -1379,8 +1379,11 @@ def _posting_pay(
     return annual_low, annual_high
 
 
-def _apply_listing(opp: Opportunity, html: str) -> None:
-    """Fill fields from JobPosting JSON-LD, then visible listing text. Listing wins."""
+def _apply_listing(opp: Opportunity, html: str) -> bool:
+    """Fill fields from JobPosting JSON-LD, then visible listing text. Listing wins.
+
+    Returns True when this HTML stated USD pay.
+    """
     posting = _job_posting(html)
     listed_pay = False
     if posting:
@@ -1411,8 +1414,10 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
             if high or low:
                 opp.pay_low = low
                 opp.pay_high = high
+                listed_pay = True
     opp.title = _role_title(opp.title)
     opp.efficiency = opp.refined_rate
+    return listed_pay
 
 
 def _html_title(html: str) -> str:
