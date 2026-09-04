@@ -1457,7 +1457,12 @@ _INDEX_URL_RE = re.compile(
     r"|dailyremote\.com/"
     r"|optiveum\.com/"
     r"|salaryexpert\.com/"
-    r"|glassdoor\.com/Salaries/)",
+    r"|glassdoor\.com/Salaries/"
+    r"|jobera\.com/"
+    r"|jobright\.ai/"
+    r"|aijobs\.net/"
+    r"|aijobs\.com/"
+    r"|aijobs\.mlyearning\.org/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(

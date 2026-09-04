@@ -988,6 +988,26 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer | Cloudflare | Hybrid | July 2026",
+                "url": "https://jobera.com/job/cloudflare-senior-machine-learning-engineer-6803af37/",
+                "description": "$262k–$379k",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer, Search & Index - jobright.ai",
+                "url": "https://jobright.ai/jobs/info/6a96d484455eaf6a08c18b9a",
+                "description": "$312K/yr - $351K/yr",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1035,6 +1055,11 @@ def test_index_pages_are_not_opportunities():
         "<title>WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn</title>"
         "<p>Boomerang Healthcare Portland, OR $125,000.00 - $165,000.00</p>",
         "https://www.linkedin.com/jobs/view/4459896965",
+    )
+    assert _html_is_index(
+        "<title>Senior Machine Learning Engineer | Cloudflare | Hybrid</title>"
+        "<p>Agent Harness - Meta Factory$262k–$379k/yr</p>",
+        "https://jobera.com/job/cloudflare-senior-machine-learning-engineer-6803af37/",
     )
     assert not _is_index_page(
         {
@@ -1200,6 +1225,14 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Machine Learning Engineer Salaries",
                 "url": "https://www.glassdoor.com/Salaries/machine-learning-engineer-salary-SRCH_KO0,25.htm",
+            },
+            {
+                "title": "Senior Machine Learning Engineer | Cloudflare | Hybrid",
+                "url": "https://jobera.com/job/cloudflare-senior-machine-learning-engineer-6803af37/",
+            },
+            {
+                "title": "Senior Machine Learning Engineer, Search & Index",
+                "url": "https://jobright.ai/jobs/info/6a96d484455eaf6a08c18b9a",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]
