@@ -3620,8 +3620,12 @@ _PAY_UNITS = {
     "HR": "hour",
     "YEAR": "year",
     "ANNUAL": "year",
+    "ANNUALLY": "year",
     "ANNUM": "year",
+    "YEARLY": "year",
     "YR": "year",
+    "PER_YEAR": "year",
+    "PER YEAR": "year",
     "WEEK": "week",
     "WEEKLY": "week",
     "MONTH": "month",
@@ -3924,7 +3928,13 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
         return int(amount * 24)
     if unit == "month":
         return int(amount * 12)
-    if unit == "year" or (unit is None and 10_000 <= amount <= 2_000_000):
+    if unit == "year":
+        if amount < 1000:
+            amount *= 1000
+        if 10_000 <= amount <= 2_000_000:
+            return int(amount)
+        return None
+    if unit is None and 10_000 <= amount <= 2_000_000:
         return int(amount)
     return None
 

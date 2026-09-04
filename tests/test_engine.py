@@ -3124,6 +3124,54 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
     assert contract.pay_high == 200_000
 
 
+def test_apply_listing_json_ld_yearly_thousands():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":150,"maxValue":180,"unitText":"YEAR"}}}
+    </script>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/ld-k")
+    assert _apply_listing(opp, html) is True
+    assert opp.pay_low == 150_000
+    assert opp.pay_high == 180_000
+    yearly = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":180,"unitText":"YEARLY"}}}
+    </script>
+    """
+    full = Opportunity(title="Engineer", url="https://jobs.example/ld-yearly")
+    assert _apply_listing(full, yearly) is True
+    assert full.pay_high == 180_000
+    dollars = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":150000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    """
+    exact = Opportunity(title="Engineer", url="https://jobs.example/ld-full")
+    assert _apply_listing(exact, dollars) is True
+    assert exact.pay_low == 150_000
+    assert exact.pay_high == 180_000
+    hourly = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    """
+    hour = Opportunity(title="Engineer", url="https://jobs.example/ld-still-hr")
+    assert _apply_listing(hour, hourly) is True
+    assert hour.pay_low == 160_000
+    assert hour.pay_high == 200_000
+
+
 def test_apply_listing_empty_json_ld_salary_falls_back_to_visible_text():
     from src.engine import _apply_listing
 
