@@ -12577,6 +12577,31 @@ def test_rippling_office_pay_range_stays_office():
     assert _apply_listing(year_band, year_html) is True
     assert year_band.pay_low == 180_000
     assert year_band.pay_high == 220_000
+    hour_html = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "workLocations": ["Bellevue, WA"],
+            "description": "<p>Office. Full time.</p>",
+            "payRangeDetails": [
+                {
+                    "location": "Bellevue, WA",
+                    "currency": "USD",
+                    "frequency": "HOURLY",
+                    "rangeStart": "80/hour",
+                    "rangeEnd": "$100 per hour",
+                    "isRemote": False,
+                }
+            ],
+        }
+    )
+    hour_band = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/eeeeeeee-ffff-0000-1111-222222222222",
+    )
+    assert _apply_listing(hour_band, hour_html) is True
+    assert hour_band.pay_low == 160_000
+    assert hour_band.pay_high == 200_000
 
 
 def test_rippling_cad_pay_range_is_foreign():
@@ -13551,6 +13576,28 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert year_sfx.pay_low == 180_000
     assert year_sfx.pay_high == 220_000
+    hour_sfx = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+    )
+    assert _apply_listing(
+        hour_sfx,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "lower_bound": "80/hour",
+                    "upper_bound": "$100 per hour",
+                    "currency_code": "USD",
+                    "salary_range_type": "HOURLY",
+                },
+                "user_provided_description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert hour_sfx.pay_low == 160_000
+    assert hour_sfx.pay_high == 200_000
     dollar = Opportunity(title="x", url="https://app.dover.com/apply/Acme/cccccccc-cccc-cccc-cccc-cccccccccccc")
     assert _apply_listing(
         dollar,
@@ -14292,6 +14339,12 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Because you liked",
         "Continue browsing roles",
         "Keep browsing roles",
+        "Saved for later",
+        "Continue scrolling",
+        "Keep discovering",
+        "Continue discovering",
+        "People also liked",
+        "Because you liked this",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

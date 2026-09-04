@@ -3992,14 +3992,19 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|because\s+you\s+searched"
     r"|because\s+you\s+applied"
-    r"|because\s+you\s+liked"
+    r"|because\s+you\s+liked(?:\s+this)?"
     r"|because\s+you\s+saved(?:\s+this\s+job)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
     r"|recently\s+saved"
     r"|jobs\s+you\s+saved"
+    r"|saved\s+for\s+later"
     r"|keep\s+scrolling"
+    r"|continue\s+scrolling"
+    r"|keep\s+discovering"
+    r"|continue\s+discovering"
     r"|continue\s+looking"
+    r"|people\s+also\s+liked"
     r"|explore\s+(?:similar|related)"
     r"|(?:discover|see|browse)\s+similar"
     r"|others\s+also\s+applied(?:\s+for)?"
@@ -4271,11 +4276,12 @@ def _num(value) -> Optional[float]:
         s = re.sub(r"\s*(?:USD|US)$", "", s, flags=re.I)
         s = re.sub(
             r"(?:\s*(?:USD|US))?(?:"
-            r"\s*/\s*(?:yearly|annual(?:ly)?|year(?!s)|yr|annum)"
-            r"|\s+per\s+(?:yearly|annual(?:ly)?|year(?!s)|yr|annum)"
-            r"|\s+a\s+year(?!s)"
+            r"\s*/\s*(?:yearly|annual(?:ly)?|year(?!s)|yr|annum|hourly|hours?|hrs?|hr|daily|days?|day|diem|weekly|weeks?|week|monthly|months?|month)"
+            r"|\s+per\s+(?:yearly|annual(?:ly)?|year(?!s)|yr|annum|hour|hr|day|diem|week|month)"
+            r"|\s+an?\s+(?:year(?!s)|hour|day|week|month)"
             r"|\s+yearly"
             r"|\s+annual(?:ly)?"
+            r"|\s+hourly"
             r")\s*$",
             "",
             s,
@@ -4311,6 +4317,8 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minPay", "maxPay"),
         ("payMin", "payMax"),
         ("minAmount", "maxAmount"),
+        ("rangeStart", "rangeEnd"),
+        ("lower_bound", "upper_bound"),
     ):
         a_nums = _nums(raw.get(a))
         b_nums = _nums(raw.get(b))
@@ -4586,6 +4594,10 @@ def _salary_blob(salary) -> str:
                 "amount",
                 "minAmount",
                 "maxAmount",
+                "rangeStart",
+                "rangeEnd",
+                "lower_bound",
+                "upper_bound",
             )
             if key in salary
         )
@@ -4646,6 +4658,10 @@ def _nums(value) -> list[float]:
             "amount",
             "minAmount",
             "maxAmount",
+            "rangeStart",
+            "rangeEnd",
+            "lower_bound",
+            "upper_bound",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
