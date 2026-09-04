@@ -630,6 +630,11 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
     assert _guess_remote("Engineer", "lab-based role in South San Francisco") is False
+    assert _guess_remote("Engineer", "this is a lab role") is False
+    assert _guess_remote("Engineer", "this is a laboratory role") is False
+    assert _guess_remote("Engineer", "work from the lab") is False
+    assert _guess_remote("Engineer", "work from our laboratory") is False
+    assert _guess_remote("Engineer", "this is a sales role") is True
     assert _guess_remote("Engineer", "field-based sales role") is False
     assert _guess_remote("Engineer", "This is a headquarters-based role") is False
     assert _guess_remote("Engineer", "HQ-based in Austin") is False
@@ -657,6 +662,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "work from home") is True
     assert _guess_remote("Engineer", "work from home. This is a site-based role") is True
     assert _guess_remote("Engineer", "work from home. This is an on-campus role") is True
+    assert _guess_remote("Engineer", "work from home. this is a lab role") is True
+    assert _guess_remote("Engineer", "work from home. work from the lab") is True
     assert _guess_remote(
         "Engineer", "work from home. This role requires you to be in San Francisco"
     ) is True
@@ -716,6 +723,19 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert oncampus.remote is False
     assert oncampus.pay_high == 180_000
     assert oncampus.score() == 0.7 * (180_000 / (40 * 50))
+    lab = Opportunity(title="Engineer", url="https://jobs.example/lab")
+    assert _apply_listing(
+        lab, "<p>This is a lab role. Salary $180,000</p>"
+    ) is True
+    assert lab.remote is False
+    assert lab.pay_high == 180_000
+    assert lab.score() == 0.7 * (180_000 / (40 * 50))
+    fromlab = Opportunity(title="Engineer", url="https://jobs.example/fromlab")
+    assert _apply_listing(
+        fromlab, "<p>Work from the lab. Salary $180,000</p>"
+    ) is True
+    assert fromlab.remote is False
+    assert fromlab.score() == 0.7 * (180_000 / (40 * 50))
     report = Opportunity(title="Engineer", url="https://jobs.example/report")
     assert _apply_listing(
         report, "<p>Must report to our NYC office. Salary $180,000</p>"
