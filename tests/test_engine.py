@@ -6560,6 +6560,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_minval, posting_qv) is True
     assert posting_minval.pay_low == 180_000
     assert posting_minval.pay_high == 220_000
+    posting_su = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "minValue":80,"maxValue":100,"salary_unit":"HOUR"}
+    </script>
+    <p>Office.</p>
+    """
+    posting_sunit = Opportunity(title="Engineer", url="https://jobs.example/ld-post-salary_unit")
+    assert _apply_listing(posting_sunit, posting_su) is True
+    assert posting_sunit.pay_low == 160_000
+    assert posting_sunit.pay_high == 200_000
     posting_qvs = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -7187,6 +7198,38 @@ def test_apply_listing_ignores_non_usd_salary():
     coded = Opportunity(title="Engineer", url="https://jobs.example/ld-currencycode-eur")
     _apply_listing(coded, code_eur)
     assert coded.pay_high is None
+    snake_code_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency_code":"EUR",
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    snake_coded = Opportunity(title="Engineer", url="https://jobs.example/ld-currency_code-eur")
+    _apply_listing(snake_coded, snake_code_eur)
+    assert snake_coded.pay_high is None
+    qv_code_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"value":{"currencyCode":"EUR","minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    qv_coded = Opportunity(title="Engineer", url="https://jobs.example/ld-value-currencyCode-eur")
+    _apply_listing(qv_coded, qv_code_eur)
+    assert qv_coded.pay_high is None
+    snake_cur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salary_currency":"EUR",
+     "baseSalary":{"@type":"QuantitativeValue","minValue":120000,"maxValue":180000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    snake_salary_cur = Opportunity(title="Engineer", url="https://jobs.example/salary_currency-eur")
+    _apply_listing(snake_salary_cur, snake_cur)
+    assert snake_salary_cur.pay_high is None
     eur_hr = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -11836,6 +11879,20 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(unit_row, unit_text) is True
     assert unit_row.pay_low == 160_000
     assert unit_row.pay_high == 200_000
+    snake_unit = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "unit_text": "HOUR"},
+        }
+    )
+    snake_unit_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/unit-text/engineer",
+    )
+    assert _apply_listing(snake_unit_row, snake_unit) is True
+    assert snake_unit_row.pay_low == 160_000
+    assert snake_unit_row.pay_high == 200_000
     comp = _workable_jobs_to_html(
         {
             "title": "Engineer",

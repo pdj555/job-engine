@@ -831,6 +831,7 @@ def _ats_period(raw: dict) -> str:
         or raw.get("interval")
         or raw.get("frequency")
         or raw.get("unitText")
+        or raw.get("unit_text")
         or raw.get("unit")
         or ""
     )
@@ -4983,7 +4984,13 @@ def _posting_salary(posting: Optional[dict]):
         if not nums:
             return None
         low, high = min(nums), max(nums)
-    unit = _ld_text(posting.get("salaryUnit")) or _ld_text(posting.get("unitText"))
+    unit = (
+        _ld_text(posting.get("salaryUnit"))
+        or _ld_text(posting.get("salary_unit"))
+        or _ld_text(posting.get("unitText"))
+        or _ld_text(posting.get("unit_text"))
+        or _ld_text(posting.get("unit"))
+    )
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -4996,8 +5003,18 @@ def _posting_salary(posting: Optional[dict]):
 
 
 def _currency_of(value) -> Optional[str]:
-    if isinstance(value, dict):
-        return _ld_text(value.get("currency")) or _ld_text(value.get("currencyCode"))
+    if not isinstance(value, dict):
+        return None
+    cur = (
+        _ld_text(value.get("currency"))
+        or _ld_text(value.get("currencyCode"))
+        or _ld_text(value.get("currency_code"))
+    )
+    if cur:
+        return cur
+    nested = value.get("value")
+    if isinstance(nested, dict) and nested is not value:
+        return _currency_of(nested)
     return None
 
 
@@ -5008,7 +5025,9 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return cur
     if not isinstance(posting, dict):
         return None
-    stated = _ld_text(posting.get("salaryCurrency"))
+    stated = _ld_text(posting.get("salaryCurrency")) or _ld_text(
+        posting.get("salary_currency")
+    )
     if stated:
         return stated
     if _salary_has_amount(salary):
