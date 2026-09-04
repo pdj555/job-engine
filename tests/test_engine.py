@@ -7123,6 +7123,49 @@ def test_apply_listing_json_ld_yearly_thousands():
     year_bound = Opportunity(title="Engineer", url="https://jobs.example/ld-bound-leftover-year")
     assert _apply_listing(year_bound, leftover_bound) is True
     assert year_bound.pay_high == 400_000
+    nest_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"salary":{"currency":"USD","min":80,"max":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_salary = Opportunity(title="Engineer", url="https://jobs.example/ld-nest-salary-hour")
+    assert _apply_listing(hour_salary, nest_hour) is True
+    assert hour_salary.pay_low == 160_000
+    assert hour_salary.pay_high == 200_000
+    nest_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"compensation":{"currency":"USD","min":80,"max":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_comp = Opportunity(title="Engineer", url="https://jobs.example/ld-nest-compensation-hour")
+    assert _apply_listing(hour_comp, nest_comp) is True
+    assert hour_comp.pay_low == 160_000
+    assert hour_comp.pay_high == 200_000
+    nest_range = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"salaryRange":{"min":80,"max":100,"frequency":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_range = Opportunity(title="Engineer", url="https://jobs.example/ld-nest-salaryRange-hour")
+    assert _apply_listing(hour_range, nest_range) is True
+    assert hour_range.pay_low == 160_000
+    assert hour_range.pay_high == 200_000
+    leftover_nest = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"salary":{"currency":"USD","min":80,"max":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    year_nest = Opportunity(title="Engineer", url="https://jobs.example/ld-nest-salary-leftover-year")
+    assert _apply_listing(year_nest, leftover_nest) is True
+    assert year_nest.pay_high == 400_000
     leftover_freq = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",

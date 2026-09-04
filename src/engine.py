@@ -4922,44 +4922,12 @@ def _unit_text(salary) -> Optional[str]:
         return None
     if not isinstance(salary, dict):
         return None
-    for key in (
-        "value",
-        "amount",
-        "min",
-        "max",
-        "from",
-        "to",
-        "minValue",
-        "maxValue",
-        "min_value",
-        "max_value",
-        "minimum",
-        "maximum",
-        "low",
-        "high",
-        "lowerBound",
-        "upperBound",
-        "lower_bound",
-        "upper_bound",
-        "rangeStart",
-        "rangeEnd",
-        "range_start",
-        "range_end",
-        "minAmount",
-        "maxAmount",
-        "min_amount",
-        "max_amount",
-    ):
+    for key in _MONEY_NEST_KEYS:
         nest = salary.get(key)
-        if isinstance(nest, dict):
-            raw = _unit_raw(nest)
+        if nest is not salary:
+            raw = _unit_text(nest)
             if raw:
                 return raw
-        if isinstance(nest, list):
-            for item in nest:
-                raw = _unit_raw(item)
-                if raw:
-                    return raw
     return _unit_raw(salary)
 
 
