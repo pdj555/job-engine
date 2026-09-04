@@ -2360,6 +2360,68 @@ def test_ashby_to_html_pay_from_scrapeable_summary():
     assert opp.score() == 100
 
 
+def test_ashby_to_html_city_location_is_office_when_workplace_missing():
+    from src.engine import _ASHBY_JOB_QUERY, _apply_listing, _ashby_to_html
+
+    assert "locationName" in _ASHBY_JOB_QUERY
+    html = _ashby_to_html(
+        {
+            "title": "Staff Machine Learning Engineer",
+            "employmentType": "FullTime",
+            "workplaceType": None,
+            "locationName": "Austin, TX",
+            "descriptionHtml": "<p>Build ML systems. Competitive salary.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/webAI/3f4040c2-e8c4-4e52-b3d5-be0d02e5c6b3",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.remote is False
+    assert "Austin, TX" in html
+
+
+def test_ashby_to_html_remote_location_name_when_workplace_missing():
+    from src.engine import _apply_listing, _ashby_to_html
+
+    html = _ashby_to_html(
+        {
+            "title": "Engineer",
+            "employmentType": "FullTime",
+            "locationName": "Remote, United States",
+            "descriptionHtml": "<p>Build systems.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/acme/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+    )
+    _apply_listing(opp, html)
+    assert opp.remote is True
+
+
+def test_ashby_to_html_workplace_type_wins_over_city_location():
+    from src.engine import _apply_listing, _ashby_to_html
+
+    html = _ashby_to_html(
+        {
+            "title": "Engineer",
+            "employmentType": "FullTime",
+            "workplaceType": "Remote",
+            "locationName": "Austin, TX",
+            "descriptionHtml": "<p>Build systems.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/acme/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+    )
+    _apply_listing(opp, html)
+    assert opp.remote is True
+
+
 def test_apply_listing_reads_workplace_from_listing():
     from src.engine import _apply_listing, _ashby_to_html, _lever_to_html, _workable_jobs_to_html
 

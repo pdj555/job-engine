@@ -901,6 +901,7 @@ query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: Str
     title
     employmentType
     workplaceType
+    locationName
     descriptionHtml
     compensationTierSummary
     scrapeableCompensationSalarySummary
@@ -974,8 +975,15 @@ def _ashby_to_html(data: dict) -> str:
             posting["baseSalary"] = {"currency": "USD", "value": value}
     desc = str(data.get("descriptionHtml") or "")
     place = str(data.get("workplaceType") or "").strip()
-    loc = f"<p>{place}</p>" if place else ""
-    _apply_workplace(posting, place)
+    loc_name = str(data.get("locationName") or "").strip()
+    if place:
+        _apply_workplace(posting, place)
+    elif loc_name:
+        if _workplace_remote(loc_name) is True:
+            _apply_workplace(posting, loc_name)
+        else:
+            _apply_workplace(posting, "onsite")
+    loc = "".join(f"<p>{p}</p>" for p in (place, loc_name) if p)
     return (
         f"<title>{title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
