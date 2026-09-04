@@ -1310,6 +1310,7 @@ _FOREIGN_DOLLAR_RE = re.compile(
     r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b\s*\$?\s*\d"
     r"|(?<![A-Za-z])(?:C|A)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
+    r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?\s*"
     r"(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b",
     re.I | re.S,
