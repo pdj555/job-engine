@@ -6108,13 +6108,13 @@ _HOURS_RE = re.compile(
     r"(?:wk|week(?:ly)?|workweeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|weekly\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|weekly\s+(?:work\s+)?(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:hours?|hrs?)\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*weekly[\s-]+(?:work[\s-]+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
-    r"|(?:hours?|hrs?)\s+of\s+work\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
+    r"|(?:hours?|hrs?)\s+of\s+work\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
