@@ -6227,6 +6227,30 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_mc, min_comp) is True
     assert posting_mc.pay_low == 180_000
     assert posting_mc.pay_high == 220_000
+    nested_comp_obj = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","compensation":{"min":180000,"max":220000}}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_nco = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-compensation-obj"
+    )
+    assert _apply_listing(posting_nco, nested_comp_obj) is True
+    assert posting_nco.pay_low == 180_000
+    assert posting_nco.pay_high == 220_000
+    nested_sal_str = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","salary":"$180,000 - $220,000"}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_nss = Opportunity(title="Engineer", url="https://jobs.example/ld-base-salary-str")
+    assert _apply_listing(posting_nss, nested_sal_str) is True
+    assert posting_nss.pay_low == 180_000
+    assert posting_nss.pay_high == 220_000
     range_minmax = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -7050,6 +7074,18 @@ def test_apply_listing_ignores_non_usd_salary():
     )
     _apply_listing(cmin_snake_eur, eur_cmin_snake)
     assert cmin_snake_eur.pay_high is None
+    eur_comp_obj = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","compensation":{"min":80000,"max":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    comp_obj_eur = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-compensation-obj-eur"
+    )
+    _apply_listing(comp_obj_eur, eur_comp_obj)
+    assert comp_obj_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():

@@ -4338,6 +4338,11 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
             high = max(b_nums)
             if low is None and len(b_nums) >= 2:
                 low = min(b_nums)
+    if low is None and high is None:
+        for key in ("compensation", "salary", "salaryRange", "payRange"):
+            nested = raw.get(key)
+            if isinstance(nested, dict):
+                return _bound_nums(nested)
     return low, high
 
 
@@ -4613,6 +4618,10 @@ def _salary_blob(salary) -> str:
                 "compensation_max",
                 "min_compensation",
                 "max_compensation",
+                "compensation",
+                "salary",
+                "salaryRange",
+                "payRange",
                 "amount",
                 "minAmount",
                 "maxAmount",
@@ -4691,6 +4700,10 @@ def _nums(value) -> list[float]:
             "compensation_max",
             "min_compensation",
             "max_compensation",
+            "compensation",
+            "salary",
+            "salaryRange",
+            "payRange",
             "amount",
             "minAmount",
             "maxAmount",
