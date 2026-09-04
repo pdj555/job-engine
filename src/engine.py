@@ -1557,6 +1557,9 @@ _INDEX_TITLE_RE = re.compile(
     r"|\bjob vacancies\b"
     r"|\bavailable positions\b"
     r"|^life at\b"
+    r"|^meet (?:the|our) team(?:\s*[|\-–—].*)?$"
+    r"|^our (?:team|people)(?:\s*[|\-–—].*)?$"
+    r"|^about (?:the|our) team(?:\s*[|\-–—].*)?$"
     r"|^team(?:\s*[|\-–—].*)?$"
     r"|^why \S+(?:\s*[|\-–—].*)?$"
     r"|\binternships\b"
@@ -3507,7 +3510,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
     r"|/(?:job[-_]?vacancies|available[-_]?positions|vacancies|explore[-_]?careers|hiring)/?$"
-    r"|/(?:internships|university[-_]?recruiting|life[-_]?at(?:[-_][^/]+)?|team)/?$"
+    r"|/(?:internships|university[-_]?recruiting|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people))/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
     re.I,

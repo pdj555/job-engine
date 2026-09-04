@@ -1817,6 +1817,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Meet the Team | Acme",
+                "url": "https://acme.com/meet-the-team",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Our People",
+                "url": "https://acme.com/our-people",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Our Team Lead",
+                "url": "https://jobs.example.com/job/our-team-lead",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Team | Acme",
                 "url": "https://acme.com/team",
                 "description": "$180,000",
@@ -2728,6 +2758,18 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Life at Acme</title><p>$180,000</p>",
         "https://acme.com/life-at-acme",
+    )
+    assert _html_is_index(
+        "<title>Meet the Team | Acme</title><p>$180,000</p>",
+        "https://acme.com/meet-the-team",
+    )
+    assert _html_is_index(
+        "<title>Engineer</title><p>$180,000</p>",
+        "https://acme.com/our-people",
+    )
+    assert not _html_is_index(
+        "<title>Our Team Lead</title><p>$180,000</p>",
+        "https://jobs.example.com/job/our-team-lead",
     )
     assert _html_is_index(
         "<title>Team | Acme</title><p>$180,000</p>",
@@ -5298,6 +5340,8 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Life at Acme</title><p>$180,000 - $270,000</p>"
         if "internships" in url:
             return "<title>Internships | Acme</title><p>$180,000</p>"
+        if "meet-the-team" in url:
+            return "<title>Meet the Team | Acme</title><p>$180,000 - $270,000</p>"
         return ""
 
     engine._listing_text = page
@@ -5321,7 +5365,12 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/internships",
         pay_high=180_000,
     )
-    opps = [keep, ghost, catalog, life, internships]
+    meet = Opportunity(
+        title="Meet the Team | Acme",
+        url="https://acme.com/meet-the-team",
+        pay_high=270_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
