@@ -3513,7 +3513,7 @@ def _compensation_from_raw(
 
 
 _RELATED_JOBS_RE = re.compile(
-    r"(?is)\b(?:similar|related|recommended)\s+jobs\b.*$"
+    r"(?is)\b(?:similar|related|recommended)\s+jobs.*$"
 )
 
 

@@ -6364,8 +6364,15 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     <p>DevOps Engineer ₹6L – ₹9L</p>
     <p>Renewals Manager $422,000 - $502,000</p>
     """
+    glued = (
+        "<title>IT Security Administrator at Bitwarden</title>"
+        "<p>$115,000 - $145,000 a year.</p>"
+        "<p>Similar JobsDrona Pay DevOps Engineer ₹6L – ₹9L Renewals Manager $422,000</p>"
+    )
     assert _parse_pay(_listing_plain_text(html)) == (115_000, 145_000)
+    assert _parse_pay(_listing_plain_text(glued)) == (115_000, 145_000)
     assert _foreign_salary(html) is False
+    assert _foreign_salary(glued) is False
     opp = Opportunity(
         title="IT Security Administrator",
         url="https://wellfound.com/jobs/4335648-it-security-administrator",
