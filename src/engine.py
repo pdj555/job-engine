@@ -541,7 +541,8 @@ def _company_from_title(title: str) -> str | None:
 
 _INDEX_URL_RE = re.compile(
     r"(?:indeed\.com/q-|indeed\.com/jobs\?|linkedin\.com/jobs/(?!view/)"
-    r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q=)",
+    r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q="
+    r"|upwork\.com/freelance-jobs/apply/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b(?!\.)|^hire a freelance\b")

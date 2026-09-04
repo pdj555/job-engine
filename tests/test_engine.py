@@ -372,6 +372,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "AI/ML Engineer - Freelance Job in AI & Machine Learning - Upwork",
+                "url": "https://www.upwork.com/freelance-jobs/apply/Engineer_~022084959075748613623/",
+                "description": "Senior Machine Learning Engineer contract.",
+            }
+        )
+        is None
+    )
 
 
 def test_search_all_drops_index_pages():

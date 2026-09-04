@@ -72,6 +72,26 @@ def test_rank_skips_index_pages():
     assert [o.title for o in ranked] == ["Real"]
 
 
+def test_rank_skips_upwork_apply_gate():
+    ranked = _rank(
+        [
+            {
+                "title": "AI/ML Engineer - Freelance Job",
+                "url": "https://www.upwork.com/freelance-jobs/apply/Engineer_~022084959075748613623/",
+                "pay": 400_000,
+                "hours_per_week": 10,
+            },
+            {
+                "title": "Real",
+                "url": "https://jobs.example/x",
+                "pay": 100_000,
+                "hours_per_week": 40,
+            },
+        ]
+    )
+    assert [o.title for o in ranked] == ["Real"]
+
+
 def test_rank_company_from_title_when_field_missing():
     ranked = _rank(
         [
