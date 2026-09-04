@@ -2930,6 +2930,26 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "See Positions | Acme",
+                "url": "https://acme.com/see-positions",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "See Openings | Acme",
+                "url": "https://acme.com/see-openings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Browse Position: Software Engineer",
                 "url": "https://jobs.example.com/job/browse-position-software-engineer",
                 "description": "$180,000",
@@ -2942,6 +2962,26 @@ def test_index_pages_are_not_opportunities():
             {
                 "title": "Software Engineer",
                 "url": "https://acme.com/browse-positions/senior-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "See Position: Software Engineer",
+                "url": "https://jobs.example.com/job/see-position-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://acme.com/see-positions/senior-engineer",
                 "description": "$180,000",
             }
         )
