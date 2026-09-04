@@ -5903,6 +5903,19 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_nested, nested_ms) is True
     assert posting_nested.pay_low == 180_000
     assert posting_nested.pay_high == 220_000
+    nested_from = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","salaryFrom":180000,"salaryTo":220000}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_nested_from = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-salaryFrom"
+    )
+    assert _apply_listing(posting_nested_from, nested_from) is True
+    assert posting_nested_from.pay_low == 180_000
+    assert posting_nested_from.pay_high == 220_000
     min_k = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6647,6 +6660,18 @@ def test_apply_listing_ignores_non_usd_salary():
     from_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryFrom-eur")
     _apply_listing(from_eur, eur_from)
     assert from_eur.pay_high is None
+    eur_nested_from = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","salaryFrom":80000,"salaryTo":100000}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    nested_from_eur = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-base-salaryFrom-eur"
+    )
+    _apply_listing(nested_from_eur, eur_nested_from)
+    assert nested_from_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -12422,6 +12447,54 @@ def test_listing_text_reads_comeet_api_not_referral_pay(monkeypatch):
     assert opp.pay_high is None
     assert opp.hours_per_week == 40
     assert "$2,000" not in text
+    from src.engine import _comeet_to_html
+
+    paid = Opportunity(
+        title="x",
+        url="https://www.comeet.com/jobs/acme/1.000/engineer/2.000",
+    )
+    assert _apply_listing(
+        paid,
+        _comeet_to_html(
+            {
+                "name": "Engineer",
+                "company_name": "Acme",
+                "employment_type": "Full-time",
+                "workplace_type": "Onsite",
+                "location": {"name": "Austin"},
+                "details": [
+                    {"name": "About", "value": "Account Executive $400,000 - $500,000"},
+                    {"name": "Salary", "value": "$180,000 - $220,000"},
+                    {"name": "Referral reward", "value": "$2,000"},
+                ],
+            }
+        ),
+    ) is True
+    assert paid.pay_low == 180_000
+    assert paid.pay_high == 220_000
+    assert paid.remote is False
+    prompt = Opportunity(
+        title="x",
+        url="https://www.comeet.com/jobs/acme/1.000/engineer/2.001",
+    )
+    _apply_listing(
+        prompt,
+        _comeet_to_html(
+            {
+                "name": "Engineer",
+                "company_name": "Acme",
+                "employment_type": "Full-time",
+                "workplace_type": "Onsite",
+                "location": {"name": "Austin"},
+                "details": [
+                    {"name": "About", "value": "Account Executive $400,000"},
+                    {"name": "Desired Salary", "value": "$180,000 - $220,000"},
+                ],
+            }
+        ),
+    )
+    assert prompt.pay_high != 180_000
+    assert prompt.pay_high != 220_000
 
 
 def test_listing_text_comeet_missing_position_is_gone(monkeypatch):
@@ -13555,6 +13628,9 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Top picks",
         "Continue browsing jobs",
         "Keep browsing jobs",
+        "Current jobs",
+        "Keep exploring jobs",
+        "Continue exploring jobs",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

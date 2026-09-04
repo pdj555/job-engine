@@ -3022,7 +3022,7 @@ def _comeet_token(html: str) -> Optional[str]:
 def _comeet_to_html(data: dict) -> str:
     """Turn Comeet position JSON into listing HTML. Never invent pay.
 
-    Omit referral rewards — those are not listed compensation.
+    Omit referral rewards and desired-salary prompts — those are not listed pay.
     """
     title = str(data.get("name") or "").strip()
     company = str(data.get("company_name") or "").strip()
@@ -3046,15 +3046,22 @@ def _comeet_to_html(data: dict) -> str:
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
+    pay = None
     for item in data.get("details") or []:
         if not isinstance(item, dict):
             continue
         name = str(item.get("name") or "").strip()
         if re.search(r"reward|referr", name, re.I):
             continue
+        if re.fullmatch(r"(?i)(?:desired|expected|target)\s+salary", name):
+            continue
         val = item.get("value")
         if isinstance(val, str) and val.strip():
             parts.append(val)
+            if pay is None and _GH_PAY_META_RE.fullmatch(name):
+                pay = _span_pay_ld(val)
+    if pay:
+        posting["baseSalary"] = pay
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
@@ -3916,7 +3923,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|continue\s+browsing(?:\s+jobs)?"
     r"|more\s+opportunities"
     r"|open\s+(?:positions|roles|jobs)"
-    r"|current\s+(?:openings|roles)"
+    r"|current\s+(?:openings|roles|jobs)"
     r"|view(?:\s+all)?\s+(?:jobs|roles|openings)"
     r"|recommended\s+for\s+you"
     r"|more\s+from\s+this\s+company"
@@ -3964,8 +3971,8 @@ _RELATED_HEADING_RE = re.compile(
     r"|because\s+you\s+viewed"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+jobs)?"
-    r"|keep\s+exploring"
-    r"|continue\s+exploring"
+    r"|keep\s+exploring(?:\s+jobs)?"
+    r"|continue\s+exploring(?:\s+jobs)?"
     r"|based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
     r"|recently\s+applied"
@@ -4221,7 +4228,7 @@ def _num(value) -> Optional[float]:
 
 
 def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
-    """min/max, from/to, minValue/maxValue, minimum/maximum, low/high, or minSalary."""
+    """min/max, from/to, minValue/maxValue, minimum/maximum, low/high, minSalary, or salaryFrom."""
     low = high = None
     for a, b in (
         ("min", "max"),
@@ -4230,6 +4237,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minimum", "maximum"),
         ("low", "high"),
         ("minSalary", "maxSalary"),
+        ("salaryFrom", "salaryTo"),
     ):
         if low is None:
             low = _num(raw.get(a))
@@ -4478,6 +4486,8 @@ def _salary_blob(salary) -> str:
                 "high",
                 "minSalary",
                 "maxSalary",
+                "salaryFrom",
+                "salaryTo",
             )
             if key in salary
         )
@@ -4517,6 +4527,8 @@ def _nums(value) -> list[float]:
             "high",
             "minSalary",
             "maxSalary",
+            "salaryFrom",
+            "salaryTo",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
