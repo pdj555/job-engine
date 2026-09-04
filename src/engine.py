@@ -3928,10 +3928,10 @@ _RELATED_HEADING_RE = re.compile(
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
     r"|opportunities\s+near\s+you"
-    r"|because\s+you\s+searched(?:\s+for)?(?:\s+this(?:\s+(?:job|role))?)?"
-    r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+(?:job|role))?)?)?"
-    r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
-    r"|because\s+you\s+saved(?:\s+this(?:\s+(?:job|role))?)?"
+    r"|because\s+you\s+searched(?:\s+for)?(?:\s+this(?:\s+(?:job|role|position))?)?"
+    r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+(?:job|role|position))?)?)?"
+    r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role|position))?)?"
+    r"|because\s+you\s+saved(?:\s+this(?:\s+(?:job|role|position))?)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
     r"|recently\s+saved(?:\s+jobs)?"
@@ -3955,19 +3955,19 @@ _RELATED_HEADING_RE = re.compile(
     r"|hiring\s+nearby"
     r"|hiring\s+near\s+you"
     r"|top\s+picks"
-    r"|more\s+like\s+this(?:\s+(?:job|role))?"
+    r"|more\s+like\s+this(?:\s+(?:job|role|position))?"
     r"|more\s+like\s+these"
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
-    r"|recently\s+viewed(?:\s+(?:jobs?|roles|positions|listings|opportunities))?"
+    r"|recently\s+viewed(?:\s+(?:jobs?|roles|positions|listings|opportunit(?:y|ies)))?"
     r"|others\s+also\s+viewed"
-    r"|because\s+you\s+viewed(?:\s+this(?:\s+(?:job|role))?)?"
+    r"|because\s+you\s+viewed(?:\s+this(?:\s+(?:job|role|position))?)?"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+(?:jobs|roles))?"
-    r"|keep\s+exploring(?:\s+(?:jobs|roles|positions))?"
-    r"|continue\s+exploring(?:\s+(?:jobs|roles|positions))?"
-    r"|jobs\s+similar\s+to\s+this(?:\s+(?:job|role))?"
+    r"|keep\s+exploring(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
+    r"|continue\s+exploring(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+similar\s+to\s+this(?:\s+(?:job|role|position))?"
     r"|based\s+on\s+your\s+activity"
     r"|jobs\s+based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
@@ -4830,7 +4830,7 @@ def _salary_span(items: list) -> dict:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, then salary aliases, then salaryMin/amount. Skip empty objects."""
+    """baseSalary, then salary aliases, then salaryMin/minValue/amount. Skip empty objects."""
     if not isinstance(posting, dict):
         return None
     for key in (
@@ -4877,6 +4877,11 @@ def _posting_salary(posting: Optional[dict]):
         ("minAmount", "maxAmount"),
         ("rangeStart", "rangeEnd"),
         ("lower_bound", "upper_bound"),
+        ("min", "max"),
+        ("from", "to"),
+        ("minValue", "maxValue"),
+        ("minimum", "maximum"),
+        ("low", "high"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:

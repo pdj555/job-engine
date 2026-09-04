@@ -6395,6 +6395,50 @@ def test_apply_listing_json_ld_yearly_thousands():
     posting_amount = Opportunity(title="Engineer", url="https://jobs.example/ld-post-amount")
     assert _apply_listing(posting_amount, posting_one) is True
     assert posting_amount.pay_high == 180_000
+    posting_mm = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "min":180000,"max":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_minmax = Opportunity(title="Engineer", url="https://jobs.example/ld-post-min")
+    assert _apply_listing(posting_minmax, posting_mm) is True
+    assert posting_minmax.pay_low == 180_000
+    assert posting_minmax.pay_high == 220_000
+    posting_qv = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "minValue":180000,"maxValue":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_minval = Opportunity(title="Engineer", url="https://jobs.example/ld-post-minValue")
+    assert _apply_listing(posting_minval, posting_qv) is True
+    assert posting_minval.pay_low == 180_000
+    assert posting_minval.pay_high == 220_000
+    posting_ft = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "from":180000,"to":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_from = Opportunity(title="Engineer", url="https://jobs.example/ld-post-from")
+    assert _apply_listing(posting_from, posting_ft) is True
+    assert posting_from.pay_low == 180_000
+    assert posting_from.pay_high == 220_000
+    posting_lh = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "low":180000,"high":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_low = Opportunity(title="Engineer", url="https://jobs.example/ld-post-low")
+    assert _apply_listing(posting_low, posting_lh) is True
+    assert posting_low.pay_low == 180_000
+    assert posting_low.pay_high == 220_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -7039,6 +7083,26 @@ def test_apply_listing_ignores_non_usd_salary():
     one_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-amount-eur")
     _apply_listing(one_eur, eur_one)
     assert one_eur.pay_high is None
+    eur_mm = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","min":80000,"max":100000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    mm_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-min-eur")
+    _apply_listing(mm_eur, eur_mm)
+    assert mm_eur.pay_high is None
+    eur_qv = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","minValue":80000,"maxValue":100000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    qv_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-minValue-eur")
+    _apply_listing(qv_eur, eur_qv)
+    assert qv_eur.pay_high is None
     eur_comp = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -15290,6 +15354,17 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Jobs similar to this job",
         "Jobs similar to this role",
         "Recently viewed opportunities",
+        "Because you viewed this position",
+        "Because you applied to this position",
+        "Because you saved this position",
+        "Because you searched this position",
+        "More like this position",
+        "Keep exploring listings",
+        "Continue exploring opportunities",
+        "Roles similar to this",
+        "Opportunities similar to this",
+        "Recently viewed opportunity",
+        "Jobs similar to this position",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
