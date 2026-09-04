@@ -4034,18 +4034,67 @@ def _posting_countries(posting: dict) -> list[str]:
     return countries
 
 
-def _salary_has_amount(salary) -> bool:
-    if isinstance(salary, (int, float, str)):
-        n = _num(salary)
-        return n is not None and n > 0
-    if not isinstance(salary, dict):
-        return False
-    value = salary.get("value")
+def _nums(value) -> list[float]:
+    """Numbers from a salary node. QuantitativeValue.value may be [min, max]."""
+    if isinstance(value, bool) or value is None:
+        return []
+    if isinstance(value, (int, float, str)):
+        n = _num(value)
+        return [n] if n is not None else []
+    if isinstance(value, list):
+        out: list[float] = []
+        for item in value:
+            out.extend(_nums(item))
+        return out
     if isinstance(value, dict):
-        return any(_num(value.get(k)) for k in ("minValue", "maxValue", "value"))
-    if value is not None:
-        return _num(value) is not None
-    return any(_num(salary.get(k)) for k in ("minValue", "maxValue"))
+        out: list[float] = []
+        for key in ("minValue", "maxValue", "value"):
+            if key in value:
+                out.extend(_nums(value.get(key)))
+        return out
+    return []
+
+
+def _salary_has_amount(salary) -> bool:
+    return any(n > 0 for n in _nums(salary))
+
+
+def _unit_text(salary) -> Optional[str]:
+    if not isinstance(salary, dict):
+        return None
+    value = salary.get("value")
+    if isinstance(value, dict) and value.get("unitText"):
+        return str(value.get("unitText"))
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict) and item.get("unitText"):
+                return str(item.get("unitText"))
+    if salary.get("unitText"):
+        return str(salary.get("unitText"))
+    return None
+
+
+def _salary_span(items: list) -> dict:
+    nums: list[float] = []
+    currency = None
+    unit = None
+    for item in items:
+        nums.extend(_nums(item))
+        if isinstance(item, dict):
+            currency = currency or _currency_of(item)
+            unit = unit or _unit_text(item)
+    qv: dict = {}
+    if unit:
+        qv["unitText"] = unit
+    if len(nums) == 1:
+        qv["value"] = nums[0]
+    else:
+        qv["minValue"] = min(nums)
+        qv["maxValue"] = max(nums)
+    blob: dict = {"value": qv}
+    if currency:
+        blob["currency"] = currency
+    return blob
 
 
 def _posting_salary(posting: Optional[dict]):
@@ -4055,12 +4104,12 @@ def _posting_salary(posting: Optional[dict]):
     for key in ("baseSalary", "salary", "estimatedSalary"):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
-        for item in items:
-            if isinstance(item, dict):
-                if _salary_has_amount(item):
-                    return item
-            elif isinstance(item, (int, float, str)) and _salary_has_amount(item):
-                return item
+        found = [item for item in items if _salary_has_amount(item)]
+        if not found:
+            continue
+        if len(found) == 1 or not all(len(_nums(item)) == 1 for item in found):
+            return found[0]
+        return _salary_span(found)
     return None
 
 
@@ -4191,13 +4240,7 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
 
 
 def _salary_unit(salary) -> Optional[str]:
-    if not isinstance(salary, dict):
-        return None
-    value = salary.get("value")
-    raw = value.get("unitText") if isinstance(value, dict) else None
-    if not raw:
-        raw = salary.get("unitText")
-    return _pay_unit(raw)
+    return _pay_unit(_unit_text(salary))
 
 
 def _posting_pay(
@@ -4206,31 +4249,15 @@ def _posting_pay(
     if _posting_foreign(posting):
         return None, None
     salary = _posting_salary(posting)
-    if salary is None:
+    if salary is None or not _usd(_posting_currency(posting, salary)):
         return None, None
-    if isinstance(salary, (int, float, str)):
-        annual = _annualize(_num(salary) or 0, None, hours)
-        if annual and 10_000 <= annual <= 2_000_000:
-            return None, annual
+    nums = _nums(salary)
+    if not nums:
         return None, None
-    if not isinstance(salary, dict) or not _usd(_posting_currency(posting, salary)):
-        return None, None
-    value = salary.get("value")
-    unit = None
-    low = high = None
-    if isinstance(value, dict):
-        unit = _pay_unit(value.get("unitText"))
-        low, high = _num(value.get("minValue")), _num(value.get("maxValue"))
-        if high is None:
-            high = _num(value.get("value"))
-    elif salary.get("minValue") is not None or salary.get("maxValue") is not None:
-        unit = _pay_unit(salary.get("unitText"))
-        low, high = _num(salary.get("minValue")), _num(salary.get("maxValue"))
-        if high is None:
-            high = _num(salary.get("value"))
-    else:
-        high = _num(value)
-        unit = _pay_unit(salary.get("unitText"))
+    unit = _salary_unit(salary)
+    low, high = min(nums), max(nums)
+    if low == high:
+        low = None
     annual_low = _annualize(low, unit, hours) if low is not None else None
     annual_high = _annualize(high, unit, hours) if high is not None else None
     if annual_low and annual_high and annual_low > annual_high:
