@@ -721,6 +721,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Senior Machine Learning Engineer - Acme - Monster",
+                "url": "https://www.monster.com/job-openings/senior-machine-learning-engineer-acme-san-francisco-ca",
+                "description": "$180,000 - $220,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior ML Engineer | Acme | Dice.com",
+                "url": "https://www.dice.com/job-detail/abc123",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer - Acme",
+                "url": "https://www.simplyhired.com/job/abc123",
+                "description": "$180,000 - $220,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Remote Machine Learning Engineer Jobs ($104K-$225K)",
                 "url": "https://www.remoterocketship.com/jobs/machine-learning-engineer/",
                 "description": "Search 546 remote jobs.",
