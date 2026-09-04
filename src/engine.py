@@ -3997,9 +3997,12 @@ def _html_title(html: str) -> str:
 
 _GONE_LISTING_RE = re.compile(
     r"(?i)(?:sorry,\s+)?this\s+job\s+was\s+removed"
-    r"|this\s+(?:job|role|position|posting)\s+is\s+no\s+longer\s+available"
+    r"|this\s+(?:job|role|position|posting)\s+is\s+no\s+longer\s+(?:available|active)"
     r"|this\s+(?:job|role|position)\s+does\s+not\s+exist"
     r"|the\s+job\s+listing\s+no\s+longer\s+exists"
+    r"|(?<!once )(?<!after )(?<!when )this\s+(?:job(?:\s+posting)?|role|position|posting)"
+    r"\s+has\s+(?:been\s+filled|expired)"
+    r"|we(?:'re| are)\s+no\s+longer\s+hiring\s+for\s+this"
 )
 
 

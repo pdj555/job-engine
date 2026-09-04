@@ -3339,6 +3339,29 @@ def test_html_is_gone_removed_listing_banner():
         )
         is False
     )
+    filled = (
+        "<title>Senior ML Engineer - Acme</title>"
+        "<p>This position has been filled.</p>"
+        "<p>$180,000 - $220,000 a year</p>"
+    )
+    assert _html_is_gone(filled) is True
+    assert (
+        _html_is_gone(
+            "<title>Engineer</title>"
+            "<p>Once this position has been filled, the team will grow.</p>"
+            "<p>$180,000 a year</p>"
+        )
+        is False
+    )
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job posting has expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting is no longer active.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>We're no longer hiring for this role.</p>"
+    ) is True
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -3375,6 +3398,32 @@ def test_enrich_drops_removed_listing_html():
     engine._listing_text = page
     keep = Opportunity(title="Keep", url="https://jobs.example/live")
     ghost = Opportunity(title="Ghost", url="https://www.builtin.com/job/removed/1")
+    opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Keep"]
+    assert keep.pay_high == 180_000
+
+
+def test_enrich_drops_filled_listing_with_leftover_pay():
+    engine = Engine()
+
+    async def page(url: str):
+        if "filled" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This position has been filled.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Keep", url="https://jobs.example/live")
+    ghost = Opportunity(
+        title="Ghost",
+        url="https://jobs.example/filled",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [keep, ghost]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
