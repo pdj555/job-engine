@@ -9073,6 +9073,30 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _apply_listing(id_opp, id_de) is False
     assert id_opp.pay_high is None
     assert _foreign_salary(id_de) is True
+    snake_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"address_country":"Germany"}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    snake_opp = Opportunity(title="Engineer", url="https://jobs.example/de-snake")
+    assert _apply_listing(snake_opp, snake_de) is False
+    assert snake_opp.pay_high is None
+    assert _foreign_salary(snake_de) is True
+    snake_value_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"address_country":{"@value":"Germany"}}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    snake_value = Opportunity(title="Engineer", url="https://jobs.example/de-snake-value")
+    assert _apply_listing(snake_value, snake_value_de) is False
+    assert snake_value.pay_high is None
+    assert _foreign_salary(snake_value_de) is True
 
 
 def test_apply_listing_json_ld_amount_without_currency_reads_place_name():
@@ -12032,6 +12056,22 @@ def test_jsonld_city_location_is_office_when_type_missing():
     _apply_listing(opp, html)
     assert opp.remote is False
     assert opp.pay_high == 274_000
+    snake_city = """
+    <title>Engineer</title>
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Staff Machine Learning Engineer",
+     "jobLocation":{"@type":"Place","address":{"address_locality":"Mountain View","address_region":"California"}},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>All other: $100,000 - $120,000</p>
+    """
+    snake_office = Opportunity(
+        title="x", url="https://jobs.example/ld-snake-locality", remote=True
+    )
+    _apply_listing(snake_office, snake_city)
+    assert snake_office.remote is False
+    assert snake_office.pay_low == 180_000
+    assert snake_office.pay_high == 220_000
 
     remote = Opportunity(title="x", url="https://jobs.example/x")
     _apply_listing(

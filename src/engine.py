@@ -4552,15 +4552,23 @@ def _posting_countries(posting: dict) -> list[str]:
                 continue
             if not isinstance(item, dict):
                 continue
-            raw = item.get("addressCountry")
+            raw = item.get("addressCountry") or item.get("address_country")
             for val in raw if isinstance(raw, list) else [raw]:
                 name = _country_label(val)
                 if name:
                     push(name)
                     add_label(name)
-            city = (_ld_text(item.get("addressLocality")) or "").strip()
-            region = (_ld_text(item.get("addressRegion")) or "").strip()
-            country = _country_label(item.get("addressCountry"))
+            city = (
+                _ld_text(item.get("addressLocality") or item.get("address_locality"))
+                or ""
+            ).strip()
+            region = (
+                _ld_text(item.get("addressRegion") or item.get("address_region"))
+                or ""
+            ).strip()
+            country = _country_label(
+                item.get("addressCountry") or item.get("address_country")
+            )
             add_label(", ".join(p for p in (city, region, country) if p))
     return countries
 
@@ -6569,9 +6577,17 @@ def _jsonld_place(posting: dict) -> str:
         if isinstance(addr, list) and addr:
             addr = addr[0]
         if isinstance(addr, dict):
-            city = (_ld_text(addr.get("addressLocality")) or "").strip()
-            region = (_ld_text(addr.get("addressRegion")) or "").strip()
-            country = _country_label(addr.get("addressCountry"))
+            city = (
+                _ld_text(addr.get("addressLocality") or addr.get("address_locality"))
+                or ""
+            ).strip()
+            region = (
+                _ld_text(addr.get("addressRegion") or addr.get("address_region"))
+                or ""
+            ).strip()
+            country = _country_label(
+                addr.get("addressCountry") or addr.get("address_country")
+            )
             label = (
                 label
                 or ", ".join(p for p in (city, region) if p)
