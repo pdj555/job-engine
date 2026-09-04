@@ -3963,13 +3963,10 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+for\s+you"
     r"|opportunities\s+for\s+you"
     r"|(?:positions|listings)\s+for\s+you(?:\s+nearby)?"
-    r"|opportunities\s+in\s+your\s+area"
-    r"|jobs\s+in\s+your\s+area"
-    r"|roles\s+in\s+your\s+area"
-    r"|jobs\s+nearby"
-    r"|nearby\s+jobs"
-    r"|roles\s+near\s+you"
-    r"|opportunities\s+near\s+you"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+in\s+your\s+area"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+nearby"
+    r"|nearby\s+(?:jobs|roles|positions|listings|opportunities)"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+near\s+you"
     r"|because\s+you\s+searched(?:\s+for)?(?:\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?)?"
     r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?)?"
@@ -4308,7 +4305,9 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("min_compensation", "max_compensation"),
         ("minAmount", "maxAmount"),
         ("rangeStart", "rangeEnd"),
+        ("range_start", "range_end"),
         ("lower_bound", "upper_bound"),
+        ("lowerBound", "upperBound"),
     ):
         a_nums = _nums(raw.get(a))
         b_nums = _nums(raw.get(b))
@@ -4679,8 +4678,12 @@ def _salary_blob(salary) -> str:
                 "maxAmount",
                 "rangeStart",
                 "rangeEnd",
+                "range_start",
+                "range_end",
                 "lower_bound",
                 "upper_bound",
+                "lowerBound",
+                "upperBound",
             )
             if key in salary
         )
@@ -4918,7 +4921,9 @@ def _posting_salary(posting: Optional[dict]):
         ("min_compensation", "max_compensation"),
         ("minAmount", "maxAmount"),
         ("rangeStart", "rangeEnd"),
+        ("range_start", "range_end"),
         ("lower_bound", "upper_bound"),
+        ("lowerBound", "upperBound"),
         ("min", "max"),
         ("from", "to"),
         ("minValue", "maxValue"),
@@ -5041,6 +5046,8 @@ _HOUR_KEYS = (
     "weeklyHours",
     "hours_per_week",
     "weekly_hours",
+    "standardWeeklyHours",
+    "scheduledWeeklyHours",
 )
 
 

@@ -1254,6 +1254,28 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert weekly.hours_per_week == 32
     assert weekly.pay_high == 128_000
+    standard = Opportunity(title="Engineer", url="https://jobs.example/ld-standardWeeklyHours")
+    assert _apply_listing(
+        standard,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"standardWeeklyHours":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert standard.hours_per_week == 32
+    assert standard.pay_high == 128_000
+    scheduled = Opportunity(title="Engineer", url="https://jobs.example/ld-scheduledWeeklyHours")
+    assert _apply_listing(
+        scheduled,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"scheduledWeeklyHours":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert scheduled.hours_per_week == 32
+    assert scheduled.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -6450,6 +6472,28 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_bound, posting_lb) is True
     assert posting_bound.pay_low == 180_000
     assert posting_bound.pay_high == 220_000
+    posting_lbc = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "lowerBound":180000,"upperBound":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_bound_c = Opportunity(title="Engineer", url="https://jobs.example/ld-post-lowerBound")
+    assert _apply_listing(posting_bound_c, posting_lbc) is True
+    assert posting_bound_c.pay_low == 180_000
+    assert posting_bound_c.pay_high == 220_000
+    posting_rss = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "range_start":180000,"range_end":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_range_s = Opportunity(title="Engineer", url="https://jobs.example/ld-post-range_start")
+    assert _apply_listing(posting_range_s, posting_rss) is True
+    assert posting_range_s.pay_low == 180_000
+    assert posting_range_s.pay_high == 220_000
     posting_one = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -15869,6 +15913,18 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Positions for you",
         "Listings for you",
         "Listings for you nearby",
+        "Nearby listings",
+        "Nearby roles",
+        "Nearby opportunities",
+        "Nearby positions",
+        "Listings nearby",
+        "Positions nearby",
+        "Roles nearby",
+        "Opportunities nearby",
+        "Listings near you",
+        "Positions near you",
+        "Listings in your area",
+        "Positions in your area",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
