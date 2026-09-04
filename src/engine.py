@@ -3,6 +3,7 @@
 import asyncio
 import json
 import re
+import xml.etree.ElementTree as ET
 from html import unescape
 from typing import Optional
 from urllib.parse import parse_qs, unquote, urlparse
@@ -377,6 +378,15 @@ class Engine:
                 return _ashby_to_html(posting)
         if _ashby_is_board(url):
             return None
+        pn = _personio_ids(url)
+        if pn:
+            raw = await fetch(_personio_xml_url(url))
+            if raw:
+                pos = _personio_position(raw, pn)
+                if pos is None:
+                    return None
+                if pos:
+                    return _personio_to_html(pos)
         html = await fetch(_lever_job_url(url))
         if html is None:
             return None
@@ -1446,7 +1456,7 @@ _INDEX_TITLE_RE = re.compile(
     r"(?i)^hire\b|\bcurrent openings\b"
 )
 _JOBS_WORD_RE = re.compile(r"(?i)\bjobs\b(?!\.)(?! by workable)")
-_ROLE_JOBS_AT_RE = re.compile(r"(?i).+\bjobs at \S")
+_ROLE_JOBS_AT_RE = re.compile(r"(?i).+\bjobs (?:at|bei) \S")
 
 
 def _title_is_index(title: str) -> bool:
@@ -2037,11 +2047,88 @@ def _personio_ids(url: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
+def _personio_xml_url(url: str) -> Optional[str]:
+    if not _personio_ids(url):
+        return None
+    host = (urlparse(url).hostname or "").casefold()
+    return f"https://{host}/xml"
+
+
 def _personio_is_board(url: str) -> bool:
     host = (urlparse(url or "").hostname or "").casefold()
     if "jobs.personio." not in host:
         return False
     return _personio_ids(url) is None
+
+
+def _personio_position(xml: str, jid: str) -> Optional[dict]:
+    """Position dict, None if the board XML omits this id, {} if XML is unusable."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return {}
+    needle = str(jid or "").strip()
+    found = False
+    for pos in root.iter("position"):
+        found = True
+        if (pos.findtext("id") or "").strip() != needle:
+            continue
+        offices = []
+        office = (pos.findtext("office") or "").strip()
+        if office:
+            offices.append(office)
+        extras = pos.find("additionalOffices")
+        if extras is not None:
+            for el in extras.findall("office"):
+                label = (el.text or "").strip()
+                if label:
+                    offices.append(label)
+        descs = []
+        for block in pos.findall("jobDescriptions/jobDescription/value"):
+            text = block.text or ""
+            for child in list(block):
+                text += ET.tostring(child, encoding="unicode")
+                text += child.tail or ""
+            text = text.strip()
+            if text:
+                descs.append(text)
+        return {
+            "name": (pos.findtext("name") or "").strip(),
+            "subcompany": (pos.findtext("subcompany") or "").strip(),
+            "offices": offices,
+            "schedule": (pos.findtext("schedule") or "").strip(),
+            "descriptions": descs,
+        }
+    if found or root.tag.endswith("workzag-jobs"):
+        return None
+    return {}
+
+
+def _personio_to_html(pos: dict) -> str:
+    """Turn Personio XML position into listing HTML. Never invent pay."""
+    title = str(pos.get("name") or "").strip()
+    company = str(pos.get("subcompany") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    sched = str(pos.get("schedule") or "").lower().replace("_", " ").replace("-", " ")
+    if "part" in sched and "full" not in sched:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in sched and "part" not in sched:
+        posting["employmentType"] = "FULL_TIME"
+    offices = pos.get("offices") if isinstance(pos.get("offices"), list) else []
+    labels = [str(o).strip() for o in offices if str(o).strip()]
+    _apply_workplace(posting, *labels)
+    parts = [f"<p>{label}</p>" for label in labels]
+    for desc in pos.get("descriptions") or []:
+        if isinstance(desc, str) and desc.strip():
+            parts.append(desc)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
 
 
 _RECRUITEE_JOB_RE = re.compile(

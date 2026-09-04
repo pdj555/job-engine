@@ -4292,6 +4292,172 @@ def test_teamtailor_and_personio_job_urls_are_not_boards():
             "description": "",
         }
     )
+    assert not _is_index_page(
+        {
+            "url": "https://nunatak.jobs.personio.de/job/2724247?language=de",
+            "title": "(Senior) Machine Learning Engineer (m/w/d) | Jobs bei The Nunatak Group GmbH",
+            "description": "",
+        }
+    )
+
+
+def _personio_xml(positions) -> str:
+    rows = []
+    for pos in positions:
+        extras = "".join(
+            f"<office>{office}</office>" for office in pos.get("additionalOffices") or []
+        )
+        extra_xml = (
+            f"<additionalOffices>{extras}</additionalOffices>" if extras else ""
+        )
+        descs = "".join(
+            f"<jobDescription><name>x</name><value>{d}</value></jobDescription>"
+            for d in pos.get("descriptions") or []
+        )
+        rows.append(
+            "<position>"
+            f"<id>{pos['id']}</id>"
+            f"<subcompany>{pos.get('subcompany') or ''}</subcompany>"
+            f"<office>{pos.get('office') or ''}</office>"
+            f"{extra_xml}"
+            f"<name>{pos.get('name') or ''}</name>"
+            f"<jobDescriptions>{descs}</jobDescriptions>"
+            f"<schedule>{pos.get('schedule') or ''}</schedule>"
+            "</position>"
+        )
+    return '<?xml version="1.0" encoding="UTF-8"?><workzag-jobs>' + "".join(rows) + "</workzag-jobs>"
+
+
+def test_listing_text_reads_personio_xml_remote_office(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    xml = _personio_xml(
+        [
+            {
+                "id": "2774857",
+                "subcompany": "FINNOFLEET P-D-F GmbH",
+                "office": "Berlin",
+                "additionalOffices": ["Remote deutschlandweit"],
+                "name": "AI Engineer (m/w/d) – Machine Learning &amp; GenAI",
+                "descriptions": ["<p>Build AI.</p>"],
+                "schedule": "full-time",
+            }
+        ]
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return xml
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://finnofleet.jobs.personio.de/job/2774857?language=de"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://finnofleet.jobs.personio.de/xml"]
+    from src.engine import _apply_listing, _html_is_index
+
+    assert _html_is_index(text, url) is False
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is False
+    assert opp.company == "FINNOFLEET P-D-F GmbH"
+    assert opp.remote is True
+    assert opp.hours_per_week == 40
+    assert "Build AI" in text
+
+
+def test_personio_city_offices_stay_office():
+    from src.engine import _apply_listing, _personio_to_html
+
+    html = _personio_to_html(
+        {
+            "name": "(Senior) Machine Learning Engineer (m/w/d)",
+            "subcompany": "The Nunatak Group GmbH",
+            "offices": ["München", "Berlin"],
+            "schedule": "full-time",
+            "descriptions": ["<p>Consulting.</p>"],
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://nunatak.jobs.personio.de/job/2724247?language=de",
+    )
+    assert _apply_listing(opp, html) is False
+    assert opp.company == "The Nunatak Group GmbH"
+    assert opp.remote is False
+
+
+def test_listing_text_personio_xml_missing_id_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return _personio_xml(
+            [
+                {
+                    "id": "1111111",
+                    "name": "Other role",
+                    "office": "Berlin",
+                    "subcompany": "Acme",
+                }
+            ]
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://acme.jobs.personio.de/job/2774857")
+    )
+    assert seen == ["https://acme.jobs.personio.de/xml"]
+    assert html is None
+
+
+def test_listing_text_personio_xml_404_falls_back_to_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if url.endswith("/xml"):
+            return None
+        return (
+            "<title>Senior AI Engineer (f/m/d) | Jobs at alpas</title>"
+            '<script type="application/ld+json">'
+            '{"@type":"JobPosting","title":"Senior AI Engineer (f/m/d)",'
+            '"hiringOrganization":{"name":"alpas"}}'
+            "</script><p>Berlin office.</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://alpas-gmbh.jobs.personio.de/job/2566758?language=en"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == [
+        "https://alpas-gmbh.jobs.personio.de/xml",
+        url,
+    ]
+    from src.engine import _apply_listing, _html_is_index
+
+    assert _html_is_index(text, url) is False
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, text)
+    assert opp.company == "alpas"
+
+
+def test_html_is_index_keeps_personio_jobs_bei_role_title():
+    from src.engine import _html_is_index
+
+    html = (
+        "<title>(Senior) Machine Learning Engineer (m/w/d) | "
+        "Jobs bei The Nunatak Group GmbH</title><p>München</p>"
+    )
+    assert (
+        _html_is_index(
+            html, "https://nunatak.jobs.personio.de/job/2724247?language=de"
+        )
+        is False
+    )
+    assert _html_is_index(
+        "<title>Jobs bei The Nunatak Group GmbH</title><p>Current openings</p>",
+        "https://nunatak.jobs.personio.de/",
+    )
 
 
 def test_recruitee_job_urls_are_not_boards():
