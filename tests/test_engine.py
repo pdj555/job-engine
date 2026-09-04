@@ -447,6 +447,9 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
         "euro 80k",
         "pounds 80,000",
         "pounds 80k",
+        "80000 euros",
+        "80000 euro",
+        "80000 pounds",
     ):
         assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
         assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
@@ -461,6 +464,12 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     )
     assert listed_euro is False
     assert euro.pay_high is None
+    euros = Opportunity(title="Engineer", url="https://jobs.example/eu2")
+    listed_euros = _apply_listing(
+        euros, "<p>Salary 80000 euros. Account Executive $400,000</p>"
+    )
+    assert listed_euros is False
+    assert euros.pay_high is None
 
 
 def test_foreign_salary_detects_mxn_cad_and_salario_dollars():

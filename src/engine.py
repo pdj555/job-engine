@@ -4458,7 +4458,7 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\bPHP\s*['’]?(?:\d{1,3}(?:[,'’.\s]\d{3}){1,2}|\d{5,7}|\d{2,3}(?:\.\d+)?\s*k\b)"
     r"|\b(?:RM|Rp)\s*['’]?(?:\d{1,3}(?:[,'’.\s]\d{3}){1,2}|\d{5,7}|\d{2,3}(?:\.\d+)?\s*k\b)"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
-    r"|\d{5,7}\s*(?:EUR|GBP)\b"
+    r"|\d{5,7}\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS|CZK|TRY|RON|BGN|THB|TWD|PHP|MYR|IDR|RUB|UAH|ISK|HRK|VND|NGN|PKR|BDT|LKR|SAR|QAR|EGP|KES|GHS|KWD|BHD|OMR|JOD|RSD|GEL|KZT|TND|DZD|BAM|AZN|MDL|MKD|BYN|NPR|UZS|KGS|MMK)\b"
     r"|\d{5,7}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS|CZK|TRY|RON|BGN|THB|TWD|PHP|MYR|IDR|RUB|UAH|ISK|HRK|VND|NGN|PKR|BDT|LKR|SAR|QAR|EGP|KES|GHS|KWD|BHD|OMR|JOD|RSD|GEL|KZT|TND|DZD|BAM|AZN|MDL|MKD|BYN|NPR|UZS|KGS|MMK)\b"
