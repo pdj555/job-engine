@@ -65,6 +65,9 @@ class Engine:
                     self._http_client = None
             gone = []
             for o, text in zip(missing, texts):
+                if text is None:
+                    gone.append(o)
+                    continue
                 if not isinstance(text, str) or not text:
                     continue
                 if _html_is_index(text, o.url):
@@ -75,12 +78,12 @@ class Engine:
                 opps[:] = [o for o in opps if o not in gone]
         _unify_board_companies(opps)
 
-    async def _listing_text(self, url: str) -> str:
+    async def _listing_text(self, url: str) -> Optional[str]:
         if not _public_http_url(url):
             return ""
         client = getattr(self, "_http_client", None)
 
-        async def fetch(target: str) -> str:
+        async def fetch(target: str) -> Optional[str]:
             if client is not None:
                 return await _http_get_text(client, target)
             try:
@@ -106,7 +109,7 @@ class Engine:
         md = _workable_md_url(url)
         if md:
             raw = await fetch(md)
-            if raw.lstrip().startswith("#"):
+            if raw and raw.lstrip().startswith("#"):
                 return _workable_to_html(raw)
         jobs_api = _workable_jobs_api_url(url)
         if jobs_api:
@@ -444,9 +447,11 @@ def _public_http_url(url: str) -> bool:
     return True
 
 
-async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
+async def _http_get_text(client: httpx.AsyncClient, url: str) -> Optional[str]:
     try:
         resp = await client.get(url)
+        if resp.status_code in (404, 410):
+            return None
         if resp.status_code >= 400:
             return ""
         return resp.text

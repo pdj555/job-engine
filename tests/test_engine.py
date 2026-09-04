@@ -1418,6 +1418,81 @@ def test_enrich_drops_fetched_board_index_html():
     assert [o.title for o in opps] == ["Real"]
 
 
+def test_http_get_text_none_on_404_empty_on_403():
+    from src.engine import _http_get_text
+
+    class _Resp:
+        def __init__(self, status: int, body: str):
+            self.status_code = status
+            self.text = body
+
+    class _Client:
+        def __init__(self, status: int):
+            self.status = status
+
+        async def get(self, _url: str):
+            return _Resp(self.status, "x" * 1000)
+
+    assert asyncio.run(_http_get_text(_Client(404), "https://jobs.lever.co/x")) is None
+    assert asyncio.run(_http_get_text(_Client(410), "https://jobs.lever.co/x")) is None
+    assert asyncio.run(_http_get_text(_Client(403), "https://jobs.lever.co/x")) == ""
+
+
+def test_listing_text_none_when_canonical_page_is_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, _url: str):
+        return None
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.lever.co/provectus/76640225-4aa7-45a3-bcdc-cb156271057b"
+        )
+    )
+    assert html is None
+
+
+def test_listing_text_greenhouse_api_404_falls_back_to_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return None
+        return "<title>Senior ML at Reddit</title><p>$180,000</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://job-boards.greenhouse.io/reddit/jobs/6960831")
+    )
+    assert seen[0] == "https://boards-api.greenhouse.io/v1/boards/reddit/jobs/6960831"
+    assert seen[1] == "https://job-boards.greenhouse.io/reddit/jobs/6960831"
+    assert html and "$180,000" in html
+
+
+def test_enrich_drops_http_404_listings_keeps_empty_fetches():
+    engine = Engine()
+
+    async def page(url: str):
+        if "gone" in url:
+            return None
+        if "thin" in url:
+            return ""
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    priced = Opportunity(title="Priced", url="https://jobs.example/paid")
+    ghost = Opportunity(title="Ghost", url="https://jobs.lever.co/gone/abc")
+    thin = Opportunity(title="Thin", url="https://jobs.example/thin")
+    opps = [priced, ghost, thin]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Priced", "Thin"]
+    assert priced.pay_high == 180_000
+    assert thin.pay_high is None
+
+
 def test_greenhouse_api_url_from_job_board_link():
     from src.engine import _greenhouse_api_url
 
