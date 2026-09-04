@@ -5189,6 +5189,12 @@ _HOUR_KEYS = (
 
 
 def _hours_from_node(work) -> Optional[int]:
+    if isinstance(work, list):
+        for item in work:
+            n = _hours_from_node(item)
+            if n is not None:
+                return n
+        return None
     n = _num(work)
     if n is None and isinstance(work, dict):
         n = (
