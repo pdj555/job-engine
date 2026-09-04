@@ -5206,6 +5206,42 @@ def test_html_is_gone_removed_listing_banner():
         "<p>Applications removed from consideration stay on file.</p>"
         "<p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting has been archived.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job has been archived.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This requisition has been archived.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting has been archived, we will notify you.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job doesn't exist.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting no longer exists.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This vacancy no longer exists.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position no longer exists.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role is no longer live.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role will not exist until next year.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5352,6 +5388,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>Position has been removed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "archived" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This posting has been archived.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "doesnt-exist" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This job doesn't exist.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -5514,6 +5562,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    archived = Opportunity(
+        title="Archived",
+        url="https://jobs.example/archived",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    doesnt_exist = Opportunity(
+        title="DoesntExist",
+        url="https://jobs.example/doesnt-exist",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -5531,6 +5591,8 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         role_ended,
         discontinued,
         been_removed,
+        archived,
+        doesnt_exist,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
