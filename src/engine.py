@@ -4932,6 +4932,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|commute\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|in(?:to)?\s+the\s+offices?\b"
     r"|in\s+our\s+(?:\S+\s+){0,4}offices?\b"
+    r"|come\s+(?:in)?to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b(?!\s+hours)"
     r"|in[-\s]person\s+(?:role|position|job)\b"
     r"|work\s+in[-\s]person\b"
     r"|in[-\s]person\s+in\b"
