@@ -817,7 +817,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/9" in [r["url"] for r in results]
+    assert "https://jobs.example/10" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -828,6 +828,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote freelance contract",
         "senior ML engineer remote site:greenhouse.io",
         "senior ML engineer remote site:jobs.lever.co",
+        "senior ML engineer remote site:jobs.eu.lever.co",
         "senior ML engineer remote site:jobs.ashbyhq.com",
         "senior ML engineer remote site:jobs.workable.com",
         "senior ML engineer remote site:apply.workable.com",
@@ -957,6 +958,17 @@ def test_heuristic_company_from_lever_prefix():
         }
     )
     assert h.company == "Lyra Health"
+
+
+def test_heuristic_lever_requisition_suffix_is_not_company():
+    h = _heuristic_opportunity(
+        {
+            "title": "IT Network Engineer II - 936",
+            "url": "https://jobs.eu.lever.co/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7",
+            "description": "",
+        }
+    )
+    assert h.company == "Quantinuum"
 
 
 def test_heuristic_company_from_ashby_at():
@@ -1846,6 +1858,69 @@ def test_listing_text_fetches_lever_job_not_apply_form(monkeypatch):
     assert opp.pay_low == 159_300
     assert opp.pay_high == 219_245
     assert opp.hours_per_week == 40
+
+
+def test_lever_api_url_uses_eu_host():
+    from src.engine import _lever_api_url
+
+    assert _lever_api_url(
+        "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply"
+    ) == "https://api.lever.co/v0/postings/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
+    assert _lever_api_url(
+        "https://jobs.eu.lever.co/prima/cc0b6018-ef61-453f-8201-ab5e6db53e31"
+    ) == "https://api.eu.lever.co/v0/postings/prima/cc0b6018-ef61-453f-8201-ab5e6db53e31"
+    assert _lever_api_url(
+        "https://jobs.eu.lever.co/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7/apply"
+    ) == "https://api.eu.lever.co/v0/postings/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7"
+    assert _lever_api_url("https://jobs.eu.lever.co/prima") is None
+
+
+def test_listing_text_reads_lever_eu_api(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if "api.eu.lever.co" in url:
+            return json.dumps(
+                {
+                    "id": "753dc869-e097-4ae9-89d1-81cf56de46a7",
+                    "text": "IT Network Engineer II",
+                    "workplaceType": "remote",
+                    "categories": {"commitment": "Full-time"},
+                    "salaryRange": {
+                        "min": 86000,
+                        "max": 108000,
+                        "currency": "USD",
+                        "interval": "per-year-salary",
+                    },
+                    "description": "<p>Run the network.</p>",
+                }
+            )
+        return "<title>Jobs at Quantinuum</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.eu.lever.co/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7"
+        )
+    )
+    assert seen == [
+        "https://api.eu.lever.co/v0/postings/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.eu.lever.co/quantinuum/753dc869-e097-4ae9-89d1-81cf56de46a7",
+    )
+    _apply_listing(opp, html)
+    assert opp.title == "IT Network Engineer II"
+    assert opp.pay_low == 86_000
+    assert opp.pay_high == 108_000
+    assert opp.remote is True
+    assert opp.score() == 54.0
+    assert opp.company == "Quantinuum"
 
 
 def test_apply_listing_company_from_html_title():

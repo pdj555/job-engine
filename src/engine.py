@@ -135,7 +135,7 @@ class Engine:
                 except json.JSONDecodeError:
                     data = None
                 if isinstance(data, dict) and (data.get("text") or data.get("id")):
-                    return _lever_to_html(data)
+                    return _lever_to_html(data, _company_from_url(url))
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -496,7 +496,8 @@ def _lever_job_url(url: str) -> str:
 
 
 _LEVER_JOB_RE = re.compile(
-    r"(?i)https?://jobs\.lever\.co/([^/]+)/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+    r"(?i)https?://(jobs(?:\.[a-z]+)?)\.lever\.co/([^/]+)/"
+    r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 )
 _LEVER_PAY_UNITS = (
     ("hour", "HOUR"),
@@ -510,13 +511,20 @@ def _lever_api_url(url: str) -> Optional[str]:
     m = _LEVER_JOB_RE.search(_lever_job_url(url) or "")
     if not m:
         return None
-    return f"https://api.lever.co/v0/postings/{m.group(1)}/{m.group(2)}"
+    host, board, jid = m.group(1).casefold(), m.group(2), m.group(3)
+    if host == "jobs":
+        api = "api.lever.co"
+    else:
+        api = f"api.{host.split('.', 1)[1]}.lever.co"
+    return f"https://{api}/v0/postings/{board}/{jid}"
 
 
-def _lever_to_html(data: dict) -> str:
+def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
     """Turn Lever posting JSON into listing HTML. Never invent pay."""
     title = str(data.get("text") or "").strip()
     posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
     cats = data.get("categories")
     if isinstance(cats, dict):
         commit = str(cats.get("commitment") or "").lower()
@@ -750,6 +758,7 @@ def _search_angles(query: str) -> list[str]:
         for site in (
             "greenhouse.io",
             "jobs.lever.co",
+            "jobs.eu.lever.co",
             "jobs.ashbyhq.com",
             "jobs.workable.com",
             "apply.workable.com",
@@ -875,8 +884,8 @@ def _company_from_title(title: str, url: str = "") -> str | None:
             return name
     host = (urlparse(url).hostname or "").casefold()
     if host.endswith("lever.co"):
-        m = re.match(r"^(.+?)\s+[-–—]\s+\S", t)
-        if m:
+        m = re.match(r"^(.+?)\s+[-–—]\s+(\S.*)$", t)
+        if m and not re.fullmatch(r"\d+", m.group(2).strip()):
             name = _clean_company_name(m.group(1))
             if name:
                 return name
