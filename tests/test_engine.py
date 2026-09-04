@@ -34,6 +34,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         250_000,
     )
     assert _parse_pay("$180K $200K") == (180_000, 200_000)
+    assert _parse_pay("Salary: $157-200kApplicants must be authorized") == (
+        157_000,
+        200_000,
+    )
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
@@ -817,7 +821,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/10" in [r["url"] for r in results]
+    assert "https://jobs.example/11" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -832,6 +836,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:jobs.ashbyhq.com",
         "senior ML engineer remote site:jobs.workable.com",
         "senior ML engineer remote site:apply.workable.com",
+        "senior ML engineer remote site:jobs.smartrecruiters.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -2735,6 +2740,129 @@ def test_listing_text_reads_greenhouse_embed_via_api(monkeypatch):
     assert opp.company == "Reddit"
     assert opp.pay_high == 180_000
     assert opp.remote is True
+
+
+def test_smartrecruiters_api_url_from_job_link():
+    from src.engine import (
+        _is_index_page,
+        _lever_job_url,
+        _smartrecruiters_api_url,
+    )
+
+    api = "https://api.smartrecruiters.com/v1/companies/Socotec/postings/744000141322430"
+    assert (
+        _smartrecruiters_api_url(
+            "https://jobs.smartrecruiters.com/Socotec/744000141322430-applied-ai-engineer"
+        )
+        == api
+    )
+    assert _lever_job_url(
+        "https://jobs.smartrecruiters.com/Socotec/744000141322430-applied-ai-engineer"
+    ) == "https://jobs.smartrecruiters.com/Socotec/744000141322430"
+    assert _is_index_page(
+        {"url": "https://jobs.smartrecruiters.com/Socotec", "title": "SOCOTEC", "description": ""}
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://jobs.smartrecruiters.com/Socotec/744000141322430",
+            "title": "Applied AI Engineer",
+            "description": "",
+        }
+    )
+    assert _smartrecruiters_api_url("https://jobs.lever.co/acme/x") is None
+
+
+def test_smartrecruiters_to_html_fills_company_pay_and_remote():
+    from src.engine import _apply_listing, _smartrecruiters_to_html
+
+    html = _smartrecruiters_to_html(
+        {
+            "name": "Applied AI Engineer",
+            "company": {"name": "SOCOTEC"},
+            "typeOfEmployment": {"id": "permanent", "label": "Full-time"},
+            "location": {
+                "city": "New York",
+                "remote": False,
+                "hybrid": False,
+                "fullLocation": "New York, United States",
+            },
+            "jobAd": {
+                "sections": {
+                    "additionalInformation": {"text": "<p>Salary: $157-200k</p>"},
+                }
+            },
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Socotec/744000141322430",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "SOCOTEC"
+    assert opp.title == "Applied AI Engineer"
+    assert opp.pay_low == 157_000
+    assert opp.pay_high == 200_000
+    assert opp.remote is False
+    assert opp.hours_per_week == 40
+    assert opp.score() == 70.0
+
+    remote = Opportunity(title="x", url="https://jobs.smartrecruiters.com/mirantis/1")
+    _apply_listing(
+        remote,
+        _smartrecruiters_to_html(
+            {
+                "name": "Senior Software Engineer (Golang)",
+                "company": {"name": "Mirantis"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Remote", "remote": True, "hybrid": False},
+                "jobAd": {"sections": {"jobDescription": {"text": "<p>Go systems.</p>"}}},
+            }
+        ),
+    )
+    assert remote.company == "Mirantis"
+    assert remote.remote is True
+    assert remote.pay_high is None
+
+
+def test_listing_text_reads_smartrecruiters_api(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if "api.smartrecruiters.com" in url:
+            return json.dumps(
+                {
+                    "name": "Applied AI Engineer",
+                    "company": {"name": "SOCOTEC"},
+                    "typeOfEmployment": {"label": "Full-time"},
+                    "location": {"remote": False, "hybrid": False, "city": "New York"},
+                    "jobAd": {
+                        "sections": {
+                            "additionalInformation": {"text": "<p>Salary: $157-200k</p>"}
+                        }
+                    },
+                }
+            )
+        return "<title>Jobs at SOCOTEC</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.smartrecruiters.com/Socotec/744000141322430-applied-ai-engineer"
+        )
+    )
+    assert seen == [
+        "https://api.smartrecruiters.com/v1/companies/Socotec/postings/744000141322430"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://jobs.smartrecruiters.com/Socotec/744000141322430")
+    _apply_listing(opp, html)
+    assert opp.company == "SOCOTEC"
+    assert opp.pay_high == 200_000
+    assert opp.remote is False
 
 
 def test_listing_plain_text_ignores_script_salaries():

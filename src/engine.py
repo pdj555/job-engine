@@ -136,6 +136,18 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and (data.get("text") or data.get("id")):
                     return _lever_to_html(data, _company_from_url(url))
+        sr_api = _smartrecruiters_api_url(url)
+        if sr_api:
+            raw = await fetch(sr_api)
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and (data.get("name") or data.get("id")):
+                    return _smartrecruiters_to_html(data)
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -473,6 +485,9 @@ def _lever_job_url(url: str) -> str:
     gh = _greenhouse_ids(url)
     if gh:
         return f"https://job-boards.greenhouse.io/{gh[0]}/jobs/{gh[1]}"
+    sr = _smartrecruiters_ids(url)
+    if sr:
+        return f"https://jobs.smartrecruiters.com/{sr[0]}/{sr[1]}"
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -762,6 +777,7 @@ def _search_angles(query: str) -> list[str]:
             "jobs.ashbyhq.com",
             "jobs.workable.com",
             "apply.workable.com",
+            "jobs.smartrecruiters.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -923,6 +939,10 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug in {"j", "jobs", "view"}:
             return None
+    elif host.endswith("smartrecruiters.com"):
+        slug = parts[0]
+        if slug.isdigit() or slug in {"jobs", "app"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -949,6 +969,8 @@ def _ats_board_key(url: str) -> Optional[str]:
         return f"ashby:{parts[0].casefold()}"
     if host.endswith("apply.workable.com"):
         return f"workable:{parts[0].casefold()}"
+    if host.endswith("smartrecruiters.com"):
+        return f"sr:{parts[0].casefold()}"
     return None
 
 
@@ -1171,6 +1193,86 @@ def _workable_is_board(url: str) -> bool:
     return False
 
 
+_SR_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?jobs\.smartrecruiters\.com/([^/]+)/(\d+)",
+)
+
+
+def _smartrecruiters_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _SR_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+def _smartrecruiters_api_url(url: str) -> Optional[str]:
+    ids = _smartrecruiters_ids(url)
+    if not ids:
+        return None
+    return f"https://api.smartrecruiters.com/v1/companies/{ids[0]}/postings/{ids[1]}"
+
+
+def _smartrecruiters_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host != "jobs.smartrecruiters.com":
+        return False
+    return _smartrecruiters_ids(url) is None
+
+
+def _smartrecruiters_to_html(data: dict) -> str:
+    """Turn SmartRecruiters posting JSON into listing HTML. Never invent pay."""
+    title = str(data.get("name") or "").strip()
+    company = ""
+    org = data.get("company")
+    if isinstance(org, dict):
+        company = str(org.get("name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = data.get("typeOfEmployment")
+    label = ""
+    if isinstance(emp, dict):
+        label = str(emp.get("label") or emp.get("id") or "")
+    elif isinstance(emp, str):
+        label = emp
+    lower = label.lower()
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower or "permanent" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    loc = data.get("location") if isinstance(data.get("location"), dict) else {}
+    if loc.get("remote") is True and loc.get("hybrid") is not True:
+        place = "remote"
+    elif loc.get("hybrid") is True:
+        place = "hybrid"
+    elif loc.get("remote") is False:
+        place = "onsite"
+    else:
+        place = str(loc.get("fullLocation") or loc.get("city") or "")
+    _apply_workplace(posting, place)
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    secs = (data.get("jobAd") or {}).get("sections") if isinstance(data.get("jobAd"), dict) else None
+    if isinstance(secs, dict):
+        for key in (
+            "jobDescription",
+            "qualifications",
+            "additionalInformation",
+            "companyDescription",
+        ):
+            sec = secs.get(key)
+            text = sec.get("text") if isinstance(sec, dict) else None
+            if isinstance(text, str) and text.strip():
+                parts.append(text)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 def _workable_to_html(md: str) -> str:
     """Turn Workable job markdown into listing HTML. Never invent pay."""
     title = ""
@@ -1235,6 +1337,8 @@ def _is_index_page(raw: dict) -> bool:
     if _INDEX_PATH_RE.search(parsed.path):
         return True
     if _workable_is_board(url):
+        return True
+    if _smartrecruiters_is_board(url):
         return True
     return False
 
@@ -1600,7 +1704,7 @@ _HOURLY_RE = re.compile(
     re.I,
 )
 _RANGE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
     re.I,
 )
 _RANGE_FULL_RE = re.compile(
@@ -1608,7 +1712,7 @@ _RANGE_FULL_RE = re.compile(
     re.I,
 )
 _RANGE_SPACE_K_RE = re.compile(
-    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s+\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s+\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
     re.I,
 )
 _RANGE_SPACE_FULL_RE = re.compile(
@@ -1618,7 +1722,7 @@ _RANGE_SPACE_FULL_RE = re.compile(
 _RANGE_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
 )
-_ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b", re.I)
+_ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)", re.I)
 _ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")
 _ANNUAL_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
