@@ -811,6 +811,9 @@ def _search_angles(query: str) -> list[str]:
             "myworkdayjobs.com",
             "icims.com",
             "jobvite.com",
+            "teamtailor.com",
+            "personio.com",
+            "personio.de",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1516,6 +1519,36 @@ def _jobvite_html_is_gone(html: str) -> bool:
     return bool(_JOBVITE_GONE_RE.search(html or ""))
 
 
+_TEAMTAILOR_JOB_RE = re.compile(r"(?i)https?://[^/]*teamtailor\.com/jobs/(\d+)")
+_PERSONIO_JOB_RE = re.compile(
+    r"(?i)https?://[^/]*jobs\.personio\.(?:com|de)/job/(\d+)"
+)
+
+
+def _teamtailor_ids(url: str) -> Optional[str]:
+    m = _TEAMTAILOR_JOB_RE.search(url or "")
+    return m.group(1) if m else None
+
+
+def _teamtailor_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith("teamtailor.com"):
+        return False
+    return _teamtailor_ids(url) is None
+
+
+def _personio_ids(url: str) -> Optional[str]:
+    m = _PERSONIO_JOB_RE.search(url or "")
+    return m.group(1) if m else None
+
+
+def _personio_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if "jobs.personio." not in host:
+        return False
+    return _personio_ids(url) is None
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1534,6 +1567,8 @@ def _ats_job_url(url: str) -> bool:
         or _workday_ids(url)
         or _icims_ids(url)
         or _jobvite_ids(url)
+        or _teamtailor_ids(url)
+        or _personio_ids(url)
     )
 
 
@@ -1567,6 +1602,10 @@ def _is_index_page(raw: dict) -> bool:
     if _icims_is_board(url):
         return True
     if _jobvite_is_board(url):
+        return True
+    if _teamtailor_is_board(url):
+        return True
+    if _personio_is_board(url):
         return True
     return False
 

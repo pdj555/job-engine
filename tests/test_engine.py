@@ -993,7 +993,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/14" in [r["url"] for r in results]
+    assert "https://jobs.example/17" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -1012,6 +1012,9 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:myworkdayjobs.com",
         "senior ML engineer remote site:icims.com",
         "senior ML engineer remote site:jobvite.com",
+        "senior ML engineer remote site:teamtailor.com",
+        "senior ML engineer remote site:personio.com",
+        "senior ML engineer remote site:personio.de",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3313,6 +3316,39 @@ def test_listing_text_jobvite_gone_html_is_gone(monkeypatch):
     )
     assert seen == ["https://jobs.jobvite.com/firstbank/job/oqLpAfwU"]
     assert html is None
+
+
+def test_teamtailor_and_personio_job_urls_are_not_boards():
+    from src.engine import _is_index_page
+
+    assert _is_index_page(
+        {
+            "url": "https://rebtel.teamtailor.com/jobs",
+            "title": "Current job openings - Rebtel",
+            "description": "",
+        }
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://rebtel.teamtailor.com/jobs/7805704-senior-machine-learning-engineer",
+            "title": "Senior Machine Learning Engineer - Rebtel",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://mse-solutions.jobs.personio.com/?language=en",
+            "title": "Jobs at mSE Solutions",
+            "description": "",
+        }
+    )
+    assert not _is_index_page(
+        {
+            "url": "https://swisspost.jobs.personio.com/job/2685789?language=en",
+            "title": "Senior Machine Learning Engineer | Jobs at Swiss Post | IT Campus",
+            "description": "",
+        }
+    )
 
 
 def test_listing_plain_text_ignores_script_salaries():
