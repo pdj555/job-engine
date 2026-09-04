@@ -2020,6 +2020,24 @@ def test_apply_listing_reads_workplace_from_listing():
     assert body.remote is False
     assert body.pay_high == 140_000
 
+    remote = Opportunity(title="x", url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+    _apply_listing(
+        remote,
+        _lever_to_html(
+            {
+                "text": "Staff Software Engineer",
+                "workplaceType": "remote",
+                "categories": {"commitment": "Full-time"},
+                "description": (
+                    "<p>This role can be hybrid, or fully remote/virtually. $180,000 - $200,000</p>"
+                ),
+            }
+        ),
+    )
+    assert remote.remote is True
+    assert remote.pay_high == 200_000
+    assert remote.score() == 100.0
+
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
     from src.engine import _apply_listing, _ashby_to_html, _foreign_salary

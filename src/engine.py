@@ -547,6 +547,7 @@ def _lever_to_html(data: dict) -> str:
     place = str(data.get("workplaceType") or "").strip()
     if place:
         parts.append(f"<p>{place}</p>")
+        _apply_workplace(posting, place)
     for key in ("description", "additional", "salaryDescription"):
         val = data.get(key)
         if isinstance(val, str) and val.strip():
@@ -675,6 +676,7 @@ def _ashby_to_html(data: dict) -> str:
     desc = str(data.get("descriptionHtml") or "")
     place = str(data.get("workplaceType") or "").strip()
     loc = f"<p>{place}</p>" if place else ""
+    _apply_workplace(posting, place)
     return (
         f"<title>{title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
@@ -1049,6 +1051,7 @@ def _greenhouse_to_html(data: dict) -> str:
         posting["employmentType"] = "PART_TIME"
     elif "full" in time_type:
         posting["employmentType"] = "FULL_TIME"
+    _apply_workplace(posting, loc)
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
@@ -1107,6 +1110,7 @@ def _workable_jobs_to_html(data: dict) -> str:
     place = str(data.get("workplace") or "").strip()
     loc = f"<p>{place}</p>" if place else ""
     page_title = f"{title} at {company}" if company else title
+    _apply_workplace(posting, place)
     return (
         f"<title>{page_title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
@@ -1437,7 +1441,11 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
     if not opp.company:
         opp.company = _guess_company(_html_title(html), opp.url)
     visible = _listing_plain_text(html)
-    opp.remote = _guess_remote(opp.title, visible)
+    structured_remote = _remote_from_posting(posting) if posting else None
+    if structured_remote is not None:
+        opp.remote = structured_remote
+    else:
+        opp.remote = _guess_remote(opp.title, visible)
     stated = _stated_hours(opp.title, visible)
     if stated:
         opp.hours_per_week = stated
@@ -1741,6 +1749,42 @@ def _guess_hours(title: str, description: str) -> Optional[int]:
         return 20
     if "full-time" in lower or "full time" in lower:
         return 40
+    return None
+
+
+def _workplace_remote(place: str) -> Optional[bool]:
+    """True/False from an ATS workplace/location string. None if unknown."""
+    p = (place or "").casefold()
+    if not p:
+        return None
+    if re.search(r"\bhybrid\b", p):
+        return False
+    if re.search(r"\b(?:onsite|on-site|on site|in-office|in office)\b", p):
+        return False
+    if re.search(r"\b(?:remote|offsite|off-site|telecommute)\b", p):
+        return True
+    compact = re.sub(r"[\s_-]+", "", p)
+    if compact in {"remote", "offsite", "telecommute"}:
+        return True
+    if compact in {"hybrid", "onsite", "office", "inoffice"}:
+        return False
+    return None
+
+
+def _apply_workplace(posting: dict, place: str) -> None:
+    flag = _workplace_remote(place)
+    if flag is True:
+        posting["jobLocationType"] = "TELECOMMUTE"
+    elif flag is False:
+        posting["jobLocationType"] = "ON_SITE"
+
+
+def _remote_from_posting(posting: dict) -> Optional[bool]:
+    jlt = str(posting.get("jobLocationType") or "").upper().replace("-", "_")
+    if "TELECOMMUTE" in jlt:
+        return True
+    if "ON_SITE" in jlt or "ONSITE" in jlt:
+        return False
     return None
 
 
