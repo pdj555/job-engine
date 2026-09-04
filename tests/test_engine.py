@@ -11817,6 +11817,43 @@ def test_jsonld_city_location_is_office_when_type_missing():
     )
     assert typed_hybrid.remote is False
     assert typed_hybrid.pay_high == 220_000
+    snake_hybrid = Opportunity(title="x", url="https://jobs.example/hybrid-snake", remote=True)
+    _apply_listing(
+        snake_hybrid,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","job_location_type":"HYBRID",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert snake_hybrid.remote is False
+    assert snake_hybrid.pay_low == 180_000
+    assert snake_hybrid.pay_high == 220_000
+    snake_site = Opportunity(title="x", url="https://jobs.example/onsite-snake", remote=True)
+    _apply_listing(
+        snake_site,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","job_location_type":"ON_SITE",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        """,
+    )
+    assert snake_site.remote is False
+    snake_tele = Opportunity(title="x", url="https://jobs.example/tele-snake")
+    _apply_listing(
+        snake_tele,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","job_location_type":{"name":"TELECOMMUTE"},
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}}}
+        </script>
+        <p>Build systems. $180,000 - $200,000</p>
+        """,
+    )
+    assert snake_tele.remote is True
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():

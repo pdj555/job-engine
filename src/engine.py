@@ -6542,7 +6542,10 @@ def _jsonld_place(posting: dict) -> str:
 
 
 def _remote_from_posting(posting: dict) -> Optional[bool]:
-    types = {t.upper().replace("-", "_") for t in _ld_types(posting.get("jobLocationType"))}
+    types = {
+        t.upper().replace("-", "_")
+        for t in _ld_types(posting.get("jobLocationType") or posting.get("job_location_type"))
+    }
     if any("TELECOMMUTE" in t for t in types):
         return True
     if any("ON_SITE" in t or t == "ONSITE" for t in types):
