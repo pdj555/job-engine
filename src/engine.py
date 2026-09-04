@@ -261,11 +261,17 @@ Only include urls that appear in the results."""
             )
             items = _items_from_llm(response.choices[0].message.content)
             by_url = {_normalize_url(r["url"]): r for r in batch if r.get("url")}
+            seen: set[str] = set()
             opportunities = []
             for item in items:
-                raw = by_url.get(_normalize_url(item.get("url") or ""))
-                if raw:
+                key = _normalize_url(item.get("url") or "")
+                raw = by_url.get(key)
+                if raw and key not in seen:
+                    seen.add(key)
                     opportunities.append(_merge_extracted(raw, item))
+            for key, raw in by_url.items():
+                if key not in seen and (o := _heuristic_opportunity(raw)):
+                    opportunities.append(o)
             if opportunities:
                 return opportunities
         except Exception as e:
@@ -353,13 +359,15 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     title = item.get("title") or raw.get("title") or "Unknown"
     desc = item.get("description") or raw.get("description") or ""
     company = item.get("company") if item.get("company") is not None else raw.get("company")
+    guess_title = raw.get("title") or title
+    guess_desc = raw.get("description") or desc
     pay_high = item.get("pay_high")
     pay_low = item.get("pay_low")
     if pay_high is None and pay_low is None:
-        pay_high = raw.get("pay") or _guess_pay(title, desc)
+        pay_high = raw.get("pay") or _guess_pay(guess_title, guess_desc)
     hours = item.get("hours_per_week")
     if hours is None:
-        hours = raw.get("hours") or _guess_hours(title, desc)
+        hours = raw.get("hours") or _guess_hours(guess_title, guess_desc)
     if item.get("remote") is not None:
         remote = bool(item["remote"])
     elif "remote" in raw:

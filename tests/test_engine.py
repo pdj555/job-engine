@@ -360,3 +360,37 @@ def test_extract_batch_falls_back_on_error_or_ungrounded_llm():
     assert grounded[0].url == "https://real.example/job"
     assert grounded[0].title == "Staff Engineer"
     assert grounded[0].pay_high == 180_000
+
+
+def test_extract_batch_fills_rows_llm_omitted_and_dedupes_url_aliases():
+    engine = Engine()
+    engine.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {
+                        "title": "From LLM",
+                        "url": "https://jobs.example/a",
+                        "pay_high": 200_000,
+                        "hours_per_week": 20,
+                    },
+                    {
+                        "title": "Alias of A",
+                        "url": "HTTPS://JOBS.EXAMPLE/A/",
+                        "pay_high": 1,
+                        "hours_per_week": 1,
+                    },
+                ]
+            }
+        )
+    )
+    batch = [
+        {"title": "Raw A", "url": "https://jobs.example/a", "description": "", "pay": 90_000, "hours": 40},
+        {"title": "Junior Developer", "url": "https://jobs.example/b", "description": "hybrid"},
+    ]
+    out = asyncio.run(engine._extract_batch(batch, "q"))
+    assert [o.url for o in out] == ["https://jobs.example/a", "https://jobs.example/b"]
+    assert out[0].title == "From LLM"
+    assert out[0].pay_high == 200_000
+    assert out[1].title == "Junior Developer"
+    assert out[1].pay_high == 90_000
