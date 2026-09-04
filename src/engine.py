@@ -4160,7 +4160,7 @@ def _num(value) -> Optional[float]:
 
 
 def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
-    """min/max, from/to, minValue/maxValue, minimum/maximum, or low/high."""
+    """min/max, from/to, minValue/maxValue, minimum/maximum, low/high, or minSalary."""
     low = high = None
     for a, b in (
         ("min", "max"),
@@ -4168,6 +4168,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("minValue", "maxValue"),
         ("minimum", "maximum"),
         ("low", "high"),
+        ("minSalary", "maxSalary"),
     ):
         if low is None:
             low = _num(raw.get(a))
@@ -4414,6 +4415,8 @@ def _salary_blob(salary) -> str:
                 "maximum",
                 "low",
                 "high",
+                "minSalary",
+                "maxSalary",
             )
             if key in salary
         )
@@ -4451,6 +4454,8 @@ def _nums(value) -> list[float]:
             "maximum",
             "low",
             "high",
+            "minSalary",
+            "maxSalary",
         ):
             if key in value:
                 out.extend(_nums(value.get(key)))
@@ -4563,6 +4568,7 @@ def _posting_salary(posting: Optional[dict]):
         "baseCompensation",
         "compensation",
         "salaryRange",
+        "payRange",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4572,12 +4578,19 @@ def _posting_salary(posting: Optional[dict]):
         if len(found) == 1 or not all(len(_nums(item)) == 1 for item in found):
             return found[0]
         return _salary_span(found)
-    low = _num(posting.get("salaryMin"))
-    if low is None:
-        low = _num(posting.get("salaryMinimum"))
-    high = _num(posting.get("salaryMax"))
-    if high is None:
-        high = _num(posting.get("salaryMaximum"))
+    low = high = None
+    for a, b in (
+        ("salaryMin", "salaryMax"),
+        ("salaryMinimum", "salaryMaximum"),
+        ("minSalary", "maxSalary"),
+        ("salaryRangeMin", "salaryRangeMax"),
+        ("min_salary", "max_salary"),
+    ):
+        nums = _nums(posting.get(a)) + _nums(posting.get(b))
+        if not nums:
+            continue
+        low, high = min(nums), max(nums)
+        break
     if low is None and high is None:
         return None
     unit = _ld_text(posting.get("salaryUnit")) or _ld_text(posting.get("unitText"))
@@ -4617,6 +4630,7 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "baseCompensation",
         "compensation",
         "salaryRange",
+        "payRange",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -5030,11 +5044,29 @@ def _posting_date(raw) -> Optional[date]:
         month = _MONTH_NUM.get(m.group(1).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
-    m = re.match(r"(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})", text)
+    m = re.match(
+        r"(?:[A-Za-z]{3},?\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})",
+        text,
+    )
     if m:
         month = _MONTH_NUM.get(m.group(2).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(1)))
+    m = re.match(r"(\d{1,2})/([A-Za-z]+)/(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(1)))
+    m = re.match(r"([A-Za-z]+)/(\d{1,2})/(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(1).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(2)))
+    m = re.match(r"(\d{4})-([A-Za-z]+)-(\d{1,2})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(1)), month, int(m.group(3)))
     m = re.match(r"([A-Za-z]+)-(\d{1,2})-(\d{4})", text)
     if m:
         month = _MONTH_NUM.get(m.group(1).lower())
