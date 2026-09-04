@@ -418,6 +418,9 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20 hrs/week") == 20
     assert _guess_hours("Engineer", "32 hours a week") == 32
     assert _guess_hours("Engineer", "32 hours a week. This is a full-time role.") == 32
+    assert _guess_hours("Engineer", "37.5 hours per week") == 38
+    assert _guess_hours("Engineer", "37.5 hrs/week") == 38
+    assert _guess_hours("Engineer", "40 hours weekly") == 40
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
     assert _guess_hours("Part-time role", "") == 20
     assert _guess_hours("Full-time Engineer", "") == 40
@@ -451,6 +454,13 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert opp.hours_per_week == 32
     assert opp.rate_is_imputed is False
     assert opp.score() == 100.0
+    frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
+    assert _apply_listing(
+        frac, "<p>$180,000 a year. 37.5 hours per week.</p>"
+    ) is True
+    assert frac.hours_per_week == 38
+    assert frac.rate_is_imputed is False
+    assert frac.score() == 180_000 / (38 * 50)
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():

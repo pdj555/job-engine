@@ -4343,7 +4343,8 @@ _NON_SALARY_MONEY_RE = re.compile(
     r")"
 )
 _HOURS_RE = re.compile(
-    r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week)\b",
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\s*(?:hrs?|hours?)\s*"
+    r"(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week(?:ly)?)\b",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
@@ -4612,7 +4613,7 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
     """Hours explicitly written as N hours/week. None if the listing does not say."""
     match = _HOURS_RE.search(f"{title} {description}")
     if match:
-        n = int(match.group(1))
+        n = int(round(float(match.group(1))))
         if 1 <= n <= 80:
             return n
     return None
