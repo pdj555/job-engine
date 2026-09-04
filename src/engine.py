@@ -1011,14 +1011,20 @@ def _unify_board_companies(opps: list) -> None:
 
 _INDEX_URL_RE = re.compile(
     r"(?:indeed\.com/q-|indeed\.com/jobs\?|linkedin\.com/jobs/(?!view/)"
-    r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q="
+    r"|glassdoor\.com/Job/"
+    r"|simplyhired\.com/search|/search\?q="
     r"|upwork\.com/freelance-jobs/apply/"
     r"|lemon\.io/for-developers/"
     r"|magic\.lemon\.io/share/"
     r"|docs\.lemon\.io/"
     r"|corptocorp\.org/"
     r"|karkidi\.com/"
-    r"|jobleads\.com/)",
+    r"|jobleads\.com/"
+    r"|remoterocketship\.com/"
+    r"|migratemate\.co/"
+    r"|builtin\.com/jobs"
+    r"|ziprecruiter\.com/Jobs/"
+    r"|ziprecruiter\.com/jobs-search)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(

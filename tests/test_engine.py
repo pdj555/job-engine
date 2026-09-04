@@ -758,6 +758,73 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.glassdoor.com/Job/remote-us-machine-learning-engineer-jobs-SRCH_IL.0,9_IS1_KO10,36.htm",
+                "description": "$160K–$240K",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.remoterocketship.com/company/acme/jobs/senior-ml-engineer",
+                "description": "$160k remote",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://migratemate.co/jobs/senior-machine-learning-engineer",
+                "description": "United States $180k",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.builtin.com/jobs/remote/ml",
+                "description": "$160k–$200k",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.ziprecruiter.com/Jobs/Senior-Machine-Learning-Engineer",
+                "description": "$160k–$200k",
+            }
+        )
+        is None
+    )
+    kept_listing = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer",
+            "url": "https://www.glassdoor.com/job-listing/senior-machine-learning-engineer-acme-JV_IC1147401_KO0,32.htm",
+            "description": "$180k–$220k",
+        }
+    )
+    assert kept_listing is not None
+    assert kept_listing.pay_high == 220_000
+    kept_builtin = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer",
+            "url": "https://www.builtin.com/job/senior-machine-learning-engineer/12345",
+            "description": "$180k–$220k",
+        }
+    )
+    assert kept_builtin is not None
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
@@ -779,6 +846,26 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Jobs - Indeed",
                 "url": "https://www.indeed.com/q-ml-jobs.html",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.glassdoor.com/Job/remote-us-machine-learning-engineer-jobs-SRCH_IL.0,9_IS1_KO10,36.htm",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.remoterocketship.com/company/acme/jobs/senior-ml-engineer",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://migratemate.co/jobs/senior-machine-learning-engineer",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.builtin.com/jobs/remote/ml",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.ziprecruiter.com/jobs-search?search=ml",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]
