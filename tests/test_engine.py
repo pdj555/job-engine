@@ -451,7 +451,7 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
 
 
 def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
-    from src.engine import _foreign_salary, _parse_pay
+    from src.engine import _apply_listing, _foreign_salary, _parse_pay
 
     mx = "Salario bruto mensual entre $20,000 y $25,000"
     assert _parse_pay(mx) == (None, None)
@@ -490,6 +490,22 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>80 000 CHF. Account Executive $220,000</p>") is True
     assert _parse_pay("80k CHF. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>80k CHF. Account Executive $220,000</p>") is True
+    assert _parse_pay("80,000 CZK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 CZK. Account Executive $220,000</p>") is True
+    assert _parse_pay("CZK80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CZK80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 CZK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 CZK. Account Executive $220,000</p>") is True
+    assert _parse_pay("80 000 CZK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80 000 CZK. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k CZK. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k CZK. Account Executive $220,000</p>") is True
+    czk = Opportunity(title="Engineer", url="https://jobs.example/cz")
+    listed = _apply_listing(
+        czk, "<p>Salary 80,000 CZK. Account Executive $400,000</p>"
+    )
+    assert listed is False
+    assert czk.pay_high is None
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
