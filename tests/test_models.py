@@ -51,3 +51,34 @@ def test_score_unknown_hours_assumes_full_time():
     # pay 100k, no hours -> assumes 40h/wk -> 100000 / (40*50) = 50.0
     opp = Opportunity(title="x", url="u", pay_high=100_000)
     assert opp.score() == 50.0
+
+
+def test_refined_rate_none_when_no_pay():
+    assert Opportunity(title="x", url="u", hours_per_week=20).refined_rate is None
+
+
+def test_refined_rate_imputes_forty_hours_unlike_dollars_per_hour():
+    opp = Opportunity(title="x", url="u", pay_high=100_000)
+    assert opp.dollars_per_hour is None
+    assert opp.refined_rate == 50.0
+
+
+def test_refined_rate_uses_actual_hours():
+    opp = Opportunity(title="x", url="u", pay_high=100_000, hours_per_week=20)
+    assert opp.refined_rate == 100.0
+
+
+def test_rate_is_imputed_only_when_pay_known_and_hours_missing():
+    assert Opportunity(title="x", url="u", pay_high=100_000).rate_is_imputed is True
+    assert Opportunity(title="x", url="u", pay_high=100_000, hours_per_week=40).rate_is_imputed is False
+    assert Opportunity(title="x", url="u", hours_per_week=40).rate_is_imputed is False
+
+
+def test_score_is_refined_rate_with_office_penalty():
+    remote = Opportunity(title="r", url="u", pay_high=100_000, hours_per_week=40, remote=True)
+    office = Opportunity(title="o", url="u", pay_high=100_000, hours_per_week=40, remote=False)
+    missing_hours = Opportunity(title="x", url="u", pay_high=100_000, remote=False)
+    assert remote.score() == 50.0
+    assert office.score() == 35.0
+    assert missing_hours.refined_rate == 50.0
+    assert missing_hours.score() == 35.0
