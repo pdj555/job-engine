@@ -164,6 +164,14 @@ class Engine:
             if raw is None:
                 return None
             return raw or ""
+        jv = _jobvite_job_url(url)
+        if jv:
+            raw = await fetch(jv)
+            if raw is None:
+                return None
+            if not raw or _jobvite_html_is_gone(raw):
+                return None
+            return raw
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -507,6 +515,9 @@ def _lever_job_url(url: str) -> str:
     icims = _icims_ids(url)
     if icims:
         return f"https://{icims[0]}/jobs/{icims[1]}/job"
+    jv = _jobvite_ids(url)
+    if jv:
+        return f"https://jobs.jobvite.com/{jv[0]}/job/{jv[1]}"
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -799,6 +810,7 @@ def _search_angles(query: str) -> list[str]:
             "jobs.smartrecruiters.com",
             "myworkdayjobs.com",
             "icims.com",
+            "jobvite.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -966,6 +978,10 @@ def _company_from_url(url: str) -> str | None:
             return None
     elif host.endswith("myworkdayjobs.com"):
         slug = host.split(".")[0]
+    elif host.endswith("jobvite.com"):
+        slug = parts[0]
+        if slug in {"jobs", "careers", "job"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -996,6 +1012,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         return f"sr:{parts[0].casefold()}"
     if host.endswith("myworkdayjobs.com"):
         return f"wd:{(parsed.hostname or '').split('.')[0].casefold()}"
+    if host.endswith("jobvite.com"):
+        slug = parts[0].casefold()
+        if slug in {"jobs", "careers", "job"}:
+            return None
+        return f"jobvite:{slug}"
     return None
 
 
@@ -1460,6 +1481,37 @@ def _icims_is_board(url: str) -> bool:
     return _icims_ids(url) is None
 
 
+_JOBVITE_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?(?:jobs|careers)\.jobvite\.com/([^/]+)/job/([A-Za-z0-9]+)"
+)
+_JOBVITE_GONE_RE = re.compile(r"(?i)the job listing no longer exists")
+
+
+def _jobvite_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _JOBVITE_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+def _jobvite_job_url(url: str) -> Optional[str]:
+    ids = _jobvite_ids(url)
+    if not ids:
+        return None
+    return f"https://jobs.jobvite.com/{ids[0]}/job/{ids[1]}"
+
+
+def _jobvite_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith("jobvite.com"):
+        return False
+    return _jobvite_ids(url) is None
+
+
+def _jobvite_html_is_gone(html: str) -> bool:
+    return bool(_JOBVITE_GONE_RE.search(html or ""))
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1473,7 +1525,7 @@ def _is_index_page(raw: dict) -> bool:
     desc = raw.get("description") or ""
     if _INDEX_URL_RE.search(url):
         return True
-    if _icims_ids(url):
+    if _icims_ids(url) or _jobvite_ids(url):
         return False
     if _title_is_index(title):
         return True
@@ -1494,6 +1546,8 @@ def _is_index_page(raw: dict) -> bool:
     if _workday_is_board(url):
         return True
     if _icims_is_board(url):
+        return True
+    if _jobvite_is_board(url):
         return True
     return False
 

@@ -942,7 +942,7 @@ def test_search_all_retries_empty_site_angles_after_generic():
     assert seen.count(ashby) == 2
     assert seen.index(ashby) < seen.index("ml")
     assert seen[-1] == ashby
-    assert "https://jobs.example/13" in [r["url"] for r in results]
+    assert "https://jobs.example/14" in [r["url"] for r in results]
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():
@@ -960,6 +960,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:jobs.smartrecruiters.com",
         "senior ML engineer remote site:myworkdayjobs.com",
         "senior ML engineer remote site:icims.com",
+        "senior ML engineer remote site:jobvite.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3194,6 +3195,72 @@ def test_listing_text_icims_410_is_gone(monkeypatch):
         engine._listing_text("https://careers-americas.icims.com/jobs/26849/principal-ml/job")
     )
     assert seen == ["https://careers-americas.icims.com/jobs/26849/job?in_iframe=1"]
+    assert html is None
+
+
+def test_jobvite_job_url_from_listing_link():
+    from src.engine import _is_index_page, _jobvite_job_url, _lever_job_url
+
+    url = "https://jobs.jobvite.com/brahma/job/ovU4zfwM"
+    assert _jobvite_job_url(url) == url
+    assert _lever_job_url(url) == url
+    assert not _is_index_page(
+        {"url": url, "title": "BRAHMA Careers - Machine Learning Engineer", "description": ""}
+    )
+    assert _is_index_page(
+        {"url": "https://jobs.jobvite.com/brahma/jobs", "title": "BRAHMA Careers", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "http://careers.jobvite.com/samtec/preview.htm",
+            "title": "Samtec Careers - Jobvite",
+            "description": "",
+        }
+    )
+    assert _jobvite_job_url("https://jobs.lever.co/acme/x") is None
+
+
+def test_listing_text_reads_jobvite_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    html = (
+        "<title>BRAHMA Careers - Machine Learning Engineer</title>"
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Machine Learning Engineer",'
+        '"hiringOrganization":{"name":"BRAHMA"},'
+        '"jobLocationType":"TELECOMMUTE"}'
+        "</script>"
+        "<p>Remote, London, United Kingdom</p>"
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return html
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    text = asyncio.run(engine._listing_text("https://jobs.jobvite.com/brahma/job/ovU4zfwM"))
+    assert seen == ["https://jobs.jobvite.com/brahma/job/ovU4zfwM"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://jobs.jobvite.com/brahma/job/ovU4zfwM")
+    _apply_listing(opp, text)
+    assert opp.company == "BRAHMA"
+    assert opp.remote is True
+
+
+def test_listing_text_jobvite_gone_html_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return "<title>FirstBank Careers</title><p>The job listing no longer exists.</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://jobs.jobvite.com/firstbank/job/oqLpAfwU")
+    )
+    assert seen == ["https://jobs.jobvite.com/firstbank/job/oqLpAfwU"]
     assert html is None
 
 
