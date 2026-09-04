@@ -2605,6 +2605,151 @@ def test_apply_listing_reads_workplace_from_listing():
     assert offered.score() == 100.0
 
 
+def test_unspecified_workplace_uses_city_not_token():
+    from src.engine import (
+        _apply_listing,
+        _apply_workplace,
+        _ashby_to_html,
+        _lever_to_html,
+        _workday_to_html,
+    )
+
+    empty: dict = {}
+    _apply_workplace(empty, "unspecified")
+    assert "jobLocationType" not in empty
+    _apply_workplace(empty, "unknown", "n/a", "none")
+    assert "jobLocationType" not in empty
+    city: dict = {}
+    _apply_workplace(city, "unspecified", "San Francisco")
+    assert city["jobLocationType"] == "ON_SITE"
+    country: dict = {}
+    _apply_workplace(country, "not specified", "United States")
+    assert "jobLocationType" not in country
+    typed: dict = {}
+    _apply_workplace(typed, "Remote", "San Francisco")
+    assert typed["jobLocationType"] == "TELECOMMUTE"
+    hybrid: dict = {}
+    _apply_workplace(hybrid, "hybrid", "Remote USA")
+    assert hybrid["jobLocationType"] == "ON_SITE"
+
+    office = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/hive/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        remote=True,
+    )
+    _apply_listing(
+        office,
+        _lever_to_html(
+            {
+                "text": "Staff Machine Learning Engineer",
+                "workplaceType": "unspecified",
+                "categories": {"commitment": "Full-time", "location": "San Francisco"},
+                "description": "<p>Remote-friendly team. $160,000 - $200,000</p>",
+            }
+        ),
+    )
+    assert office.remote is False
+    assert office.pay_high == 200_000
+
+    us = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        remote=True,
+    )
+    _apply_listing(
+        us,
+        _lever_to_html(
+            {
+                "text": "Engineer",
+                "workplaceType": "unspecified",
+                "categories": {"location": "United States"},
+                "description": "<p>Build systems. $160,000 - $200,000</p>",
+            }
+        ),
+    )
+    assert us.remote is True
+
+    remote = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/spotify/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    )
+    _apply_listing(
+        remote,
+        _lever_to_html(
+            {
+                "text": "Personalization Engineer",
+                "workplaceType": "remote",
+                "categories": {"location": "New York, NY"},
+                "description": "<p>$180,000 - $200,000</p>",
+            }
+        ),
+    )
+    assert remote.remote is True
+
+    ashby = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/acme/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+        remote=True,
+    )
+    _apply_listing(
+        ashby,
+        _ashby_to_html(
+            {
+                "title": "Engineer",
+                "employmentType": "FullTime",
+                "workplaceType": "unspecified",
+                "locationName": "Austin, TX",
+                "descriptionHtml": "<p>Remote-friendly team.</p>",
+            }
+        ),
+    )
+    assert ashby.remote is False
+
+    wd_office = Opportunity(
+        title="x",
+        url="https://adobe.wd5.myworkdayjobs.com/en-US/external_experienced/job/x_R1",
+        remote=True,
+    )
+    _apply_listing(
+        wd_office,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "Adobe"},
+                "jobPostingInfo": {
+                    "title": "Staff Machine Learning Engineer",
+                    "timeType": "Full time",
+                    "remoteType": "unspecified",
+                    "location": "San Jose",
+                    "jobDescription": "<p>Base Pay Range: $211,800 USD - $306,625 USD</p>",
+                },
+            }
+        ),
+    )
+    assert wd_office.remote is False
+
+    wd_us = Opportunity(
+        title="x",
+        url="https://sailpoint.wd1.myworkdayjobs.com/en-US/SailPoint/job/x_R1",
+        remote=True,
+    )
+    _apply_listing(
+        wd_us,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "SailPoint"},
+                "jobPostingInfo": {
+                    "title": "Staff Machine Learning Engineer",
+                    "timeType": "Full time",
+                    "remoteType": "unspecified",
+                    "location": "United States",
+                    "jobDescription": "<p>Base Pay Range: $149,200 USD - $251,576 USD</p>",
+                },
+            }
+        ),
+    )
+    assert wd_us.remote is True
+
+
 def test_workplace_remote_or_hybrid_is_remote():
     from src.engine import _apply_listing, _greenhouse_to_html, _workplace_remote
 

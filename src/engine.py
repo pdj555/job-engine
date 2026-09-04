@@ -840,10 +840,12 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
                 "value": value,
             }
     parts = []
+    loc = str(cats.get("location") or "").strip() if isinstance(cats, dict) else ""
     place = str(data.get("workplaceType") or "").strip()
-    if place:
-        parts.append(f"<p>{place}</p>")
-        _apply_workplace(posting, place)
+    _apply_workplace(posting, place, loc)
+    for label in (place, loc):
+        if label:
+            parts.append(f"<p>{label}</p>")
     for key in ("description", "additional", "salaryDescription"):
         val = data.get(key)
         if isinstance(val, str) and val.strip():
@@ -996,7 +998,7 @@ def _ashby_to_html(data: dict) -> str:
     desc = str(data.get("descriptionHtml") or "")
     place = str(data.get("workplaceType") or "").strip()
     loc_name = str(data.get("locationName") or "").strip()
-    _apply_workplace(posting, place or loc_name)
+    _apply_workplace(posting, place, loc_name)
     loc = "".join(f"<p>{p}</p>" for p in (place, loc_name) if p)
     return (
         f"<title>{title}</title>"
@@ -1880,7 +1882,7 @@ def _workday_to_html(data: dict) -> str:
         posting["employmentType"] = "FULL_TIME"
     place = str(info.get("remoteType") or "").strip()
     loc = str(info.get("location") or "").strip()
-    _apply_workplace(posting, place or loc)
+    _apply_workplace(posting, place, loc)
     desc = str(info.get("jobDescription") or "")
     page_title = f"{title} at {company}" if company else title
     bits = []
@@ -2448,12 +2450,10 @@ def _pinpoint_to_html(job: dict, board: str = "") -> str:
     elif "full" in lower:
         posting["employmentType"] = "FULL_TIME"
     work = str(job.get("workplace_type") or job.get("workplace_type_text") or "").strip()
-    if work:
-        place = work.replace("_", " ")
-    else:
-        loc = job.get("location") if isinstance(job.get("location"), dict) else {}
-        place = str(loc.get("name") or "").strip()
-    _apply_workplace(posting, place)
+    loc = job.get("location") if isinstance(job.get("location"), dict) else {}
+    loc_name = str(loc.get("name") or "").strip()
+    place = work.replace("_", " ") if work else loc_name
+    _apply_workplace(posting, place if work else "", loc_name)
     pay = _pinpoint_pay_ld(job)
     if pay:
         posting["baseSalary"] = pay
@@ -2532,13 +2532,12 @@ def _comeet_to_html(data: dict) -> str:
         posting["employmentType"] = "FULL_TIME"
     loc = data.get("location") if isinstance(data.get("location"), dict) else {}
     work = str(data.get("workplace_type") or "").strip()
+    loc_name = str(loc.get("name") or "").strip()
     if loc.get("is_remote") is True:
         place = "remote"
-    elif work:
-        place = work
     else:
-        place = str(loc.get("name") or "").strip()
-    _apply_workplace(posting, place)
+        place = work or loc_name
+    _apply_workplace(posting, place if loc.get("is_remote") is True else work, loc_name)
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
@@ -3920,6 +3919,9 @@ _COUNTRY_ONLY_RE = re.compile(
     r"european union|eu"
     r")$"
 )
+_UNKNOWN_WORKPLACE_RE = re.compile(
+    r"(?i)^(?:unspecified|unknown|n/?a|none|null|not\s+(?:specified|set|listed|available))$"
+)
 
 
 def _workplace_remote(place: str) -> Optional[bool]:
@@ -3946,13 +3948,22 @@ def _workplace_remote(place: str) -> Optional[bool]:
     return None
 
 
-def _apply_workplace(posting: dict, place: str) -> None:
-    flag = _workplace_remote(place)
-    if flag is True:
-        posting["jobLocationType"] = "TELECOMMUTE"
-    elif flag is False:
-        posting["jobLocationType"] = "ON_SITE"
-    elif (place or "").strip() and not _COUNTRY_ONLY_RE.fullmatch(place.strip()):
+def _apply_workplace(posting: dict, *places: str) -> None:
+    site = ""
+    for raw in places:
+        place = (raw or "").strip()
+        if not place or _UNKNOWN_WORKPLACE_RE.fullmatch(place):
+            continue
+        flag = _workplace_remote(place)
+        if flag is True:
+            posting["jobLocationType"] = "TELECOMMUTE"
+            return
+        if flag is False:
+            posting["jobLocationType"] = "ON_SITE"
+            return
+        if not site:
+            site = place
+    if site and not _COUNTRY_ONLY_RE.fullmatch(site):
         posting["jobLocationType"] = "ON_SITE"
 
 
@@ -3982,7 +3993,7 @@ def _jsonld_place(posting: dict) -> str:
             names.append(label)
     if any(_workplace_remote(n) is True for n in names):
         return "remote"
-    return next((n for n in names if n), "")
+    return next((n for n in names if n and not _UNKNOWN_WORKPLACE_RE.fullmatch(n)), "")
 
 
 def _remote_from_posting(posting: dict) -> Optional[bool]:
@@ -3997,7 +4008,7 @@ def _remote_from_posting(posting: dict) -> Optional[bool]:
     flag = _workplace_remote(place)
     if flag is not None:
         return flag
-    if _COUNTRY_ONLY_RE.fullmatch(place.strip()):
+    if _UNKNOWN_WORKPLACE_RE.fullmatch(place.strip()) or _COUNTRY_ONLY_RE.fullmatch(place.strip()):
         return None
     return False
 
