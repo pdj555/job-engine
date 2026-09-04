@@ -567,6 +567,10 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
+_HOURLY_RANGE_RE = re.compile(
+    r"\$\s*(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*\$?\s*(\d{1,3}(?:\.\d+)?)\s*(?:/|\s+per\s+)\s*h(?:r|our)s?\b",
+    re.I,
+)
 _HOURLY_RE = re.compile(
     r"\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:/|\s+per\s+)\s*h(?:r|our)s?\b",
     re.I,
@@ -595,6 +599,13 @@ def _parse_pay(
     text: str, hours: Optional[int] = None
 ) -> tuple[Optional[int], Optional[int]]:
     """(pay_low, pay_high) annual USD from listing text. (None, None) if unknown."""
+    hourly_range = _HOURLY_RANGE_RE.search(text)
+    if hourly_range:
+        weeks = hours or 40
+        low = int(_money(hourly_range.group(1)) * weeks * 50)
+        high = int(_money(hourly_range.group(2)) * weeks * 50)
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
     hourly = _HOURLY_RE.search(text)
     if hourly:
         rate = _money(hourly.group(1))

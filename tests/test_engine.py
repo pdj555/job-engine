@@ -29,6 +29,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
 def test_guess_pay_annualizes_hourly():
     assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
     assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
+    assert _guess_pay("", "$80 - $100 / Hour") == 200_000
+    from src.engine import _parse_pay
+    assert _parse_pay("$80 - $100 / Hour") == (160_000, 200_000)
+    assert _parse_pay("$80–$100/hr") == (160_000, 200_000)
 
 
 def test_guess_pay_reads_description_not_just_title():
