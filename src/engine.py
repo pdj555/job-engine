@@ -4450,9 +4450,9 @@ _FOREIGN_PAY_RE = re.compile(
     r"(?:€|£)\s*\d{1,3}(?:,\d{3}){1,2}"
     r"|(?:€|£)\s*\d{5,7}\b"
     r"|(?:€|£)\s*\d{2,3}(?:\.\d+)?\s*k\b"
-    r"|\b(?:EUR|GBP)\s*\d{1,3}(?:[,'’.\s]\d{3}){1,2}"
-    r"|\b(?:EUR|GBP)\s*\d{5,7}\b"
-    r"|\b(?:EUR|GBP)\s*\d{2,3}(?:\.\d+)?\s*k\b"
+    r"|\b(?:EUR|GBP|euros?|pounds?)\s*\d{1,3}(?:[,'’.\s]\d{3}){1,2}"
+    r"|\b(?:EUR|GBP|euros?|pounds?)\s*\d{5,7}\b"
+    r"|\b(?:EUR|GBP|euros?|pounds?)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|(?:₹|¥|₩|₪|฿|₫|₦|₴|₸|₺|₽|₱|৳|₾|₼|₡|₭|៛)\s*\d"
     r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS|CZK|TRY|RON|BGN|THB|TWD|MYR|IDR|RUB|UAH|ISK|HRK|VND|NGN|PKR|BDT|LKR|SAR|QAR|EGP|KES|GHS|KWD|BHD|OMR|JOD|RSD|GEL|KZT|TND|DZD|BAM|AZN|MDL|MKD|BYN|NPR|UZS|KGS|MMK)\s*['’]?\d"
     r"|\bPHP\s*['’]?(?:\d{1,3}(?:[,'’.\s]\d{3}){1,2}|\d{5,7}|\d{2,3}(?:\.\d+)?\s*k\b)"
@@ -4476,7 +4476,7 @@ _FOREIGN_PAY_RE = re.compile(
 )
 _FOREIGN_DOLLAR_RE = re.compile(
     r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\s*\$?\s*\d"
-    r"|(?<![A-Za-z])(?:AU|CA|SG|MX|AR|CL|HK|NZ|NT|C|A|R|S)\$\s*\d"
+    r"|(?<![A-Za-z])(?:AU|CA|SG|MX|AR|CL|HK|NZ|NT|COL|CO|PE|C|A|R|S)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"

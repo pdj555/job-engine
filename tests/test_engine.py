@@ -426,7 +426,7 @@ def test_parse_pay_prefers_remote_geo_band():
 
 
 def test_foreign_salary_detects_k_suffix_gbp_and_eur():
-    from src.engine import _foreign_salary, _parse_pay
+    from src.engine import _apply_listing, _foreign_salary, _parse_pay
 
     for blob in ("£60k", "£60K - £80K", "€85k", "GBP 60k", "EUR 85k"):
         assert _parse_pay(blob) == (None, None)
@@ -441,13 +441,26 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
         "80.000 EUR",
         "80 000 EUR",
         "80 000 euros",
+        "euro 80,000",
+        "euros 80,000",
+        "euro 80000",
+        "euro 80k",
+        "pounds 80,000",
+        "pounds 80k",
     ):
         assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
         assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
     assert _parse_pay("$180,000") == (None, 180_000)
+    assert _parse_pay("Experience with Euro 8. Salary $180,000") == (None, 180_000)
     assert _foreign_salary("<p>Salary $180,000</p>") is False
     assert _foreign_salary("<p>$60k a year</p>") is False
     assert _foreign_salary("<p>Apply now. No salary listed.</p>") is False
+    euro = Opportunity(title="Engineer", url="https://jobs.example/eu")
+    listed_euro = _apply_listing(
+        euro, "<p>Salary euro 80,000. Account Executive $400,000</p>"
+    )
+    assert listed_euro is False
+    assert euro.pay_high is None
 
 
 def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
@@ -1214,6 +1227,14 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     assert _foreign_salary("<p>AR$ 80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("CL$ 80,000. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>CL$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("PE$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>PE$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("PE$80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>PE$80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("COL$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>COL$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("CO$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CO$ 80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("US$ 180,000") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("S$ 12,000") == (None, None)
@@ -1243,6 +1264,12 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     )
     assert listed_au is False
     assert au.pay_high is None
+    pe = Opportunity(title="Engineer", url="https://jobs.example/pe")
+    listed_pe = _apply_listing(
+        pe, "<p>Salary PE$ 80,000. Account Executive $400,000</p>"
+    )
+    assert listed_pe is False
+    assert pe.pay_high is None
     lpa = Opportunity(title="Engineer", url="https://jobs.example/in")
     listed = _apply_listing(lpa, "<p>15 LPA. US equivalent $90,000</p>")
     assert listed is False
