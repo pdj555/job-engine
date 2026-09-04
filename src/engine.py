@@ -4481,11 +4481,11 @@ _FOREIGN_DOLLAR_RE = re.compile(
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"
     r"(?:\s*[—–-]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?)?"
-    r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b"
-    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD)\)"
-    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
-    r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
-    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b",
+    r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|pesos?)\b"
+    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\)"
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b"
+    r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b",
     re.I | re.S,
 )
 

@@ -1031,6 +1031,49 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90 000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("$90,000 AUD") == (None, None)
+    assert _parse_pay("80,000 CLP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 CLP. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 CLP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 CLP. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k CLP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k CLP. Account Executive $220,000</p>") is True
+    assert _parse_pay("$80,000 CLP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>$80,000 CLP. Account Executive $220,000</p>") is True
+    clp = Opportunity(title="Engineer", url="https://jobs.example/cl")
+    listed_clp = _apply_listing(
+        clp, "<p>Salary 80,000 CLP. Account Executive $400,000</p>"
+    )
+    assert listed_clp is False
+    assert clp.pay_high is None
+    assert _parse_pay("80,000 COP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 COP. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 COP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 COP. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k COP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k COP. Account Executive $220,000</p>") is True
+    assert _parse_pay("$80,000 COP. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>$80,000 COP. Account Executive $220,000</p>") is True
+    cop = Opportunity(title="Engineer", url="https://jobs.example/co")
+    listed_cop = _apply_listing(
+        cop, "<p>Salary 80,000 COP. Account Executive $400,000</p>"
+    )
+    assert listed_cop is False
+    assert cop.pay_high is None
+    assert _parse_pay("80,000 PEN. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 PEN. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 PEN. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 PEN. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k PEN. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k PEN. Account Executive $220,000</p>") is True
+    assert _parse_pay("$80,000 PEN. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>$80,000 PEN. Account Executive $220,000</p>") is True
+    pen = Opportunity(title="Engineer", url="https://jobs.example/pe")
+    listed_pen = _apply_listing(
+        pen, "<p>Salary 80,000 PEN. Account Executive $400,000</p>"
+    )
+    assert listed_pen is False
+    assert pen.pay_high is None
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
     assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
     assert _parse_pay("80000 Rs. Account Executive $220,000") == (None, None)
