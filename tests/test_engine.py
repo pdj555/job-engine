@@ -459,12 +459,25 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
         "80,000 zloty",
         "80,000 kroner",
         "80,000 kronor",
+        "80,000 francs",
+        "francs 80,000",
+        "80k francs",
+        "80000 francs",
+        "80,000 dirhams",
+        "80,000 rand",
+        "80,000 baht",
+        "80,000 shekels",
+        "80,000 forint",
+        "80,000 koruna",
+        "80,000 rupees",
+        "80,000 rupee",
     ):
         assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
         assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
     assert _parse_pay("$180,000") == (None, 180_000)
     assert _parse_pay("Experience with Euro 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("Experience with yen 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Experience with rand 8. Salary $180,000") == (None, 180_000)
     assert _foreign_salary("<p>Salary $180,000</p>") is False
     assert _foreign_salary("<p>$60k a year</p>") is False
     assert _foreign_salary("<p>Apply now. No salary listed.</p>") is False
@@ -486,6 +499,12 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     )
     assert listed_yen is False
     assert yen.pay_high is None
+    francs = Opportunity(title="Engineer", url="https://jobs.example/ch")
+    listed_francs = _apply_listing(
+        francs, "<p>Salary 80,000 francs. Account Executive $400,000</p>"
+    )
+    assert listed_francs is False
+    assert francs.pay_high is None
 
 
 def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
