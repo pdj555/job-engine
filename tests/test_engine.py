@@ -1284,6 +1284,16 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Bitwarden",
+                "url": "https://wellfound.com/company/bitwarden",
+                "description": "$115,000 - $145,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Machine Learning Engineer Salary and Equity in 2026",
                 "url": "https://wellfound.com/hiring-data/r/machine-learning-engineer-2",
                 "description": "$180,000",
@@ -1413,6 +1423,10 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Software Engineer</title><p>$110k – $200k</p>",
         "https://wellfound.com/jobs?role=software-engineer",
+    )
+    assert _html_is_index(
+        "<title>Bitwarden</title><p>$115,000 - $145,000</p>",
+        "https://wellfound.com/company/bitwarden",
     )
     assert _html_is_index(
         "<title>Machine Learning</title><p>$120,000 - $200,000</p>",
