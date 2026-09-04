@@ -1105,6 +1105,8 @@ def _search_angles(query: str) -> list[str]:
             "jobs.gem.com",
             "careers.walmart.com",
             "jobs.apple.com",
+            "wellfound.com",
+            "builtin.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1451,7 +1453,7 @@ _INDEX_URL_RE = re.compile(
     r"|jobleads\.com/"
     r"|remoterocketship\.com/"
     r"|migratemate\.co/"
-    r"|builtin\.com/jobs"
+    r"|builtin\.com/(?!job/)"
     r"|ziprecruiter\.com/Jobs/"
     r"|ziprecruiter\.com/jobs-search"
     r"|lever\.co/jobgether/"
@@ -1476,6 +1478,7 @@ _INDEX_URL_RE = re.compile(
     r"|aijobs\.mlyearning\.org/"
     r"|wellfound\.com/role/"
     r"|wellfound\.com/jobs/?(?:\?|$)"
+    r"|wellfound\.com/hiring-data/"
     r"|angel\.co/role/"
     r"|h1bscope\.com/"
     r"|salarybyrole\.com/"

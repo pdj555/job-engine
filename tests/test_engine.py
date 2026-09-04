@@ -1124,6 +1124,36 @@ def test_index_pages_are_not_opportunities():
     )
     assert kept_wellfound is not None
     assert kept_wellfound.pay_high == 145_000
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salary and Equity in 2026",
+                "url": "https://wellfound.com/hiring-data/r/machine-learning-engineer-2",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer salary in US",
+                "url": "https://builtin.com/salaries/us/machine-learning-engineer",
+                "description": "$151,800",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer - Built In",
+                "url": "https://builtin.com/learn/careers/machine-learning-engineer",
+                "description": "Career guide",
+            }
+        )
+        is None
+    )
     amgen = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer Jobs at Amgen in United States - Remote",
@@ -1436,6 +1466,8 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:jobs.gem.com",
         "senior ML engineer remote site:careers.walmart.com",
         "senior ML engineer remote site:jobs.apple.com",
+        "senior ML engineer remote site:wellfound.com",
+        "senior ML engineer remote site:builtin.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
