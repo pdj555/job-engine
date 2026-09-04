@@ -12509,6 +12509,42 @@ def test_apply_listing_ignores_related_jsonld_jobposting():
     assert _apply_listing(solo, only_list) is True
     assert solo.pay_high == 220_000
     assert solo.company == "Acme"
+    linked = Opportunity(title="Engineer", url="https://jobs.example/ld-id-salary")
+    by_id = """
+    <title>Engineer</title>
+    <script type="application/ld+json">
+    {"@graph":[
+      {"@type":"JobPosting","title":"Engineer","hiringOrganization":{"name":"Acme"},
+       "baseSalary":{"@id":"#salary"}},
+      {"@type":"MonetaryAmount","@id":"#salary","currency":"USD",
+       "value":{"@id":"#amount"}},
+      {"@type":"QuantitativeValue","@id":"#amount",
+       "minValue":180000,"maxValue":220000,"unitText":"YEAR"}
+    ]}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    assert _apply_listing(linked, by_id) is True
+    assert linked.pay_low == 180_000
+    assert linked.pay_high == 220_000
+    assert linked.company == "Acme"
+    eur_id = Opportunity(title="Engineer", url="https://jobs.example/ld-id-eur")
+    eur = """
+    <title>Engineer</title>
+    <script type="application/ld+json">
+    {"@graph":[
+      {"@type":"JobPosting","title":"Engineer","hiringOrganization":{"name":"Acme"},
+       "baseSalary":{"@id":"#salary"}},
+      {"@type":"MonetaryAmount","@id":"#salary","currency":"EUR",
+       "value":{"@id":"#amount"}},
+      {"@type":"QuantitativeValue","@id":"#amount",
+       "minValue":120000,"maxValue":180000,"unitText":"YEAR"}
+    ]}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    _apply_listing(eur_id, eur)
+    assert eur_id.pay_high is None
 
 
 def test_apply_listing_prefers_longer_jsonld_title_over_related_substring():

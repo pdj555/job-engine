@@ -3841,6 +3841,9 @@ def _ld_types(value) -> set[str]:
     return set()
 
 
+_LD_REF_KEYS = frozenset({"@id", "@type", "@context"})
+
+
 def _walk_ld(obj, in_itemlist: bool = False):
     """Yield (node, inside_itemlist). Related cards live under ItemList."""
     if isinstance(obj, list):
@@ -3852,6 +3855,45 @@ def _walk_ld(obj, in_itemlist: bool = False):
         for value in obj.values():
             if isinstance(value, (dict, list)):
                 yield from _walk_ld(value, listed)
+
+
+def _ld_ids(obj) -> dict[str, dict]:
+    """Index JSON-LD nodes that actually hold data, including #fragment aliases."""
+    out: dict[str, dict] = {}
+    for node, _ in _walk_ld(obj):
+        ident = node.get("@id")
+        if not isinstance(ident, str):
+            continue
+        ident = ident.strip()
+        if not ident or not (set(node) - _LD_REF_KEYS):
+            continue
+        out[ident] = node
+        if "#" in ident:
+            frag = "#" + ident.rsplit("#", 1)[-1]
+            if frag != ident and frag != "#":
+                out.setdefault(frag, node)
+    return out
+
+
+def _ld_resolve(value, index: dict, stack: frozenset = frozenset()):
+    """Replace {@id} stubs with the graph node. Salary often lives on another node."""
+    if isinstance(value, list):
+        return [_ld_resolve(v, index, stack) for v in value]
+    if not isinstance(value, dict):
+        return value
+    ident = value.get("@id")
+    if isinstance(ident, str) and ident not in index and "#" in ident:
+        frag = "#" + ident.rsplit("#", 1)[-1]
+        if frag in index:
+            ident = frag
+    if (
+        isinstance(ident, str)
+        and ident in index
+        and not (set(value) - _LD_REF_KEYS)
+        and ident not in stack
+    ):
+        return _ld_resolve(index[ident], index, stack | {ident})
+    return {k: _ld_resolve(v, index, stack) for k, v in value.items()}
 
 
 def _ld_title_hit(posting: dict, blob: str) -> int:
@@ -3897,10 +3939,12 @@ def _job_posting(html: str, role: str = "") -> Optional[dict]:
     """The listing's JobPosting. Related-job JSON-LD in an ItemList is not pay."""
     posts: list[tuple[dict, bool]] = []
     seen: set[int] = set()
+    index: dict[str, dict] = {}
     for raw in _LD_SCRIPT_RE.findall(html or ""):
         data = _ld_payload(raw)
         if data is None:
             continue
+        index.update(_ld_ids(data))
         for obj, listed in _walk_ld(data):
             if "JobPosting" not in _ld_types(obj.get("@type")):
                 continue
@@ -3913,20 +3957,24 @@ def _job_posting(html: str, role: str = "") -> Optional[dict]:
         return None
     standalone = [p for p, listed in posts if not listed]
     pool = standalone or [p for p, _ in posts]
+    posting = None
     if len(pool) == 1:
-        return pool[0]
-    page = _html_title(html)
-    best = None
-    best_n = -1
-    for posting in pool:
-        n = max(_ld_title_hit(posting, page), _ld_title_hit(posting, role))
-        if n > best_n:
-            best, best_n = posting, n
-    if best_n >= 0:
-        return best
-    if standalone:
-        return standalone[0]
-    return None
+        posting = pool[0]
+    else:
+        page = _html_title(html)
+        best = None
+        best_n = -1
+        for item in pool:
+            n = max(_ld_title_hit(item, page), _ld_title_hit(item, role))
+            if n > best_n:
+                best, best_n = item, n
+        if best_n >= 0:
+            posting = best
+        elif standalone:
+            posting = standalone[0]
+    if posting is None:
+        return None
+    return _ld_resolve(posting, index)
 
 
 def _num(value) -> Optional[float]:
