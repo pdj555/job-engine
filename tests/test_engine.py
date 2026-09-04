@@ -13051,10 +13051,15 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     assert quals.pay_high == 180_000
     for heading in (
         "More like this",
+        "More like these",
+        "Jobs like this",
         "You applied",
         "Recently viewed",
         "Keep browsing",
         "Similar careers",
+        "Related careers",
+        "Similar listings",
+        "Similar job",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
