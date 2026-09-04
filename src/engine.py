@@ -4324,6 +4324,24 @@ _DURATION_UNITS = {
 }
 
 
+def _ld_text(value) -> Optional[str]:
+    """String from a JSON-LD scalar, [scalar], or {@value,name,value} node."""
+    if isinstance(value, str) and value.strip():
+        return value
+    if isinstance(value, list):
+        for item in value:
+            text = _ld_text(item)
+            if text:
+                return text
+        return None
+    if isinstance(value, dict):
+        for key in ("@value", "name", "value"):
+            raw = value.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw
+    return None
+
+
 def _duration_unit(raw: str) -> Optional[str]:
     token = raw.strip().upper().rsplit("/", 1)[-1]
     token = re.sub(r"(?<!\d)0+[YMDHS]", "", token)
@@ -4335,11 +4353,11 @@ def _duration_unit(raw: str) -> Optional[str]:
 def _unit_raw(node) -> Optional[str]:
     if not isinstance(node, dict):
         return None
-    raw = node.get("unitText") or node.get("unitCode")
+    raw = _ld_text(node.get("unitText")) or _ld_text(node.get("unitCode"))
     if raw:
-        return str(raw)
-    duration = node.get("duration")
-    if isinstance(duration, str) and duration.strip():
+        return raw
+    duration = _ld_text(node.get("duration"))
+    if duration:
         return _duration_unit(duration)
     return None
 
@@ -4401,9 +4419,7 @@ def _posting_salary(posting: Optional[dict]):
 
 def _currency_of(value) -> Optional[str]:
     if isinstance(value, dict):
-        cur = value.get("currency")
-        if cur:
-            return str(cur)
+        return _ld_text(value.get("currency"))
     return None
 
 
@@ -4414,9 +4430,9 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return cur
     if not isinstance(posting, dict):
         return None
-    stated = posting.get("salaryCurrency")
+    stated = _ld_text(posting.get("salaryCurrency"))
     if stated:
-        return str(stated)
+        return stated
     if _salary_has_amount(salary):
         return None
     for key in ("baseSalary", "salary", "estimatedSalary"):
