@@ -1342,6 +1342,66 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Join Our Team | Acme",
+                "url": "https://acme.com/join-our-team",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Work With Us | Acme",
+                "url": "https://acme.com/work-with-us",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "We're Hiring | Acme",
+                "url": "https://acme.com/were-hiring",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Opportunities | Acme",
+                "url": "https://acme.com/opportunities",
+                "description": "$200,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Join Our Team as a Software Engineer",
+                "url": "https://jobs.example.com/job/join-our-team-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://acme.com/join-our-team/senior-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Home | Grants.gov",
                 "url": "https://www.grants.gov/",
                 "description": "Find grants",
@@ -2121,6 +2181,30 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
         "https://acme.com/job-openings/senior-engineer",
+    )
+    assert _html_is_index(
+        "<title>Join Our Team | Acme</title><p>$180,000</p>",
+        "https://acme.com/join-our-team",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$180,000</p>",
+        "https://acme.com/work-with-us",
+    )
+    assert _html_is_index(
+        "<title>We're Hiring | Acme</title><p>$180,000</p>",
+        "https://acme.com/were-hiring",
+    )
+    assert _html_is_index(
+        "<title>Opportunities | Acme</title><p>$200,000</p>",
+        "https://acme.com/opportunities",
+    )
+    assert not _html_is_index(
+        "<title>Join Our Team as a Software Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/join-our-team-software-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/join-our-team/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Senior Machine Learning Engineer - Freelance</title>",

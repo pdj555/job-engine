@@ -1547,6 +1547,10 @@ _INDEX_TITLE_RE = re.compile(
     r"|\ball openings\b"
     r"|\bcareer opportunities\b"
     r"|^careers at\b"
+    r"|^join our team(?:\s*[|\-–—].*)?$"
+    r"|^work with us(?:\s*[|\-–—].*)?$"
+    r"|^we(?:'re| are) hiring(?:\s*[|\-–—].*)?$"
+    r"|^opportunities(?:\s*[|\-–—].*)?$"
     r"|\bfreelancers\b"
     r"|\bsalary guide\b"
     r"|\bsalary data\b"
@@ -3490,6 +3494,8 @@ _INDEX_PATH_RE = re.compile(
     r"|^/hire(?:/|$)"
     r"|/(?:open[-_]?positions|open[-_]?roles|current[-_]?openings)/?$"
     r"|/(?:career[-_]?opportunities|job[-_]?openings|all[-_]?openings)/?$"
+    r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
+    r"|/opportunities/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
     re.I,
