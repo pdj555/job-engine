@@ -3926,6 +3926,16 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
     return None
 
 
+def _salary_unit(salary) -> Optional[str]:
+    if not isinstance(salary, dict):
+        return None
+    value = salary.get("value")
+    raw = value.get("unitText") if isinstance(value, dict) else None
+    if not raw:
+        raw = salary.get("unitText")
+    return _PAY_UNITS.get(str(raw or "").upper())
+
+
 def _posting_pay(
     posting: dict, hours: Optional[int]
 ) -> tuple[Optional[int], Optional[int]]:
@@ -3966,8 +3976,9 @@ def _posting_pay(
 
 
 def _apply_listing(opp: Opportunity, html: str) -> bool:
-    """Fill fields from JobPosting JSON-LD, then visible listing text. Listing wins.
+    """Fill fields from JobPosting JSON-LD, then visible listing text.
 
+    Visible yearly USD wins over JSON-LD hourly/daily/weekly/monthly rates.
     Returns True when this HTML stated USD pay.
     """
     posting = _job_posting(html)
@@ -4009,6 +4020,18 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             opp.pay_low = low
             opp.pay_high = high
             listed_pay = True
+    elif (
+        listed_pay
+        and posting
+        and not _posting_foreign(posting)
+        and _salary_unit(posting.get("baseSalary") or posting.get("salary"))
+        in {"hour", "day", "week", "biweek", "semimonth", "month"}
+    ):
+        text = _NON_SALARY_MONEY_RE.sub(" ", visible or "")
+        if not (_FOREIGN_DOLLAR_RE.search(text) or _FOREIGN_PAY_RE.search(text)):
+            yearly = _annual_pay(text)
+            if yearly[0] or yearly[1]:
+                opp.pay_low, opp.pay_high = yearly
     if opp.remote and not _posting_foreign(posting):
         geo = _remote_geo_pay(visible)
         if geo:
@@ -4297,6 +4320,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r"(?:\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly))?"
+    r"(?:\s+(?:housing|living|relocation|meal|food|travel))?"
     r"\s+stipend\b"
     r"|"
     r"\b(?:monthly\s+)?stipend\s*(?:of|:)?\s*"

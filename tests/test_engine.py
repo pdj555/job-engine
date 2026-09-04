@@ -74,8 +74,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Salary $180,000 plus $25,000 annual bonus") == (None, 180_000)
     assert _parse_pay("$2,000/month stipend") == (None, None)
     assert _parse_pay("$2,000 monthly stipend") == (None, None)
+    assert _parse_pay("$2,000/month housing stipend") == (None, None)
+    assert _parse_pay("$2,000 housing stipend") == (None, None)
     assert _parse_pay("stipend of $2,000 per month") == (None, None)
     assert _parse_pay("Salary $180,000 plus $2,000/month stipend") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $2,000/month housing stipend") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$250,000 OTE") == (None, None)
     assert _parse_pay("OTE $250,000") == (None, None)
     assert _parse_pay("on-target earnings of $250,000") == (None, None)
@@ -3020,6 +3026,45 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
     assert opp.pay_high == 200_000
     assert opp.hours_per_week == 40
     assert opp.score() == 100.0
+
+
+def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":80,"unitText":"HOUR"}}}
+    </script>
+    <p>Salary $180,000 plus $80/hr on-call</p>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/ld-hr")
+    assert _apply_listing(opp, html) is True
+    assert opp.pay_high == 180_000
+    day = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":800,"unitText":"DAY"}}}
+    </script>
+    <p>Salary $180,000 plus $800/day travel</p>
+    """
+    travel = Opportunity(title="Engineer", url="https://jobs.example/ld-day")
+    assert _apply_listing(travel, day) is True
+    assert travel.pay_high == 180_000
+    hourly = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Contract $80-$100/hr</p>
+    """
+    contract = Opportunity(title="Engineer", url="https://jobs.example/ld-only-hr")
+    assert _apply_listing(contract, hourly) is True
+    assert contract.pay_low == 160_000
+    assert contract.pay_high == 200_000
 
 
 def test_apply_listing_empty_json_ld_salary_falls_back_to_visible_text():
