@@ -2031,6 +2031,41 @@ def test_heuristic_company_from_builtin_title():
     assert remote.company is None
 
 
+def test_heuristic_company_from_wellfound_at_bullet_title():
+    from src.engine import _dedupe_opportunities, _role_title
+
+    h = _heuristic_opportunity(
+        {
+            "title": "IT Security Administrator at Bitwarden • Remote (Work from Home) | Wellfound",
+            "url": "https://wellfound.com/jobs/4335648-it-security-administrator",
+            "description": "$115,000 - $145,000",
+        }
+    )
+    assert h.company == "Bitwarden"
+    assert "Wellfound" not in _role_title(h.title)
+    ats = Opportunity(
+        title="IT Security Administrator",
+        company="Bitwarden",
+        url="https://jobs.lever.co/bitwarden/abc",
+        pay_high=145_000,
+    )
+    wellfound = Opportunity(
+        title="IT Security Administrator at Bitwarden • Remote (Work from Home) | Wellfound",
+        company="Bitwarden",
+        url="https://wellfound.com/jobs/4335648-it-security-administrator",
+        pay_high=145_000,
+    )
+    assert [o.url for o in _dedupe_opportunities([ats, wellfound])] == [ats.url]
+    v7 = _heuristic_opportunity(
+        {
+            "title": "Demand Generation Lead at V7 • New York City | Wellfound",
+            "url": "https://wellfound.com/jobs/4677846-demand-generation-lead",
+            "description": "",
+        }
+    )
+    assert v7.company == "V7"
+
+
 def test_heuristic_company_from_title_at():
     h = _heuristic_opportunity(
         {

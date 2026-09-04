@@ -1021,7 +1021,7 @@ def _ashby_to_html(data: dict) -> str:
 
 _ATS_TITLE_TAIL_RE = re.compile(
     r"(?i)\s*[-–—|]\s*(?:jobs\.(?:lever\.co|ashbyhq\.com|workable\.com)|"
-    r"jobs by workable|built\s*in(?:\s+[A-Za-z]{2,})?)\s*$"
+    r"jobs by workable|built\s*in(?:\s+[A-Za-z]{2,})?|wellfound)\s*$"
 )
 
 
@@ -1217,13 +1217,15 @@ def _company_from_title(title: str, url: str = "") -> str | None:
     t = _strip_ats_title(title)
     m = re.search(r"(?i)\bat\s+(.+)$", t)
     if m:
-        name = m.group(1).strip(" .,-")
-        if name and not _PLACE_RE.search(name):
+        name = re.split(r"\s*[•|]\s*", m.group(1).strip(" .,-"), maxsplit=1)[0].strip()
+        name = _clean_company_name(name)
+        if name:
             return name
     m = re.search(r"(?i)\s+@\s+(.+)$", t)
     if m:
-        name = m.group(1).strip(" .,-")
-        if name and not _PLACE_RE.search(name):
+        name = re.split(r"\s*[•|]\s*", m.group(1).strip(" .,-"), maxsplit=1)[0].strip()
+        name = _clean_company_name(name)
+        if name:
             return name
     host = (urlparse(url).hostname or "").casefold()
     if host.endswith("lever.co"):
