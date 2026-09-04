@@ -3740,15 +3740,62 @@ def _foreign_salary(html: str) -> bool:
     return _foreign_pay_text(_listing_plain_text(html))
 
 
+_US_COUNTRY_RE = re.compile(
+    r"(?i)^(?:the\s+)?(?:united states(?:\s+of\s+america)?|usa|u\.s\.a?\.?|us)$"
+)
+
+
+def _country_label(value) -> str:
+    if isinstance(value, dict):
+        value = value.get("name") or value.get("alternateName") or ""
+    return str(value or "").strip()
+
+
+def _posting_countries(posting: dict) -> list[str]:
+    loc = posting.get("jobLocation")
+    rows = loc if isinstance(loc, list) else [loc]
+    countries: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        addr = row.get("address")
+        addrs = addr if isinstance(addr, list) else [addr]
+        for item in addrs:
+            if not isinstance(item, dict):
+                continue
+            raw = item.get("addressCountry")
+            for val in raw if isinstance(raw, list) else [raw]:
+                name = _country_label(val)
+                if name:
+                    countries.append(name)
+    return countries
+
+
+def _salary_has_amount(salary) -> bool:
+    if isinstance(salary, (int, float, str)):
+        n = _num(salary)
+        return n is not None and n > 0
+    if not isinstance(salary, dict):
+        return False
+    value = salary.get("value")
+    if isinstance(value, dict):
+        return any(_num(value.get(k)) for k in ("minValue", "maxValue", "value"))
+    if value is not None:
+        return _num(value) is not None
+    return any(_num(salary.get(k)) for k in ("minValue", "maxValue"))
+
+
 def _posting_foreign(posting: Optional[dict]) -> bool:
     if not isinstance(posting, dict):
         return False
     salary = posting.get("baseSalary") or posting.get("salary")
-    return (
-        isinstance(salary, dict)
-        and bool(salary.get("currency"))
-        and not _usd(salary.get("currency"))
-    )
+    currency = salary.get("currency") if isinstance(salary, dict) else None
+    if currency:
+        return not _usd(currency)
+    if not _salary_has_amount(salary):
+        return False
+    countries = _posting_countries(posting)
+    return bool(countries) and all(not _US_COUNTRY_RE.fullmatch(c) for c in countries)
 
 
 def _posting_company(posting: dict) -> Optional[str]:
@@ -3802,6 +3849,8 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
 def _posting_pay(
     posting: dict, hours: Optional[int]
 ) -> tuple[Optional[int], Optional[int]]:
+    if _posting_foreign(posting):
+        return None, None
     salary = posting.get("baseSalary") or posting.get("salary")
     if salary is None:
         return None, None

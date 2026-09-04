@@ -2604,6 +2604,90 @@ def test_apply_listing_ignores_non_usd_salary():
     assert opp.pay_high is None
 
 
+def test_apply_listing_json_ld_amount_without_currency_follows_country():
+    from src.engine import _apply_listing, _foreign_salary
+
+    se = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Spotify"},
+     "jobLocation":{"address":{"addressCountry":"SE"}},
+     "baseSalary":{"currency":"","value":{"minValue":800000,"maxValue":900000,"unitText":"YEAR"}}}
+    </script>
+    <p>US equivalent $90,000 a year</p>
+    """
+    se_opp = Opportunity(title="Engineer", url="https://jobs.example/se")
+    assert _apply_listing(se_opp, se) is False
+    assert se_opp.company == "Spotify"
+    assert se_opp.pay_high is None
+    assert _foreign_salary(se) is True
+
+    dict_se = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Volvo"},
+     "jobLocation":{"address":{"addressCountry":{"@type":"Country","name":"Sweden"}}},
+     "baseSalary":800000}
+    </script>
+    """
+    dict_opp = Opportunity(title="Engineer", url="https://jobs.example/volvo")
+    assert _apply_listing(dict_opp, dict_se) is False
+    assert dict_opp.pay_high is None
+    assert _foreign_salary(dict_se) is True
+
+    us = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"addressCountry":"United States"}},
+     "baseSalary":{"currency":"","value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+    </script>
+    """
+    us_opp = Opportunity(title="Engineer", url="https://jobs.example/us")
+    assert _apply_listing(us_opp, us) is True
+    assert us_opp.pay_low == 180_000
+    assert us_opp.pay_high == 200_000
+    assert _foreign_salary(us) is False
+
+    none = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+    </script>
+    """
+    none_opp = Opportunity(title="Engineer", url="https://jobs.example/none")
+    assert _apply_listing(none_opp, none) is True
+    assert none_opp.pay_high == 200_000
+    assert _foreign_salary(none) is False
+
+    usd_se = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"addressCountry":"SE"}},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+    </script>
+    """
+    usd_opp = Opportunity(title="Engineer", url="https://jobs.example/usd-se")
+    assert _apply_listing(usd_opp, usd_se) is True
+    assert usd_opp.pay_high == 200_000
+    assert _foreign_salary(usd_se) is False
+
+
+def test_apply_listing_empty_json_ld_salary_non_us_falls_back_to_visible_text():
+    from src.engine import _apply_listing, _foreign_salary
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Klarna"},
+     "jobLocation":{"address":{"addressCountry":"Sweden"}},
+     "baseSalary":{"@type":"MonetaryAmount","currency":"","value":{"unitText":""}}}
+    </script>
+    <p>$180,000 a year</p>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/klarna")
+    assert _apply_listing(opp, html) is True
+    assert opp.company == "Klarna"
+    assert opp.pay_high == 180_000
+    assert _foreign_salary(html) is False
+
+
 def test_enrich_drops_foreign_salary_keeps_unknown_usd():
     engine = Engine()
 
@@ -2633,6 +2717,29 @@ def test_enrich_drops_foreign_salary_keeps_unknown_usd():
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["USD", "Unknown"]
     assert usd.pay_high == 180_000
+    assert unknown.pay_high is None
+
+
+def test_enrich_drops_json_ld_amount_without_currency_outside_us():
+    engine = Engine()
+
+    async def page(url: str) -> str:
+        if "se" in url:
+            return """
+            <script type="application/ld+json">
+            {"@type":"JobPosting","hiringOrganization":{"name":"Spotify"},
+             "jobLocation":{"address":{"addressCountry":"SE"}},
+             "baseSalary":{"value":{"minValue":800000,"maxValue":900000,"unitText":"YEAR"}}}
+            </script>
+            """
+        return "<title>Staff Engineer</title><p>Apply now. No salary listed.</p>"
+
+    engine._listing_text = page
+    se = Opportunity(title="SE", url="https://jobs.example/se")
+    unknown = Opportunity(title="Unknown", url="https://jobs.example/unknown")
+    opps = [se, unknown]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Unknown"]
     assert unknown.pay_high is None
 
 
