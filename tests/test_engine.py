@@ -25,6 +25,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Engineer", "USD 200,000–240,000") == 240_000
     from src.engine import _parse_pay
     assert _parse_pay("**Salary:** USD 160,000–190,000") == (160_000, 190_000)
+    assert _parse_pay("Base Salary: $126,000 - $180,000Diversity") == (126_000, 180_000)
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
