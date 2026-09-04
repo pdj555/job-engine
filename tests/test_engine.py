@@ -126,6 +126,27 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>$15000 to $17000 gross Salary Monthly</p>") is True
 
 
+def test_foreign_salary_detects_kr_and_zl_without_iso_code():
+    from src.engine import _apply_listing, _foreign_salary, _parse_pay
+
+    kr = "800 000 kr. US equivalent $90,000"
+    assert _parse_pay(kr) == (None, None)
+    assert _foreign_salary(f"<p>{kr}</p>") is True
+    assert _parse_pay("800.000 kr") == (None, None)
+    assert _foreign_salary("<p>Compensation: 750000 kr</p>") is True
+    assert _parse_pay("kr 750 000") == (None, None)
+    assert _parse_pay("800 000:-") == (None, None)
+    zl = "240 000 zł or $180,000"
+    assert _parse_pay(zl) == (None, None)
+    assert _foreign_salary(f"<p>{zl}</p>") is True
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
+    assert _foreign_salary("<p>$180,000 a year</p>") is False
+    opp = Opportunity(title="Engineer", url="https://jobs.example/se")
+    listed = _apply_listing(opp, f"<p>{kr}</p>")
+    assert listed is False
+    assert opp.pay_high is None
+
+
 def test_guess_pay_annualizes_hourly():
     assert _guess_pay("Contract", "$80/hr") == 160_000  # 80 * 40 * 50
     assert _guess_pay("Contract", "$80/hr", hours=20) == 80_000
