@@ -2845,6 +2845,56 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Browse Positions | Acme",
+                "url": "https://acme.com/browse-positions",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Explore Openings | Acme",
+                "url": "https://acme.com/explore-openings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Discover Roles | Acme",
+                "url": "https://acme.com/discover-roles",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Browse Position: Software Engineer",
+                "url": "https://jobs.example.com/job/browse-position-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://acme.com/browse-positions/senior-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Recommended Position: Software Engineer",
                 "url": "https://jobs.example.com/job/recommended-position-software-engineer",
                 "description": "$180,000",
@@ -16997,6 +17047,27 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Matching roles Account Executive $400,000</p>",
     ) is False
     assert matching_roles.pay_high is None
+    browse_listings = Opportunity(title="Engineer", url="https://jobs.example/browse-listings-text")
+    assert _apply_listing(
+        browse_listings,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Browse listings Account Executive $400,000</p>",
+    ) is False
+    assert browse_listings.pay_high is None
+    explore_openings = Opportunity(title="Engineer", url="https://jobs.example/explore-openings-text")
+    assert _apply_listing(
+        explore_openings,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Explore openings Account Executive $400,000</p>",
+    ) is False
+    assert explore_openings.pay_high is None
+    discover_roles = Opportunity(title="Engineer", url="https://jobs.example/discover-roles-text")
+    assert _apply_listing(
+        discover_roles,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Discover roles Account Executive $400,000</p>",
+    ) is False
+    assert discover_roles.pay_high is None
     related_dollar = (
         "<title>Engineer</title><p>Great team. Apply now.</p><p>Related $400,000</p>"
     )
