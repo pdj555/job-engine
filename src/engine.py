@@ -340,14 +340,19 @@ def _with_terms(query: str, *terms: str) -> str:
 def _search_angles(query: str) -> list[str]:
     """Web queries for this goal. Grants and equity only when the user asked."""
     text = query.casefold()
-    angles = [
-        _with_terms(query, "remote", "job", "hiring"),
-        _with_terms(query, "freelance", "contract"),
-    ]
+    angles = [query]
+    for extra in (("remote", "job", "hiring"), ("freelance", "contract")):
+        q = _with_terms(query, *extra)
+        if q not in angles:
+            angles.append(q)
     if any(w in text for w in ("grant", "funding", "fellowship", "scholarship")):
-        angles.append(_with_terms(query, "grant", "funding", "opportunity"))
+        q = _with_terms(query, "grant", "funding", "opportunity")
+        if q not in angles:
+            angles.append(q)
     if any(w in text for w in ("equity", "cofounder", "co-founder", "startup")):
-        angles.append(_with_terms(query, "startup", "equity", "cofounder"))
+        q = _with_terms(query, "startup", "equity", "cofounder")
+        if q not in angles:
+            angles.append(q)
     return angles
 
 

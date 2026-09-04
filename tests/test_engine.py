@@ -349,6 +349,7 @@ def test_search_all_drops_index_pages():
 def test_search_angles_omit_grants_and_equity_unless_asked():
     job = _search_angles("senior ML engineer remote")
     assert job == [
+        "senior ML engineer remote",
         "senior ML engineer remote job hiring",
         "senior ML engineer remote freelance contract",
     ]
