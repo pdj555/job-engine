@@ -1449,7 +1449,12 @@ _INDEX_URL_RE = re.compile(
     r"|arc\.dev/remote-jobs"
     r"|jobdescription\.org/"
     r"|ai\.engineer/jobs"
-    r"|remotely\.works/blog/)",
+    r"|remotely\.works/blog/"
+    r"|peopleinai\.com/"
+    r"|7seventy\.net/"
+    r"|globalcareer\.io/"
+    r"|visa-hunt\.com/"
+    r"|dailyremote\.com/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(

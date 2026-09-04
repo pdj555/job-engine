@@ -895,6 +895,56 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.peopleinai.com/job/senior-machine-learning-engineer-9",
+                "description": "California $200,000 - $300,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer Remote (United States)",
+                "url": "https://7seventy.net/7job/759-lkdn-649-remote-united-states-senior-machine-learning-engineer",
+                "description": "Compensation:$180,000 – $250,000 per year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer | High Paying Remote Job",
+                "url": "https://globalcareer.io/remote/jobs/senior-machine-learning-engineer/",
+                "description": "$180,000 - $210,000 / year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer at Rebtel",
+                "url": "https://www.visa-hunt.com/jobs/472ad0f1815d89a1",
+                "description": "Stockholm",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer at Clearview AI",
+                "url": "https://dailyremote.com/remote-job/senior-machine-learning-engineer-5211999",
+                "description": "$180k remote",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -932,6 +982,11 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Jobs at Grafana Labs</title><p>Current openings</p>",
         "https://job-boards.greenhouse.io/grafanalabs/jobs/1",
+    )
+    assert _html_is_index(
+        "<title>Working in Artificial Intelligence | People in AI</title>"
+        "<p>California $200,000 - $300,000</p>",
+        "https://www.peopleinai.com/job/senior-machine-learning-engineer-9",
     )
     assert not _is_index_page(
         {
@@ -1061,6 +1116,26 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Staff Machine Learning Engineer",
                 "url": "https://www.remotely.works/blog/what-are-the-responsibilities-of-a-staff-machine-learning",
+            },
+            {
+                "title": "Senior Machine Learning Engineer",
+                "url": "https://www.peopleinai.com/job/senior-machine-learning-engineer-9",
+            },
+            {
+                "title": "Senior Machine Learning Engineer Remote (United States)",
+                "url": "https://7seventy.net/7job/759-lkdn-649-remote-united-states-senior-machine-learning-engineer",
+            },
+            {
+                "title": "Senior Machine Learning Engineer | High Paying Remote Job",
+                "url": "https://globalcareer.io/remote/jobs/senior-machine-learning-engineer/",
+            },
+            {
+                "title": "Senior Machine Learning Engineer at Rebtel",
+                "url": "https://www.visa-hunt.com/jobs/472ad0f1815d89a1",
+            },
+            {
+                "title": "Senior Machine Learning Engineer at Clearview AI",
+                "url": "https://dailyremote.com/remote-job/senior-machine-learning-engineer-5211999",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]
