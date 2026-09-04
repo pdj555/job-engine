@@ -6839,6 +6839,28 @@ def test_apply_listing_ignores_related_jsonld_jobposting():
     assert opp.company == "Bitwarden"
 
 
+def test_apply_listing_prefers_longer_jsonld_title_over_related_substring():
+    from src.engine import _apply_listing
+
+    html = """
+    <title>Staff Software Engineer at Acme | Careers</title>
+    <script type="application/ld+json">
+    {"@graph": [
+      {"@type":"JobPosting","title":"Software Engineer",
+       "baseSalary":{"currency":"USD","value":{"minValue":400000,"maxValue":500000,"unitText":"YEAR"}}},
+      {"@type":"JobPosting","title":"Staff Software Engineer",
+       "hiringOrganization":{"name":"Acme"},
+       "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    """
+    opp = Opportunity(title="x", url="https://jobs.example/staff")
+    _apply_listing(opp, html)
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 220_000
+    assert opp.company == "Acme"
+
+
 def test_listing_plain_text_ignores_script_salaries():
     from src.engine import _listing_plain_text, _parse_pay, _visible_text
 

@@ -3667,10 +3667,19 @@ def _job_posting(html: str) -> Optional[dict]:
         return posts[0]
     title = _html_title(html).casefold()
     if title:
+        head = re.split(r"\s*[•|]\s*", title, maxsplit=1)[0].strip()
+        role_head = re.split(r"\s+at\s+", head, maxsplit=1)[0].strip()
+        best = None
+        best_n = -1
         for posting in posts:
             pt = str(posting.get("title") or "").strip().casefold()
-            if pt and (pt in title or title.startswith(pt)):
-                return posting
+            if not pt:
+                continue
+            if role_head == pt or role_head.startswith(pt + " ") or head.startswith(pt):
+                if len(pt) > best_n:
+                    best, best_n = posting, len(pt)
+        if best:
+            return best
     return posts[0]
 
 
