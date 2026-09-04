@@ -2627,6 +2627,141 @@ def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):
     assert html is None
 
 
+def test_greenhouse_hosted_ids_from_gh_jid_and_html():
+    from src.engine import _ats_job_url, _greenhouse_hosted_ids, _is_index_page
+
+    url = "https://www.samsara.com/company/careers/roles/7266357?gh_jid=7266357"
+    assert _greenhouse_hosted_ids(url) == ("samsara", "7266357")
+    assert _ats_job_url(url)
+    assert not _is_index_page(
+        {"url": url, "title": "Jobs at Samsara", "description": ""}
+    )
+    assert _greenhouse_hosted_ids(
+        "https://www.samsara.com/company/careers/roles/7266357"
+    ) is None
+    assert _greenhouse_hosted_ids(
+        "https://www.samsara.com/company/careers/roles/7266357",
+        '<div id="greenhouse-job-7266357-auto"></div>',
+    ) == ("samsara", "7266357")
+    assert _greenhouse_hosted_ids(
+        "https://www.samsara.com/company/careers/roles/7266357",
+        "https://job-boards.greenhouse.io/samsara/jobs/7266357",
+    ) == ("samsara", "7266357")
+    assert (
+        _greenhouse_hosted_ids(
+            "https://www.example.com/company/careers/roles/7266357",
+            "<title>Careers</title><p>No greenhouse embed</p>",
+        )
+        is None
+    )
+    assert _greenhouse_hosted_ids(
+        "https://job-boards.greenhouse.io/reddit/jobs/6960831"
+    ) is None
+
+
+def test_listing_text_hosted_greenhouse_reads_api(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return json.dumps(
+                {
+                    "id": 7266357,
+                    "title": "Staff Machine Learning Engineer - Edge AI",
+                    "company_name": "Samsara",
+                    "location": {"name": "Remote - US"},
+                    "content": "<p>Build models.</p>",
+                    "pay_input_ranges": [
+                        {
+                            "min_cents": 17864000,
+                            "max_cents": 31900000,
+                            "currency_type": "USD",
+                        }
+                    ],
+                }
+            )
+        return "<title>SPA</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://www.samsara.com/company/careers/roles/7266357?gh_jid=7266357"
+    html = asyncio.run(engine._listing_text(url))
+    assert seen == [
+        "https://boards-api.greenhouse.io/v1/boards/samsara/jobs/7266357?pay_transparency=true"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.company == "Samsara"
+    assert opp.title == "Staff Machine Learning Engineer - Edge AI"
+    assert opp.remote is True
+    assert opp.pay_low == 178_640
+    assert opp.pay_high == 319_000
+    assert opp.score() == 159.5
+
+
+def test_listing_text_hosted_greenhouse_api_404_keeps_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return None
+        return (
+            "<title>Staff Machine Learning Engineer - Edge AI - Remote - US</title>"
+            "<p>$178,640 - $319,000</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://www.samsara.com/company/careers/roles/7266357?gh_jid=7266357"
+    html = asyncio.run(engine._listing_text(url))
+    assert any("boards-api.greenhouse.io" in u for u in seen)
+    assert html and "$178,640" in html
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.pay_high == 319_000
+    assert opp.company is None
+
+
+def test_listing_text_hosted_greenhouse_from_html_marker(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "boards-api.greenhouse.io" in url:
+            return json.dumps(
+                {
+                    "id": 7266357,
+                    "title": "Staff ML",
+                    "company_name": "Samsara",
+                    "location": {"name": "Remote - US"},
+                    "content": "<p>x</p>",
+                }
+            )
+        return '<div id="greenhouse-job-7266357-auto"></div>'
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://www.samsara.com/company/careers/roles/7266357"
+    html = asyncio.run(engine._listing_text(url))
+    assert seen[0] == url
+    assert seen[1] == (
+        "https://boards-api.greenhouse.io/v1/boards/samsara/jobs/7266357"
+        "?pay_transparency=true"
+    )
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    _apply_listing(opp, html)
+    assert opp.company == "Samsara"
+    assert opp.remote is True
+
+
 def test_listing_text_greenhouse_api_timeout_falls_back_to_html(monkeypatch):
     engine = Engine()
     seen: list[str] = []

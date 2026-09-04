@@ -109,6 +109,16 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and not data.get("error"):
                     return _greenhouse_to_html(data)
+        hosted = _greenhouse_hosted_ids(url)
+        if hosted:
+            raw = await fetch(_greenhouse_boards_api_url(hosted))
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and not data.get("error"):
+                    return _greenhouse_to_html(data)
         md = _workable_md_url(url)
         if md:
             raw = await fetch(md)
@@ -327,7 +337,20 @@ class Engine:
                 return None
             if posting:
                 return _ashby_to_html(posting)
-        return await fetch(_lever_job_url(url))
+        html = await fetch(_lever_job_url(url))
+        if html is None:
+            return None
+        hosted = _greenhouse_hosted_ids(url, html)
+        if hosted:
+            raw = await fetch(_greenhouse_boards_api_url(hosted))
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and not data.get("error"):
+                    return _greenhouse_to_html(data)
+        return html
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search ATS site: queries first, then generic angles; retry empty site: queries."""
@@ -1348,10 +1371,17 @@ def _title_is_index(title: str) -> bool:
     if _ROLE_JOBS_AT_RE.search(t) and not re.match(r"(?i)\s*jobs\b", t):
         return False
     return bool(_JOBS_WORD_RE.search(t))
+
+
 _GH_HOST = r"(?:job-boards(?:\.[a-z]+)?|boards(?:\.[a-z]+)?)\.greenhouse\.io"
 _GH_JOB_RE = re.compile(
     rf"(?i)https?://{_GH_HOST}/(?!embed\b)([^/]+)/jobs/(\d+)",
 )
+_GH_EMBED_FOR_RE = re.compile(
+    rf"(?i)https?://{_GH_HOST}/embed/job_app\?[^\"'\s<>]*\bfor=([a-z0-9_-]+)",
+)
+_GH_HOSTED_JID_RE = re.compile(r"(?i)(?:[?&]gh_jid=|greenhouse-job-)(\d{5,})")
+_GH_BOARD_SKIP = frozenset({"www", "careers", "jobs", "job", "app", "cdn", "api"})
 
 
 def _greenhouse_ids(url: str) -> Optional[tuple[str, str]]:
@@ -1376,10 +1406,59 @@ def _greenhouse_api_url(url: str) -> Optional[str]:
     ids = _greenhouse_ids(url)
     if not ids:
         return None
+    return _greenhouse_boards_api_url(ids)
+
+
+def _greenhouse_boards_api_url(ids: tuple[str, str]) -> str:
     return (
         f"https://boards-api.greenhouse.io/v1/boards/{ids[0]}/jobs/{ids[1]}"
         "?pay_transparency=true"
     )
+
+
+def _greenhouse_board_from_host(url: str) -> Optional[str]:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host or host.endswith("greenhouse.io"):
+        return None
+    labels = [p for p in host.split(".") if p and p not in _GH_BOARD_SKIP]
+    if len(labels) < 2:
+        return None
+    board = labels[-2]
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", board):
+        return None
+    return board
+
+
+def _greenhouse_hosted_ids(url: str, html: str = "") -> Optional[tuple[str, str]]:
+    """Board token and job id for a company-hosted Greenhouse page.
+
+    greenhouse.io URLs stay on `_greenhouse_ids`. A wrong host board must not
+    mark the posting gone — callers fall through to page HTML on API 404.
+    """
+    if _greenhouse_ids(url):
+        return None
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    if host.endswith("greenhouse.io"):
+        return None
+    q = parse_qs(parsed.query)
+    jid = (q.get("gh_jid") or [""])[0].strip()
+    job = _GH_JOB_RE.search(html or "")
+    if not (jid.isdigit() and len(jid) >= 5):
+        m = _GH_HOSTED_JID_RE.search(html or "")
+        jid = m.group(1) if m else (job.group(2) if job else "")
+    if not (jid.isdigit() and len(jid) >= 5):
+        return None
+    board = (q.get("for") or [""])[0].strip()
+    if not board:
+        embed = job or _GH_EMBED_FOR_RE.search(html or "")
+        if embed:
+            board = embed.group(1)
+    if not board:
+        board = _greenhouse_board_from_host(url) or ""
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", board):
+        return None
+    return board, jid
 
 
 def _cents_to_annual(cents) -> Optional[int]:
@@ -2809,6 +2888,7 @@ def _ats_job_url(url: str) -> bool:
     """True when the URL is a specific ATS posting, not a board or catalog."""
     return bool(
         _greenhouse_ids(url)
+        or _greenhouse_hosted_ids(url)
         or _lever_api_url(url)
         or _ashby_ids(url)
         or _workable_md_url(url)
