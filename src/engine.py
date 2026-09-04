@@ -3620,10 +3620,11 @@ def _compensation_from_raw(
 
 _RELATED_JOBS_RE = re.compile(
     r"(?is)(?:similar|related|recommended|other|more|featured|popular|suggested|matching)\s+jobs.*$"
-    r"|jobs\s+(?:you\s+may\s+like|near\s+you).*$"
-    r"|you\s+may\s+also\s+like.*$"
-    r"|people\s+also\s+viewed.*$"
-    r"|(?:similar|related|recommended|other|more)\s+(?:roles|openings).*$"
+    r"|jobs\s+(?:you\s+(?:may|might)\s+like|near\s+you).*$"
+    r"|you\s+(?:may|might)\s+(?:also\s+)?like.*$"
+    r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
+    r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
+    r"|(?:similar|related|recommended|other)\s+opportunities.*$"
 )
 
 

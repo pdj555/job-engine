@@ -8640,6 +8640,42 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     <h2>People also viewed</h2>
     <p>Account Executive $180,000 - $220,000</p>
     """
+    positions = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Other positions</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    opportunities = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Other opportunities</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    might = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>You might also like</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    applicants = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Applicants also viewed</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    featured_roles = """
+    <title>Engineer</title>
+    <p>Great team. Apply now.</p>
+    <h2>Featured roles</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
+    own_then_opps = """
+    <title>Engineer</title>
+    <p>$115,000 - $145,000 a year.</p>
+    <h2>Other opportunities</h2>
+    <p>Account Executive $180,000 - $220,000</p>
+    """
     glued = (
         "<title>IT Security Administrator at Bitwarden</title>"
         "<p>$115,000 - $145,000 a year.</p>"
@@ -8656,6 +8692,12 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     assert _parse_pay(_listing_plain_text(featured)) == (None, None)
     assert _parse_pay(_listing_plain_text(viewed)) == (None, None)
     assert _parse_pay(_listing_plain_text(glued_other)) == (None, None)
+    assert _parse_pay(_listing_plain_text(positions)) == (None, None)
+    assert _parse_pay(_listing_plain_text(opportunities)) == (None, None)
+    assert _parse_pay(_listing_plain_text(might)) == (None, None)
+    assert _parse_pay(_listing_plain_text(applicants)) == (None, None)
+    assert _parse_pay(_listing_plain_text(featured_roles)) == (None, None)
+    assert _parse_pay(_listing_plain_text(own_then_opps)) == (115_000, 145_000)
     assert _foreign_salary(html) is False
     assert _foreign_salary(glued) is False
     opp = Opportunity(
@@ -8672,6 +8714,21 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     feat = Opportunity(title="Engineer", url="https://jobs.example/featured")
     assert _apply_listing(feat, featured) is False
     assert feat.pay_high is None
+    pos = Opportunity(title="Engineer", url="https://jobs.example/positions")
+    assert _apply_listing(pos, positions) is False
+    assert pos.pay_high is None
+    opps = Opportunity(title="Engineer", url="https://jobs.example/opps")
+    assert _apply_listing(opps, opportunities) is False
+    assert opps.pay_high is None
+    kept = Opportunity(title="Engineer", url="https://jobs.example/kept")
+    assert _apply_listing(kept, own_then_opps) is True
+    assert kept.pay_high == 145_000
+    growth = Opportunity(title="Engineer", url="https://jobs.example/growth")
+    assert _apply_listing(
+        growth,
+        "<title>Engineer</title><p>We offer more opportunities for growth. Salary $180,000</p>",
+    ) is True
+    assert growth.pay_high == 180_000
 
 
 def test_apply_listing_ignores_related_jsonld_jobposting():
