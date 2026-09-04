@@ -424,6 +424,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote freelance contract",
         "senior ML engineer remote site:greenhouse.io",
         "senior ML engineer remote site:jobs.lever.co",
+        "senior ML engineer remote site:jobs.ashbyhq.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -516,6 +517,38 @@ def test_heuristic_company_from_lever_prefix():
         }
     )
     assert h.company == "Lyra Health"
+
+
+def test_heuristic_company_from_ashby_at():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior ML Engineer @ Quilter",
+            "url": "https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1/application",
+            "description": "",
+        }
+    )
+    assert h.company == "Quilter"
+    assert h.url == "https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1"
+
+
+def test_apply_listing_ashby_json_ld_pay():
+    from src.engine import _apply_listing
+
+    html = """
+    <title>Senior ML Engineer @ Quilter</title>
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Quilter"},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":200000,"unitText":"YEAR"}}}
+    </script>
+    """
+    opp = Opportunity(
+        title="Senior ML Engineer @ Quilter",
+        url="https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Quilter"
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 200_000
 
 
 def test_heuristic_company_from_lever_slug():

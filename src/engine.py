@@ -375,12 +375,17 @@ def _normalize_url(url: str) -> str:
 
 
 def _lever_job_url(url: str) -> str:
-    """Lever /apply is a form, not the posting. Fetch the job page."""
+    """Job page, not the apply form (Lever /apply, Ashby /application)."""
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
+    cut = None
     if host.endswith("lever.co") and path.casefold().endswith("/apply"):
-        path = path[: -len("/apply")] or "/"
+        cut = "/apply"
+    elif host.endswith("ashbyhq.com") and path.casefold().endswith("/application"):
+        cut = "/application"
+    if cut:
+        path = path[: -len(cut)] or "/"
         return parsed._replace(path=path, query="", fragment="").geturl()
     return url
 
@@ -410,12 +415,13 @@ async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
 def _title_key(title: str, company: Optional[str] = None) -> str:
     """Role identity across boards: strip ATS suffixes and company wrappers."""
     t = title or ""
-    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.lever\.co\s*$", "", t)
+    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.(?:lever\.co|ashbyhq\.com)\s*$", "", t)
     t = re.sub(r"(?i)^job application for\s+", "", t)
     if company and company.strip():
         c = re.escape(company.strip())
         t = re.sub(rf"(?i)^{c}\s*[-:|]\s*", "", t)
         t = re.sub(rf"(?i)\s+at\s+{c}\b.*$", "", t)
+        t = re.sub(rf"(?i)\s+@\s+{c}\s*$", "", t)
     t = re.sub(r"(?i)\s+in remote\b.*$", "", t)
     return re.sub(r"\W+", " ", t).casefold().strip()
 
@@ -448,7 +454,7 @@ def _search_angles(query: str) -> list[str]:
         if q not in angles:
             angles.append(q)
     if "site:" not in text:
-        for site in ("greenhouse.io", "jobs.lever.co"):
+        for site in ("greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com"):
             q = f"{query} site:{site}"
             if q not in angles:
                 angles.append(q)
@@ -549,15 +555,21 @@ _ROLE_START_RE = re.compile(
 
 
 def _company_from_title(title: str, url: str = "") -> str | None:
-    """Employer from ` at X`, or Lever `Company - Role` titles."""
-    m = re.search(r"(?i)\bat\s+(.+)$", title or "")
+    """Employer from ` at X`, ` @ X`, or Lever `Company - Role` titles."""
+    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.(?:lever\.co|ashbyhq\.com)\s*$", "", title or "")
+    m = re.search(r"(?i)\bat\s+(.+)$", t)
+    if m:
+        name = m.group(1).strip(" .,-")
+        if name and not _PLACE_RE.search(name):
+            return name
+    m = re.search(r"(?i)\s+@\s+(.+)$", t)
     if m:
         name = m.group(1).strip(" .,-")
         if name and not _PLACE_RE.search(name):
             return name
     host = (urlparse(url).hostname or "").casefold()
     if host.endswith("lever.co"):
-        m = re.match(r"^(.+?)\s+[-–—]\s+\S", title or "")
+        m = re.match(r"^(.+?)\s+[-–—]\s+\S", t)
         if m:
             name = m.group(1).strip(" .,-")
             if name and not _PLACE_RE.search(name) and not _ROLE_START_RE.search(name):
@@ -576,8 +588,10 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug in {"jobs", "embed"}:
             return None
-    elif host.endswith("lever.co"):
+    elif host.endswith("lever.co") or host.endswith("ashbyhq.com"):
         slug = parts[0]
+        if host.endswith("ashbyhq.com") and slug in {"jobs", "application"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -600,6 +614,8 @@ def _ats_board_key(url: str) -> Optional[str]:
         return f"gh:{parts[0].casefold()}"
     if host.endswith("lever.co"):
         return f"lever:{parts[0].casefold()}"
+    if host.endswith("ashbyhq.com"):
+        return f"ashby:{parts[0].casefold()}"
     return None
 
 
