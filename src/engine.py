@@ -265,6 +265,16 @@ class Engine:
                     return _bamboohr_to_html(job, bb[0])
                 return None
             return ""
+        jz = _jazzhr_ids(url)
+        if jz:
+            raw = await fetch(_jazzhr_job_url(url))
+            if raw is None:
+                return None
+            if raw:
+                if _job_posting(raw):
+                    return raw
+                return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -629,6 +639,9 @@ def _lever_job_url(url: str) -> str:
     bb = _bamboohr_job_url(url)
     if bb:
         return bb
+    jz = _jazzhr_job_url(url)
+    if jz:
+        return jz
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -931,6 +944,7 @@ def _search_angles(query: str) -> list[str]:
             "pinpointhq.com",
             "comeet.com",
             "bamboohr.com",
+            "applytojob.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1130,6 +1144,10 @@ def _company_from_url(url: str) -> str | None:
             slug = labels[1]
         if slug in {"www", "app", "careers"}:
             return None
+    elif host.endswith(".applytojob.com"):
+        slug = host.split(".")[0]
+        if slug in {"www", "app", "careers"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1197,6 +1215,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"www", "app", "careers"}:
             return None
         return f"bamboohr:{slug}"
+    if host.endswith(".applytojob.com"):
+        slug = host.split(".")[0].casefold()
+        if slug in {"www", "app", "careers"}:
+            return None
+        return f"jazzhr:{slug}"
     return None
 
 
@@ -2412,6 +2435,37 @@ def _bamboohr_to_html(job: dict, board: str = "") -> str:
     )
 
 
+_JAZZHR_JOB_RE = re.compile(
+    r"(?i)https?://(?:www\.)?([a-z0-9-]+)\.applytojob\.com/apply/([A-Za-z0-9]{6,})"
+)
+
+
+def _jazzhr_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _JAZZHR_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1).casefold()
+    if board in {"www", "app", "careers"}:
+        return None
+    return board, m.group(2)
+
+
+def _jazzhr_job_url(url: str) -> Optional[str]:
+    ids = _jazzhr_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.applytojob.com/apply/{ids[1]}"
+
+
+def _jazzhr_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host in {"applytojob.com", "www.applytojob.com"}:
+        return True
+    if not host.endswith(".applytojob.com"):
+        return False
+    return _jazzhr_ids(url) is None
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2438,6 +2492,7 @@ def _ats_job_url(url: str) -> bool:
         or _pinpoint_ids(url)
         or _comeet_ids(url)
         or _bamboohr_ids(url)
+        or _jazzhr_ids(url)
     )
 
 
@@ -2487,6 +2542,8 @@ def _is_index_page(raw: dict) -> bool:
     if _comeet_is_board(url):
         return True
     if _bamboohr_is_board(url):
+        return True
+    if _jazzhr_is_board(url):
         return True
     return False
 

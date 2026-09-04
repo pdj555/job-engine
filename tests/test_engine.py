@@ -1021,6 +1021,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:pinpointhq.com",
         "senior ML engineer remote site:comeet.com",
         "senior ML engineer remote site:bamboohr.com",
+        "senior ML engineer remote site:applytojob.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4200,6 +4201,116 @@ def test_listing_text_bamboohr_missing_id_is_gone(monkeypatch):
         engine._listing_text("https://lawsonlundell.bamboohr.com/careers/244")
     )
     assert seen == ["https://lawsonlundell.bamboohr.com/careers/244/detail"]
+    assert html is None
+
+
+def test_jazzhr_job_urls_are_not_boards():
+    from src.engine import _is_index_page, _jazzhr_job_url, _lever_job_url
+
+    job = (
+        "https://harvesthosts.applytojob.com/apply/"
+        "etlianxvgi/senior-full-stack-engineer"
+    )
+    assert _lever_job_url(job) == (
+        "https://harvesthosts.applytojob.com/apply/etlianxvgi"
+    )
+    assert _jazzhr_job_url(job) == (
+        "https://harvesthosts.applytojob.com/apply/etlianxvgi"
+    )
+    assert not _is_index_page(
+        {"url": job, "title": "Senior Full Stack Engineer - Harvest Hosts - Career Page", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://veronetworks.applytojob.com/apply/",
+            "title": "Vero Networks - Career Page",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://usengineering.applytojob.com/apply",
+            "title": "U.S. Engineering - Career Page",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_jazzhr_jobposting_pay(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    html = (
+        "<title>Senior Full Stack Engineer - Harvest Hosts - Career Page</title>"
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Senior Full Stack Engineer",'
+        '"hiringOrganization":{"name":"Harvest Hosts"},'
+        '"employmentType":"FULL_TIME","jobLocationType":"TELECOMMUTE",'
+        '"baseSalary":{"currency":"USD","value":{"unitText":"YEAR",'
+        '"minValue":130000,"maxValue":150000}}}'
+        "</script>"
+        "<p>Remote</p>"
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return html
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://harvesthosts.applytojob.com/apply/etlianxvgi/senior-full-stack-engineer"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://harvesthosts.applytojob.com/apply/etlianxvgi"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is True
+    assert opp.company == "Harvest Hosts"
+    assert opp.remote is True
+    assert opp.pay_low == 130_000
+    assert opp.pay_high == 150_000
+    assert opp.hours_per_week == 40
+
+
+def test_listing_text_jazzhr_board_shell_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    html = (
+        "<title>Anika Systems - Career Page</title>"
+        '<script type="application/ld+json">'
+        '{"@type":"Organization","name":"Anika Systems"}'
+        "</script>"
+        "<p>Full Time</p>"
+    )
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return html
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    gone = asyncio.run(
+        engine._listing_text(
+            "https://anikasystems.applytojob.com/apply/vQZOpYzJri/AI-Engineer"
+        )
+    )
+    assert seen == ["https://anikasystems.applytojob.com/apply/vQZOpYzJri"]
+    assert gone is None
+
+
+def test_listing_text_jazzhr_410_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return None
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://veronetworks.applytojob.com/apply/zzzzzzzzzz/Gone-Role"
+        )
+    )
+    assert seen == ["https://veronetworks.applytojob.com/apply/zzzzzzzzzz"]
     assert html is None
 
 
