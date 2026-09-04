@@ -32,6 +32,26 @@ def test_rank_skips_non_http_urls():
     assert [o.title for o in ranked] == ["ok"]
 
 
+def test_rank_skips_index_pages():
+    ranked = _rank(
+        [
+            {
+                "title": "Jobs - Indeed",
+                "url": "https://www.indeed.com/q-ml-jobs.html",
+                "pay": 400_000,
+                "hours_per_week": 10,
+            },
+            {
+                "title": "Real",
+                "url": "https://jobs.example/x",
+                "pay": 100_000,
+                "hours_per_week": 40,
+            },
+        ]
+    )
+    assert [o.title for o in ranked] == ["Real"]
+
+
 def test_rank_builds_opportunity_models_with_fields():
     ranked = _rank(
         [{"title": "X", "url": "https://acme.example/x", "company": "Acme", "pay": 120_000,

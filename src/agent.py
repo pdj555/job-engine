@@ -15,6 +15,7 @@ from openai import AsyncOpenAI
 
 from config.settings import settings
 from src.models import Opportunity
+from src.engine import _is_index_page
 
 PROMPT = """You are an autonomous opportunity scout. Goal: {query}
 
@@ -59,7 +60,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
     opportunities = []
     for o in items:
         url = o.get("url") or ""
-        if not _http_url(url):
+        if not _http_url(url) or _is_index_page(o):
             continue
         opp = Opportunity(
             title=o.get("title", "Unknown"),

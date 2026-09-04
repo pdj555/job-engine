@@ -68,7 +68,7 @@ class Engine:
         unique = []
         for r in all_results:
             key = _normalize_url(r.get("url") or "")
-            if key and key not in seen:
+            if key and key not in seen and not _is_index_page(r):
                 seen.add(key)
                 unique.append(r)
 
@@ -264,7 +264,8 @@ Only include urls that appear in the results."""
                 raw = by_url.get(key)
                 if raw and key not in seen:
                     seen.add(key)
-                    opportunities.append(_merge_extracted(raw, item))
+                    if not _is_index_page(raw):
+                        opportunities.append(_merge_extracted(raw, item))
             for key, raw in by_url.items():
                 if key not in seen and (o := _heuristic_opportunity(raw)):
                     opportunities.append(o)
@@ -330,7 +331,7 @@ def _items_from_llm(content: Optional[str]) -> list:
 
 def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
     url = raw.get("url")
-    if not url:
+    if not url or _is_index_page(raw):
         return None
     title = raw.get("title") or "Unknown"
     desc = raw.get("description") or ""
@@ -385,6 +386,28 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     )
     opp.efficiency = opp.refined_rate
     return opp
+
+
+_INDEX_URL_RE = re.compile(
+    r"(?:indeed\.com/q-|indeed\.com/jobs\?|linkedin\.com/jobs/(?!view/)"
+    r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q=)",
+    re.I,
+)
+_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b")
+
+
+def _is_index_page(raw: dict) -> bool:
+    """True for search/board index pages, not a single opportunity."""
+    url = raw.get("url") or ""
+    title = raw.get("title") or ""
+    desc = raw.get("description") or ""
+    if _INDEX_URL_RE.search(url):
+        return True
+    if _INDEX_TITLE_RE.search(title):
+        return True
+    if re.match(r"(?i)\s*browse\s+\d+", desc):
+        return True
+    return False
 
 
 def _compensation_from_raw(

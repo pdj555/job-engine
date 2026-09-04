@@ -252,6 +252,69 @@ def test_heuristic_opportunity_prefers_raw_then_guesses():
     assert thin.remote is False
 
 
+def test_index_pages_are_not_opportunities():
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Flexible Ml Engineer Remote $150,000 Jobs - Indeed",
+                "url": "https://www.indeed.com/q-ml-engineer-remote-$150,000-jobs.html",
+                "description": "Browse 568 Ml Engineer Remote $150,000 job openings.",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Remote Machine Learning Engineer Jobs ($104K-$225K)",
+                "url": "https://www.remoterocketship.com/jobs/machine-learning-engineer/",
+                "description": "Search 546 remote jobs.",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "RemoteFront | 100,000+ Remote Jobs from 20,000+ Vetted Companies",
+                "url": "https://www.remotefront.com/remote-ml-engineer-jobs",
+                "description": "median $190k (most $150k-$215k)",
+            }
+        )
+        is None
+    )
+    kept = _heuristic_opportunity(
+        {
+            "title": "Senior AI/ML Engineer",
+            "url": "https://www.gravityer.com/jobs/ctg-senior-ai-ml-engineer",
+            "description": "Remote (US Only) | $150K-$200K",
+        }
+    )
+    assert kept is not None
+    assert kept.pay_high == 200_000
+
+
+def test_search_all_drops_index_pages():
+    engine = Engine()
+
+    async def fake_brave(_query: str):
+        return [
+            {
+                "title": "Jobs - Indeed",
+                "url": "https://www.indeed.com/q-ml-jobs.html",
+            },
+            {"title": "Real role", "url": "https://jobs.example/ml"},
+        ]
+
+    async def fake_perplexity(_query: str):
+        return []
+
+    engine._search_brave = fake_brave
+    engine._search_perplexity = fake_perplexity
+    results = asyncio.run(engine._search_all("ml"))
+    assert [r["url"] for r in results] == ["https://jobs.example/ml"]
+
+
 def test_find_ranks_and_limits_without_llm():
     engine = Engine()
     engine.openai = None
