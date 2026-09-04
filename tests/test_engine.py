@@ -5835,6 +5835,12 @@ def test_apply_listing_json_ld_yearly_thousands():
         f"<title>Engineer</title><script type=application/ld+json>{body}</script>",
     ) is True
     assert unquoted.pay_high == 220_000
+    quoted = Opportunity(title="Engineer", url="https://jobs.example/ld-single-quote")
+    assert _apply_listing(
+        quoted,
+        f"<title>Engineer</title><script type='application/ld+json'>{body.replace(chr(34), chr(39))}</script>",
+    ) is True
+    assert quoted.pay_high == 220_000
     cdata = Opportunity(title="Engineer", url="https://jobs.example/ld-cdata")
     assert _apply_listing(
         cdata,
@@ -6026,6 +6032,33 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(hr, hour_span) is True
     assert hr.pay_low == 160_000
     assert hr.pay_high == 200_000
+    slash = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","value":{"@type":"QuantitativeValue","value":"$80-$100/hr"}}}
+    </script>
+    """
+    hourly_slash = Opportunity(title="Engineer", url="https://jobs.example/ld-slash-hr")
+    assert _apply_listing(hourly_slash, slash) is True
+    assert hourly_slash.pay_low == 160_000
+    assert hourly_slash.pay_high == 200_000
+    single_hr = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","baseSalary":"$80/hr"}
+    </script>
+    """
+    one = Opportunity(title="Engineer", url="https://jobs.example/ld-one-hr")
+    assert _apply_listing(one, single_hr) is True
+    assert one.pay_high == 160_000
+    phrase = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","baseSalary":"$80-$100 per hour"}
+    </script>
+    """
+    per = Opportunity(title="Engineer", url="https://jobs.example/ld-per-hour-str")
+    assert _apply_listing(per, phrase) is True
+    assert per.pay_low == 160_000
+    assert per.pay_high == 200_000
 
 
 def test_apply_listing_json_ld_monthly_and_weekly_thousands():
@@ -6052,6 +6085,14 @@ def test_apply_listing_json_ld_monthly_and_weekly_thousands():
     dollars = Opportunity(title="Engineer", url="https://jobs.example/ld-mo")
     assert _apply_listing(dollars, full) is True
     assert dollars.pay_high == 180_000
+    month_str = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","baseSalary":"$15,000 per month"}
+    </script>
+    """
+    monthly = Opportunity(title="Engineer", url="https://jobs.example/ld-mo-str")
+    assert _apply_listing(monthly, month_str) is True
+    assert monthly.pay_high == 180_000
     week = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6272,6 +6313,16 @@ def test_apply_listing_ignores_non_usd_salary():
     coded = Opportunity(title="Engineer", url="https://jobs.example/ld-currencycode-eur")
     _apply_listing(coded, code_eur)
     assert coded.pay_high is None
+    eur_hr = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currency":"EUR","value":{"value":"$80-$100/hr"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    hour_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-eur-hr-str")
+    _apply_listing(hour_eur, eur_hr)
+    assert hour_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():

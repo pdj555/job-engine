@@ -3907,6 +3907,8 @@ _PAY_UNITS = {
     "HOUR": "hour",
     "HOURLY": "hour",
     "HR": "hour",
+    "HRS": "hour",
+    "HOURS": "hour",
     "HUR": "hour",
     "YEAR": "year",
     "ANNUAL": "year",
@@ -4035,6 +4037,8 @@ def _ld_json(text: str):
         return json.loads(text)
     except json.JSONDecodeError:
         cleaned = re.sub(r",(\s*[}\]])", r"\1", text)
+        if "'" in cleaned and '"' not in cleaned:
+            cleaned = cleaned.replace("'", '"')
         if cleaned == text:
             return None
         try:
@@ -4263,6 +4267,23 @@ _SALARY_TOKEN_RE = re.compile(
 )
 
 
+_BLOB_UNIT_RE = re.compile(
+    r"(?i)(?:/|\bper\s+|\ban?\s+)?\b("
+    r"hourly|hours|hour|hrs|hr|"
+    r"yearly|year|yr|"
+    r"annually|annual|annum|"
+    r"monthly|months|month|"
+    r"weekly|weeks|week|"
+    r"daily|days|day|diem"
+    r")\b"
+)
+
+
+def _unit_from_blob(text: str) -> Optional[str]:
+    m = _BLOB_UNIT_RE.search(text or "")
+    return _pay_unit(m.group(1) if m else None)
+
+
 def _span_nums(text: str) -> list[float]:
     """Stated range amounts from a salary string. Ignore years-of-experience."""
     out: list[float] = []
@@ -4275,7 +4296,18 @@ def _span_nums(text: str) -> list[float]:
     rate = [n for n in out if 10 <= n <= 1000]
     if yearly:
         return yearly
-    if len(rate) >= 2 and not re.search(r"(?i)\byears?\b", text or ""):
+    if re.search(r"(?i)\byears?\b", text or ""):
+        return []
+    if len(rate) >= 2:
+        return rate
+    if len(rate) == 1 and _unit_from_blob(text) in {
+        "hour",
+        "day",
+        "week",
+        "biweek",
+        "semimonth",
+        "month",
+    }:
         return rate
     return []
 
@@ -4582,7 +4614,7 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
 
 
 def _salary_unit(salary) -> Optional[str]:
-    return _pay_unit(_unit_text(salary))
+    return _pay_unit(_unit_text(salary)) or _unit_from_blob(_salary_blob(salary))
 
 
 def _posting_pay(
