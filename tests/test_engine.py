@@ -5858,6 +5858,29 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_jc, job_comp) is True
     assert posting_jc.pay_low == 180_000
     assert posting_jc.pay_high == 220_000
+    offered = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "offeredSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_offered = Opportunity(title="Engineer", url="https://jobs.example/ld-offeredSalary")
+    assert _apply_listing(posting_offered, offered) is True
+    assert posting_offered.pay_low == 180_000
+    assert posting_offered.pay_high == 220_000
+    fromto = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryFrom":180000,"salaryTo":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_from = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryFrom")
+    assert _apply_listing(posting_from, fromto) is True
+    assert posting_from.pay_low == 180_000
+    assert posting_from.pay_high == 220_000
     min_sal = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6603,6 +6626,27 @@ def test_apply_listing_ignores_non_usd_salary():
     jc_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-jobCompensation-eur")
     _apply_listing(jc_eur, eur_jc)
     assert jc_eur.pay_high is None
+    eur_offered = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "offeredSalary":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    offered_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-offeredSalary-eur")
+    _apply_listing(offered_eur, eur_offered)
+    assert offered_eur.pay_high is None
+    eur_from = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR","salaryFrom":80000,"salaryTo":100000}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    from_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryFrom-eur")
+    _apply_listing(from_eur, eur_from)
+    assert from_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -7451,6 +7495,24 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "Friday, January 15, 2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020 Jan 15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020 January 15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020 Jan. 15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020/Jan/15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020.01.15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2029 Jan 15")
     ) is False
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "01-15-2020")
@@ -10179,6 +10241,32 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(meta_row, meta_pay)
     assert meta_row.pay_low == 180_000
     assert meta_row.pay_high == 220_000
+    annual_pay = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "metadata": [{"name": "Annual Salary", "value": "$180,000 - $220,000"}],
+        }
+    )
+    annual_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/10")
+    _apply_listing(annual_row, annual_pay)
+    assert annual_row.pay_low == 180_000
+    assert annual_row.pay_high == 220_000
+    annual_base = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "metadata": [{"name": "Annual Base Salary", "value": "$180,000 - $220,000"}],
+        }
+    )
+    annual_base_row = Opportunity(
+        title="x", url="https://job-boards.greenhouse.io/acme/jobs/11"
+    )
+    _apply_listing(annual_base_row, annual_base)
+    assert annual_base_row.pay_low == 180_000
+    assert annual_base_row.pay_high == 220_000
     meta_eur = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -13448,6 +13536,16 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Similar listings",
         "Similar job",
         "Matching roles",
+        "Available jobs",
+        "Available roles",
+        "Your recent searches",
+        "Hiring in your area",
+        "Explore more",
+        "Jobs for you",
+        "Because you searched",
+        "Because you applied",
+        "People also applied for",
+        "Nearby jobs",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"
@@ -13465,6 +13563,21 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
     ) is True
     assert like.pay_low == 180_000
     assert like.pay_high == 220_000
+    explore = Opportunity(title="Engineer", url="https://jobs.example/explore-kept")
+    assert _apply_listing(
+        explore,
+        "<title>Engineer</title><p>Salary $180,000 - $220,000 a year.</p>"
+        "<h2>Explore more</h2><p>Account Executive $400,000</p>",
+    ) is True
+    assert explore.pay_low == 180_000
+    assert explore.pay_high == 220_000
+    benefits = Opportunity(title="Engineer", url="https://jobs.example/explore-benefits")
+    assert _apply_listing(
+        benefits,
+        "<title>Engineer</title><h2>Explore more of our benefits</h2>"
+        "<p>Salary $180,000</p>",
+    ) is True
+    assert benefits.pay_high == 180_000
     applied_copy = Opportunity(title="Engineer", url="https://jobs.example/applied-copy")
     assert _apply_listing(
         applied_copy,

@@ -1770,7 +1770,7 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:base\s+)?(?:salary|compensation|pay)(?:\s+range)?$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly)\s+)*(?:salary|compensation|pay)(?:\s+range)?$"
 )
 
 
@@ -3935,8 +3935,19 @@ _RELATED_HEADING_RE = re.compile(
     r"|hot\s+openings"
     r"|available\s+openings"
     r"|matching\s+openings"
-    r"|people\s+also\s+applied"
-    r"|applicants\s+also\s+applied"
+    r"|people\s+also\s+applied(?:\s+for)?"
+    r"|applicants\s+also\s+applied(?:\s+for)?"
+    r"|available\s+(?:jobs|roles|positions)"
+    r"|your\s+recent\s+searches"
+    r"|recent\s+searches"
+    r"|hiring\s+in\s+your\s+area"
+    r"|explore\s+more"
+    r"|jobs\s+for\s+you"
+    r"|jobs\s+in\s+your\s+area"
+    r"|nearby\s+jobs"
+    r"|roles\s+near\s+you"
+    r"|because\s+you\s+searched"
+    r"|because\s+you\s+applied"
     r"|more\s+like\s+this"
     r"|more\s+like\s+these"
     r"|jobs\s+like\s+this"
@@ -4602,7 +4613,7 @@ def _salary_span(items: list) -> dict:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, then salary aliases, then salaryMin. Skip empty objects."""
+    """baseSalary, then salary aliases, then salaryMin/salaryFrom. Skip empty objects."""
     if not isinstance(posting, dict):
         return None
     for key in (
@@ -4614,6 +4625,7 @@ def _posting_salary(posting: Optional[dict]):
         "salaryRange",
         "payRange",
         "jobCompensation",
+        "offeredSalary",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4630,6 +4642,7 @@ def _posting_salary(posting: Optional[dict]):
         ("minSalary", "maxSalary"),
         ("salaryRangeMin", "salaryRangeMax"),
         ("min_salary", "max_salary"),
+        ("salaryFrom", "salaryTo"),
     ):
         nums = _nums(posting.get(a)) + _nums(posting.get(b))
         if not nums:
@@ -4677,6 +4690,7 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "salaryRange",
         "payRange",
         "jobCompensation",
+        "offeredSalary",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -5126,6 +5140,22 @@ def _posting_date(raw) -> Optional[date]:
         month = _MONTH_NUM.get(m.group(2).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(1)))
+    m = re.match(
+        r"(\d{4})\s+([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?",
+        text,
+    )
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(1)), month, int(m.group(3)))
+    m = re.match(r"(\d{4})/([A-Za-z]+)/(\d{1,2})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(1)), month, int(m.group(3)))
+    m = re.match(r"(\d{4})\.(\d{1,2})\.(\d{1,2})", text)
+    if m:
+        return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     m = re.match(r"(\d{1,2})[-.](\d{1,2})[-.](\d{4})", text)
     if not m:
         return None
