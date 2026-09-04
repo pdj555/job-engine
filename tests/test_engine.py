@@ -721,6 +721,25 @@ def test_search_all_runs_site_angles_before_generic():
     assert seen == sites + generic
 
 
+def test_search_all_retries_empty_site_angles_after_generic():
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_brave(query: str):
+        seen.append(query)
+        if "ashbyhq.com" in query and seen.count(query) == 1:
+            return []
+        return [{"title": "R", "url": f"https://jobs.example/{len(seen)}"}]
+
+    engine._search_brave = fake_brave
+    results = asyncio.run(engine._search_all("ml"))
+    ashby = "ml site:jobs.ashbyhq.com"
+    assert seen.count(ashby) == 2
+    assert seen.index(ashby) < seen.index("ml")
+    assert seen[-1] == ashby
+    assert "https://jobs.example/9" in [r["url"] for r in results]
+
+
 def test_search_angles_omit_grants_and_equity_unless_asked():
     job = _search_angles("senior ML engineer remote")
     assert job == [
