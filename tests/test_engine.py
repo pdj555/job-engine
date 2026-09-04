@@ -123,6 +123,22 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Full-time Engineer", "") == 40
     assert _guess_hours("Contract Engineer", "") is None
     assert _guess_hours("Engineer", "") is None
+    assert _guess_hours("Engineer", "partner teams") is None
+    assert (
+        _guess_hours(
+            "Staff, Machine Learning Engineer",
+            "education benefit program for full-time and part-time associates",
+        )
+        is None
+    )
+    assert _guess_hours("Part-time role", "full-time and part-time associates") == 20
+    assert (
+        _guess_hours(
+            "Engineer",
+            "This is a full-time role. Benefits for full-time and part-time associates.",
+        )
+        == 40
+    )
 
 
 def test_apply_listing_reads_hours_a_week_for_rate():
@@ -135,6 +151,27 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert opp.hours_per_week == 32
     assert opp.rate_is_imputed is False
     assert opp.score() == 100.0
+
+
+def test_apply_listing_benefits_boilerplate_is_not_part_time():
+    from src.engine import _apply_listing
+
+    html = (
+        "<title>Staff, Machine Learning Engineer - Walmart Careers</title>"
+        "<p>Bentonville, AR (onsite) $130,000 - $260,000</p>"
+        "<p>education benefit program for full-time and part-time associates</p>"
+    )
+    opp = Opportunity(
+        title="Staff, Machine Learning Engineer",
+        url="https://careers.walmart.com/us/en/jobs/R-2395925",
+    )
+    _apply_listing(opp, html)
+    assert opp.hours_per_week is None
+    assert opp.rate_is_imputed is True
+    assert opp.pay_low == 130_000
+    assert opp.pay_high == 260_000
+    assert opp.remote is False
+    assert opp.score() == 91.0
 
 
 def test_apply_listing_stated_hours_beat_part_time_default():

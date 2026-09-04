@@ -3283,6 +3283,12 @@ _HOURS_RE = re.compile(
     r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week)\b",
     re.I,
 )
+_DUAL_TIME_RE = re.compile(
+    r"(?i)(?:full[\s-]*time\s*(?:and|or|/|&|,)\s*(?:and\s+)?part[\s-]*time"
+    r"|part[\s-]*time\s*(?:and|or|/|&|,)\s*(?:and\s+)?full[\s-]*time)"
+)
+_PART_TIME_RE = re.compile(r"(?i)\bpart[\s-]+time\b")
+_FULL_TIME_RE = re.compile(r"(?i)\bfull[\s-]+time\b")
 _GEO_PAREN_RANGE_RE = re.compile(
     r"(?is)\(([^)]{0,120})\)\s*:\s*"
     r"\$\s*([\d,]+(?:\.\d+)?)\s*(k\b)?"
@@ -3426,17 +3432,24 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
     return None
 
 
+def _employment_hours(text: str) -> Optional[int]:
+    """20/40 from this blob's employment type. None if both or neither."""
+    stripped = _DUAL_TIME_RE.sub(" ", text or "")
+    part = bool(_PART_TIME_RE.search(stripped))
+    full = bool(_FULL_TIME_RE.search(stripped))
+    if part and not full:
+        return 20
+    if full and not part:
+        return 40
+    return None
+
+
 def _guess_hours(title: str, description: str) -> Optional[int]:
     """Hours from the listing text, or None. Does not assume full-time."""
     stated = _stated_hours(title, description)
     if stated:
         return stated
-    lower = f"{title} {description}".lower()
-    if "part-time" in lower or "part time" in lower:
-        return 20
-    if "full-time" in lower or "full time" in lower:
-        return 40
-    return None
+    return _employment_hours(title) or _employment_hours(description)
 
 
 def _workplace_remote(place: str) -> Optional[bool]:
