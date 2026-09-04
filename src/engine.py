@@ -1538,6 +1538,14 @@ _RANGE_FULL_RE = re.compile(
     r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
     re.I,
 )
+_RANGE_SPACE_K_RE = re.compile(
+    r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s+\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b",
+    re.I,
+)
+_RANGE_SPACE_FULL_RE = re.compile(
+    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s+\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)",
+    re.I,
+)
 _RANGE_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
 )
@@ -1581,6 +1589,16 @@ def _parse_pay(
     ranged_full = _RANGE_FULL_RE.search(text)
     if ranged_full:
         low, high = int(_money(ranged_full.group(1))), int(_money(ranged_full.group(2)))
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
+    spaced_k = _RANGE_SPACE_K_RE.search(text)
+    if spaced_k:
+        low, high = int(_money(spaced_k.group(1)) * 1000), int(_money(spaced_k.group(2)) * 1000)
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
+    spaced = _RANGE_SPACE_FULL_RE.search(text)
+    if spaced:
+        low, high = int(_money(spaced.group(1))), int(_money(spaced.group(2)))
         if 10_000 <= low <= high <= 2_000_000:
             return low, high
     ranged_usd = _RANGE_USD_RE.search(text)

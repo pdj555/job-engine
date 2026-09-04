@@ -29,6 +29,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("proposed band b/t US$175k and $250k annually") == (175_000, 250_000)
     assert _parse_pay("$160,000 and $190,000") == (160_000, 190_000)
     assert _parse_pay("$180,000 and $5,000 signing bonus") == (None, 180_000)
+    assert _parse_pay("Salary range: $190,000 $250,000 + performance-based bonus") == (
+        190_000,
+        250_000,
+    )
+    assert _parse_pay("$180K $200K") == (180_000, 200_000)
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
