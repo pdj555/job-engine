@@ -1396,6 +1396,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert qv_hours.hours_per_week == 32
     assert qv_hours.pay_low == 128_000
     assert qv_hours.pay_high == 160_000
+    value_hours = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-value")
+    assert _apply_listing(
+        value_hours,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"workHours":{"@value":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert value_hours.hours_per_week == 32
+    assert value_hours.pay_low == 128_000
+    assert value_hours.pay_high == 160_000
     per_week = Opportunity(title="Engineer", url="https://jobs.example/ld-hoursPerWeek")
     assert _apply_listing(
         per_week,
@@ -6825,6 +6837,41 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(minmax, bounds) is True
     assert minmax.pay_low == 180_000
     assert minmax.pay_high == 220_000
+    at_value = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue",
+         "minValue":{"@value":180000},"maxValue":{"@value":220000},"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    typed_bounds = Opportunity(title="Engineer", url="https://jobs.example/ld-minValue-value")
+    assert _apply_listing(typed_bounds, at_value) is True
+    assert typed_bounds.pay_low == 180_000
+    assert typed_bounds.pay_high == 220_000
+    at_value_range = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue",
+         "value":{"@value":"$180,000 - $220,000"},"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    typed_range = Opportunity(title="Engineer", url="https://jobs.example/ld-value-value")
+    assert _apply_listing(typed_range, at_value_range) is True
+    assert typed_range.pay_low == 180_000
+    assert typed_range.pay_high == 220_000
+    euro_value = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","baseSalary":{"@value":"€80,000"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    euro_opp = Opportunity(title="Engineer", url="https://jobs.example/ld-euro-value")
+    assert _apply_listing(euro_opp, euro_value) is False
+    assert euro_opp.pay_high is None
     low_high = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",

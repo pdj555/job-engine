@@ -4315,6 +4315,14 @@ def _num(value) -> Optional[float]:
             return float(s)
         except ValueError:
             return None
+    if isinstance(value, dict):
+        for key in ("@value", "value", "name"):
+            nested = value.get(key)
+            if nested is not None and nested is not value:
+                amount = _num(nested)
+                if amount is not None:
+                    return amount
+        return _num(_ld_text(value))
     return None
 
 
@@ -4690,7 +4698,7 @@ def _salary_blob(salary) -> str:
     if isinstance(salary, list):
         return " ".join(_salary_blob(item) for item in salary)
     if isinstance(salary, dict):
-        return " ".join(
+        blob = " ".join(
             _salary_blob(salary.get(key))
             for key in (
                 "minValue",
@@ -4776,6 +4784,10 @@ def _salary_blob(salary) -> str:
             )
             if key in salary
         )
+        text = _ld_text(salary)
+        if text:
+            return f"{blob} {text}".strip()
+        return blob
     return ""
 
 
@@ -4885,6 +4897,12 @@ def _nums(value) -> list[float]:
         for key in _MONEY_NEST_KEYS:
             if key in value:
                 out.extend(_nums(value.get(key)))
+        if out:
+            return out
+        amount = _num(value)
+        if amount is not None:
+            out.append(amount)
+        out.extend(_span_nums(_ld_text(value) or ""))
         return out
     return []
 
