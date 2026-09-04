@@ -97,10 +97,10 @@ def agent(
     limit: int = typer.Option(15, "-n", help="Results"),
 ):
     """
-    Find opportunities autonomously via the Hermes Agent brain.
+    Find opportunities autonomously.
 
-    The agent plans its own searches, extracts opportunities, and ranks by
-    $/hour. Requires a running Hermes Agent server (see docs/AGENT.md).
+    Plans its own searches, then ranks by $/hour. Uses the OpenAI Agents SDK
+    when OPENAI_API_KEY is set; otherwise the same open-web path as `find`.
     """
     from src.agent import agent_find
 
@@ -118,7 +118,6 @@ def agent(
                 results = await agent_find(query, limit)
             except Exception as e:
                 console.print(f"[red]Agent error:[/red] {e}")
-                console.print("[dim]Is Hermes Agent running? See docs/AGENT.md[/dim]")
                 return
 
         if not results:

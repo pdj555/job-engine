@@ -82,7 +82,7 @@ export function SearchComposer({
     apiOnline === false
       ? "api offline · run `job-engine serve` on :8000"
       : mode === "agent"
-        ? "autonomous · hermes brain plans its own searches"
+        ? "autonomous · plans its own searches"
         : "/ focus · enter to search";
 
   return (
