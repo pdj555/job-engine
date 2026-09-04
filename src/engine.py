@@ -4436,12 +4436,12 @@ _FOREIGN_PAY_RE = re.compile(
     r"(?:€|£)\s*\d{1,3}(?:,\d{3}){1,2}"
     r"|(?:€|£)\s*\d{5,7}\b"
     r"|(?:€|£)\s*\d{2,3}(?:\.\d+)?\s*k\b"
-    r"|\b(?:EUR|GBP)\s*\d{1,3}(?:,\d{3}){1,2}"
+    r"|\b(?:EUR|GBP)\s*\d{1,3}(?:[,'’.\s]\d{3}){1,2}"
     r"|\b(?:EUR|GBP)\s*\d{5,7}\b"
     r"|\b(?:EUR|GBP)\s*\d{2,3}(?:\.\d+)?\s*k\b"
     r"|(?:₹|¥)\s*\d"
     r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\s+['’]?\d"
-    r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{5,7}\s*(?:EUR|GBP)\b"
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP|euros?|pounds?)\b"
     r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\b"
@@ -4462,7 +4462,7 @@ _FOREIGN_DOLLAR_RE = re.compile(
     r"(?:\s*[—–-]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?)?"
     r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|pesos?)\b"
     r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD)\)"
-    r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
     r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b"
     r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS)\b",
     re.I | re.S,
@@ -4563,6 +4563,14 @@ def _posting_countries(posting: dict) -> list[str]:
         if not isinstance(row, dict):
             continue
         add_label(_ld_text(row.get("name")) or "")
+        loc_country = _country_label(
+            row.get("addressCountry")
+            or row.get("address_country")
+            or row.get("country")
+        )
+        if loc_country:
+            push(loc_country)
+            add_label(loc_country)
         addr = row.get("address")
         addrs = addr if isinstance(addr, list) else [addr]
         for item in addrs:
@@ -4571,7 +4579,11 @@ def _posting_countries(posting: dict) -> list[str]:
                 continue
             if not isinstance(item, dict):
                 continue
-            raw = item.get("addressCountry") or item.get("address_country")
+            raw = (
+                item.get("addressCountry")
+                or item.get("address_country")
+                or item.get("country")
+            )
             for val in raw if isinstance(raw, list) else [raw]:
                 name = _country_label(val)
                 if name:
@@ -4586,7 +4598,9 @@ def _posting_countries(posting: dict) -> list[str]:
                 or ""
             ).strip()
             country = _country_label(
-                item.get("addressCountry") or item.get("address_country")
+                item.get("addressCountry")
+                or item.get("address_country")
+                or item.get("country")
             )
             add_label(", ".join(p for p in (city, region, country) if p))
     return countries
@@ -4952,7 +4966,7 @@ _DURATION_UNITS = {
 
 
 def _ld_text(value) -> Optional[str]:
-    """String from a JSON-LD scalar, [scalar], or {@value,name,value,@id} node."""
+    """String from a JSON-LD scalar, [scalar], or {@value,name,value,@id,text} node."""
     if isinstance(value, str) and value.strip():
         return value
     if isinstance(value, list):
@@ -4962,7 +4976,7 @@ def _ld_text(value) -> Optional[str]:
                 return text
         return None
     if isinstance(value, dict):
-        for key in ("@value", "name", "value", "@id"):
+        for key in ("@value", "name", "value", "@id", "text"):
             raw = value.get(key)
             if isinstance(raw, str) and raw.strip():
                 return raw
@@ -5573,7 +5587,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+expired\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:paused|on\s+hold)\b"
     r"|we(?:'ve|\s+have)\s+paused\s+this\s+search\b"
-    r"|we(?:'ve|\s+have)\s+concluded\s+this\s+search\b"
+    r"|we(?:'ve|\s+have)?\s+concluded\s+this\s+search\b"
     r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we\s+filled\s+this\s+"
@@ -5608,6 +5622,8 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+(?:down|offline)\b"
     r"|we\s+took\s+down\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"|we(?:'ve|\s+have)\s+taken\s+down\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we(?:'ve|\s+have)?\s+(?:closed|cancelled|canceled)\s+this\s+search\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:cancelled|canceled)\b"
@@ -6629,7 +6645,9 @@ def _jsonld_place(posting: dict) -> str:
                 or ""
             ).strip()
             country = _country_label(
-                addr.get("addressCountry") or addr.get("address_country")
+                addr.get("addressCountry")
+                or addr.get("address_country")
+                or addr.get("country")
             )
             label = (
                 label

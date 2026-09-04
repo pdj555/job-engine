@@ -431,7 +431,17 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     for blob in ("£60k", "£60K - £80K", "€85k", "GBP 60k", "EUR 85k"):
         assert _parse_pay(blob) == (None, None)
         assert _foreign_salary(f"<p>{blob} a year</p>") is True
-    for blob in ("80,000 EUR", "80000 GBP", "80k EUR", "80,000 euros", "80k euros", "EUR80,000"):
+    for blob in (
+        "80,000 EUR",
+        "80000 GBP",
+        "80k EUR",
+        "80,000 euros",
+        "80k euros",
+        "EUR80,000",
+        "80.000 EUR",
+        "80 000 EUR",
+        "80 000 euros",
+    ):
         assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
         assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
     assert _parse_pay("$180,000") == (None, 180_000)
@@ -468,6 +478,8 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>Compensation: 150,000 CHF</p>") is True
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
+    assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>Salary 90 000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("$90,000 AUD") == (None, None)
     assert _parse_pay("INR 2,400,000. US $180,000") == (None, None)
     assert _foreign_salary("<p>₹12,00,000 or $180,000</p>") is True
@@ -6734,6 +6746,30 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert titled.title == "Staff Engineer"
+    text_title = Opportunity(title="x", url="https://jobs.example/ld-title-text")
+    assert _apply_listing(
+        text_title,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":{"text":"Staff Engineer"},'
+        '"hiringOrganization":{"name":{"text":"Acme"}},'
+        '"workHours":{"text":"32 hours per week"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert text_title.title == "Staff Engineer"
+    assert text_title.company == "Acme"
+    assert text_title.hours_per_week == 32
+    named_text = Opportunity(title="x", url="https://jobs.example/ld-name-wins-text")
+    assert _apply_listing(
+        named_text,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":{"name":"Staff Engineer","text":"Catalog"},'
+        '"hiringOrganization":{"name":"Acme","legalName":{"text":"Holdings"}},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert named_text.title == "Staff Engineer"
+    assert named_text.company == "Acme"
     alt = Opportunity(title="x", url="https://jobs.example/ld-alternateName")
     assert _apply_listing(
         alt,
@@ -9235,6 +9271,42 @@ def test_apply_listing_json_ld_amount_without_currency_follows_country():
     assert _apply_listing(snake_opp, snake_de) is False
     assert snake_opp.pay_high is None
     assert _foreign_salary(snake_de) is True
+    country_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"country":"Germany"}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    country_opp = Opportunity(title="Engineer", url="https://jobs.example/de-country")
+    assert _apply_listing(country_opp, country_de) is False
+    assert country_opp.pay_high is None
+    assert _foreign_salary(country_de) is True
+    text_de = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"address":{"addressCountry":{"text":"Germany"}}},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    text_opp = Opportunity(title="Engineer", url="https://jobs.example/de-text")
+    assert _apply_listing(text_opp, text_de) is False
+    assert text_opp.pay_high is None
+    assert _foreign_salary(text_de) is True
+    place_country = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "jobLocation":{"@type":"Place","country":"Germany"},
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    place_opp = Opportunity(title="Engineer", url="https://jobs.example/de-place-country")
+    assert _apply_listing(place_opp, place_country) is False
+    assert place_opp.pay_high is None
+    assert _foreign_salary(place_country) is True
     snake_value_de = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -10819,6 +10891,26 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We closed this ticket.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've taken down this job.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've taken down this comment.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We concluded this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've concluded this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We concluded this ticket.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
