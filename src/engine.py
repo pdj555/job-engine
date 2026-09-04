@@ -1028,8 +1028,20 @@ _INDEX_URL_RE = re.compile(
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
-    r"(?i)\bjobs\b(?!\.)(?! by workable)|^hire a freelance\b|\bcurrent openings\b"
+    r"(?i)^hire a freelance\b|\bcurrent openings\b"
 )
+_JOBS_WORD_RE = re.compile(r"(?i)\bjobs\b(?!\.)(?! by workable)")
+_ROLE_JOBS_AT_RE = re.compile(r"(?i).+\bjobs at \S")
+
+
+def _title_is_index(title: str) -> bool:
+    """Board/catalog titles. 'Role Jobs at Employer' is a listing, not a board."""
+    t = title or ""
+    if _INDEX_TITLE_RE.search(t):
+        return True
+    if _ROLE_JOBS_AT_RE.search(t) and not re.match(r"(?i)\s*jobs\b", t):
+        return False
+    return bool(_JOBS_WORD_RE.search(t))
 _GH_HOST = r"(?:job-boards(?:\.[a-z]+)?|boards(?:\.[a-z]+)?)\.greenhouse\.io"
 _GH_JOB_RE = re.compile(
     rf"(?i)https?://{_GH_HOST}/(?!embed\b)([^/]+)/jobs/(\d+)",
@@ -1421,7 +1433,7 @@ def _is_index_page(raw: dict) -> bool:
     desc = raw.get("description") or ""
     if _INDEX_URL_RE.search(url):
         return True
-    if _INDEX_TITLE_RE.search(title):
+    if _title_is_index(title):
         return True
     if re.match(r"(?i)\s*browse\s+\d+", desc):
         return True

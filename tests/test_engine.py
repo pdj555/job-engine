@@ -825,6 +825,26 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert kept_builtin is not None
+    amgen = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer Jobs at Amgen in United States - Remote",
+            "url": "https://careers.amgen.com/en/job/washington-d-c/senior-machine-learning-engineer/87/99808047504",
+            "description": "Remote",
+        }
+    )
+    assert amgen is not None
+    from src.engine import _is_index_page
+
+    assert _is_index_page(
+        {
+            "url": "https://job-boards.greenhouse.io/grafanalabs/jobs/1",
+            "title": "Jobs at Grafana Labs",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {"url": "https://jobs.ashbyhq.com/acme", "title": "Jobs", "description": ""}
+    )
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
