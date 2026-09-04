@@ -5251,6 +5251,8 @@ def _posting_company(posting: dict) -> Optional[str]:
             _ld_text(org.get("name"))
             or _ld_text(org.get("legalName"))
             or _ld_text(org.get("legal_name"))
+            or _ld_text(org.get("alternateName"))
+            or _ld_text(org.get("alternate_name"))
             or ""
         ).strip()
     else:
@@ -5453,7 +5455,12 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
     posting = _job_posting(html, opp.title)
     listed_pay = False
     if posting:
-        pt = (_ld_text(posting.get("title")) or "").strip()
+        pt = (
+            _ld_text(posting.get("title"))
+            or _ld_text(posting.get("jobTitle"))
+            or _ld_text(posting.get("job_title"))
+            or ""
+        ).strip()
         if pt:
             opp.title = _role_title(pt)
         name = _posting_company(posting)
@@ -5557,7 +5564,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:paused|on\s+hold)\b"
     r"|we(?:'ve|\s+have)\s+paused\s+this\s+search\b"
     r"|we(?:'ve|\s+have)\s+concluded\s+this\s+search\b"
-    r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated)\s+this\s+"
+    r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we\s+filled\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"

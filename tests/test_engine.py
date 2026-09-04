@@ -6644,6 +6644,46 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert legal_place.company != "Remote"
+    job_title = Opportunity(title="x", url="https://jobs.example/ld-jobTitle")
+    assert _apply_listing(
+        job_title,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","jobTitle":"Staff Engineer",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert job_title.title == "Staff Engineer"
+    titled = Opportunity(title="x", url="https://jobs.example/ld-title-wins")
+    assert _apply_listing(
+        titled,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Staff Engineer","jobTitle":"Catalog",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert titled.title == "Staff Engineer"
+    alt = Opportunity(title="x", url="https://jobs.example/ld-alternateName")
+    assert _apply_listing(
+        alt,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"alternateName":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert alt.company == "Acme"
+    alt_place = Opportunity(title="x", url="https://jobs.example/ld-alternate-place")
+    assert _apply_listing(
+        alt_place,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"alternateName":"Remote"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert alt_place.company != "Remote"
 
 
 def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
@@ -10611,6 +10651,26 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We deactivated this feature.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We archived this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've deleted this listing.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We discontinued this position.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We archived our blog.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We deleted this comment.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
