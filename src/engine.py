@@ -70,7 +70,7 @@ class Engine:
                     continue
                 if not isinstance(text, str) or not text:
                     continue
-                if _html_is_index(text, o.url):
+                if _html_is_index(text, o.url) or _html_is_gone(text):
                     gone.append(o)
                     continue
                 listed = _apply_listing(o, text)
@@ -400,6 +400,8 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and not data.get("error"):
                     return _greenhouse_to_html(data)
+        if html and _html_is_gone(html):
+            return None
         return html
 
     async def _search_all(self, query: str) -> list[dict]:
@@ -3775,6 +3777,19 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
 def _html_title(html: str) -> str:
     m = re.search(r"(?is)<title>([^<]+)</title>", html or "")
     return unescape(m.group(1)).strip() if m else ""
+
+
+_GONE_LISTING_RE = re.compile(
+    r"(?i)(?:sorry,\s+)?this\s+job\s+was\s+removed"
+    r"|this\s+(?:job|role|position|posting)\s+is\s+no\s+longer\s+available"
+    r"|this\s+(?:job|role|position)\s+does\s+not\s+exist"
+    r"|the\s+job\s+listing\s+no\s+longer\s+exists"
+)
+
+
+def _html_is_gone(html: str) -> bool:
+    """True when the page says the posting was taken down. 200 HTML is not a listing."""
+    return bool(_GONE_LISTING_RE.search(_listing_plain_text(html)))
 
 
 def _html_is_index(html: str, url: str) -> bool:

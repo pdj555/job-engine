@@ -2550,6 +2550,72 @@ def test_apply_listing_company_from_html_title():
     assert opp.company == "Signifyd"
 
 
+def test_html_is_gone_removed_listing_banner():
+    from src.engine import _html_is_gone, _html_is_index
+
+    removed = (
+        "<title>Machine learning Engineer - Agentic Retrieval - Zoom | Built In</title>"
+        "<p>Sorry, this job was removed at 08:39 a.m. (UTC) on Friday, Aug 28, 2026</p>"
+        "<p>Similar Jobs Square Account Executive $151,800 - $332,200</p>"
+    )
+    assert _html_is_gone(removed) is True
+    assert _html_is_index(removed, "https://www.builtin.com/job/ml/10377512") is False
+    assert (
+        _html_is_gone(
+            "<title>ML Engineer - Zoom | Built In</title>"
+            "<p>Design hybrid retrieval systems. $180,000 - $220,000</p>"
+        )
+        is False
+    )
+    assert (
+        _html_is_gone(
+            "<title>Engineer</title>"
+            "<p>Applications removed from consideration stay on file.</p>"
+        )
+        is False
+    )
+
+
+def test_listing_text_removed_html_is_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        return (
+            "<title>ML Engineer - Zoom | Built In</title>"
+            "<p>Sorry, this job was removed at 08:39 a.m. (UTC)</p>"
+            "<p>$151,800 - $332,200</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://www.builtin.com/job/machine-learning-engineer-agentic-retrieval/10377512"
+        )
+    )
+    assert html is None
+
+
+def test_enrich_drops_removed_listing_html():
+    engine = Engine()
+
+    async def page(url: str):
+        if "removed" in url:
+            return (
+                "<title>ML Engineer - Zoom | Built In</title>"
+                "<p>Sorry, this job was removed at 08:39 a.m. (UTC)</p>"
+                "<p>$151,800</p>"
+            )
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Keep", url="https://jobs.example/live")
+    ghost = Opportunity(title="Ghost", url="https://www.builtin.com/job/removed/1")
+    opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Keep"]
+    assert keep.pay_high == 180_000
+
+
 def test_enrich_drops_fetched_board_index_html():
     engine = Engine()
 
