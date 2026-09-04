@@ -658,6 +658,26 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Senior Machine Learning Engineer - Acme - Indeed",
+                "url": "https://www.indeed.com/viewjob?jk=abc123def456",
+                "description": "$180,000 - $220,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "ML Engineer - Acme",
+                "url": "https://ca.indeed.com/viewjob?jk=xyz789",
+                "description": "$90,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Remote Machine Learning Engineer Jobs ($104K-$225K)",
                 "url": "https://www.remoterocketship.com/jobs/machine-learning-engineer/",
                 "description": "Search 546 remote jobs.",
@@ -1288,6 +1308,11 @@ def test_index_pages_are_not_opportunities():
         "<title>WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn</title>"
         "<p>Boomerang Healthcare Portland, OR $125,000.00 - $165,000.00</p>",
         "https://www.linkedin.com/jobs/view/4459896965",
+    )
+    assert _html_is_index(
+        "<title>Senior Machine Learning Engineer - Acme</title>"
+        "<p>$180,000 - $220,000 a year</p>",
+        "https://www.indeed.com/viewjob?jk=abc123def456",
     )
     assert _html_is_index(
         "<title>John Behling - Staff Engineer, Applied Machine Learning at Greenhouse</title>",
