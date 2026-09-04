@@ -544,6 +544,9 @@ def _lever_to_html(data: dict) -> str:
                 "value": value,
             }
     parts = []
+    place = str(data.get("workplaceType") or "").strip()
+    if place:
+        parts.append(f"<p>{place}</p>")
     for key in ("description", "additional", "salaryDescription"):
         val = data.get(key)
         if isinstance(val, str) and val.strip():
@@ -670,10 +673,12 @@ def _ashby_to_html(data: dict) -> str:
                 value["value"] = high or low
             posting["baseSalary"] = {"currency": "USD", "value": value}
     desc = str(data.get("descriptionHtml") or "")
+    place = str(data.get("workplaceType") or "").strip()
+    loc = f"<p>{place}</p>" if place else ""
     return (
         f"<title>{title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
-        f"<p>{summary}</p>{desc}"
+        f"{loc}<p>{summary}</p>{desc}"
     )
 
 
@@ -1099,11 +1104,13 @@ def _workable_jobs_to_html(data: dict) -> str:
     emp = data.get("employmentType")
     if isinstance(emp, str) and emp.strip():
         posting["employmentType"] = emp.strip()
+    place = str(data.get("workplace") or "").strip()
+    loc = f"<p>{place}</p>" if place else ""
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
         f'<script type="application/ld+json">{json.dumps(posting)}</script>'
-        f"{''.join(parts)}"
+        f"{loc}{''.join(parts)}"
     )
 
 
@@ -1420,22 +1427,19 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             listed_pay = True
     if not opp.company:
         opp.company = _guess_company(_html_title(html), opp.url)
-    visible = None
-    if not listed_pay or opp.hours_per_week is None:
-        visible = _listing_plain_text(html)
-        if opp.hours_per_week is None:
-            hours = _guess_hours(opp.title, visible)
-            if hours:
-                opp.hours_per_week = hours
-        if not listed_pay:
-            low, high = _parse_pay(visible, opp.hours_per_week, remote=opp.remote)
-            if high or low:
-                opp.pay_low = low
-                opp.pay_high = high
-                listed_pay = True
+    visible = _listing_plain_text(html)
+    opp.remote = _guess_remote(opp.title, visible)
+    if opp.hours_per_week is None:
+        hours = _guess_hours(opp.title, visible)
+        if hours:
+            opp.hours_per_week = hours
+    if not listed_pay:
+        low, high = _parse_pay(visible, opp.hours_per_week, remote=opp.remote)
+        if high or low:
+            opp.pay_low = low
+            opp.pay_high = high
+            listed_pay = True
     if opp.remote:
-        if visible is None:
-            visible = _listing_plain_text(html)
         geo = _remote_geo_pay(visible)
         if geo:
             opp.pay_low, opp.pay_high = geo
@@ -1715,7 +1719,10 @@ def _guess_hours(title: str, description: str) -> Optional[int]:
 
 def _guess_remote(title: str, description: str) -> bool:
     text = f"{title} {description}".lower()
-    if any(w in text for w in ("onsite", "on-site", "in-office", "in office", "hybrid")):
+    if any(
+        w in text
+        for w in ("onsite", "on-site", "on site", "in-office", "in office", "hybrid")
+    ):
         return False
     return True
 

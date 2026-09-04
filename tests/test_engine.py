@@ -99,6 +99,7 @@ def test_guess_hours_from_text_not_job_type():
 def test_guess_remote_penalizes_onsite_signals():
     assert _guess_remote("Engineer", "hybrid schedule") is False
     assert _guess_remote("Engineer", "must be onsite") is False
+    assert _guess_remote("Engineer", "must work on site") is False
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
 
 
@@ -1880,7 +1881,73 @@ def test_ashby_to_html_pay_from_scrapeable_summary():
     assert opp.pay_high == 200_000
     assert opp.hours_per_week == 40
     assert opp.rate_is_imputed is False
+    assert opp.remote is True
     assert opp.score() == 100
+
+
+def test_apply_listing_reads_workplace_from_listing():
+    from src.engine import _apply_listing, _ashby_to_html, _lever_to_html, _workable_jobs_to_html
+
+    hybrid = _ashby_to_html(
+        {
+            "title": "Engineer",
+            "employmentType": "FullTime",
+            "workplaceType": "Hybrid",
+            "descriptionHtml": "<p>Build systems.</p>",
+            "scrapeableCompensationSalarySummary": "$180K - $200K",
+        }
+    )
+    ashby = Opportunity(
+        title="x",
+        url="https://jobs.ashbyhq.com/acme/9a15ed0b-1a0e-4c00-b7c8-8a0c4e8e9abc",
+        remote=True,
+    )
+    _apply_listing(ashby, hybrid)
+    assert ashby.remote is False
+    assert ashby.pay_high == 200_000
+    assert ashby.score() == 70.0
+
+    lever = Opportunity(title="x", url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", remote=True)
+    _apply_listing(
+        lever,
+        _lever_to_html(
+            {
+                "text": "Engineer",
+                "workplaceType": "onsite",
+                "categories": {"commitment": "Full-time"},
+                "description": "<p>Build systems. $160,000 - $180,000</p>",
+            }
+        ),
+    )
+    assert lever.remote is False
+    assert lever.pay_low == 160_000
+    assert lever.pay_high == 180_000
+
+    workable = Opportunity(title="x", url="https://jobs.workable.com/view/abc", remote=True)
+    _apply_listing(
+        workable,
+        _workable_jobs_to_html(
+            {
+                "title": "Engineer",
+                "workplace": "hybrid",
+                "employmentType": "Full-time",
+                "description": "<p>$140,000 - $160,000</p>",
+                "company": {"title": "Acme"},
+            }
+        ),
+    )
+    assert workable.remote is False
+    assert workable.company == "Acme"
+    assert workable.pay_low == 140_000
+    assert workable.hours_per_week == 40
+
+    body = Opportunity(title="Engineer", url="https://jobs.example/x", remote=True)
+    _apply_listing(
+        body,
+        "<title>Engineer at Acme</title><p>This is a hybrid role in NYC. $120,000 - $140,000</p>",
+    )
+    assert body.remote is False
+    assert body.pay_high == 140_000
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
@@ -2237,8 +2304,13 @@ def test_apply_listing_prefers_remote_geo_band_over_json_ld():
     assert remote.pay_low == 140_000
     assert remote.pay_high == 170_000
 
-    office = Opportunity(title="x", url="https://jobs.example/x", remote=False)
-    _apply_listing(office, html)
+    office = Opportunity(title="x", url="https://jobs.example/x", remote=True)
+    office_html = html.replace(
+        "<p>Tier 1",
+        "<p>This is a hybrid role.</p><p>Tier 1",
+    )
+    _apply_listing(office, office_html)
+    assert office.remote is False
     assert office.pay_low == 160_000
     assert office.pay_high == 190_000
 
