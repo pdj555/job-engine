@@ -5373,6 +5373,27 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This role will not exist until next year.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Sorry, we couldn't find this job.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job could not be found.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The job you are looking for is no longer available.</p>"
+        "<p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We couldn't find this job description in the PDF.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Job not found.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5531,6 +5552,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>This job doesn't exist.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "couldnt-find" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Sorry, we couldn't find this job.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "looking-for" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>The job you are looking for is no longer available.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -5705,6 +5738,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    couldnt_find = Opportunity(
+        title="CouldntFind",
+        url="https://jobs.example/couldnt-find",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    looking_for = Opportunity(
+        title="LookingFor",
+        url="https://jobs.example/looking-for",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -5724,6 +5769,8 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         been_removed,
         archived,
         doesnt_exist,
+        couldnt_find,
+        looking_for,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
