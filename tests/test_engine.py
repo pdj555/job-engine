@@ -1975,6 +1975,53 @@ def test_find_ranks_parsed_pay_above_unknown():
     assert ranked[1].score() == 0
 
 
+def test_heuristic_company_from_builtin_title():
+    from src.engine import _apply_listing, _dedupe_opportunities, _role_title
+
+    h = _heuristic_opportunity(
+        {
+            "title": "Enterprise Senior Lead AI Product Manager- Go to Market - Wells Fargo | Built In",
+            "url": "https://www.builtin.com/job/enterprise-senior-lead-ai-product-manager-go-market/11015128",
+            "description": "$185,000 - $300,000",
+        }
+    )
+    assert h.company == "Wells Fargo"
+    assert _role_title(h.title).endswith("Wells Fargo")
+    assert "Built In" not in _role_title(h.title)
+    html = (
+        "<title>Substation Program Director - 26342 - Enverus | Built In</title>"
+        "<p>In-Office. $130,000 - $150,000</p>"
+    )
+    opp = Opportunity(
+        title="Substation Program Director - 26342 - Enverus | Built In",
+        url="https://www.builtin.com/job/substation-program-director-26342/11015219",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Enverus"
+    assert opp.pay_high == 150_000
+    ats = Opportunity(
+        title="Enterprise Senior Lead AI Product Manager- Go to Market",
+        company="Wells Fargo",
+        url="https://jobs.example/wf",
+        pay_high=300_000,
+    )
+    builtin = Opportunity(
+        title="Enterprise Senior Lead AI Product Manager- Go to Market - Wells Fargo | Built In",
+        company="Wells Fargo",
+        url="https://www.builtin.com/job/enterprise-senior-lead-ai-product-manager-go-market/11015128",
+        pay_high=300_000,
+    )
+    assert [o.url for o in _dedupe_opportunities([ats, builtin])] == [ats.url]
+    remote = _heuristic_opportunity(
+        {
+            "title": "ML Engineer - Remote | Built In",
+            "url": "https://www.builtin.com/job/ml-engineer/1",
+            "description": "",
+        }
+    )
+    assert remote.company is None
+
+
 def test_heuristic_company_from_title_at():
     h = _heuristic_opportunity(
         {

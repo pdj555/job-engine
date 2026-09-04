@@ -1020,7 +1020,8 @@ def _ashby_to_html(data: dict) -> str:
 
 
 _ATS_TITLE_TAIL_RE = re.compile(
-    r"(?i)\s*[-–—|]\s*(?:jobs\.(?:lever\.co|ashbyhq\.com|workable\.com)|jobs by workable)\s*$"
+    r"(?i)\s*[-–—|]\s*(?:jobs\.(?:lever\.co|ashbyhq\.com|workable\.com)|"
+    r"jobs by workable|built\s*in(?:\s+[A-Za-z]{2,})?)\s*$"
 )
 
 
@@ -1206,7 +1207,7 @@ _ROLE_START_RE = re.compile(
 
 def _clean_company_name(name: str) -> str | None:
     name = name.strip(" .,-")
-    if not name or _PLACE_RE.search(name) or _ROLE_START_RE.search(name):
+    if not name or re.fullmatch(r"\d+", name) or _PLACE_RE.search(name) or _ROLE_START_RE.search(name):
         return None
     return name
 
@@ -1243,6 +1244,12 @@ def _company_from_title(title: str, url: str = "") -> str | None:
                 name = _clean_company_name(m.group(1))
                 if name:
                     return name
+    if "builtin" in host or re.search(r"(?i)\|\s*built\s*in\b", title or ""):
+        parts = [p.strip() for p in re.split(r"\s+[-–—]\s+", t) if p.strip()]
+        if len(parts) >= 2:
+            name = _clean_company_name(parts[-1])
+            if name:
+                return name
     return None
 
 
