@@ -50,6 +50,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     ) == (None, None)
     assert _parse_pay("Salary $180k without $500K bonus") == (None, 180_000)
     assert _parse_pay("Compensation up to $180,000") == (None, 180_000)
+    assert _parse_pay("$150,000 in equity") == (None, None)
+    assert _parse_pay("equity: $150,000") == (None, None)
+    assert _parse_pay("RSUs of $80,000") == (None, None)
+    assert _parse_pay("$150k-$200k equity") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $50,000 equity") == (None, 180_000)
+    assert _parse_pay("$180k plus $50k in RSUs") == (None, 180_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -180,6 +187,17 @@ def test_guess_pay_annualizes_hourly():
 
 def test_guess_pay_reads_description_not_just_title():
     assert _guess_pay("Engineer", "comp $175k plus equity") == 175_000
+
+
+def test_apply_listing_does_not_rank_equity_as_salary():
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="Engineer", url="https://jobs.example/x")
+    assert _apply_listing(opp, "<p>$150,000 in equity. Apply now.</p>") is False
+    assert opp.pay_high is None
+    paid = Opportunity(title="Engineer", url="https://jobs.example/y")
+    assert _apply_listing(paid, "<p>Salary $180,000 plus $50,000 equity</p>") is True
+    assert paid.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
