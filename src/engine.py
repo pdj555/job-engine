@@ -1753,16 +1753,21 @@ def _guess_hours(title: str, description: str) -> Optional[int]:
 
 
 def _workplace_remote(place: str) -> Optional[bool]:
-    """True/False from an ATS workplace/location string. None if unknown."""
+    """True/False from an ATS workplace/location string. None if unknown.
+
+    Remote wins when the string offers both (e.g. "Remote or Hybrid").
+    """
     p = (place or "").casefold()
     if not p:
         return None
+    if re.search(r"\b(?:not remote|no remote|onsite only|on-site only)\b", p):
+        return False
+    if re.search(r"\b(?:remote|offsite|off-site|telecommute)\b", p):
+        return True
     if re.search(r"\bhybrid\b", p):
         return False
     if re.search(r"\b(?:onsite|on-site|on site|in-office|in office)\b", p):
         return False
-    if re.search(r"\b(?:remote|offsite|off-site|telecommute)\b", p):
-        return True
     compact = re.sub(r"[\s_-]+", "", p)
     if compact in {"remote", "offsite", "telecommute"}:
         return True
@@ -1788,10 +1793,20 @@ def _remote_from_posting(posting: dict) -> Optional[bool]:
     return None
 
 
+_REMOTE_OPTION_RE = re.compile(
+    r"(?i)\b(?:fully\s+remote|remote(?:-|\s+)?first|work\s+from\s+(?:home|anywhere)"
+    r"|hybrid\s*[,/]?\s*(?:or\s+)?(?:fully\s+)?remote"
+    r"|remote\s*[,/]?\s*(?:or\s+)?hybrid)\b"
+)
+
+
 def _guess_remote(title: str, description: str) -> bool:
-    text = f"{title} {description}".lower()
+    text = f"{title} {description}"
+    if _REMOTE_OPTION_RE.search(text):
+        return True
+    lower = text.lower()
     if any(
-        w in text
+        w in lower
         for w in ("onsite", "on-site", "on site", "in-office", "in office", "hybrid")
     ):
         return False

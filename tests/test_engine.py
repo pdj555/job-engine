@@ -147,6 +147,7 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be onsite") is False
     assert _guess_remote("Engineer", "must work on site") is False
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
+    assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
 
 
 # --- DuckDuckGo HTML parsing -------------------------------------------
@@ -2037,6 +2038,51 @@ def test_apply_listing_reads_workplace_from_listing():
     assert remote.remote is True
     assert remote.pay_high == 200_000
     assert remote.score() == 100.0
+
+    offered = Opportunity(title="Engineer", url="https://jobs.example/x")
+    _apply_listing(
+        offered,
+        (
+            "<title>Engineer at Acme</title>"
+            "<p>This role can be hybrid, or fully remote/virtually. $180,000 - $200,000</p>"
+        ),
+    )
+    assert offered.remote is True
+    assert offered.pay_high == 200_000
+    assert offered.score() == 100.0
+
+
+def test_workplace_remote_or_hybrid_is_remote():
+    from src.engine import _apply_listing, _greenhouse_to_html, _workplace_remote
+
+    assert _workplace_remote("Remote or Hybrid") is True
+    assert _workplace_remote("Hybrid / Remote") is True
+    assert _workplace_remote("hybrid") is False
+    assert _workplace_remote("New York, NY (Hybrid)") is False
+    assert _workplace_remote("Remote - United States") is True
+    assert _workplace_remote("onsite only") is False
+
+    html = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "location": {"name": "Remote or Hybrid"},
+            "content": (
+                "<p>Tier 1 (NYC/SF Bay Area/Seattle): $160,000 - $190,000</p>"
+                "<p>Tier 3 (US - All Other): $140,000 - $170,000</p>"
+            ),
+        }
+    )
+    opp = Opportunity(
+        title="Engineer",
+        url="https://job-boards.greenhouse.io/acme/jobs/1",
+        remote=True,
+    )
+    _apply_listing(opp, html)
+    assert opp.remote is True
+    assert opp.pay_low == 140_000
+    assert opp.pay_high == 170_000
+    assert opp.score() == 85.0
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
