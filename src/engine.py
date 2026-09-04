@@ -3214,6 +3214,8 @@ def _dover_pay_ld(job: dict) -> Optional[dict]:
     comp = job.get("compensation") if isinstance(job.get("compensation"), dict) else {}
     low, high = _num(comp.get("lower_bound")), _num(comp.get("upper_bound"))
     if low is None and high is None:
+        low, high = _bound_nums(comp)
+    if low is None and high is None:
         return None
     cur = str(comp.get("currency_code") or "").upper() or "USD"
     value: dict = {}
@@ -4687,19 +4689,29 @@ _GONE_LISTING_RE = re.compile(
 )
 
 
+def _posting_date(raw) -> Optional[date]:
+    text = str(raw or "").strip()
+    m = re.match(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", text)
+    if m:
+        try:
+            return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            return None
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
+    if not m:
+        return None
+    try:
+        return date(int(m.group(3)), int(m.group(1)), int(m.group(2)))
+    except ValueError:
+        return None
+
+
 def _posting_expired(posting: Optional[dict]) -> bool:
-    """True when JobPosting.validThrough is a date before today."""
+    """True when JobPosting.validThrough (or expires) is a date before today."""
     if not isinstance(posting, dict):
         return False
-    raw = str(posting.get("validThrough") or "").strip()
-    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", raw)
-    if not m:
-        return False
-    try:
-        through = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-    except ValueError:
-        return False
-    return through < date.today()
+    through = _posting_date(posting.get("validThrough") or posting.get("expires"))
+    return through is not None and through < date.today()
 
 
 def _html_is_gone(html: str) -> bool:

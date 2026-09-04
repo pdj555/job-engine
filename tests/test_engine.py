@@ -6882,6 +6882,18 @@ def test_html_is_gone_removed_listing_banner():
         expired_ld.replace("2020-01-01", "2029-12-31")
     ) is False
     assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "01/15/2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "2020/01/15")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "12/31/2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace('"validThrough":"2020-01-01"', '"expires":"2020-01-15"')
+    ) is True
+    assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Applications for this position are closed.</p><p>$180,000</p>"
     ) is True
@@ -11715,6 +11727,28 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     assert opp.pay_high == 220_000
     assert opp.hours_per_week == 40
     assert "$17,500" not in text
+    from src.engine import _dover_to_html
+
+    span = Opportunity(title="x", url="https://app.dover.com/apply/Acme/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    assert _apply_listing(
+        span,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency_code": "USD",
+                    "salary_range_type": "YEARLY",
+                },
+                "user_provided_description": "<p>Office. Account Executive $400,000</p>",
+            }
+        ),
+    ) is True
+    assert span.pay_low == 180_000
+    assert span.pay_high == 220_000
 
 
 def test_dover_inr_salary_is_foreign():
