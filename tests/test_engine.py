@@ -704,7 +704,7 @@ def test_search_all_drops_index_pages():
     assert [r["url"] for r in results] == ["https://jobs.example/ml"]
 
 
-def test_search_all_runs_site_angles_after_generic():
+def test_search_all_runs_site_angles_before_generic():
     engine = Engine()
     seen: list[str] = []
 
@@ -718,7 +718,7 @@ def test_search_all_runs_site_angles_after_generic():
     sites = [q for q in seen if "site:" in q]
     assert generic
     assert sites
-    assert seen == generic + sites
+    assert seen == sites + generic
 
 
 def test_search_angles_omit_grants_and_equity_unless_asked():

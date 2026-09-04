@@ -157,21 +157,23 @@ class Engine:
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
-        """Search generic angles in parallel, then ATS site: queries one at a time."""
+        """Search ATS site: queries one at a time, then generic angles in parallel."""
         angles = _search_angles(query)
         generic = [q for q in angles if "site:" not in q.casefold()]
         sites = [q for q in angles if "site:" in q.casefold()]
-        searches = [self._search_brave(q) for q in generic]
-        if self.perplexity_key:
-            searches.append(self._search_perplexity(query))
-        results = list(
-            await asyncio.gather(*searches, return_exceptions=True)
-        ) if searches else []
+        results = []
         for q in sites:
             try:
                 results.append(await self._search_brave(q))
             except Exception as e:
                 results.append(e)
+        searches = [self._search_brave(q) for q in generic]
+        if self.perplexity_key:
+            searches.append(self._search_perplexity(query))
+        if searches:
+            results.extend(
+                await asyncio.gather(*searches, return_exceptions=True)
+            )
 
         all_results = []
         for r in results:
