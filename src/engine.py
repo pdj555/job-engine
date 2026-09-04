@@ -2462,41 +2462,43 @@ def _recruitee_offer(data: dict) -> Optional[dict]:
 
 def _recruitee_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary. Skip currency-only rows with no amounts."""
-    sal = data.get("salary")
-    if isinstance(sal, str) and sal.strip():
-        nums = _span_nums(sal)
-        if not nums:
-            return None
-        value: dict = {"unitText": "YEAR"}
-        if len(nums) >= 2:
-            value["minValue"] = int(min(nums))
-            value["maxValue"] = int(max(nums))
+    for key in ("salary", "salaryRange", "compensation"):
+        sal = data.get(key)
+        if isinstance(sal, str) and sal.strip():
+            nums = _span_nums(sal)
+            if not nums:
+                continue
+            value: dict = {"unitText": "YEAR"}
+            if len(nums) >= 2:
+                value["minValue"] = int(min(nums))
+                value["maxValue"] = int(max(nums))
+            else:
+                value["value"] = int(nums[0])
+            currency = "EUR" if _foreign_pay_text(sal) else "USD"
+            return {"currency": currency, "value": value}
+        if not isinstance(sal, dict):
+            continue
+        low, high = _bound_nums(sal)
+        if low is None and high is None:
+            continue
+        period = str(sal.get("period") or "").lower()
+        unit = None
+        for needle, name in _RECRUITEE_PAY_UNITS:
+            if needle in period:
+                unit = name
+                break
+        value: dict = {}
+        if unit:
+            value["unitText"] = unit
+        if low is not None and high is not None:
+            value["minValue"] = int(low) if low == int(low) else low
+            value["maxValue"] = int(high) if high == int(high) else high
         else:
-            value["value"] = int(nums[0])
-        currency = "EUR" if _foreign_pay_text(sal) else "USD"
+            amount = high if high is not None else low
+            value["value"] = int(amount) if amount == int(amount) else amount
+        currency = str(sal.get("currency") or "").upper() or "USD"
         return {"currency": currency, "value": value}
-    if not isinstance(sal, dict):
-        return None
-    low, high = _bound_nums(sal)
-    if low is None and high is None:
-        return None
-    period = str(sal.get("period") or "").lower()
-    unit = None
-    for needle, name in _RECRUITEE_PAY_UNITS:
-        if needle in period:
-            unit = name
-            break
-    value: dict = {}
-    if unit:
-        value["unitText"] = unit
-    if low is not None and high is not None:
-        value["minValue"] = int(low) if low == int(low) else low
-        value["maxValue"] = int(high) if high == int(high) else high
-    else:
-        amount = high if high is not None else low
-        value["value"] = int(amount) if amount == int(amount) else amount
-    currency = str(sal.get("currency") or "").upper() or "USD"
-    return {"currency": currency, "value": value}
+    return None
 
 
 def _recruitee_to_html(data: dict) -> str:
@@ -3945,8 +3947,14 @@ _RELATED_HEADING_RE = re.compile(
     r"|because\s+you\s+viewed"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing"
+    r"|keep\s+exploring"
+    r"|continue\s+exploring"
+    r"|based\s+on\s+your\s+activity"
+    r"|people\s+also\s+searched"
+    r"|recently\s+applied"
     r"|similar\s+careers"
     r"|related\s+careers"
+    r"|other\s+careers"
     r"|similar\s+listings"
     r"|similar\s+job"
     r"|matching\s+roles"
@@ -4185,6 +4193,9 @@ def _num(value) -> Optional[float]:
     if isinstance(value, str):
         s = value.replace(",", "").replace("$", "").strip()
         s = re.sub(r"^(?:USD|US)\s*", "", s, flags=re.I)
+        m = re.fullmatch(r"(\d+(?:\.\d+)?)\s*k", s, flags=re.I)
+        if m:
+            return float(m.group(1)) * 1000
         try:
             return float(s)
         except ValueError:
@@ -4602,6 +4613,7 @@ def _posting_salary(posting: Optional[dict]):
         "compensation",
         "salaryRange",
         "payRange",
+        "jobCompensation",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4664,6 +4676,7 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "compensation",
         "salaryRange",
         "payRange",
+        "jobCompensation",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -5072,13 +5085,16 @@ def _posting_date(raw) -> Optional[date]:
     m = re.match(r"(\d{4})(\d{2})(\d{2})\b", text)
     if m:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-    m = re.match(r"([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})", text)
+    m = re.match(
+        r"(?:[A-Za-z]+,\s+)?([A-Za-z]+)\.?\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
+        text,
+    )
     if m:
         month = _MONTH_NUM.get(m.group(1).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
     m = re.match(
-        r"(?:[A-Za-z]{3},?\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})",
+        r"(?:[A-Za-z]+,\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?,?\s+(\d{4})",
         text,
     )
     if m:
