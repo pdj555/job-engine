@@ -2152,6 +2152,56 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Culture | Acme",
+                "url": "https://acme.com/culture",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Our Culture",
+                "url": "https://acme.com/our-culture",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Leadership | Acme",
+                "url": "https://acme.com/leadership",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Culture Engineer",
+                "url": "https://jobs.example.com/job/culture-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Leadership Development Program",
+                "url": "https://jobs.example.com/job/ldp",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -3121,6 +3171,22 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Benefits Analyst</title><p>$180,000</p>",
         "https://jobs.example.com/job/benefits-analyst",
+    )
+    assert _html_is_index(
+        "<title>Culture | Acme</title><p>$180,000</p>",
+        "https://acme.com/culture",
+    )
+    assert _html_is_index(
+        "<title>Leadership | Acme</title><p>$180,000</p>",
+        "https://acme.com/leadership",
+    )
+    assert not _html_is_index(
+        "<title>Culture Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/culture-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Leadership Development Program</title><p>$180,000</p>",
+        "https://jobs.example.com/job/ldp",
     )
     assert not _html_is_index(
         "<title>Early Career Software Engineer</title><p>$180,000</p>",
@@ -6007,6 +6073,12 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Careers | Acme</title><p>$180,000 - $270,000</p>"
         if "our-benefits" in url:
             return "<title>Our Benefits</title><p>$180,000</p>"
+        if "our-culture" in url:
+            return "<title>Our Culture</title><p>$180,000</p>"
+        if url.rstrip("/").endswith("/culture"):
+            return "<title>Culture | Acme</title><p>$180,000 - $270,000</p>"
+        if url.rstrip("/").endswith("/leadership"):
+            return "<title>Leadership | Acme</title><p>$180,000</p>"
         return ""
 
     engine._listing_text = page
@@ -6060,7 +6132,17 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/our-benefits",
         pay_high=180_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits]
+    culture = Opportunity(
+        title="Culture | Acme",
+        url="https://acme.com/culture",
+        pay_high=270_000,
+    )
+    leadership = Opportunity(
+        title="Leadership | Acme",
+        url="https://acme.com/leadership",
+        pay_high=180_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
