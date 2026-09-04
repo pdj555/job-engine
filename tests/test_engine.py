@@ -288,6 +288,19 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$3,000 per week travel") == (None, None)
     assert _parse_pay("Salary $180,000 plus $3,000 per week travel") == (None, 180_000)
     assert _parse_pay("Base $200,000. $15,000 per month housing") == (None, 200_000)
+    assert _parse_pay("$30/hour meal") == (None, None)
+    assert _parse_pay("$50/day meal") == (None, None)
+    assert _parse_pay("$75/day food") == (None, None)
+    assert _parse_pay("$2,000/month living") == (None, None)
+    assert _parse_pay("Meal: $30/hour") == (None, None)
+    assert _parse_pay("Food: $75/day") == (None, None)
+    assert _parse_pay("Living: $2,000/month") == (None, None)
+    assert _parse_pay("meal of $50 per day") == (None, None)
+    assert _parse_pay("$50/day for meals") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $30/hour meal") == (None, 180_000)
+    assert _parse_pay("$180,000 meal in NYC") == (None, 180_000)
+    assert _parse_pay("$100 per diem") == (None, 25_000)
+    assert _parse_pay("$15,000 per month") == (None, 180_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
     from src.engine import _apply_listing
 
@@ -299,6 +312,14 @@ def test_guess_pay_annualizes_hourly():
         paid, "<p>Salary $180,000 plus $800/day travel</p>"
     ) is True
     assert paid.pay_high == 180_000
+    meal = Opportunity(title="Engineer", url="https://jobs.example/meal")
+    assert _apply_listing(meal, "<p>$30/hour meal. Great team.</p>") is False
+    assert meal.pay_high is None
+    meal_sal = Opportunity(title="Engineer", url="https://jobs.example/meal-sal")
+    assert _apply_listing(
+        meal_sal, "<p>Salary $180,000 plus $30/hour meal</p>"
+    ) is True
+    assert meal_sal.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
