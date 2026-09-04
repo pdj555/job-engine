@@ -29,6 +29,7 @@ class Engine:
         self.openai = AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
         self.brave_key = settings.brave_api_key
         self.perplexity_key = settings.perplexity_api_key
+        self._ddg_sem = asyncio.Semaphore(3)
 
     async def find(self, query: str, limit: int = 20) -> list[Opportunity]:
         """
@@ -167,21 +168,28 @@ class Engine:
                 return await self._search_ddg(query)
 
     async def _search_ddg(self, query: str) -> list[dict]:
-        """Free web search fallback."""
-        async with httpx.AsyncClient() as client:
+        """Free web search fallback. Retry DDG 202s; cap concurrency so site: angles survive."""
+        async with self._ddg_sem:
             try:
-                resp = await client.post(
-                    "https://html.duckduckgo.com/html/",
-                    data={"q": query, "b": ""},
-                    headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
-                    timeout=30.0,
-                    follow_redirects=True,
-                )
-                resp.raise_for_status()
-                return _parse_ddg_html(resp.text)
+                async with httpx.AsyncClient() as client:
+                    for attempt in range(3):
+                        resp = await client.post(
+                            "https://html.duckduckgo.com/html/",
+                            data={"q": query, "b": ""},
+                            headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
+                            timeout=30.0,
+                            follow_redirects=True,
+                        )
+                        if resp.status_code == 202:
+                            await asyncio.sleep(0.4 * (attempt + 1))
+                            continue
+                        if resp.status_code >= 400:
+                            return []
+                        return _parse_ddg_html(resp.text)
             except Exception as e:
                 print(f"DDG error: {e}")
                 return []
+            return []
 
     async def _search_perplexity(self, query: str) -> list[dict]:
         """Deep search with Perplexity."""

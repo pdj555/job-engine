@@ -121,6 +121,69 @@ def test_parse_ddg_strips_bold_and_does_not_need_a_tiny_window():
     assert results[1]["description"] == "Must be hybrid, $80/hr, 20 hrs/week"
 
 
+def test_search_ddg_retries_202_then_parses(monkeypatch):
+    import httpx
+
+    hits: list[int] = []
+
+    class FakeResp:
+        def __init__(self, status_code: int, text: str):
+            self.status_code = status_code
+            self.text = text
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return None
+
+        async def post(self, _url, **_kwargs):
+            hits.append(1)
+            if len(hits) == 1:
+                return FakeResp(202, "<html>challenge</html>")
+            return FakeResp(200, DDG_HTML)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
+
+    async def no_sleep(_delay):
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    rows = asyncio.run(Engine()._search_ddg("ml"))
+    assert len(hits) == 2
+    assert [r["url"] for r in rows] == [
+        "https://example.com/job1",
+        "https://example.org/job2",
+    ]
+
+
+def test_search_ddg_gives_up_after_202s(monkeypatch):
+    import httpx
+
+    class FakeResp:
+        status_code = 202
+        text = "<html>challenge</html>"
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return None
+
+        async def post(self, _url, **_kwargs):
+            return FakeResp()
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
+
+    async def no_sleep(_delay):
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    assert asyncio.run(Engine()._search_ddg("ml")) == []
+
+
 def test_heuristic_uses_ddg_snippet_pay_hours_and_remote():
     results = _parse_ddg_html(DDG_LIVE_SHAPE)
     office = _heuristic_opportunity(results[1])
