@@ -3504,11 +3504,20 @@ def _foreign_pay_text(text: str) -> bool:
 def _foreign_salary(html: str) -> bool:
     """True when the listing states a non-USD salary. Ranking is USD $/hour."""
     posting = _job_posting(html)
-    if posting:
-        salary = posting.get("baseSalary") or posting.get("salary")
-        if isinstance(salary, dict) and salary.get("currency") and not _usd(salary.get("currency")):
-            return True
+    if _posting_foreign(posting):
+        return True
     return _foreign_pay_text(_listing_plain_text(html))
+
+
+def _posting_foreign(posting: Optional[dict]) -> bool:
+    if not isinstance(posting, dict):
+        return False
+    salary = posting.get("baseSalary") or posting.get("salary")
+    return (
+        isinstance(salary, dict)
+        and bool(salary.get("currency"))
+        and not _usd(salary.get("currency"))
+    )
 
 
 def _posting_company(posting: dict) -> Optional[str]:
@@ -3634,13 +3643,13 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             opp.pay_low = low
             opp.pay_high = high
             listed_pay = True
-    if not listed_pay:
+    if not listed_pay and not _posting_foreign(posting):
         low, high = _parse_pay(visible, opp.hours_per_week, remote=opp.remote)
         if high or low:
             opp.pay_low = low
             opp.pay_high = high
             listed_pay = True
-    if opp.remote:
+    if opp.remote and not _posting_foreign(posting):
         geo = _remote_geo_pay(visible)
         if geo:
             opp.pay_low, opp.pay_high = geo

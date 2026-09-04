@@ -3404,7 +3404,7 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
             "company_name": "Samsara",
             "title": "Lead Machine Learning Engineer - ML Infrastructure",
             "location": {"name": "Remote - Canada"},
-            "content": "<p>Annual Base Salary$196,000—$269,500 CAD</p>",
+            "content": "<p>Annual Base Salary$196,000—$269,500 CADTotal Rewards</p>",
             "pay_input_ranges": [
                 {
                     "min_cents": 19600000,
