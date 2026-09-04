@@ -945,6 +945,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn",
+                "url": "https://www.linkedin.com/jobs/view/4459896965",
+                "description": "Portland, OR $125,000.00 - $165,000.00",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -987,6 +997,11 @@ def test_index_pages_are_not_opportunities():
         "<title>Working in Artificial Intelligence | People in AI</title>"
         "<p>California $200,000 - $300,000</p>",
         "https://www.peopleinai.com/job/senior-machine-learning-engineer-9",
+    )
+    assert _html_is_index(
+        "<title>WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn</title>"
+        "<p>Boomerang Healthcare Portland, OR $125,000.00 - $165,000.00</p>",
+        "https://www.linkedin.com/jobs/view/4459896965",
     )
     assert not _is_index_page(
         {
@@ -1136,6 +1151,10 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Senior Machine Learning Engineer at Clearview AI",
                 "url": "https://dailyremote.com/remote-job/senior-machine-learning-engineer-5211999",
+            },
+            {
+                "title": "WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn",
+                "url": "https://www.linkedin.com/jobs/view/4459896965",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]
