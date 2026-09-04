@@ -74,6 +74,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Base $180,000. OTE $250,000") == (None, 180_000)
     assert _parse_pay("$80,000 commission") == (None, None)
     assert _parse_pay("commission of $80,000") == (None, None)
+    assert _parse_pay("$200,000 total compensation") == (None, None)
+    assert _parse_pay("total compensation of $200,000") == (None, None)
+    assert _parse_pay("$200k TC") == (None, None)
+    assert _parse_pay("TC: $200,000") == (None, None)
+    assert _parse_pay("Base $180,000. TC $250,000") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -315,6 +320,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     comm = Opportunity(title="Account Executive", url="https://jobs.example/comm")
     assert _apply_listing(comm, "<p>$80,000 commission. Apply now.</p>") is False
     assert comm.pay_high is None
+    tc = Opportunity(title="Engineer", url="https://jobs.example/tc")
+    assert _apply_listing(tc, "<p>$200k TC. Apply now.</p>") is False
+    assert tc.pay_high is None
+    tcmix = Opportunity(title="Engineer", url="https://jobs.example/tcmix")
+    assert _apply_listing(tcmix, "<p>Base $180,000. TC $250,000</p>") is True
+    assert tcmix.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
