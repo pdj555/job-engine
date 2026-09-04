@@ -5211,24 +5211,34 @@ def _hours_from_node(work) -> Optional[int]:
         return None
     n = _num(work)
     if n is None and isinstance(work, dict):
-        n = (
-            _num(work.get("value"))
-            or _num(work.get("minValue"))
-            or _num(work.get("min_value"))
-            or _num(work.get("min"))
-            or _num(work.get("lowerBound"))
-            or _num(work.get("lower_bound"))
-            or _num(work.get("rangeStart"))
-            or _num(work.get("range_start"))
-            or _num(work.get("amount"))
-            or _num(work.get("maxValue"))
-            or _num(work.get("max_value"))
-            or _num(work.get("max"))
-            or _num(work.get("upperBound"))
-            or _num(work.get("upper_bound"))
-            or _num(work.get("rangeEnd"))
-            or _num(work.get("range_end"))
-        )
+        for key in (
+            "value",
+            "minValue",
+            "min_value",
+            "min",
+            "minimum",
+            "low",
+            "lowerBound",
+            "lower_bound",
+            "rangeStart",
+            "range_start",
+            "amount",
+            "maxValue",
+            "max_value",
+            "max",
+            "maximum",
+            "high",
+            "upperBound",
+            "upper_bound",
+            "rangeEnd",
+            "range_end",
+        ):
+            nested = work.get(key)
+            if nested is work:
+                continue
+            n = _hours_from_node(nested)
+            if n is not None:
+                break
         if n is None:
             for key in _HOUR_KEYS:
                 if key in ("workHours", "work_hours"):
