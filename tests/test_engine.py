@@ -66,6 +66,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("relocation of $10,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 relocation") == (None, 180_000)
     assert _parse_pay("$180,000 relocation to Seattle") == (None, 180_000)
+    assert _parse_pay("$15,000 tuition reimbursement") == (None, None)
+    assert _parse_pay("$20,000 education benefit") == (None, None)
+    assert _parse_pay("$15,000 tuition assistance") == (None, None)
+    assert _parse_pay("$15,000 education reimbursement") == (None, None)
+    assert _parse_pay("$15,000 tuition") == (None, None)
+    assert _parse_pay("tuition reimbursement of $15,000") == (None, None)
+    assert _parse_pay("education reimbursement of $15,000") == (None, None)
+    assert _parse_pay("$10,000 student loan repayment") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $15,000 tuition reimbursement") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 tuition in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 per month") == (None, 180_000)
     assert _parse_pay("$25,000 annual bonus") == (None, None)
     assert _parse_pay("target bonus of $25,000") == (None, None)
     assert _parse_pay("$25,000 performance bonus") == (None, None)
@@ -320,6 +334,16 @@ def test_guess_pay_annualizes_hourly():
         meal_sal, "<p>Salary $180,000 plus $30/hour meal</p>"
     ) is True
     assert meal_sal.pay_high == 180_000
+    tuition = Opportunity(title="Engineer", url="https://jobs.example/tuition")
+    assert _apply_listing(
+        tuition, "<p>$15,000 tuition reimbursement. Great team.</p>"
+    ) is False
+    assert tuition.pay_high is None
+    tuition_sal = Opportunity(title="Engineer", url="https://jobs.example/tuition-sal")
+    assert _apply_listing(
+        tuition_sal, "<p>Salary $180,000 plus $15,000 tuition reimbursement</p>"
+    ) is True
+    assert tuition_sal.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
