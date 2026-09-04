@@ -5123,8 +5123,12 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return cur
     if not isinstance(posting, dict):
         return None
-    stated = _ld_text(posting.get("salaryCurrency")) or _ld_text(
-        posting.get("salary_currency")
+    stated = (
+        _ld_text(posting.get("salaryCurrency"))
+        or _ld_text(posting.get("salary_currency"))
+        or _ld_text(posting.get("currency"))
+        or _ld_text(posting.get("currencyCode"))
+        or _ld_text(posting.get("currency_code"))
     )
     if stated:
         return stated

@@ -8146,6 +8146,50 @@ def test_apply_listing_ignores_non_usd_salary():
     qv = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-eur")
     _apply_listing(qv, currency)
     assert qv.pay_high is None
+    posting_cur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "currency":"EUR",
+     "baseSalary":{"@type":"QuantitativeValue","minValue":80000,"maxValue":100000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    root_eur = Opportunity(title="Engineer", url="https://jobs.example/posting-currency-eur")
+    _apply_listing(root_eur, posting_cur)
+    assert root_eur.pay_high is None
+    posting_code = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "currencyCode":"EUR",
+     "baseSalary":{"value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    root_code = Opportunity(title="Engineer", url="https://jobs.example/posting-currencyCode-eur")
+    _apply_listing(root_code, posting_code)
+    assert root_code.pay_high is None
+    posting_snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "currency_code":"EUR",
+     "baseSalary":{"value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    root_snake = Opportunity(title="Engineer", url="https://jobs.example/posting-currency_code-eur")
+    _apply_listing(root_snake, posting_snake)
+    assert root_snake.pay_high is None
+    loc_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "location":{"currency":"EUR"},
+     "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    place_eur = Opportunity(title="Engineer", url="https://jobs.example/location-currency-eur")
+    assert _apply_listing(place_eur, loc_eur) is True
+    assert place_eur.pay_low == 180_000
+    assert place_eur.pay_high == 220_000
     nested_cur = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
