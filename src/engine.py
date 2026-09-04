@@ -3622,6 +3622,8 @@ _PAY_UNITS = {
     "WEEKLY": "week",
     "MONTH": "month",
     "MONTHLY": "month",
+    "DAY": "day",
+    "DAILY": "day",
 }
 
 
@@ -3894,6 +3896,8 @@ def _annualize(amount: float, unit: Optional[str], hours: Optional[int]) -> Opti
         if not 10 <= amount <= 1000:
             return None
         return int(amount * (hours or 40) * 50)
+    if unit == "day":
+        return int(amount * 5 * 50)
     if unit == "week":
         return int(amount * 50)
     if unit == "month":
@@ -4137,6 +4141,16 @@ _WEEKLY_RANGE_RE = re.compile(
 _WEEKLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
 )
+_DAY_TAIL = r"\s*(?:/\s*days?|(?:per|a)\s+days?|daily)\b"
+_DAILY_RANGE_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"\s*(?:[-–—]|to)\s*"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    + _DAY_TAIL
+)
+_DAILY_RE = re.compile(
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _DAY_TAIL
+)
 _RANGE_K_RE = re.compile(
     r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*\$?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)",
     re.I,
@@ -4255,6 +4269,16 @@ def _week_annual(raw: str, k: Optional[str]) -> Optional[int]:
     return None
 
 
+def _day_annual(raw: str, k: Optional[str]) -> Optional[int]:
+    n = _money(raw)
+    if k:
+        n *= 1000
+    annual = int(n * 5 * 50)
+    if 10_000 <= annual <= 2_000_000:
+        return annual
+    return None
+
+
 def _labeled_range(
     low_raw: str, low_k: Optional[str], high_raw: str, high_k: Optional[str]
 ) -> Optional[tuple[int, int]]:
@@ -4304,6 +4328,17 @@ def _parse_pay(
         geo = _remote_geo_pay(text)
         if geo:
             return geo
+    daily_range = _DAILY_RANGE_RE.search(text)
+    if daily_range:
+        low = _day_annual(daily_range.group(1), daily_range.group(2))
+        high = _day_annual(daily_range.group(3), daily_range.group(4))
+        if low and high and low <= high:
+            return low, high
+    daily = _DAILY_RE.search(text)
+    if daily:
+        annual = _day_annual(daily.group(1), daily.group(2))
+        if annual:
+            return None, annual
     weekly_range = _WEEKLY_RANGE_RE.search(text)
     if weekly_range:
         low = _week_annual(weekly_range.group(1), weekly_range.group(2))

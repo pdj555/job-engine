@@ -240,6 +240,40 @@ def test_parse_pay_annualizes_weekly_usd():
     assert opp.pay_high == 150_000
 
 
+def test_parse_pay_annualizes_daily_usd():
+    from src.engine import _apply_listing, _parse_pay
+
+    assert _parse_pay("$800/day") == (None, 200_000)
+    assert _parse_pay("$800 per day") == (None, 200_000)
+    assert _parse_pay("$800 a day") == (None, 200_000)
+    assert _parse_pay("$800 daily") == (None, 200_000)
+    assert _parse_pay("USD 800 per day") == (None, 200_000)
+    assert _parse_pay("$400-$500/day") == (100_000, 125_000)
+    assert _parse_pay("$400–$600 per day") == (100_000, 150_000)
+    assert _parse_pay("$80/hr") == (None, 160_000)
+    assert _parse_pay("$3,000 per week") == (None, 150_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
+    opp = Opportunity(title="Engineer", url="https://jobs.example/day")
+    assert _apply_listing(opp, "<p>Rate $800 per day</p>") is True
+    assert opp.pay_high == 200_000
+
+
+def test_apply_listing_json_ld_daily_pay():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":400,"maxValue":500,"unitText":"DAY"}}}
+    </script>
+    """
+    opp = Opportunity(title="Engineer", url="https://jobs.example/ld-day")
+    assert _apply_listing(opp, html) is True
+    assert opp.pay_low == 100_000
+    assert opp.pay_high == 125_000
+
+
 def test_guess_pay_reads_description_not_just_title():
     assert _guess_pay("Engineer", "comp $175k plus equity") == 175_000
 
