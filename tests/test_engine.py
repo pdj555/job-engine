@@ -10416,6 +10416,21 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(from_list, listed_lists) is True
     assert from_list.pay_low == 180_000
     assert from_list.pay_high == 220_000
+    bi_list = _lever_to_html(
+        {
+            "text": "Engineer",
+            "description": "<p>Office. Full time.</p>",
+            "lists": [{"text": "Bi-Weekly Salary", "content": "$3,000 - $4,000"}],
+        },
+        "Acme",
+    )
+    from_bi = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/ffffffff-0000-1111-2222-444444444444",
+    )
+    assert _apply_listing(from_bi, bi_list) is True
+    assert from_bi.pay_low == 75_000
+    assert from_bi.pay_high == 100_000
     eur_list = _lever_to_html(
         {
             "text": "Engineer",
@@ -10994,6 +11009,18 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(biweekly_drow, biweekly_dollars)
     assert biweekly_drow.pay_low == 75_000
     assert biweekly_drow.pay_high == 100_000
+    hyphen_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Bi-Weekly Salary", "value": "$3,000 - $4,000"}],
+        }
+    )
+    hyphen_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/22")
+    _apply_listing(hyphen_drow, hyphen_dollars)
+    assert hyphen_drow.pay_low == 75_000
+    assert hyphen_drow.pay_high == 100_000
     semi_dollars = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -12654,6 +12681,21 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert text_pay.pay_low == 180_000
     assert text_pay.pay_high == 220_000
+    biweek_str = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-biweek")
+    assert _apply_listing(
+        biweek_str,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": "$3,000 - $4,000 every two weeks",
+                "description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert biweek_str.pay_low == 75_000
+    assert biweek_str.pay_high == 100_000
     comp = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-comp")
     assert _apply_listing(
         comp,
@@ -14844,6 +14886,10 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Recently viewed positions",
         "More like this job",
         "Opportunities near you",
+        "Because you viewed this role",
+        "Because you applied to this role",
+        "Because you saved this role",
+        "More like this role",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

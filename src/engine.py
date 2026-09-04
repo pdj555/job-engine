@@ -1802,8 +1802,8 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly|biweekly|semi-?monthly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
-    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly|biweekly|semi-?monthly)\s+)+rate$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly|bi[-\s]?weekly|semi[-\s]?monthly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
+    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly|bi[-\s]?weekly|semi[-\s]?monthly)\s+)+rate$"
 )
 
 
@@ -2494,17 +2494,10 @@ def _recruitee_pay_ld(data: dict) -> Optional[dict]:
     for key in ("salary", "salaryRange", "compensation"):
         sal = data.get(key)
         if isinstance(sal, str) and sal.strip():
-            nums = _span_nums(sal)
-            if not nums:
-                continue
-            value: dict = {"unitText": "YEAR"}
-            if len(nums) >= 2:
-                value["minValue"] = int(min(nums))
-                value["maxValue"] = int(max(nums))
-            else:
-                value["value"] = int(nums[0])
-            currency = "EUR" if _foreign_pay_text(sal) else "USD"
-            return {"currency": currency, "value": value}
+            pay = _span_pay_ld(sal)
+            if pay:
+                return pay
+            continue
         if not isinstance(sal, dict):
             continue
         low, high = _bound_nums(sal)
@@ -3984,9 +3977,9 @@ _RELATED_HEADING_RE = re.compile(
     r"|roles\s+near\s+you"
     r"|opportunities\s+near\s+you"
     r"|because\s+you\s+searched(?:\s+for(?:\s+this(?:\s+job)?)?)?"
-    r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+job)?)?)?"
+    r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+(?:job|role))?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
-    r"|because\s+you\s+saved(?:\s+this(?:\s+job)?)?"
+    r"|because\s+you\s+saved(?:\s+this(?:\s+(?:job|role))?)?"
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
     r"|recently\s+saved(?:\s+jobs)?"
@@ -4010,14 +4003,14 @@ _RELATED_HEADING_RE = re.compile(
     r"|hiring\s+nearby"
     r"|hiring\s+near\s+you"
     r"|top\s+picks"
-    r"|more\s+like\s+this(?:\s+job)?"
+    r"|more\s+like\s+this(?:\s+(?:job|role))?"
     r"|more\s+like\s+these"
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
     r"|recently\s+viewed(?:\s+(?:jobs|roles|positions))?"
     r"|others\s+also\s+viewed"
-    r"|because\s+you\s+viewed(?:\s+this(?:\s+job)?)?"
+    r"|because\s+you\s+viewed(?:\s+this(?:\s+(?:job|role))?)?"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+(?:jobs|roles))?"
     r"|keep\s+exploring(?:\s+(?:jobs|roles))?"
