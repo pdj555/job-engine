@@ -1762,14 +1762,14 @@ def _workplace_remote(place: str) -> Optional[bool]:
         return None
     if re.search(r"\b(?:not remote|no remote|onsite only|on-site only)\b", p):
         return False
-    if re.search(r"\b(?:remote|offsite|off-site|telecommute)\b", p):
+    if re.search(r"\b(?:remote|offsite|off-site|telecommute|distributed)\b", p):
         return True
     if re.search(r"\bhybrid\b", p):
         return False
     if re.search(r"\b(?:onsite|on-site|on site|in-office|in office)\b", p):
         return False
     compact = re.sub(r"[\s_-]+", "", p)
-    if compact in {"remote", "offsite", "telecommute"}:
+    if compact in {"remote", "offsite", "telecommute", "distributed"}:
         return True
     if compact in {"hybrid", "onsite", "office", "inoffice"}:
         return False

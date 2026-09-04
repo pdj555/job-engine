@@ -2057,6 +2057,7 @@ def test_workplace_remote_or_hybrid_is_remote():
 
     assert _workplace_remote("Remote or Hybrid") is True
     assert _workplace_remote("Hybrid / Remote") is True
+    assert _workplace_remote("Distributed; Hybrid") is True
     assert _workplace_remote("hybrid") is False
     assert _workplace_remote("New York, NY (Hybrid)") is False
     assert _workplace_remote("Remote - United States") is True
