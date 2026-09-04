@@ -624,6 +624,13 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "37.5 hours per week") == 38
     assert _guess_hours("Engineer", "37.5 hrs/week") == 38
     assert _guess_hours("Engineer", "40 hours weekly") == 40
+    assert _guess_hours("Engineer", "50 hour work week") == 50
+    assert _guess_hours("Engineer", "50-hour workweek") == 50
+    assert _guess_hours("Engineer", "50-hour work week") == 50
+    assert _guess_hours("Engineer", "45 hour work-week") == 45
+    assert _guess_hours("Engineer", "40 hrs. per week") == 40
+    assert _guess_hours("Engineer", "2 hour weekly meeting") is None
+    assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
     assert _guess_hours("Part-time role", "") == 20
     assert _guess_hours("Full-time Engineer", "") == 40
@@ -674,6 +681,29 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert _apply_listing(json_hours, ld) is True
     assert json_hours.hours_per_week == 38
     assert json_hours.score() == 180_000 / (38 * 50)
+    workweek = Opportunity(title="Engineer", url="https://jobs.example/workweek")
+    assert _apply_listing(
+        workweek, "<p>$180,000 a year. This is a 50-hour workweek.</p>"
+    ) is True
+    assert workweek.hours_per_week == 50
+    assert workweek.rate_is_imputed is False
+    assert workweek.score() == 180_000 / (50 * 50)
+    meeting = Opportunity(title="Engineer", url="https://jobs.example/meeting")
+    assert _apply_listing(
+        meeting, "<p>$180,000 a year. 2 hour weekly meeting.</p>"
+    ) is True
+    assert meeting.hours_per_week is None
+    assert meeting.score() == 180_000 / (40 * 50)
+    ld_week = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","workHours":"50-hour workweek",
+     "baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}
+    </script>
+    """
+    json_week = Opportunity(title="Engineer", url="https://jobs.example/ld-workweek")
+    assert _apply_listing(json_week, ld_week) is True
+    assert json_week.hours_per_week == 50
+    assert json_week.score() == 180_000 / (50 * 50)
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():

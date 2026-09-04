@@ -4490,8 +4490,10 @@ _NON_SALARY_MONEY_RE = re.compile(
     r")"
 )
 _HOURS_RE = re.compile(
-    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\s*(?:hrs?|hours?)\s*"
-    r"(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week(?:ly)?)\b",
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:hrs?|hours?)\.?\s*"
+    r"(?:/|\s*per\s*|\s+a\s+|\s+work[\s-]*)?\s*"
+    r"(?:wk|week(?:ly)?|workweeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
