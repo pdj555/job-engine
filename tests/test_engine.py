@@ -458,6 +458,10 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary(f"<p>{mx}</p>") is True
     assert _parse_pay("CAD $160,000 - $180,000") == (None, None)
     assert _foreign_salary("<p>CAD $160,000 - $180,000</p>") is True
+    assert _parse_pay("CAD80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CAD80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("NZD90,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>NZD90,000. Account Executive $220,000</p>") is True
     assert _parse_pay("C$90,000") == (None, None)
     assert _foreign_salary("<p>Pay is $180,000 CAD a year</p>") is True
     assert _parse_pay("$160,000 - 200,000 (CAD)") == (None, None)
@@ -10911,6 +10915,46 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We concluded this ticket.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search was closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search concluded.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We paused this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Hiring for this search has ended.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We pulled this job.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This listing was pulled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We pulled this comment.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this search has closed, we will archive it.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer open.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
