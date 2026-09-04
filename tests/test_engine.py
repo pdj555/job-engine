@@ -1408,6 +1408,30 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert nested_min.hours_per_week == 32
     assert nested_min.pay_high == 128_000
+    nested_qv = Opportunity(title="Engineer", url="https://jobs.example/ld-workHours-hoursPerWeek-qv")
+    assert _apply_listing(
+        nested_qv,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"hoursPerWeek":{"@type":"QuantitativeValue","value":32}},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert nested_qv.hours_per_week == 32
+    assert nested_qv.pay_high == 128_000
+    nested_qv_min = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-workHours-weeklyHours-qv"
+    )
+    assert _apply_listing(
+        nested_qv_min,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"weeklyHours":{"minValue":32}},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert nested_qv_min.hours_per_week == 32
+    assert nested_qv_min.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():

@@ -5213,7 +5213,10 @@ def _hours_from_node(work) -> Optional[int]:
             for key in _HOUR_KEYS:
                 if key in ("workHours", "work_hours"):
                     continue
-                n = _num(work.get(key))
+                nested = work.get(key)
+                if nested is work:
+                    continue
+                n = _hours_from_node(nested)
                 if n is not None:
                     break
         if n is None:
