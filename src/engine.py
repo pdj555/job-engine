@@ -825,8 +825,8 @@ def _period_unit(period: str) -> Optional[str]:
 
 
 def _ats_period(raw: dict) -> str:
-    """Occupied period / interval / frequency / unitText / unitCode on an ATS salary object."""
-    return str(
+    """Occupied period / interval / frequency / unitText / unitCode / salaryUnit / duration."""
+    text = str(
         raw.get("period")
         or raw.get("interval")
         or raw.get("frequency")
@@ -835,8 +835,18 @@ def _ats_period(raw: dict) -> str:
         or raw.get("unit")
         or raw.get("unitCode")
         or raw.get("unit_code")
+        or raw.get("salaryUnit")
+        or raw.get("salary_unit")
         or ""
     )
+    if text:
+        return text
+    duration = raw.get("duration")
+    if isinstance(duration, dict):
+        duration = _ld_text(duration)
+    if duration:
+        return _duration_unit(str(duration)) or ""
+    return ""
 
 
 def _lever_api_url(url: str) -> Optional[str]:
@@ -3924,20 +3934,19 @@ _RELATED_JOBS_RE = re.compile(
 _RELATED_HEADING_RE = re.compile(
     r"(?is)(</(?:p|h1|article|section|div|ul|ol|li|main)>)(\s*)"
     r"<(h[1-6])(?:\s[^>]*)?>\s*"
-    r"(?:browse(?:\s+all)?(?:\s+open)?\s+jobs"
-    r"|browse(?:\s+all)?\s+roles"
-    r"|new\s+(?:jobs|roles)"
+    r"(?:browse(?:\s+all)?(?:\s+open)?\s+(?:jobs|roles|positions|listings|opportunities)"
+    r"|new\s+(?:jobs|roles|positions|listings|opportunities)"
     r"|see\s+also"
     r"|see\s+more"
     r"|discover\s+more"
-    r"|hot\s+(?:jobs|roles)"
-    r"|latest\s+(?:jobs|roles)"
-    r"|explore(?:\s+all)?\s+(?:jobs|roles|openings)"
+    r"|hot\s+(?:jobs|roles|positions|listings|opportunities)"
+    r"|latest\s+(?:jobs|roles|positions|listings|opportunities)"
+    r"|explore(?:\s+all)?\s+(?:jobs|roles|openings|positions|listings|opportunities)"
     r"|continue\s+browsing(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
     r"|more\s+opportunities"
-    r"|open\s+(?:positions|roles|jobs)"
-    r"|current\s+(?:openings|roles|jobs)"
-    r"|view(?:\s+all)?\s+(?:jobs|roles|openings)"
+    r"|open\s+(?:positions|roles|jobs|listings|opportunities)"
+    r"|current\s+(?:openings|roles|jobs|positions|listings|opportunities)"
+    r"|view(?:\s+all)?\s+(?:jobs|roles|openings|positions|listings|opportunities)"
     r"|recommended\s+for\s+you"
     r"|jobs\s+recommended\s+for\s+you"
     r"|roles\s+recommended\s+for\s+you"
@@ -3946,11 +3955,11 @@ _RELATED_HEADING_RE = re.compile(
     r"|more\s+from\s+\S+"
     r"|jobs\s+at\s+this\s+company"
     r"|jobs\s+at\s+\S+"
-    r"|all\s+(?:jobs|openings)"
-    r"|see(?:\s+all)?\s+(?:jobs|roles|openings)"
-    r"|discover\s+(?:jobs|openings|roles)"
-    r"|jobs\s+you\s+applied\s+to"
-    r"|jobs\s+you\s+(?:may|might)\s+be\s+interested\s+in"
+    r"|all\s+(?:jobs|openings|roles|positions|listings|opportunities)"
+    r"|see(?:\s+all)?\s+(?:jobs|roles|openings|positions|listings|opportunities)"
+    r"|discover\s+(?:jobs|openings|roles|positions|listings|opportunities)"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+you\s+applied\s+to"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+you\s+(?:may|might)\s+be\s+interested\s+in"
     r"|browse(?:\s+all)?\s+openings"
     r"|explore\s+careers"
     r"|browse\s+careers"
@@ -3962,7 +3971,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|matching\s+positions"
     r"|people\s+also\s+applied(?:\s+for)?"
     r"|applicants\s+also\s+applied(?:\s+for)?"
-    r"|available\s+(?:jobs|roles|positions)"
+    r"|available\s+(?:jobs|roles|positions|listings|opportunities)"
     r"|your\s+recent\s+searches"
     r"|recent\s+searches"
     r"|hiring\s+in\s+your\s+area"
@@ -3984,7 +3993,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|your\s+(?:recent\s+)?applications"
     r"|your\s+saved\s+searches"
     r"|recently\s+saved(?:\s+jobs)?"
-    r"|jobs\s+you\s+saved"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+you\s+saved"
     r"|saved\s+for\s+later"
     r"|keep\s+scrolling"
     r"|continue\s+scrolling"
@@ -3996,29 +4005,29 @@ _RELATED_HEADING_RE = re.compile(
     r"|(?:discover|see|browse)\s+similar"
     r"|others\s+also\s+applied(?:\s+for)?"
     r"|based\s+on\s+your\s+search"
-    r"|jobs\s+based\s+on\s+your\s+search"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+based\s+on\s+your\s+search"
     r"|trending\s+(?:jobs|roles|positions|listings|opportunities)"
-    r"|(?:your\s+)?saved\s+jobs"
-    r"|applied\s+jobs"
+    r"|(?:your\s+)?saved\s+(?:jobs|roles|positions|listings|opportunities)"
+    r"|applied\s+(?:jobs|roles|positions|listings|opportunities)"
     r"|keep\s+looking"
     r"|hiring\s+nearby"
     r"|hiring\s+near\s+you"
     r"|top\s+picks"
     r"|more\s+like\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?"
     r"|more\s+like\s+these"
-    r"|jobs\s+like\s+this"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
     r"|recently\s+viewed(?:\s+(?:jobs?|roles|positions|listings|opportunit(?:y|ies)))?"
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed(?:\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?)?"
-    r"|jobs\s+you\s+viewed"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
     r"|keep\s+exploring(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
     r"|continue\s+exploring(?:\s+(?:jobs|roles|positions|listings|opportunities))?"
     r"|(?:jobs|roles|positions|listings|opportunities)\s+similar\s+to\s+this(?:\s+(?:job|role|position|listing|opportunit(?:y|ies)))?"
     r"|based\s+on\s+your\s+activity"
-    r"|jobs\s+based\s+on\s+your\s+activity"
+    r"|(?:jobs|roles|positions|listings|opportunities)\s+based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
     r"|recently\s+applied(?:\s+jobs)?"
     r"|similar\s+careers"
@@ -5022,6 +5031,10 @@ def _posting_salary(posting: Optional[dict]):
         or _ld_text(posting.get("unitCode"))
         or _ld_text(posting.get("unit_code"))
     )
+    if not unit:
+        duration = _ld_text(posting.get("duration"))
+        if duration:
+            unit = _duration_unit(duration)
     value: dict = {}
     if unit:
         value["unitText"] = unit
@@ -5040,6 +5053,8 @@ def _currency_of(value) -> Optional[str]:
         _ld_text(value.get("currency"))
         or _ld_text(value.get("currencyCode"))
         or _ld_text(value.get("currency_code"))
+        or _ld_text(value.get("salaryCurrency"))
+        or _ld_text(value.get("salary_currency"))
     )
     if cur:
         return cur
@@ -5065,17 +5080,27 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return None
     for key in (
         "baseSalary",
+        "base_salary",
         "salary",
         "estimatedSalary",
+        "estimated_salary",
         "baseCompensation",
+        "base_compensation",
         "compensation",
         "salaryRange",
+        "salary_range",
         "payRange",
+        "pay_range",
         "jobCompensation",
+        "job_compensation",
         "offeredSalary",
+        "offered_salary",
         "annualSalary",
+        "annual_salary",
         "jobSalary",
+        "job_salary",
         "basePay",
+        "base_pay",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]

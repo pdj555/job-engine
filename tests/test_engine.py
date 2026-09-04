@@ -6668,6 +6668,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_sunit, posting_su) is True
     assert posting_sunit.pay_low == 160_000
     assert posting_sunit.pay_high == 200_000
+    posting_dur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":80,"salaryMax":100,"duration":"PT1H"}
+    </script>
+    <p>Office.</p>
+    """
+    posting_hour_d = Opportunity(title="Engineer", url="https://jobs.example/ld-post-duration")
+    assert _apply_listing(posting_hour_d, posting_dur) is True
+    assert posting_hour_d.pay_low == 160_000
+    assert posting_hour_d.pay_high == 200_000
     posting_uc = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -7283,6 +7294,37 @@ def test_apply_listing_ignores_non_usd_salary():
     qv = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-eur")
     _apply_listing(qv, currency)
     assert qv.pay_high is None
+    nested_cur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"salaryCurrency":"EUR",
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    nested_eur = Opportunity(title="Engineer", url="https://jobs.example/salary-salaryCurrency-eur")
+    _apply_listing(nested_eur, nested_cur)
+    assert nested_eur.pay_high is None
+    snake_empty = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "base_salary":{"currency":"EUR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    snake_eur = Opportunity(title="Engineer", url="https://jobs.example/base_salary-empty-eur")
+    _apply_listing(snake_eur, snake_empty)
+    assert snake_eur.pay_high is None
+    range_empty = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salary_range":{"currency":"EUR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    range_eur = Opportunity(title="Engineer", url="https://jobs.example/salary_range-empty-eur")
+    _apply_listing(range_eur, range_empty)
+    assert range_eur.pay_high is None
     bare = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
@@ -10984,6 +11026,44 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(code_row, unit_code) is True
     assert code_row.pay_low == 160_000
     assert code_row.pay_high == 200_000
+    unit_salary = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "salaryUnit": "HOUR",
+            },
+        },
+        "Acme",
+    )
+    salary_unit_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-888888888888",
+    )
+    assert _apply_listing(salary_unit_row, unit_salary) is True
+    assert salary_unit_row.pay_low == 160_000
+    assert salary_unit_row.pay_high == 200_000
+    duration = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "duration": "PT1H",
+            },
+        },
+        "Acme",
+    )
+    duration_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-999999999999",
+    )
+    assert _apply_listing(duration_row, duration) is True
+    assert duration_row.pay_low == 160_000
+    assert duration_row.pay_high == 200_000
     biweekly = _lever_to_html(
         {
             "text": "Engineer",
@@ -12152,6 +12232,34 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(code_row, unit_code) is True
     assert code_row.pay_low == 160_000
     assert code_row.pay_high == 200_000
+    salary_unit = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "salary_unit": "HOUR"},
+        }
+    )
+    salary_unit_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/salary-unit/engineer",
+    )
+    assert _apply_listing(salary_unit_row, salary_unit) is True
+    assert salary_unit_row.pay_low == 160_000
+    assert salary_unit_row.pay_high == 200_000
+    duration = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "duration": "PT1H"},
+        }
+    )
+    duration_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/duration/engineer",
+    )
+    assert _apply_listing(duration_row, duration) is True
+    assert duration_row.pay_low == 160_000
+    assert duration_row.pay_high == 200_000
     comp = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -16385,6 +16493,34 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<h2>Browse jobs</h2><p>Account Executive $180,000 - $220,000</p>",
     ) is False
     assert browse.pay_high is None
+    browse_list = Opportunity(title="Engineer", url="https://jobs.example/browse-listings")
+    assert _apply_listing(
+        browse_list,
+        "<title>Engineer</title><p>Great team. Apply now.</p>"
+        "<h2>Browse listings</h2><p>Account Executive $400,000</p>",
+    ) is False
+    assert browse_list.pay_high is None
+    like_roles = Opportunity(title="Engineer", url="https://jobs.example/roles-like")
+    assert _apply_listing(
+        like_roles,
+        "<title>Engineer</title><p>Great team. Apply now.</p>"
+        "<h2>Roles like this</h2><p>Account Executive $400,000</p>",
+    ) is False
+    assert like_roles.pay_high is None
+    open_opps = Opportunity(title="Engineer", url="https://jobs.example/open-opps")
+    assert _apply_listing(
+        open_opps,
+        "<title>Engineer</title><p>Great team. Apply now.</p>"
+        "<h2>Open opportunities</h2><p>Account Executive $400,000</p>",
+    ) is False
+    assert open_opps.pay_high is None
+    quals = Opportunity(title="Engineer", url="https://jobs.example/rec-quals")
+    assert _apply_listing(
+        quals,
+        "<title>Engineer</title><p>Office. Full time.</p>"
+        "<h2>Recommended qualifications</h2><p>Salary $180,000</p>",
+    ) is True
+    assert quals.pay_high == 180_000
     latest = Opportunity(title="Engineer", url="https://jobs.example/latest")
     assert _apply_listing(
         latest,
