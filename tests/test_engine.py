@@ -5494,6 +5494,8 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
 
 
 def test_apply_listing_json_ld_yearly_thousands():
+    from html import escape
+
     from src.engine import _apply_listing
 
     html = """
@@ -5612,6 +5614,46 @@ def test_apply_listing_json_ld_yearly_thousands():
         f'<title>Engineer</title><script type="application/ld+json"><!--{body}--></script>',
     ) is True
     assert wrapped.pay_high == 220_000
+    encoded = body.replace('"', "&quot;")
+    entities = Opportunity(title="Engineer", url="https://jobs.example/ld-entities")
+    assert _apply_listing(
+        entities,
+        f'<title>Engineer</title><script type="application/ld+json">{encoded}</script>',
+    ) is True
+    assert entities.pay_high == 220_000
+    assert entities.company == "Acme"
+    amp = body.replace("Acme", "Acme & Co")
+    escaped = Opportunity(title="Engineer", url="https://jobs.example/ld-escape")
+    assert _apply_listing(
+        escaped,
+        f'<title>Engineer</title><script type="application/ld+json">{escape(amp)}</script>',
+    ) is True
+    assert escaped.pay_high == 220_000
+    assert escaped.company == "Acme & Co"
+    numeric = Opportunity(title="Engineer", url="https://jobs.example/ld-numquot")
+    assert _apply_listing(
+        numeric,
+        f'<title>Engineer</title><script type="application/ld+json">{body.replace(chr(34), "&#34;")}</script>',
+    ) is True
+    assert numeric.pay_high == 220_000
+    inner = (
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"description":"Use &quot;quotes&quot; in HTML",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}'
+    )
+    quoted = Opportunity(title="Engineer", url="https://jobs.example/ld-inner-quot")
+    assert _apply_listing(
+        quoted,
+        f'<title>Engineer</title><script type="application/ld+json">{inner}</script>',
+    ) is True
+    assert quoted.pay_high == 220_000
+    bom = Opportunity(title="Engineer", url="https://jobs.example/ld-bom")
+    assert _apply_listing(
+        bom,
+        f'<title>Engineer</title><script type="application/ld+json">\ufeff{body}</script>',
+    ) is True
+    assert bom.pay_high == 220_000
 
 
 def test_apply_listing_json_ld_monthly_and_weekly_thousands():

@@ -3822,14 +3822,17 @@ def _ld_title_hit(posting: dict, blob: str) -> int:
 
 
 def _ld_payload(raw: str):
-    """Parse JSON-LD script text. CMS wrappers are not pay."""
-    text = _LD_COMMENT_TAIL_RE.sub("", _LD_COMMENT_RE.sub("", raw or "")).strip()
+    """Parse JSON-LD script text. CMS wrappers and HTML entities are not pay."""
+    text = _LD_COMMENT_TAIL_RE.sub("", _LD_COMMENT_RE.sub("", raw or ""))
+    text = text.lstrip("\ufeff").strip()
     if not text:
         return None
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return None
+    for candidate in (text, unescape(text).lstrip("\ufeff").strip()):
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    return None
 
 
 def _job_posting(html: str, role: str = "") -> Optional[dict]:
