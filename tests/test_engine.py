@@ -61,7 +61,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("signing bonus of $25,000") == (None, None)
     assert _parse_pay("$10,000 relocation bonus") == (None, None)
     assert _parse_pay("relocation bonus of $10,000") == (None, None)
+    assert _parse_pay("$25,000 annual bonus") == (None, None)
+    assert _parse_pay("target bonus of $25,000") == (None, None)
+    assert _parse_pay("$25,000 performance bonus") == (None, None)
+    assert _parse_pay("$25,000 retention bonus") == (None, None)
     assert _parse_pay("Salary $180,000 plus $20,000 signing bonus") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $25,000 annual bonus") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -254,6 +259,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     both = Opportunity(title="Engineer", url="https://jobs.example/w")
     assert _apply_listing(both, "<p>Salary $180,000 plus $20,000 signing bonus</p>") is True
     assert both.pay_high == 180_000
+    annual = Opportunity(title="Engineer", url="https://jobs.example/a")
+    assert _apply_listing(annual, "<p>$25,000 annual bonus. Apply now.</p>") is False
+    assert annual.pay_high is None
+    mixed = Opportunity(title="Engineer", url="https://jobs.example/m")
+    assert _apply_listing(mixed, "<p>Salary $180,000 plus $25,000 annual bonus</p>") is True
+    assert mixed.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
