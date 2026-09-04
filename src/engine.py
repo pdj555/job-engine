@@ -4049,14 +4049,18 @@ def _html_title(html: str) -> str:
 
 _GONE_LISTING_RE = re.compile(
     r"(?i)(?:sorry,\s+)?this\s+job\s+was\s+removed"
-    r"|this\s+(?:job|role|position|posting)\s+is\s+no\s+longer\s+(?:available|active)"
-    r"|this\s+(?:job|role|position)\s+does\s+not\s+exist"
+    r"|this\s+(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition)"
+    r"\s+is\s+no\s+longer\s+(?:available|active|posted)"
+    r"|this\s+(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition)"
+    r"\s+does\s+not\s+exist"
     r"|the\s+job\s+listing\s+no\s+longer\s+exists"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition)"
     r"\s+has\s+(?:been\s+)?(?:filled|expired|closed)"
-    r"|we\s+have\s+filled\s+this\s+(?:job|role|position|posting)"
-    r"|this\s+(?:job(?:\s+posting)?|role|position|posting)\s+(?:is|has\s+been)\s+closed"
+    r"|we\s+have\s+(?:filled|closed)\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition)"
+    r"|this\s+(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition)"
+    r"\s+(?:is|has\s+been)\s+closed"
     r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|accepting\s+applications)"
     r"|no\s+longer\s+accepting\s+applications"
 )

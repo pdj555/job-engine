@@ -3812,6 +3812,22 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title><p>This posting has been closed.</p>"
     ) is True
     assert _html_is_gone(
+        "<title>Engineer</title><p>This opportunity is no longer available.</p>"
+        "<p>$180,000 a year</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job is no longer posted.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This requisition is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This vacancy is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>We have closed this position.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
         "<title>Engineer</title><p>We are no longer accepting applications.</p>"
         "<p>$180,000 a year</p>"
     ) is True
@@ -3879,6 +3895,32 @@ def test_enrich_drops_filled_listing_with_leftover_pay():
     ghost = Opportunity(
         title="Ghost",
         url="https://jobs.example/filled",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Keep"]
+    assert keep.pay_high == 180_000
+
+
+def test_enrich_drops_closed_opportunity_with_leftover_pay():
+    engine = Engine()
+
+    async def page(url: str):
+        if "closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This opportunity is no longer available.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Keep", url="https://jobs.example/live")
+    ghost = Opportunity(
+        title="Ghost",
+        url="https://jobs.example/closed",
         pay_high=220_000,
         hours_per_week=40,
     )
