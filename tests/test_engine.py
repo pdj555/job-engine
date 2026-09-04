@@ -308,6 +308,10 @@ def test_parse_pay_annualizes_daily_usd():
     assert _parse_pay("USD 800 per day") == (None, 200_000)
     assert _parse_pay("$400-$500/day") == (100_000, 125_000)
     assert _parse_pay("$400–$600 per day") == (100_000, 150_000)
+    assert _parse_pay("$400 per diem") == (None, 100_000)
+    assert _parse_pay("$400/diem") == (None, 100_000)
+    assert _parse_pay("USD 400 per diem") == (None, 100_000)
+    assert _parse_pay("$400-$500 per diem") == (100_000, 125_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
     assert _parse_pay("$3,000 per week") == (None, 150_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
@@ -330,6 +334,16 @@ def test_apply_listing_json_ld_daily_pay():
     assert _apply_listing(opp, html) is True
     assert opp.pay_low == 100_000
     assert opp.pay_high == 125_000
+    diem = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":400,"unitText":"PER_DIEM"}}}
+    </script>
+    """
+    per = Opportunity(title="Engineer", url="https://jobs.example/ld-diem")
+    assert _apply_listing(per, diem) is True
+    assert per.pay_high == 100_000
 
 
 def test_guess_pay_reads_description_not_just_title():

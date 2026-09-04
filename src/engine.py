@@ -3628,6 +3628,9 @@ _PAY_UNITS = {
     "MONTHLY": "month",
     "DAY": "day",
     "DAILY": "day",
+    "DIEM": "day",
+    "PER_DIEM": "day",
+    "PERDIEM": "day",
     "BIWEEKLY": "biweek",
     "BI_WEEKLY": "biweek",
     "BI-WEEKLY": "biweek",
@@ -4183,7 +4186,7 @@ _SEMIMONTHLY_RANGE_RE = re.compile(
 _SEMIMONTHLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _SEMIMONTH_TAIL
 )
-_DAY_TAIL = r"\s*(?:/\s*days?|(?:per|a)\s+days?|daily)\b"
+_DAY_TAIL = r"\s*(?:/\s*(?:days?|diem)|(?:per|a)\s+(?:days?|diem)|daily)\b"
 _DAILY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
