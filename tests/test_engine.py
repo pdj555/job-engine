@@ -5161,6 +5161,31 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title><p>Position closed.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting has been discontinued.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job has been discontinued.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Position has been removed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This position has been removed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this position has been removed, we will archive it.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Applications removed from consideration stay on file.</p>"
+        "<p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -5295,6 +5320,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>This role has ended.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "discontinued" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This posting has been discontinued.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "been-removed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Position has been removed.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         if "is-expired" in url:
@@ -5445,6 +5482,18 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
+    discontinued = Opportunity(
+        title="Discontinued",
+        url="https://jobs.example/discontinued",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    been_removed = Opportunity(
+        title="BeenRemoved",
+        url="https://jobs.example/been-removed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
     opps = [
         keep,
         expired,
@@ -5460,6 +5509,8 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         deadline,
         no_longer_avail,
         role_ended,
+        discontinued,
+        been_removed,
     ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
