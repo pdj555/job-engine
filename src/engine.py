@@ -5247,7 +5247,12 @@ def _posting_company(posting: dict) -> Optional[str]:
     if isinstance(org, str):
         name = org.strip()
     elif isinstance(org, dict):
-        name = (_ld_text(org.get("name")) or "").strip()
+        name = (
+            _ld_text(org.get("name"))
+            or _ld_text(org.get("legalName"))
+            or _ld_text(org.get("legal_name"))
+            or ""
+        ).strip()
     else:
         return None
     if not name or _PLACE_RE.search(name):

@@ -6604,6 +6604,46 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert snake_place.company != "Remote"
+    legal = Opportunity(title="x", url="https://jobs.example/ld-legalName")
+    assert _apply_listing(
+        legal,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"@type":"Organization","legalName":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert legal.company == "Acme"
+    legal_snake = Opportunity(title="x", url="https://jobs.example/ld-legal-name")
+    assert _apply_listing(
+        legal_snake,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiring_organization":{"legal_name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert legal_snake.company == "Acme"
+    named = Opportunity(title="x", url="https://jobs.example/ld-name-wins")
+    assert _apply_listing(
+        named,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"name":"Acme","legalName":"Acme Holdings Inc"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert named.company == "Acme"
+    legal_place = Opportunity(title="x", url="https://jobs.example/ld-legal-place")
+    assert _apply_listing(
+        legal_place,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"legalName":"Remote"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert legal_place.company != "Remote"
 
 
 def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
