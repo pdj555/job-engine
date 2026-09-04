@@ -275,6 +275,21 @@ class Engine:
                     return raw
                 return None
             return ""
+        dv = _dover_ids(url)
+        if dv:
+            raw = await fetch(_dover_api_url(url))
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    return None
+                job = _dover_job(data)
+                if job:
+                    return _dover_to_html(job)
+                return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -642,6 +657,9 @@ def _lever_job_url(url: str) -> str:
     jz = _jazzhr_job_url(url)
     if jz:
         return jz
+    dv = _dover_job_url(url)
+    if dv:
+        return dv
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -945,6 +963,7 @@ def _search_angles(query: str) -> list[str]:
             "comeet.com",
             "bamboohr.com",
             "applytojob.com",
+            "app.dover.com",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1148,6 +1167,13 @@ def _company_from_url(url: str) -> str | None:
         slug = host.split(".")[0]
         if slug in {"www", "app", "careers"}:
             return None
+    elif host in {"app.dover.com", "www.app.dover.com"}:
+        if len(parts) >= 2 and parts[0].casefold() == "apply":
+            slug = parts[1]
+            if slug.casefold() in {"jobs", "apply", "careers"}:
+                return None
+        else:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1220,6 +1246,13 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"www", "app", "careers"}:
             return None
         return f"jazzhr:{slug}"
+    if host in {"app.dover.com", "www.app.dover.com"}:
+        if len(parts) >= 2 and parts[0].casefold() == "apply":
+            slug = parts[1].casefold()
+            if slug in {"jobs", "apply", "careers"}:
+                return None
+            return f"dover:{slug}"
+        return None
     return None
 
 
@@ -2466,6 +2499,145 @@ def _jazzhr_is_board(url: str) -> bool:
     return _jazzhr_ids(url) is None
 
 
+_DOVER_UUID = (
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+)
+_DOVER_APPLY_RE = re.compile(
+    rf"(?i)https?://(?:www\.)?app\.dover\.com/apply/([^/]+)/({_DOVER_UUID})"
+)
+_DOVER_CAREERS_RE = re.compile(
+    rf"(?i)https?://(?:www\.)?app\.dover\.com/dover/careers/({_DOVER_UUID})"
+)
+_DOVER_PAY_UNITS = {
+    "YEARLY": "YEAR",
+    "ANNUAL": "YEAR",
+    "YEAR": "YEAR",
+    "MONTHLY": "MONTH",
+    "MONTH": "MONTH",
+    "HOURLY": "HOUR",
+    "HOUR": "HOUR",
+    "WEEKLY": "WEEK",
+    "WEEK": "WEEK",
+}
+
+
+def _dover_ids(url: str) -> Optional[str]:
+    apply = _DOVER_APPLY_RE.search(url or "")
+    if apply:
+        return apply.group(2).casefold()
+    careers = _DOVER_CAREERS_RE.search(url or "")
+    if careers:
+        return careers.group(1).casefold()
+    return None
+
+
+def _dover_job_url(url: str) -> Optional[str]:
+    apply = _DOVER_APPLY_RE.search(url or "")
+    if apply:
+        return (
+            f"https://app.dover.com/apply/{apply.group(1)}/{apply.group(2).casefold()}"
+        )
+    careers = _DOVER_CAREERS_RE.search(url or "")
+    if careers:
+        return f"https://app.dover.com/dover/careers/{careers.group(1).casefold()}"
+    return None
+
+
+def _dover_api_url(url: str) -> Optional[str]:
+    jid = _dover_ids(url)
+    if not jid:
+        return None
+    return f"https://app.dover.com/api/v1/inbound/application-portal-job/{jid}"
+
+
+def _dover_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if host not in {"app.dover.com", "www.app.dover.com"}:
+        return False
+    return _dover_ids(url) is None
+
+
+def _dover_job(data) -> Optional[dict]:
+    if not isinstance(data, dict):
+        return None
+    if data.get("active") is False or data.get("is_private") is True:
+        return None
+    if data.get("title") or data.get("id"):
+        return data
+    return None
+
+
+def _dover_place(job: dict) -> str:
+    work = str(job.get("workplace_type") or "").strip()
+    if work:
+        return work.replace("_", " ")
+    rows = job.get("locations") if isinstance(job.get("locations"), list) else []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("location_type") or "").replace("_", " ")
+        name = str(row.get("name") or "").strip()
+        if kind or name:
+            return kind or name
+    return str(job.get("location") or "").strip()
+
+
+def _dover_pay_ld(job: dict) -> Optional[dict]:
+    comp = job.get("compensation") if isinstance(job.get("compensation"), dict) else {}
+    low, high = _num(comp.get("lower_bound")), _num(comp.get("upper_bound"))
+    if low is None and high is None:
+        return None
+    cur = str(comp.get("currency_code") or "").upper() or "USD"
+    value: dict = {}
+    unit = _DOVER_PAY_UNITS.get(str(comp.get("salary_range_type") or "").upper())
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    return {"currency": cur, "value": value}
+
+
+def _dover_to_html(job: dict) -> str:
+    """Turn Dover inbound job JSON into listing HTML. Never invent pay.
+
+    Omit application_questions — those are applicant prompts, not listed pay.
+    """
+    title = str(job.get("title") or "").strip()
+    company = str(job.get("client_name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = ""
+    comp = job.get("compensation") if isinstance(job.get("compensation"), dict) else {}
+    emp = str(comp.get("employment_type") or "")
+    lower = emp.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    place = _dover_place(job)
+    _apply_workplace(posting, place)
+    pay = _dover_pay_ld(job)
+    if pay:
+        posting["baseSalary"] = pay
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    desc = job.get("user_provided_description")
+    if isinstance(desc, str) and desc.strip():
+        parts.append(desc)
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -2493,6 +2665,7 @@ def _ats_job_url(url: str) -> bool:
         or _comeet_ids(url)
         or _bamboohr_ids(url)
         or _jazzhr_ids(url)
+        or _dover_ids(url)
     )
 
 
@@ -2544,6 +2717,8 @@ def _is_index_page(raw: dict) -> bool:
     if _bamboohr_is_board(url):
         return True
     if _jazzhr_is_board(url):
+        return True
+    if _dover_is_board(url):
         return True
     return False
 

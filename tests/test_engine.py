@@ -1022,6 +1022,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:comeet.com",
         "senior ML engineer remote site:bamboohr.com",
         "senior ML engineer remote site:applytojob.com",
+        "senior ML engineer remote site:app.dover.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -4311,6 +4312,158 @@ def test_listing_text_jazzhr_410_is_gone(monkeypatch):
         )
     )
     assert seen == ["https://veronetworks.applytojob.com/apply/zzzzzzzzzz"]
+    assert html is None
+
+
+def test_dover_job_urls_are_not_boards():
+    from src.engine import _dover_api_url, _is_index_page, _lever_job_url
+
+    job = (
+        "https://app.dover.com/apply/conveyor/"
+        "1ba85ce7-7f2e-4230-ba94-4bb67a3371b8"
+    )
+    assert _lever_job_url(job) == job
+    assert _dover_api_url(job) == (
+        "https://app.dover.com/api/v1/inbound/application-portal-job/"
+        "1ba85ce7-7f2e-4230-ba94-4bb67a3371b8"
+    )
+    assert not _is_index_page(
+        {"url": job, "title": "Dover", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://app.dover.com/jobs/causallabs",
+            "title": "Careers - app.dover.com",
+            "description": "",
+        }
+    )
+    assert _is_index_page(
+        {
+            "url": "https://app.dover.com/apply/SemiAnalysis",
+            "title": "Dover",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = {
+        "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "active": True,
+        "is_private": False,
+        "client_name": "Acme",
+        "title": "Staff AI Engineer",
+        "workplace_type": "REMOTE",
+        "locations": [{"location_type": "REMOTE", "name": "United States"}],
+        "compensation": {
+            "lower_bound": 180000,
+            "upper_bound": 220000,
+            "currency_code": "USD",
+            "salary_range_type": "YEARLY",
+            "employment_type": "FULL_TIME",
+        },
+        "application_questions": [
+            {"name": "desired_salary", "label": "Expected pay", "value": "$17,500"}
+        ],
+        "user_provided_description": "<p>Build AI systems.</p>",
+    }
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return json.dumps(payload)
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://app.dover.com/apply/Acme/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == [
+        "https://app.dover.com/api/v1/inbound/application-portal-job/"
+        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="Dover", url=url)
+    listed = _apply_listing(opp, text)
+    assert listed is True
+    assert opp.company == "Acme"
+    assert opp.remote is True
+    assert opp.pay_low == 180_000
+    assert opp.pay_high == 220_000
+    assert opp.hours_per_week == 40
+    assert "$17,500" not in text
+
+
+def test_dover_inr_salary_is_foreign():
+    from src.engine import _apply_listing, _dover_to_html, _foreign_salary
+
+    html = _dover_to_html(
+        {
+            "title": "ML Engineer Intern",
+            "client_name": "Peakflo",
+            "workplace_type": "REMOTE",
+            "compensation": {
+                "lower_bound": 480000,
+                "upper_bound": 600000,
+                "currency_code": "INR",
+                "salary_range_type": "YEARLY",
+                "employment_type": "INTERNSHIP",
+            },
+            "user_provided_description": "<p>India remote intern.</p>",
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://app.dover.com/apply/Peakflo/f7345aa2-9bc2-4196-99e4-2c3f277f9bfb",
+    )
+    listed = _apply_listing(opp, html)
+    assert listed is False
+    assert opp.pay_high is None
+    assert opp.remote is True
+    assert _foreign_salary(html) is True
+
+
+def test_listing_text_dover_missing_id_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        return None
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://app.dover.com/dover/careers/"
+            "81955b55-70c1-435d-860e-050487e2eae2"
+        )
+    )
+    assert seen == [
+        "https://app.dover.com/api/v1/inbound/application-portal-job/"
+        "81955b55-70c1-435d-860e-050487e2eae2"
+    ]
+    assert html is None
+
+
+def test_listing_text_dover_inactive_is_gone(monkeypatch):
+    engine = Engine()
+
+    async def fake_get(_client, url: str):
+        return json.dumps(
+            {
+                "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                "active": False,
+                "title": "Closed Role",
+                "client_name": "Acme",
+            }
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://app.dover.com/apply/Acme/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        )
+    )
     assert html is None
 
 
