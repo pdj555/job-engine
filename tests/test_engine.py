@@ -313,6 +313,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 QSEHRA contribution") == (None, None)
     assert _parse_pay("$10,000 ICHRA contribution") == (None, None)
     assert _parse_pay("$10,000 COBRA subsidy") == (None, None)
+    assert _parse_pay("$10,000 clothing stipend") == (None, None)
+    assert _parse_pay("$10,000 long-term incentive") == (None, None)
+    assert _parse_pay("$10,000 option grant") == (None, None)
+    assert _parse_pay("$10,000 variable bonus") == (None, None)
+    assert _parse_pay("$10,000 cell phone reimbursement") == (None, None)
+    assert _parse_pay("$10,000 donation match") == (None, None)
+    assert _parse_pay("$10,000 pet benefit") == (None, None)
     assert _parse_pay("$10,000 pension") == (None, 10_000)
     assert _parse_pay("$20,000 bonus") == (None, 20_000)
     assert _parse_pay("$180,000 gym in NYC") == (None, 180_000)
@@ -732,6 +739,12 @@ def test_guess_pay_annualizes_hourly():
     cobra = Opportunity(title="Engineer", url="https://jobs.example/cobra")
     assert _apply_listing(cobra, "<p>$10,000 COBRA subsidy. Great team.</p>") is False
     assert cobra.pay_high is None
+    lti = Opportunity(title="Engineer", url="https://jobs.example/lti")
+    assert _apply_listing(lti, "<p>$10,000 long-term incentive. Apply now.</p>") is False
+    assert lti.pay_high is None
+    don = Opportunity(title="Engineer", url="https://jobs.example/don-match")
+    assert _apply_listing(don, "<p>$10,000 donation match. Great team.</p>") is False
+    assert don.pay_high is None
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -1188,6 +1201,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "office 3 days a week") is False
     assert _guess_remote("Engineer", "office presence 3 days a week") is False
     assert _guess_remote("Engineer", "3 days of office presence a week") is False
+    assert _guess_remote("Engineer", "office attendance 3 days a week") is False
+    assert _guess_remote("Engineer", "campus presence 3 days a week") is False
     assert _guess_remote("Engineer", "3 days in Seattle per week") is False
     assert _guess_remote("Engineer", "this role requires 3 days in Seattle") is False
     assert _guess_remote("Engineer", "hybrid 3 days in NYC") is False
@@ -2976,6 +2991,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Citizenship | Acme",
+                "url": "https://acme.com/citizenship",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Charity | Acme",
+                "url": "https://acme.com/charity",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Charity Engineer",
+                "url": "https://jobs.example.com/job/charity-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Platform Team Engineer",
                 "url": "https://jobs.example.com/job/platform-team-engineer",
                 "description": "$180,000",
@@ -4133,6 +4178,22 @@ def test_index_pages_are_not_opportunities():
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
         "https://acme.com/foundation/senior-engineer",
+    )
+    assert _html_is_index(
+        "<title>Citizenship | Acme</title><p>$180,000</p>",
+        "https://acme.com/citizenship",
+    )
+    assert _html_is_index(
+        "<title>Charity | Acme</title><p>$180,000</p>",
+        "https://acme.com/charity",
+    )
+    assert not _html_is_index(
+        "<title>Charity Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/charity-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/charity/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Senior Engineer</title><p>$180,000</p>",
@@ -7447,6 +7508,10 @@ def test_enrich_drops_fetched_board_index_html():
             return "<title>Giving | Acme</title><p>$180,000</p>"
         if url.rstrip("/").endswith("/philanthropy"):
             return "<title>Philanthropy | Acme</title><p>$180,000</p>"
+        if url.rstrip("/").endswith("/citizenship"):
+            return "<title>Citizenship | Acme</title><p>$180,000</p>"
+        if url.rstrip("/").endswith("/charity"):
+            return "<title>Charity | Acme</title><p>$180,000</p>"
         return ""
 
     engine._listing_text = page
@@ -7625,7 +7690,17 @@ def test_enrich_drops_fetched_board_index_html():
         url="https://acme.com/philanthropy",
         pay_high=180_000,
     )
-    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news, newsroom, investors, sustainability, esg, impact, community, csr, purpose, people, ethics, media_center, environment, foundation, giving, philanthropy]
+    citizenship = Opportunity(
+        title="Citizenship | Acme",
+        url="https://acme.com/citizenship",
+        pay_high=180_000,
+    )
+    charity = Opportunity(
+        title="Charity | Acme",
+        url="https://acme.com/charity",
+        pay_high=180_000,
+    )
+    opps = [keep, ghost, catalog, life, internships, meet, campus, early, job_search, careers, benefits, culture, leadership, about, values, locations, diversity, dei, story, faqs, news, newsroom, investors, sustainability, esg, impact, community, csr, purpose, people, ethics, media_center, environment, foundation, giving, philanthropy, citizenship, charity]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
@@ -11649,6 +11724,41 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<p>Explore roles across the company. Salary $180,000</p>",
     ) is True
     assert roles_body.pay_high == 180_000
+    browse_roles = Opportunity(title="Engineer", url="https://jobs.example/br-roles")
+    assert _apply_listing(
+        browse_roles,
+        "<title>Engineer</title><p>Great team.</p>"
+        "<h2>Browse roles</h2><p>Account Executive $220,000</p>",
+    ) is False
+    assert browse_roles.pay_high is None
+    all_open = Opportunity(title="Engineer", url="https://jobs.example/all-open")
+    assert _apply_listing(
+        all_open,
+        "<title>Engineer</title><p>Great team.</p>"
+        "<h2>All openings</h2><p>Account Executive $220,000</p>",
+    ) is False
+    assert all_open.pay_high is None
+    view_roles = Opportunity(title="Engineer", url="https://jobs.example/view-roles")
+    assert _apply_listing(
+        view_roles,
+        "<title>Engineer</title><p>Great team.</p>"
+        "<h2>View all roles</h2><p>Account Executive $220,000</p>",
+    ) is False
+    assert view_roles.pay_high is None
+    open_jobs = Opportunity(title="Engineer", url="https://jobs.example/open-jobs-h")
+    assert _apply_listing(
+        open_jobs,
+        "<title>Engineer</title><p>Great team.</p>"
+        "<h2>Open jobs</h2><p>Account Executive $220,000</p>",
+    ) is False
+    assert open_jobs.pay_high is None
+    browse_roles_copy = Opportunity(title="Engineer", url="https://jobs.example/br-r-copy")
+    assert _apply_listing(
+        browse_roles_copy,
+        "<title>Engineer</title>"
+        "<p>Browse roles on our careers page. Salary $180,000</p>",
+    ) is True
+    assert browse_roles_copy.pay_high == 180_000
 
 
 def test_apply_listing_ignores_related_jsonld_jobposting():
