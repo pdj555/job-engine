@@ -93,6 +93,8 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>CAD $160,000 - $180,000</p>") is True
     assert _parse_pay("C$90,000") == (None, None)
     assert _foreign_salary("<p>Pay is $180,000 CAD a year</p>") is True
+    assert _parse_pay("$160,000 - 200,000 (CAD)") == (None, None)
+    assert _foreign_salary("<p>The salary range for this role is $160,000 - 200,000 (CAD)</p>") is True
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
     assert _parse_pay("$15000 to $17000 gross Salary Monthly") == (None, None)
