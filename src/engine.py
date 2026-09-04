@@ -1474,7 +1474,9 @@ _INDEX_URL_RE = re.compile(
     r"|aijobs\.net/"
     r"|aijobs\.com/"
     r"|aijobs\.mlyearning\.org/"
-    r"|wellfound\.com/role/)",
+    r"|wellfound\.com/role/"
+    r"|wellfound\.com/jobs/?(?:\?|$)"
+    r"|angel\.co/role/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(

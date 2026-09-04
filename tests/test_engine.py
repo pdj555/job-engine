@@ -1038,6 +1038,16 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://wellfound.com/jobs?role=software-engineer",
+                "description": "$185k – $218k",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1107,6 +1117,10 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Software Engineer</title><p>$185k – $218k</p>",
         "https://wellfound.com/role/l/software-engineer/united-states",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$110k – $200k</p>",
+        "https://wellfound.com/jobs?role=software-engineer",
     )
     assert not _html_is_index(
         "<title>IT Security Administrator at Bitwarden</title><p>$115,000 - $145,000</p>",
