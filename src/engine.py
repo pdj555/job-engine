@@ -3434,7 +3434,8 @@ def _apple_to_html(job: dict) -> str:
 
 
 _INDEX_PATH_RE = re.compile(
-    r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
+    r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search"
+    r"|^/(?:careers|jobs)/?$",
     re.I,
 )
 
@@ -3844,6 +3845,11 @@ def _html_is_index(html: str, url: str) -> bool:
         return True
     if _INDEX_URL_RE.search(url):
         return True
+    if not _ats_job_url(url):
+        parsed = urlparse(url)
+        path = parsed.path.rstrip("/") or "/"
+        if path == "/" or _INDEX_PATH_RE.search(parsed.path):
+            return True
     title = _html_title(html)
     if not title:
         return False

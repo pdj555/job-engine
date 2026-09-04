@@ -1333,6 +1333,33 @@ def test_index_pages_are_not_opportunities():
             "description": "",
         }
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Careers at Scale AI | Build the Future of AI | Scale AI",
+                "url": "https://scale.com/careers",
+                "description": "Staff Machine Learning Engineer",
+            }
+        )
+        is None
+    )
+    assert _html_is_index(
+        "<title>Staff Machine Learning Engineer</title>"
+        '<script type="application/ld+json">{"@type":"JobPosting"}</script>',
+        "https://scale.com/careers",
+    )
+    assert _html_is_index(
+        "<title>Staff Software Engineer</title>",
+        "https://www.lever.co/careers",
+    )
+    assert not _html_is_index(
+        "<title>Staff Machine Learning Engineer</title>",
+        "https://job-boards.greenhouse.io/reddit/jobs/7747244",
+    )
+    assert not _html_is_index(
+        "<title>Staff Machine Learning Engineer - Edge AI</title>",
+        "https://www.samsara.com/careers?gh_jid=7266357",
+    )
     assert not _is_index_page(
         {
             "url": "https://job-boards.eu.greenhouse.io/overstory/jobs/4411330101",
