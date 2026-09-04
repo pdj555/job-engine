@@ -5774,6 +5774,43 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_min, mins) is True
     assert posting_min.pay_low == 180_000
     assert posting_min.pay_high == 220_000
+    compensation = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseCompensation":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_comp = Opportunity(title="Engineer", url="https://jobs.example/ld-baseCompensation")
+    assert _apply_listing(posting_comp, compensation) is True
+    assert posting_comp.pay_low == 180_000
+    assert posting_comp.pay_high == 220_000
+    empty_then_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD"},
+     "baseCompensation":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    skipped_base = Opportunity(title="Engineer", url="https://jobs.example/ld-empty-base-comp")
+    assert _apply_listing(skipped_base, empty_then_comp) is True
+    assert skipped_base.pay_low == 180_000
+    assert skipped_base.pay_high == 220_000
+    listed_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":180000,"unitText":"YEAR"}},
+     "baseCompensation":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","value":250000,"unitText":"YEAR"}}}
+    </script>
+    """
+    base_comp = Opportunity(title="Engineer", url="https://jobs.example/ld-base-comp")
+    assert _apply_listing(base_comp, listed_comp) is True
+    assert base_comp.pay_high == 180_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6398,6 +6435,18 @@ def test_apply_listing_ignores_non_usd_salary():
     min_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryMin-eur")
     _apply_listing(min_eur, eur_min)
     assert min_eur.pay_high is None
+    eur_comp = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseCompensation":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    comp_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-baseCompensation-eur")
+    _apply_listing(comp_eur, eur_comp)
+    assert comp_eur.pay_high is None
+    assert comp_eur.company == "Acme"
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -7198,6 +7247,15 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "January 15, 2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Jan-15-2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15-Jan-2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Jan-15-2029")
     ) is False
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "01-15-2020")
@@ -12934,6 +12992,42 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "<title>Engineer</title><h2>Recommended qualifications</h2><p>Salary $180,000</p>",
     ) is True
     assert quals.pay_high == 180_000
+    for heading in (
+        "More like this",
+        "You applied",
+        "Recently viewed",
+        "Keep browsing",
+        "Similar careers",
+    ):
+        rail = (
+            "<title>Engineer</title><p>Great team. Apply now.</p>"
+            f"<h2>{heading}</h2><p>Account Executive $400,000</p>"
+        )
+        assert _parse_pay(_listing_plain_text(rail)) == (None, None)
+        ghost_rail = Opportunity(title="Engineer", url=f"https://jobs.example/{heading}")
+        assert _apply_listing(ghost_rail, rail) is False
+        assert ghost_rail.pay_high is None
+    like = Opportunity(title="Engineer", url="https://jobs.example/like-kept")
+    assert _apply_listing(
+        like,
+        "<title>Engineer</title><p>Salary $180,000 - $220,000 a year.</p>"
+        "<h2>More like this</h2><p>Account Executive $400,000</p>",
+    ) is True
+    assert like.pay_low == 180_000
+    assert like.pay_high == 220_000
+    applied_copy = Opportunity(title="Engineer", url="https://jobs.example/applied-copy")
+    assert _apply_listing(
+        applied_copy,
+        "<title>Engineer</title><p>You applied on March 1. Salary $180,000</p>",
+    ) is True
+    assert applied_copy.pay_high == 180_000
+    nav_like = Opportunity(title="Engineer", url="https://jobs.example/nav-like")
+    assert _apply_listing(
+        nav_like,
+        "<header><h2>More like this</h2></header>"
+        "<title>Engineer</title><p>Salary $180,000</p>",
+    ) is True
+    assert nav_like.pay_high == 180_000
     browse = Opportunity(title="Engineer", url="https://jobs.example/browse")
     assert _apply_listing(
         browse,

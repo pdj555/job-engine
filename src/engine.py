@@ -3907,6 +3907,11 @@ _RELATED_HEADING_RE = re.compile(
     r"|matching\s+openings"
     r"|people\s+also\s+applied"
     r"|applicants\s+also\s+applied"
+    r"|more\s+like\s+this"
+    r"|you\s+applied"
+    r"|recently\s+viewed"
+    r"|keep\s+browsing"
+    r"|similar\s+careers"
     r"|related"
     r"|similar"
     r"|recommended)\s*"
@@ -4543,10 +4548,10 @@ def _salary_span(items: list) -> dict:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, then salary, then estimatedSalary. Skip objects with no amount."""
+    """baseSalary, salary, estimatedSalary, then baseCompensation. Skip empty objects."""
     if not isinstance(posting, dict):
         return None
-    for key in ("baseSalary", "salary", "estimatedSalary"):
+    for key in ("baseSalary", "salary", "estimatedSalary", "baseCompensation"):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
         found = [item for item in items if _salary_has_amount(item)]
@@ -4593,7 +4598,7 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return stated
     if _salary_has_amount(salary):
         return None
-    for key in ("baseSalary", "salary", "estimatedSalary"):
+    for key in ("baseSalary", "salary", "estimatedSalary", "baseCompensation"):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
         for item in items:
@@ -5007,6 +5012,16 @@ def _posting_date(raw) -> Optional[date]:
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
     m = re.match(r"(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(2).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(1)))
+    m = re.match(r"([A-Za-z]+)-(\d{1,2})-(\d{4})", text)
+    if m:
+        month = _MONTH_NUM.get(m.group(1).lower())
+        if month:
+            return _ymd(int(m.group(3)), month, int(m.group(2)))
+    m = re.match(r"(\d{1,2})-([A-Za-z]+)-(\d{4})", text)
     if m:
         month = _MONTH_NUM.get(m.group(2).lower())
         if month:
