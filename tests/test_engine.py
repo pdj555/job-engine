@@ -884,6 +884,16 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert qonto is not None
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer at ServiceNow",
+                "url": "https://www.remotesource.com/jobs/yZVKfcilCyoKCJTGfDGhF-senior-machine-learning-engineer-at-servicenow",
+                "description": "Canada Full-Time",
+            }
+        )
+        is None
+    )
 
 
 def test_heuristic_stores_lever_job_url_not_apply():
@@ -929,6 +939,14 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Jobgether - Senior Machine Learning Engineer",
                 "url": "https://jobs.lever.co/jobgether/dd9c2026-60c2-4c5f-b507-dc9d22cc68b9",
+            },
+            {
+                "title": "Senior Machine Learning Engineer at ServiceNow",
+                "url": "https://www.remotesource.com/jobs/abc-senior-machine-learning-engineer-at-servicenow",
+            },
+            {
+                "title": "Remote Machine Learning",
+                "url": "https://arc.dev/remote-jobs/machine-learning",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]

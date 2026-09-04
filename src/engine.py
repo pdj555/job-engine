@@ -1057,7 +1057,9 @@ _INDEX_URL_RE = re.compile(
     r"|ziprecruiter\.com/Jobs/"
     r"|ziprecruiter\.com/jobs-search"
     r"|lever\.co/jobgether/"
-    r"|jobgether\.com/)",
+    r"|jobgether\.com/"
+    r"|remotesource\.com/"
+    r"|arc\.dev/remote-jobs)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
