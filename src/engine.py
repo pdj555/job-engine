@@ -5653,7 +5653,7 @@ _GONE_LISTING_RE = re.compile(
     r"\s+was\s+(?:withdrawn|cancelled|canceled|removed|taken\s+down|taken\s+offline|deactivated|unpublished|deleted|unposted|pulled)"
     r"|we(?:'ve|\s+have)\s+decided\s+not\s+to\s+fill\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
-    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:closed|filled|withdrawn|removed|taken\s+down|taken\s+offline)\b"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:closed|filled|withdrawn|removed|taken\s+down|taken\s+offline|unpublished|archived|deactivated|deleted|unposted|pulled|discontinued)\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?concluded\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
