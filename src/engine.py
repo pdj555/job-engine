@@ -178,11 +178,11 @@ class Engine:
                 return await self._search_ddg(query)
 
     async def _search_ddg(self, query: str) -> list[dict]:
-        """Free web search fallback. Retry DDG 202s; cap concurrency so site: angles survive."""
-        async with self._ddg_sem:
-            try:
-                async with httpx.AsyncClient() as client:
-                    for attempt in range(3):
+        """Free web search fallback. Retry DDG 202s; cap in-flight posts so site: angles survive."""
+        try:
+            async with httpx.AsyncClient() as client:
+                for attempt in range(4):
+                    async with self._ddg_sem:
                         resp = await client.post(
                             "https://html.duckduckgo.com/html/",
                             data={"q": query, "b": ""},
@@ -190,16 +190,20 @@ class Engine:
                             timeout=30.0,
                             follow_redirects=True,
                         )
-                        if resp.status_code == 202:
-                            await asyncio.sleep(0.4 * (attempt + 1))
-                            continue
-                        if resp.status_code >= 400:
-                            return []
-                        return _parse_ddg_html(resp.text)
-            except Exception as e:
-                print(f"DDG error: {e}")
-                return []
+                    if resp.status_code == 202 or (
+                        resp.status_code == 200 and "result__a" not in resp.text
+                    ):
+                        if attempt == 3:
+                            break
+                        await asyncio.sleep(0.4 * (attempt + 1))
+                        continue
+                    if resp.status_code >= 400:
+                        return []
+                    return _parse_ddg_html(resp.text)
+        except Exception as e:
+            print(f"DDG error: {e}")
             return []
+        return []
 
     async def _search_perplexity(self, query: str) -> list[dict]:
         """Deep search with Perplexity."""
