@@ -199,6 +199,22 @@ class Engine:
                 if parsed:
                     return parsed
             return ""
+        bz = _breezy_ids(url)
+        if bz:
+            raw = await fetch(_breezy_json_url(url))
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, list):
+                    job = _breezy_job(data, bz[1])
+                    if job:
+                        return _breezy_to_html(job)
+                    return None
+            return ""
         ashby = _ashby_ids(url)
         if ashby:
             if client is not None:
@@ -551,6 +567,9 @@ def _lever_job_url(url: str) -> str:
     rp = _rippling_job_url(url)
     if rp:
         return rp
+    bz = _breezy_job_url(url)
+    if bz:
+        return bz
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -849,6 +868,7 @@ def _search_angles(query: str) -> list[str]:
             "personio.de",
             "recruitee.com",
             "ats.rippling.com",
+            "breezy.hr",
         ):
             q = f"{query} site:{site}"
             if q not in angles:
@@ -1028,6 +1048,10 @@ def _company_from_url(url: str) -> str | None:
         slug = parts[0]
         if slug in {"jobs", "apply"}:
             return None
+    elif host.endswith(".breezy.hr"):
+        slug = host.split(".")[0]
+        if slug in {"www", "app"}:
+            return None
     else:
         return None
     name = slug.replace("-", " ").replace("_", " ").strip()
@@ -1073,6 +1097,11 @@ def _ats_board_key(url: str) -> Optional[str]:
         if slug in {"jobs", "apply"}:
             return None
         return f"rippling:{slug}"
+    if host.endswith(".breezy.hr"):
+        slug = host.split(".")[0].casefold()
+        if slug in {"www", "app"}:
+            return None
+        return f"breezy:{slug}"
     return None
 
 
@@ -1877,6 +1906,102 @@ def _rippling_to_html(post: dict, api: Optional[dict] = None) -> str:
     )
 
 
+_BREEZY_JOB_RE = re.compile(
+    r"(?i)https?://([a-z0-9-]+)\.breezy\.hr/p/([a-f0-9]+)"
+)
+
+
+def _breezy_ids(url: str) -> Optional[tuple[str, str]]:
+    m = _BREEZY_JOB_RE.search(url or "")
+    if not m:
+        return None
+    board = m.group(1).casefold()
+    if board in {"www", "app"}:
+        return None
+    return board, m.group(2).casefold()
+
+
+def _breezy_job_url(url: str) -> Optional[str]:
+    ids = _breezy_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.breezy.hr/p/{ids[1]}"
+
+
+def _breezy_json_url(url: str) -> Optional[str]:
+    ids = _breezy_ids(url)
+    if not ids:
+        return None
+    return f"https://{ids[0]}.breezy.hr/json"
+
+
+def _breezy_is_board(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").casefold()
+    if not host.endswith(".breezy.hr") and host != "breezy.hr":
+        return False
+    return _breezy_ids(url) is None
+
+
+def _breezy_job(data, jid: str) -> Optional[dict]:
+    if not isinstance(data, list):
+        return None
+    needle = (jid or "").casefold()
+    for row in data:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("id") or "").casefold() == needle:
+            return row
+        fid = str(row.get("friendly_id") or "").casefold()
+        if fid == needle or fid.startswith(f"{needle}-"):
+            return row
+    return None
+
+
+def _breezy_to_html(job: dict) -> str:
+    """Turn a Breezy board JSON row into listing HTML. Never invent pay."""
+    title = str(job.get("name") or "").strip()
+    company = ""
+    org = job.get("company")
+    if isinstance(org, dict):
+        company = str(org.get("name") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    kind = job.get("type")
+    label = ""
+    if isinstance(kind, dict):
+        label = str(kind.get("id") or kind.get("name") or "")
+    elif isinstance(kind, str):
+        label = kind
+    lower = label.lower().replace("_", " ").replace("-", " ")
+    if "part" in lower:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in lower:
+        posting["employmentType"] = "FULL_TIME"
+    loc = job.get("location") if isinstance(job.get("location"), dict) else {}
+    remote = loc.get("is_remote")
+    if remote is True:
+        place = "remote"
+    elif remote is False:
+        place = "onsite"
+    else:
+        details = loc.get("remote_details") if isinstance(loc.get("remote_details"), dict) else {}
+        place = str(details.get("value") or loc.get("name") or "").strip()
+    _apply_workplace(posting, place)
+    parts = []
+    if place:
+        parts.append(f"<p>{place}</p>")
+    salary = str(job.get("salary") or "").strip()
+    if salary:
+        parts.append(f"<p>{salary}</p>")
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -1899,6 +2024,7 @@ def _ats_job_url(url: str) -> bool:
         or _personio_ids(url)
         or _recruitee_ids(url)
         or _rippling_ids(url)
+        or _breezy_ids(url)
     )
 
 
@@ -1940,6 +2066,8 @@ def _is_index_page(raw: dict) -> bool:
     if _recruitee_is_board(url):
         return True
     if _rippling_is_board(url):
+        return True
+    if _breezy_is_board(url):
         return True
     return False
 

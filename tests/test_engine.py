@@ -1017,6 +1017,7 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:personio.de",
         "senior ML engineer remote site:recruitee.com",
         "senior ML engineer remote site:ats.rippling.com",
+        "senior ML engineer remote site:breezy.hr",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -3698,6 +3699,123 @@ def test_listing_text_rippling_missing_job_is_gone(monkeypatch):
         "00000000-0000-0000-0000-000000000000"
     ]
     assert html is None
+
+
+def test_breezy_job_urls_are_not_boards():
+    from src.engine import _breezy_json_url, _is_index_page, _lever_job_url
+
+    apply = (
+        "https://concurrent-technologies-corporation.breezy.hr/p/"
+        "4362758f2795-senior-software-engineer-specialist/apply"
+    )
+    assert _lever_job_url(apply) == (
+        "https://concurrent-technologies-corporation.breezy.hr/p/4362758f2795"
+    )
+    assert _breezy_json_url(apply) == (
+        "https://concurrent-technologies-corporation.breezy.hr/json"
+    )
+    assert not _is_index_page(
+        {"url": apply, "title": "Jobs at Concurrent", "description": ""}
+    )
+    assert _is_index_page(
+        {
+            "url": "https://stacklet.breezy.hr/",
+            "title": "Openings at Stacklet",
+            "description": "",
+        }
+    )
+
+
+def test_listing_text_reads_breezy_json_salary_not_board_html(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+    payload = [
+        {
+            "id": "a09e83b26526",
+            "friendly_id": "a09e83b26526-senior-software-engineer-remote",
+            "name": "Senior Software Engineer, remote",
+            "type": {"id": "fullTime", "name": "Full-Time"},
+            "location": {
+                "is_remote": True,
+                "name": "Austin, TX",
+                "remote_details": {"value": "remote"},
+            },
+            "salary": "$135,000 – $195,000",
+            "company": {"name": "Edfinity"},
+        }
+    ]
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if url.endswith("/json"):
+            return json.dumps(payload)
+        return (
+            "<title>%DOC_TITLE%Edfinity</title>"
+            "<p>%POSITION_TYPE_FULL_TIME%$135,000 – $195,000%BUTTON</p>"
+        )
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    url = "https://edfinity.breezy.hr/p/a09e83b26526-senior-software-engineer-remote"
+    text = asyncio.run(engine._listing_text(url))
+    assert seen == ["https://edfinity.breezy.hr/json"]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url=url)
+    assert _apply_listing(opp, text) is True
+    assert opp.company == "Edfinity"
+    assert opp.remote is True
+    assert opp.pay_low == 135_000
+    assert opp.pay_high == 195_000
+    assert opp.hours_per_week == 40
+    assert opp.score() == 97.5
+    assert "%DOC_TITLE%" not in text
+
+
+def test_listing_text_breezy_missing_id_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if url.endswith("/json"):
+            return json.dumps(
+                [
+                    {
+                        "id": "a09e83b26526",
+                        "name": "Senior Software Engineer, remote",
+                        "salary": "$135,000 – $195,000",
+                        "company": {"name": "Edfinity"},
+                    }
+                ]
+            )
+        return "<title>%DOC_TITLE%Edfinity</title><p>$135,000 – $195,000</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://edfinity.breezy.hr/p/00000000000000000000000000000000-gone-role"
+        )
+    )
+    assert seen == ["https://edfinity.breezy.hr/json"]
+    assert html is None
+
+
+def test_breezy_foreign_salary_is_foreign():
+    from src.engine import _apply_listing, _breezy_to_html, _foreign_salary
+
+    html = _breezy_to_html(
+        {
+            "name": "Engineer",
+            "company": {"name": "Acme"},
+            "type": {"id": "fullTime"},
+            "location": {"is_remote": True},
+            "salary": "£60,000 – £80,000",
+        }
+    )
+    opp = Opportunity(title="x", url="https://acme.breezy.hr/p/aaaaaaaaaaaa")
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
 
 
 def test_listing_plain_text_ignores_script_salaries():
