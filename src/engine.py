@@ -406,6 +406,11 @@ def _search_angles(query: str) -> list[str]:
         q = _with_terms(query, *extra)
         if q not in angles:
             angles.append(q)
+    if "site:" not in text:
+        for site in ("greenhouse.io", "jobs.lever.co"):
+            q = f"{query} site:{site}"
+            if q not in angles:
+                angles.append(q)
     if any(w in text for w in ("grant", "funding", "fellowship", "scholarship")):
         q = _with_terms(query, "grant", "funding", "opportunity")
         if q not in angles:
@@ -507,7 +512,7 @@ _INDEX_URL_RE = re.compile(
     r"|glassdoor\.com/Job/jobs|simplyhired\.com/search|/search\?q=)",
     re.I,
 )
-_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b|^hire a freelance\b")
+_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b(?!\.)|^hire a freelance\b")
 
 
 _INDEX_PATH_RE = re.compile(

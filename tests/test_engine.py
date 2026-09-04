@@ -298,6 +298,14 @@ def test_index_pages_are_not_opportunities():
     )
     assert kept is not None
     assert kept.pay_high == 200_000
+    lever = _heuristic_opportunity(
+        {
+            "title": "Lyra Health - Senior ML Engineer (ML/AI) - jobs.lever.co",
+            "url": "https://jobs.lever.co/lyrahealth/d33ddfed-8c69-4e29-966b-0e190190cd6a",
+            "description": "Remote role.",
+        }
+    )
+    assert lever is not None
     assert (
         _heuristic_opportunity(
             {
@@ -367,6 +375,13 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote",
         "senior ML engineer remote job hiring",
         "senior ML engineer remote freelance contract",
+        "senior ML engineer remote site:greenhouse.io",
+        "senior ML engineer remote site:jobs.lever.co",
+    ]
+    assert _search_angles("ml site:example.com") == [
+        "ml site:example.com",
+        "ml site:example.com remote job hiring",
+        "ml site:example.com freelance contract",
     ]
     grant = _search_angles("AI grant funding")
     assert "AI grant funding opportunity" in grant
