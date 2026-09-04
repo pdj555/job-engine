@@ -4462,6 +4462,23 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This visa is no longer open to contractors.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting is expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The application window has closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Application period is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The application window closes on Friday.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Applications close on January 1.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -4586,6 +4603,12 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
     engine = Engine()
 
     async def page(url: str):
+        if "is-expired" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This posting is expired.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         if "expired" in url:
             return (
                 "<title>Senior ML Engineer</title>"
@@ -4596,6 +4619,12 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
             return (
                 "<title>Senior ML Engineer</title>"
                 "<p>Applications for this position are closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "window-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>The application window has closed.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
         return "<title>Senior ML</title><p>$180,000 a year</p>"
@@ -4614,7 +4643,19 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
-    opps = [keep, expired, closed]
+    window = Opportunity(
+        title="WindowClosed",
+        url="https://jobs.example/window-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    is_expired = Opportunity(
+        title="IsExpired",
+        url="https://jobs.example/is-expired",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, expired, closed, window, is_expired]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000
