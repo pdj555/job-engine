@@ -10920,6 +10920,30 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(monthly_row, monthly_sal)
     assert monthly_row.pay_low == 180_000
     assert monthly_row.pay_high == 220_000
+    monthly_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Monthly Salary", "value": "$15,000 - $18,000"}],
+        }
+    )
+    monthly_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/18")
+    _apply_listing(monthly_drow, monthly_dollars)
+    assert monthly_drow.pay_low == 180_000
+    assert monthly_drow.pay_high == 216_000
+    weekly_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Weekly Salary", "value": "$3,000 - $4,000"}],
+        }
+    )
+    weekly_drow = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/19")
+    _apply_listing(weekly_drow, weekly_dollars)
+    assert weekly_drow.pay_low == 150_000
+    assert weekly_drow.pay_high == 200_000
     meta_eur = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -11222,6 +11246,29 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(pr_row, pr) is True
     assert pr_row.pay_low == 180_000
     assert pr_row.pay_high == 220_000
+    week_str = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": "$3,000 - $4,000 per week",
+        }
+    )
+    week_row = Opportunity(title="x", url="https://jobs.workable.com/view/vwx/engineer")
+    assert _apply_listing(week_row, week_str) is True
+    assert week_row.pay_low == 150_000
+    assert week_row.pay_high == 200_000
+    day_str = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Office. Full time.</p>",
+            "salary": "$2,000 per day",
+        }
+    )
+    day_row = Opportunity(title="x", url="https://jobs.workable.com/view/yza/engineer")
+    assert _apply_listing(day_row, day_str) is True
+    assert day_row.pay_high == 500_000
 
 
 def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
@@ -14604,6 +14651,12 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Recently viewed roles",
         "Matching positions",
         "Jobs based on your activity",
+        "Because you searched for this",
+        "Jobs you might be interested in",
+        "Roles recommended for you",
+        "Hiring near you",
+        "Roles in your area",
+        "Opportunities for you",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

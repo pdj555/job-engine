@@ -3963,6 +3963,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|view(?:\s+all)?\s+(?:jobs|roles|openings)"
     r"|recommended\s+for\s+you"
     r"|jobs\s+recommended\s+for\s+you"
+    r"|roles\s+recommended\s+for\s+you"
     r"|more\s+from\s+this\s+company"
     r"|more\s+from\s+\S+"
     r"|jobs\s+at\s+this\s+company"
@@ -3971,6 +3972,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|see(?:\s+all)?\s+(?:jobs|roles|openings)"
     r"|discover\s+(?:jobs|openings|roles)"
     r"|jobs\s+you\s+applied\s+to"
+    r"|jobs\s+you\s+(?:may|might)\s+be\s+interested\s+in"
     r"|browse(?:\s+all)?\s+openings"
     r"|explore\s+careers"
     r"|browse\s+careers"
@@ -3991,11 +3993,13 @@ _RELATED_HEADING_RE = re.compile(
     r"|view\s+more"
     r"|jobs\s+for\s+you(?:\s+nearby)?"
     r"|roles\s+for\s+you"
+    r"|opportunities\s+for\s+you"
     r"|jobs\s+in\s+your\s+area"
+    r"|roles\s+in\s+your\s+area"
     r"|jobs\s+nearby"
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
-    r"|because\s+you\s+searched"
+    r"|because\s+you\s+searched(?:\s+for(?:\s+this)?)?"
     r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+job)?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
     r"|because\s+you\s+saved(?:\s+this(?:\s+job)?)?"
@@ -4020,6 +4024,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|applied\s+jobs"
     r"|keep\s+looking"
     r"|hiring\s+nearby"
+    r"|hiring\s+near\s+you"
     r"|top\s+picks"
     r"|more\s+like\s+this"
     r"|more\s+like\s+these"
@@ -4534,9 +4539,14 @@ def _span_nums(text: str) -> list[float]:
         return yearly
     if re.search(r"(?i)\byears?\b", text or ""):
         return []
+    unit = _unit_from_blob(text)
+    if unit in {"hour", "day", "week", "biweek", "semimonth", "month"}:
+        period = [n for n in out if 10 <= n < 10_000]
+        if period:
+            return period
     if len(rate) >= 2:
         return rate
-    if len(rate) == 1 and _unit_from_blob(text) in {
+    if len(rate) == 1 and unit in {
         "hour",
         "day",
         "week",
@@ -4581,13 +4591,34 @@ def _span_pay_ld(blob: str) -> Optional[dict]:
     }
 
 
+def _period_annualizes(pay: dict) -> bool:
+    """True when JSON-LD unitText annualizes every amount into the yearly band."""
+    node = pay.get("value") if isinstance(pay, dict) else None
+    if not isinstance(node, dict):
+        return False
+    unit = _pay_unit(node.get("unitText"))
+    if unit in (None, "year"):
+        return False
+    nums = [
+        node[k]
+        for k in ("minValue", "maxValue", "value")
+        if isinstance(node.get(k), (int, float))
+    ]
+    return bool(nums) and all(_annualize(float(n), unit, 40) is not None for n in nums)
+
+
 def _named_pay_ld(name: str, value: str) -> Optional[dict]:
-    """Range from a pay-named field. Use the name when the value omits the period."""
-    pay = _span_pay_ld(value)
-    if pay:
-        return pay
+    """Range from a pay-named field. Prefer the name's period when it annualizes."""
+    plain = _span_pay_ld(value)
     blob = f"{name} {value}".strip()
-    return _span_pay_ld(blob) if blob != value.strip() else None
+    named = (
+        _span_pay_ld(blob)
+        if name.strip() and blob != (value or "").strip()
+        else None
+    )
+    if named and _period_annualizes(named):
+        return named
+    return plain or named
 
 
 def _salary_blob(salary) -> str:
