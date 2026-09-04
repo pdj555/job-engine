@@ -932,6 +932,46 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Senior ML Engineer - Acme - Jooble",
+                "url": "https://jooble.org/j/123456789",
+                "description": "$180,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "ML Engineer $180,000 - Adzuna",
+                "url": "https://www.adzuna.com/details/123456",
+                "description": "$180,000 - $220,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior ML Engineer - Acme | Talent.com",
+                "url": "https://www.talent.com/view?id=abc123",
+                "description": "$180,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior ML Engineer - Acme - CareerBuilder",
+                "url": "https://www.careerbuilder.com/job/abc123",
+                "description": "$180,000 - $220,000 a year",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Remote Machine Learning Engineer Jobs ($104K-$225K)",
                 "url": "https://www.remoterocketship.com/jobs/machine-learning-engineer/",
                 "description": "Search 546 remote jobs.",
