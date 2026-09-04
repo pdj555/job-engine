@@ -14,11 +14,11 @@ export function LineChart({ data, height = 64, active = true }: LineChartProps) 
   const padT = 4;
   const padB = 4;
 
-  const series = data.length >= 2 ? data : [0, 0];
+  const series = data.length >= 2 ? data : data.length === 1 ? [data[0], data[0]] : [0, 0];
   const max = Math.max(...series);
   const min = Math.min(...series);
   const range = max - min;
-  const flat = !active || range === 0;
+  const idle = !active || series.every((v) => v === 0);
 
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
@@ -26,7 +26,10 @@ export function LineChart({ data, height = 64, active = true }: LineChartProps) 
   const points = series
     .map((v, i) => {
       const x = padL + (i / (series.length - 1)) * plotW;
-      const y = flat ? padT + plotH : padT + (1 - (v - min) / (range || 1)) * plotH;
+      const y =
+        range === 0
+          ? padT + plotH * 0.4
+          : padT + (1 - (v - min) / range) * plotH;
       return `${x},${y}`;
     })
     .join(" ");
@@ -47,9 +50,9 @@ export function LineChart({ data, height = 64, active = true }: LineChartProps) 
               y2={y}
               stroke="var(--line)"
               strokeWidth="0.5"
-              opacity={flat ? 0.08 : 0.14}
+              opacity={idle ? 0.08 : 0.14}
             />
-            {!flat && (
+            {!idle && range > 0 && (
               <text
                 x={0}
                 y={y + 3}
@@ -63,7 +66,7 @@ export function LineChart({ data, height = 64, active = true }: LineChartProps) 
           </g>
         );
       })}
-      {flat ? (
+      {idle ? (
         <line
           x1={padL}
           y1={padT + plotH}

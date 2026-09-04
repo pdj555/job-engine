@@ -2,19 +2,8 @@
 
 import type { Opportunity } from "@/lib/types";
 import { formatRate } from "@/lib/format";
+import { downsample } from "@/lib/series";
 import { LineChart } from "./line-chart";
-
-function series(values: number[], points = 16): number[] {
-  if (values.length === 0) return Array.from({ length: points }, () => 0);
-  const out: number[] = [];
-  const size = Math.max(1, values.length / points);
-  for (let i = 0; i < points; i++) {
-    const start = Math.floor(i * size);
-    const slice = values.slice(start, Math.floor((i + 1) * size));
-    out.push(slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : 0);
-  }
-  return out;
-}
 
 function MetricCell({
   title,
@@ -55,25 +44,25 @@ export function MetricsSection({ results }: { results: Opportunity[] }) {
         <MetricCell
           title="Avg $/hr"
           value={idle ? "—" : formatRate(avg)}
-          data={series(rates)}
+          data={downsample(rates)}
           active={!idle}
         />
         <MetricCell
           title="Remote"
           value={idle ? "—" : `${remotePct}%`}
-          data={series(idle ? [] : results.map((r) => (r.remote ? 100 : 0)))}
+          data={downsample(idle ? [] : results.map((r) => (r.remote ? 100 : 0)))}
           active={!idle}
         />
         <MetricCell
           title="Top $/hr"
           value={idle ? "—" : formatRate(top)}
-          data={series(idle ? [] : [...rates].sort((a, b) => a - b))}
+          data={downsample(idle ? [] : [...rates].sort((a, b) => a - b))}
           active={!idle}
         />
         <MetricCell
           title="Results"
           value={idle ? "0" : String(results.length)}
-          data={series(idle ? [] : rates.map((_, i) => i + 1))}
+          data={downsample(idle ? [] : results.map((_, i) => i + 1))}
           active={!idle}
         />
       </div>
