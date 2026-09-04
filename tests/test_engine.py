@@ -71,6 +71,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$25,000 performance bonus") == (None, None)
     assert _parse_pay("$25,000 retention bonus") == (None, None)
     assert _parse_pay("Salary $180,000 plus $20,000 signing bonus") == (None, 180_000)
+    assert _parse_pay("$25,000 sign-on") == (None, None)
+    assert _parse_pay("$25,000 sign on") == (None, None)
+    assert _parse_pay("sign-on of $25,000") == (None, None)
+    assert _parse_pay("sign-on: $25,000") == (None, None)
+    assert _parse_pay("$15,000 referral bonus") == (None, None)
+    assert _parse_pay("$50,000 employee referral bonus") == (None, None)
+    assert _parse_pay("referral bonus of $15,000") == (None, None)
+    assert _parse_pay("$10,000 spot bonus") == (None, None)
+    assert _parse_pay("spot bonus of $10,000") == (None, None)
+    assert _parse_pay("$12,000 wellness stipend") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $50,000 employee referral bonus") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $25,000 sign-on") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $25,000 annual bonus") == (None, 180_000)
     assert _parse_pay("$2,000/month stipend") == (None, None)
     assert _parse_pay("$2,000 monthly stipend") == (None, None)
