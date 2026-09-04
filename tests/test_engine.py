@@ -83,6 +83,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$2,000/month housing allowance") == (None, None)
+    assert _parse_pay("$2,000/month housing") == (None, None)
+    assert _parse_pay("Housing: $2,000/month") == (None, None)
+    assert _parse_pay("Housing $2,000 per month") == (None, None)
+    assert _parse_pay("$15,000 per month housing") == (None, None)
+    assert _parse_pay("housing of $2,000 per month") == (None, None)
+    assert _parse_pay("Salary $15,000 per month. Housing not provided") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$3,000/month car allowance") == (None, None)
     assert _parse_pay("housing allowance of $2,000 per month") == (None, None)
     assert _parse_pay("car allowance of $3,000 per month") == (None, None)
@@ -258,9 +267,23 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $80/hr on-call") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $800/day travel") == (None, 180_000)
+    assert _parse_pay("$800/day travel") == (None, None)
+    assert _parse_pay("travel of $800 per day") == (None, None)
+    assert _parse_pay("Travel: $800/day") == (None, None)
+    assert _parse_pay("$3,000 per week travel") == (None, None)
     assert _parse_pay("Salary $180,000 plus $3,000 per week travel") == (None, 180_000)
     assert _parse_pay("Base $200,000. $15,000 per month housing") == (None, 200_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
+    from src.engine import _apply_listing
+
+    travel = Opportunity(title="Engineer", url="https://jobs.example/travel")
+    assert _apply_listing(travel, "<p>$800/day travel. Great team.</p>") is False
+    assert travel.pay_high is None
+    paid = Opportunity(title="Engineer", url="https://jobs.example/travel-sal")
+    assert _apply_listing(
+        paid, "<p>Salary $180,000 plus $800/day travel</p>"
+    ) is True
+    assert paid.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
@@ -281,6 +304,14 @@ def test_parse_pay_annualizes_monthly_usd():
     opp = Opportunity(title="Engineer", url="https://jobs.example/mo")
     assert _apply_listing(opp, "<p>Salary $15,000 per month</p>") is True
     assert opp.pay_high == 180_000
+    housing = Opportunity(title="Engineer", url="https://jobs.example/house")
+    assert _apply_listing(housing, "<p>$2,000/month housing. Great team.</p>") is False
+    assert housing.pay_high is None
+    salary = Opportunity(title="Engineer", url="https://jobs.example/house-sal")
+    assert _apply_listing(
+        salary, "<p>Salary $180,000 plus $2,000/month housing</p>"
+    ) is True
+    assert salary.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_weekly_usd():
