@@ -4190,20 +4190,32 @@ def _remote_from_posting(posting: dict) -> Optional[bool]:
 
 _REMOTE_OPTION_RE = re.compile(
     r"(?i)\b(?:fully\s+remote|remote(?:-|\s+)?first|work\s+from\s+(?:home|anywhere)"
-    r"|hybrid\s*[,/]?\s*(?:or\s+)?(?:fully\s+)?remote"
-    r"|remote\s*[,/]?\s*(?:or\s+)?hybrid)\b"
+    r"|hybrid\s*(?:/|,?\s*or)\s+(?:fully\s+)?remote"
+    r"|remote\s*(?:/|,?\s*or)\s+hybrid)\b"
 )
+_HYBRID_WORKPLACE_RE = re.compile(
+    r"(?i)\bhybrid\s+(?:work(?:ing)?(?:\s+(?:environment|model|schedule|arrangement|approach))?|"
+    r"role|position|schedule|workplace|environment|office|setup|approach)\b"
+    r"|\bmust\s+be\s+hybrid\b"
+    r"|\(hybrid\)"
+    r"|\[hybrid\]"
+)
+_ONSITE_WORKPLACE_RE = re.compile(
+    r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
+)
+_RELATED_JOBS_RE = re.compile(r"(?is)\bsimilar jobs\b.*$")
 
 
 def _guess_remote(title: str, description: str) -> bool:
-    text = f"{title} {description}"
+    """Remote unless the listing's own text says office/hybrid workplace.
+
+    Related-job cards and ML 'hybrid retrieval' are not workplace.
+    """
+    desc = _RELATED_JOBS_RE.sub("", description or "")
+    text = f"{title} {desc}"
     if _REMOTE_OPTION_RE.search(text):
         return True
-    lower = text.lower()
-    if any(
-        w in lower
-        for w in ("onsite", "on-site", "on site", "in-office", "in office", "hybrid")
-    ):
+    if _ONSITE_WORKPLACE_RE.search(text) or _HYBRID_WORKPLACE_RE.search(text):
         return False
     return True
 

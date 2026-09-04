@@ -202,10 +202,21 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert opp.rate_is_imputed is False
     assert opp.score() == 80_000 / (24 * 50)
     assert _guess_remote("Engineer", "hybrid schedule") is False
+    assert _guess_remote("Engineer", "Must be hybrid, $80/hr") is False
     assert _guess_remote("Engineer", "must be onsite") is False
     assert _guess_remote("Engineer", "must work on site") is False
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
+    assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
+    assert _guess_remote("Engineer", "Our structured hybrid approach is centered around our offices") is False
+    assert _guess_remote(
+        "Engineer",
+        "The work style of each role, Hybrid, Remote, or In-Person is indicated in the job description.",
+    ) is True
+    assert _guess_remote(
+        "Engineer",
+        "Apply now. Similar Jobs Square Account Executive Remote or Hybrid Everett, WA",
+    ) is True
 
 
 # --- DuckDuckGo HTML parsing -------------------------------------------
