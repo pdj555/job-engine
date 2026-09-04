@@ -1621,6 +1621,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|^explore careers\b"
     r"|\b(?:job|role|position|listing) vacancies\b"
     r"|\bavailable (?:positions|roles|listings|opportunities)\b"
+    r"|\b(?:featured|latest|popular) (?:positions|roles|listings|openings|opportunities)\b"
     r"|^life at\b"
     r"|^meet (?:the|our) team(?:\s*[|\-–—].*)?$"
     r"|^our (?:team|people)(?:\s*[|\-–—].*)?$"
@@ -3811,6 +3812,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
     r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities)|vacancies|explore[-_]?careers|hiring)/?$"
+    r"|/(?:featured|latest|popular)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
@@ -3927,8 +3929,8 @@ _RELATED_JOBS_RE = re.compile(
     r"|jobs\s+(?:you\s+(?:may|might)\s+like|near\s+you).*$"
     r"|you\s+(?:may|might)\s+(?:also\s+)?like.*$"
     r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
-    r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
-    r"|(?:similar|related|recommended|other|featured|popular|suggested|matching)\s+(?:opportunities|listings).*$"
+    r"|(?:similar|related|recommended|other|more|featured|popular|suggested|latest|current|available)\s+(?:roles|openings|positions).*$"
+    r"|(?:similar|related|recommended|other|featured|popular|suggested|matching|latest|current|available)\s+(?:opportunities|listings).*$"
     r"|(?:similar|related|recommended|featured|suggested|matching)\s*:?\s*\$.*$"
 )
 _RELATED_HEADING_RE = re.compile(
