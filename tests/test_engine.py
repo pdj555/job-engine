@@ -3165,6 +3165,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "View Careers | Acme",
+                "url": "https://acme.com/view-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Discover Careers | Acme",
+                "url": "https://acme.com/discover-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "See Careers | Acme",
+                "url": "https://acme.com/see-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Search Openings | Acme",
                 "url": "https://acme.com/search-openings",
                 "description": "$400,000",
@@ -5125,6 +5155,18 @@ def test_index_pages_are_not_opportunities():
         "<title>Staff Engineer</title><p>$180,000</p>",
         "https://acme.com/find-careers/staff-engineer",
     )
+    assert _html_is_index(
+        "<title>View Careers | Acme</title><p>$400,000</p>",
+        "https://acme.com/view-careers",
+    )
+    assert _html_is_index(
+        "<title>Discover Careers | Acme</title><p>$400,000</p>",
+        "https://acme.com/discover-careers",
+    )
+    assert not _html_is_index(
+        "<title>Staff Engineer</title><p>$180,000</p>",
+        "https://acme.com/view-careers/staff-engineer",
+    )
     assert not _html_is_index(
         "<title>Hiring Manager</title><p>$180,000</p>",
         "https://jobs.example.com/job/hiring-manager",
@@ -6740,6 +6782,16 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert job_title.title == "Staff Engineer"
+    headline = Opportunity(title="x", url="https://jobs.example/ld-headline")
+    assert _apply_listing(
+        headline,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","headline":"Staff Engineer",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert headline.title == "Staff Engineer"
     titled = Opportunity(title="x", url="https://jobs.example/ld-title-wins")
     assert _apply_listing(
         titled,
@@ -6750,6 +6802,16 @@ def test_apply_listing_json_ld_company_and_hourly_pay():
         "</script>",
     ) is True
     assert titled.title == "Staff Engineer"
+    title_over_headline = Opportunity(title="x", url="https://jobs.example/ld-title-over-headline")
+    assert _apply_listing(
+        title_over_headline,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Staff Engineer","headline":"Catalog",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}'
+        "</script>",
+    ) is True
+    assert title_over_headline.title == "Staff Engineer"
     text_title = Opportunity(title="x", url="https://jobs.example/ld-title-text")
     assert _apply_listing(
         text_title,
@@ -10947,6 +11009,22 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We pulled this comment.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We are no longer advertising this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We are no longer advertising our benefits.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We wrapped up this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We wrapped up this ticket.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"

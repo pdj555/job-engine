@@ -1643,6 +1643,9 @@ _INDEX_TITLE_RE = re.compile(
     r"|^browse careers\b"
     r"|^find careers\b"
     r"|^search careers\b"
+    r"|^view careers\b"
+    r"|^discover careers\b"
+    r"|^see careers\b"
     r"|\b(?:job|role|position|listing) vacancies\b"
     r"|\bavailable (?:positions|roles|listings|opportunities|openings)\b"
     r"|\b(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply) (?:positions|roles|listings|openings|opportunities)\b"
@@ -3833,7 +3836,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:career[-_]?(?:opportunities|listings|roles|positions)|(?:job|role|position|listing)[-_]?openings|all[-_]?(?:openings|positions|roles|listings|opportunities|jobs))/?$"
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
-    r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|find[-_]?careers|search[-_]?careers|hiring)/?$"
+    r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|find[-_]?careers|search[-_]?careers|view[-_]?careers|discover[-_]?careers|see[-_]?careers|hiring)/?$"
     r"|/(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
@@ -5483,6 +5486,7 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
             _ld_text(posting.get("title"))
             or _ld_text(posting.get("jobTitle"))
             or _ld_text(posting.get("job_title"))
+            or _ld_text(posting.get("headline"))
             or ""
         ).strip()
         if pt:
@@ -5588,6 +5592,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been)\s+(?:paused|on\s+hold)\b"
     r"|we(?:'ve|\s+have)?\s+paused\s+this\s+search\b"
     r"|we(?:'ve|\s+have)?\s+concluded\s+this\s+search\b"
+    r"|we(?:'ve|\s+have)?\s+wrapped\s+up\s+this\s+search\b"
     r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued|pulled)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we\s+filled\s+this\s+"
@@ -5603,7 +5608,7 @@ _GONE_LISTING_RE = re.compile(
     r"\s+is\s+(?:unpublished|archived|deactivated)\b"
     r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|recruiting\s+for\s+this|advertising\s+for\s+this|accepting\s+(?:new\s+)?(?:applications|applicants)|taking\s+(?:new\s+)?(?:applications|applicants))"
     r"|we(?:'re| are)\s+no\s+longer\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
-    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+stopped\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"|we(?:'ve|\s+have)\s+closed\s+recruiting\s+for\s+this\s+"
