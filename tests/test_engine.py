@@ -1166,6 +1166,12 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     assert _parse_pay("R$180,000. US equivalent $40,000") == (None, None)
     assert _parse_pay("HK$ 180,000") == (None, None)
     assert _foreign_salary("<p>HK$ 180,000 a year</p>") is True
+    assert _parse_pay("NT$ 80,000") == (None, None)
+    assert _foreign_salary("<p>NT$ 80,000 a year</p>") is True
+    assert _parse_pay("NT$80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>NT$80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("NT$ 80k. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>NT$ 80k. Account Executive $220,000</p>") is True
     assert _parse_pay("S$ 12,000") == (None, None)
     assert _parse_pay("NZ$ 140,000") == (None, None)
     assert _parse_pay("Rs. 12,00,000 or $90,000") == (None, None)
@@ -1181,6 +1187,12 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     listed = _apply_listing(opp, "<p>R$ 180,000 a year. US equivalent $40,000</p>")
     assert listed is False
     assert opp.pay_high is None
+    nt = Opportunity(title="Engineer", url="https://jobs.example/tw")
+    listed_nt = _apply_listing(
+        nt, "<p>Salary NT$ 80,000. Account Executive $400,000</p>"
+    )
+    assert listed_nt is False
+    assert nt.pay_high is None
     lpa = Opportunity(title="Engineer", url="https://jobs.example/in")
     listed = _apply_listing(lpa, "<p>15 LPA. US equivalent $90,000</p>")
     assert listed is False
