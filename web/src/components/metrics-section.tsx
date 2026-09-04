@@ -39,7 +39,9 @@ function MetricCell({
 
 export function MetricsSection({ results }: { results: Opportunity[] }) {
   const idle = results.length === 0;
-  const rates = results.map((r) => r.dollars_per_hour ?? 0).filter((r) => r > 0);
+  const rates = results
+    .map((r) => r.refined_rate ?? r.dollars_per_hour ?? 0)
+    .filter((r) => r > 0);
   const avg = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
   const remotePct = results.length
     ? Math.round((results.filter((r) => r.remote).length / results.length) * 100)

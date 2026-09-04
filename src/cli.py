@@ -65,7 +65,12 @@ def display(opportunities: list[Opportunity]):
     for i, opp in enumerate(opportunities, 1):
         pay = f"${opp.pay:,}" if opp.pay else "?"
         hours = str(opp.hours_per_week) if opp.hours_per_week else "?"
-        efficiency = f"${opp.dollars_per_hour:.0f}" if opp.dollars_per_hour else "?"
+        if opp.refined_rate is None:
+            efficiency = "?"
+        elif opp.rate_is_imputed:
+            efficiency = f"~${opp.refined_rate:.0f}"
+        else:
+            efficiency = f"${opp.refined_rate:.0f}"
         remote_tag = "" if opp.remote else " [red](office)[/red]"
 
         table.add_row(
@@ -83,7 +88,12 @@ def display(opportunities: list[Opportunity]):
     # Show top 3 URLs
     console.print("[bold]Top picks:[/bold]")
     for i, opp in enumerate(opportunities[:3], 1):
-        eff = f"${opp.dollars_per_hour:.0f}/hr" if opp.dollars_per_hour else ""
+        if opp.refined_rate is None:
+            eff = ""
+        elif opp.rate_is_imputed:
+            eff = f"~${opp.refined_rate:.0f}/hr"
+        else:
+            eff = f"${opp.refined_rate:.0f}/hr"
         console.print(f"  {i}. {opp.title[:50]}")
         console.print(f"     [dim]{opp.url}[/dim]")
         if eff:
