@@ -1485,7 +1485,8 @@ _INDEX_URL_RE = re.compile(
     r"|salarysolver\.com/"
     r"|salarycube\.com/"
     r"|motionrecruitment\.com/it-salary"
-    r"|hackerx\.org/[^\"'\s]*salary)",
+    r"|hackerx\.org/[^\"'\s]*salary"
+    r"|greenhouse\.com/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
@@ -1544,6 +1545,8 @@ def _greenhouse_ids(url: str) -> Optional[tuple[str, str]]:
 
 def _greenhouse_is_board(url: str) -> bool:
     host = (urlparse(url or "").hostname or "").casefold()
+    if host.endswith("greenhouse.com"):
+        return True
     if not host.endswith("greenhouse.io"):
         return False
     return _greenhouse_ids(url) is None
@@ -1565,7 +1568,7 @@ def _greenhouse_boards_api_url(ids: tuple[str, str]) -> str:
 
 def _greenhouse_board_from_host(url: str) -> Optional[str]:
     host = (urlparse(url or "").hostname or "").casefold()
-    if not host or host.endswith("greenhouse.io"):
+    if not host or host.endswith("greenhouse.io") or host.endswith("greenhouse.com"):
         return None
     labels = [p for p in host.split(".") if p and p not in _GH_BOARD_SKIP]
     if len(labels) < 2:
@@ -1586,7 +1589,7 @@ def _greenhouse_hosted_ids(url: str, html: str = "") -> Optional[tuple[str, str]
         return None
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
-    if host.endswith("greenhouse.io"):
+    if host.endswith("greenhouse.io") or host.endswith("greenhouse.com"):
         return None
     q = parse_qs(parsed.query)
     jid = (q.get("gh_jid") or [""])[0].strip()

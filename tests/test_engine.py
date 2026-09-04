@@ -1215,6 +1215,28 @@ def test_index_pages_are_not_opportunities():
         "<title>IT Security Administrator at Bitwarden</title><p>$115,000 - $145,000</p>",
         "https://wellfound.com/jobs/4335648-it-security-administrator",
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff Software Engineer",
+                "url": "https://www.greenhouse.com/careers",
+                "description": "Greenhouse $150,000 - $220,000",
+            }
+        )
+        is None
+    )
+    assert _html_is_index(
+        "<title>Staff Software Engineer</title>"
+        '<script type="application/ld+json">{"@type":"JobPosting","title":"Staff Software Engineer"}</script>',
+        "https://www.greenhouse.com/careers",
+    )
+    assert _is_index_page(
+        {
+            "url": "https://www.greenhouse.com/careers",
+            "title": "Staff Software Engineer",
+            "description": "",
+        }
+    )
     assert not _is_index_page(
         {
             "url": "https://job-boards.eu.greenhouse.io/overstory/jobs/4411330101",
@@ -3652,6 +3674,13 @@ def test_greenhouse_hosted_ids_from_gh_jid_and_html():
     assert _greenhouse_hosted_ids(
         "https://job-boards.greenhouse.io/reddit/jobs/6960831"
     ) is None
+    vendor = "https://www.greenhouse.com/careers?gh_jid=1234567"
+    embed = "https://job-boards.greenhouse.io/greenhouse/jobs/1234567"
+    assert _greenhouse_hosted_ids(vendor, embed) is None
+    assert not _ats_job_url(vendor)
+    assert _is_index_page(
+        {"url": vendor, "title": "Staff Software Engineer", "description": ""}
+    )
 
 
 def test_listing_text_hosted_greenhouse_reads_api(monkeypatch):
