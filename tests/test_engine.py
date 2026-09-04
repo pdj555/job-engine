@@ -1400,6 +1400,77 @@ def test_greenhouse_api_html_fills_company_and_pay_range():
     assert opp.pay_high == 303_400
 
 
+def test_workable_jobs_api_url_from_view_link():
+    from src.engine import _workable_jobs_api_url
+
+    assert _workable_jobs_api_url(
+        "https://jobs.workable.com/view/3wwPqWr4G8nzLWnxfEAKur/remote-senior-engineer-ai-ml"
+    ) == "https://jobs.workable.com/api/v1/jobs/3wwPqWr4G8nzLWnxfEAKur"
+    assert _workable_jobs_api_url("https://apply.workable.com/a2z-sync/j/C95E51CDDA") is None
+
+
+def test_workable_jobs_api_html_fills_company_and_pay_range():
+    from src.engine import _apply_listing, _workable_jobs_to_html
+
+    html = _workable_jobs_to_html(
+        {
+            "title": "Senior Engineer, AI/ML",
+            "company": {"title": "A2Z Sync"},
+            "employmentType": "Full-time",
+            "description": "<p>Build agents.</p>",
+            "requirementsSection": (
+                "<p>The expected salary range for this role is "
+                "<strong>$160,000 to $190,000 annually</strong>.</p>"
+            ),
+        }
+    )
+    opp = Opportunity(
+        title="Senior Engineer, AI/ML | A2Z Sync | Jobs By Workable",
+        url="https://jobs.workable.com/view/3wwPqWr4G8nzLWnxfEAKur/x",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "A2Z Sync"
+    assert opp.title == "Senior Engineer, AI/ML"
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 190_000
+    assert opp.hours_per_week == 40
+
+
+def test_listing_text_prefers_workable_jobs_api_over_spa_shell(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if "/api/v1/jobs/" in url:
+            return json.dumps(
+                {
+                    "title": "Senior Machine Learning Engineer",
+                    "company": {"title": "Canopy"},
+                    "requirementsSection": "<p>Base Salary: $126,000 - $180,000</p>",
+                }
+            )
+        return "<title>Senior Machine Learning Engineer | Canopy | Jobs By Workable</title>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.workable.com/view/7mMjfHgS93LyPeHLK2XeMV/remote-senior-machine-learning-engineer"
+        )
+    )
+    assert seen[0] == "https://jobs.workable.com/api/v1/jobs/7mMjfHgS93LyPeHLK2XeMV"
+    from src.engine import _apply_listing
+
+    opp = Opportunity(
+        title="Senior Machine Learning Engineer | Canopy | Jobs By Workable",
+        url="https://jobs.workable.com/view/7mMjfHgS93LyPeHLK2XeMV/x",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "Canopy"
+    assert opp.pay_low == 126_000
+    assert opp.pay_high == 180_000
+
+
 def test_listing_text_prefers_greenhouse_api_over_board_shell(monkeypatch):
     engine = Engine()
     seen: list[str] = []

@@ -108,6 +108,16 @@ class Engine:
             raw = await fetch(md)
             if raw.lstrip().startswith("#"):
                 return _workable_to_html(raw)
+        jobs_api = _workable_jobs_api_url(url)
+        if jobs_api:
+            raw = await fetch(jobs_api)
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and data.get("title"):
+                    return _workable_jobs_to_html(data)
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
@@ -763,6 +773,46 @@ def _workable_md_url(url: str) -> Optional[str]:
     if not m:
         return None
     return f"https://apply.workable.com/{m.group(1)}/jobs/view/{m.group(2)}.md"
+
+
+_WORKABLE_VIEW_RE = re.compile(
+    r"(?i)https?://jobs\.workable\.com/view/([A-Za-z0-9]+)",
+)
+
+
+def _workable_jobs_api_url(url: str) -> Optional[str]:
+    m = _WORKABLE_VIEW_RE.search(url or "")
+    if not m:
+        return None
+    return f"https://jobs.workable.com/api/v1/jobs/{m.group(1)}"
+
+
+def _workable_jobs_to_html(data: dict) -> str:
+    """Turn jobs.workable.com job JSON into listing HTML. Never invent pay."""
+    company = ""
+    org = data.get("company")
+    if isinstance(org, dict):
+        company = str(org.get("title") or org.get("name") or "").strip()
+        if company and _PLACE_RE.search(company):
+            company = ""
+    title = str(data.get("title") or "").strip()
+    parts = []
+    for key in ("description", "requirementsSection", "benefitsSection"):
+        val = data.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    posting = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    emp = data.get("employmentType")
+    if isinstance(emp, str) and emp.strip():
+        posting["employmentType"] = emp.strip()
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
 
 
 def _workable_is_board(url: str) -> bool:
