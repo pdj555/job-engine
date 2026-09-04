@@ -5709,7 +5709,7 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"\s+is\s+no\s+longer\s+being\s+(?:recruited|advertised)\b"
     r"|we(?:'re| are)\s+not\s+accepting\s+applications\s+for\s+this\s+"
-    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|no\s+longer\s+(?:accepting|taking)\s+(?:new\s+)?(?:applications|applicants|candidates)\b"
     r"|no\s+longer\s+reviewing\s+applications\b"
     r"|applications\s+are\s+no\s+longer\s+being\s+accepted\b"
