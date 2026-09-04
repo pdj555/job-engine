@@ -1434,19 +1434,23 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
         hours = _posting_hours(posting)
         if hours:
             opp.hours_per_week = hours
+    if not opp.company:
+        opp.company = _guess_company(_html_title(html), opp.url)
+    visible = _listing_plain_text(html)
+    opp.remote = _guess_remote(opp.title, visible)
+    stated = _stated_hours(opp.title, visible)
+    if stated:
+        opp.hours_per_week = stated
+    elif opp.hours_per_week is None:
+        hours = _guess_hours(opp.title, visible)
+        if hours:
+            opp.hours_per_week = hours
+    if posting:
         low, high = _posting_pay(posting, opp.hours_per_week)
         if high or low:
             opp.pay_low = low
             opp.pay_high = high
             listed_pay = True
-    if not opp.company:
-        opp.company = _guess_company(_html_title(html), opp.url)
-    visible = _listing_plain_text(html)
-    opp.remote = _guess_remote(opp.title, visible)
-    if opp.hours_per_week is None:
-        hours = _guess_hours(opp.title, visible)
-        if hours:
-            opp.hours_per_week = hours
     if not listed_pay:
         low, high = _parse_pay(visible, opp.hours_per_week, remote=opp.remote)
         if high or low:
@@ -1581,7 +1585,7 @@ _ANNUAL_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
 )
 _HOURS_RE = re.compile(
-    r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*)?\s*(?:wk|week)\b",
+    r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*|\s+a\s+)?\s*(?:wk|week)\b",
     re.I,
 )
 _GEO_PAREN_RANGE_RE = re.compile(
@@ -1717,15 +1721,22 @@ def _guess_pay(title: str, description: str, hours: Optional[int] = None) -> Opt
     return high or low
 
 
-def _guess_hours(title: str, description: str) -> Optional[int]:
-    """Hours from the listing text, or None. Does not assume full-time."""
-    text = f"{title} {description}"
-    match = _HOURS_RE.search(text)
+def _stated_hours(title: str, description: str) -> Optional[int]:
+    """Hours explicitly written as N hours/week. None if the listing does not say."""
+    match = _HOURS_RE.search(f"{title} {description}")
     if match:
         n = int(match.group(1))
         if 1 <= n <= 80:
             return n
-    lower = text.lower()
+    return None
+
+
+def _guess_hours(title: str, description: str) -> Optional[int]:
+    """Hours from the listing text, or None. Does not assume full-time."""
+    stated = _stated_hours(title, description)
+    if stated:
+        return stated
+    lower = f"{title} {description}".lower()
     if "part-time" in lower or "part time" in lower:
         return 20
     if "full-time" in lower or "full time" in lower:

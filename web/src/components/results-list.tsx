@@ -48,6 +48,8 @@ export function ResultsList({
                         {opp.pay != null || opp.pay_low != null || opp.pay_high != null
                           ? `${formatPayRange(opp.pay_low, opp.pay_high ?? opp.pay)}/yr`
                           : "—"}
+                        {" · "}
+                        {opp.hours_per_week != null ? `${opp.hours_per_week}h/wk` : "?"}
                       </p>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">

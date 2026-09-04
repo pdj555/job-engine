@@ -106,13 +106,43 @@ def test_guess_pay_reads_description_not_just_title():
 
 def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20 hrs/week") == 20
+    assert _guess_hours("Engineer", "32 hours a week") == 32
+    assert _guess_hours("Engineer", "32 hours a week. This is a full-time role.") == 32
+    assert _guess_hours("Engineer", "12 weeks of parental leave") is None
     assert _guess_hours("Part-time role", "") == 20
     assert _guess_hours("Full-time Engineer", "") == 40
     assert _guess_hours("Contract Engineer", "") is None
     assert _guess_hours("Engineer", "") is None
 
 
-def test_guess_remote_penalizes_onsite_signals():
+def test_apply_listing_reads_hours_a_week_for_rate():
+    from src.engine import _apply_listing
+
+    html = "<title>Engineer at Acme</title><p>$160,000 a year. 32 hours a week.</p>"
+    opp = Opportunity(title="Engineer", url="https://jobs.example/x")
+    _apply_listing(opp, html)
+    assert opp.pay_high == 160_000
+    assert opp.hours_per_week == 32
+    assert opp.rate_is_imputed is False
+    assert opp.score() == 100.0
+
+
+def test_apply_listing_stated_hours_beat_part_time_default():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Therapist","employmentType":"PART_TIME",
+     "baseSalary":{"currency":"USD","value":{"minValue":80000,"maxValue":80000,"unitText":"YEAR"}}}
+    </script>
+    <p>Approximately 24 hours per week.</p>
+    """
+    opp = Opportunity(title="Therapist", url="https://jobs.example/x")
+    _apply_listing(opp, html)
+    assert opp.hours_per_week == 24
+    assert opp.pay_high == 80_000
+    assert opp.rate_is_imputed is False
+    assert opp.score() == 80_000 / (24 * 50)
     assert _guess_remote("Engineer", "hybrid schedule") is False
     assert _guess_remote("Engineer", "must be onsite") is False
     assert _guess_remote("Engineer", "must work on site") is False
