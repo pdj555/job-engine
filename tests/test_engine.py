@@ -6641,6 +6641,28 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(hour, hourly) is True
     assert hour.pay_low == 160_000
     assert hour.pay_high == 200_000
+    hourly_snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unit_text":"HOUR"}}}
+    </script>
+    """
+    hour_snake = Opportunity(title="Engineer", url="https://jobs.example/ld-still-hr-unit_text")
+    assert _apply_listing(hour_snake, hourly_snake) is True
+    assert hour_snake.pay_low == 160_000
+    assert hour_snake.pay_high == 200_000
+    hourly_unit = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unit":"HOUR"}}}
+    </script>
+    """
+    hour_unit = Opportunity(title="Engineer", url="https://jobs.example/ld-still-hr-unit")
+    assert _apply_listing(hour_unit, hourly_unit) is True
+    assert hour_unit.pay_low == 160_000
+    assert hour_unit.pay_high == 200_000
     estimated = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",

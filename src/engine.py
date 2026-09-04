@@ -4875,7 +4875,15 @@ def _duration_unit(raw: str) -> Optional[str]:
 def _unit_raw(node) -> Optional[str]:
     if not isinstance(node, dict):
         return None
-    raw = _ld_text(node.get("unitText")) or _ld_text(node.get("unitCode"))
+    raw = (
+        _ld_text(node.get("unitText"))
+        or _ld_text(node.get("unit_text"))
+        or _ld_text(node.get("unitCode"))
+        or _ld_text(node.get("unit_code"))
+        or _ld_text(node.get("unit"))
+        or _ld_text(node.get("salaryUnit"))
+        or _ld_text(node.get("salary_unit"))
+    )
     if raw:
         return raw
     duration = _ld_text(node.get("duration"))
