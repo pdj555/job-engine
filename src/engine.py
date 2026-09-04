@@ -1807,8 +1807,8 @@ def _cents_to_annual(cents) -> Optional[int]:
 
 
 _GH_PAY_META_RE = re.compile(
-    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|weekly|bi[-\s]?weekly|semi[-\s]?monthly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
-    r"|^(?:(?:base|annual|yearly|hourly|monthly|weekly|bi[-\s]?weekly|semi[-\s]?monthly)\s+)+rate$"
+    r"(?i)^(?:(?:base|annual|yearly|hourly|monthly|every\s+(?:two|2|other)\s+weeks?|fortnightly|bi[-\s]?weekly|semi[-\s]?monthly|weekly)\s+)*(?:salary|compensation|pay)(?:\s+(?:range|band|rate))?$"
+    r"|^(?:(?:base|annual|yearly|hourly|monthly|every\s+(?:two|2|other)\s+weeks?|fortnightly|bi[-\s]?weekly|semi[-\s]?monthly|weekly)\s+)+rate$"
 )
 
 
@@ -1892,6 +1892,13 @@ def _greenhouse_to_html(data: dict) -> str:
         if name and val not in (None, ""):
             meta[name] = val
     n = _num(meta.get("scheduled weekly hours"))
+    if n is None or not (1 <= n <= 80):
+        n = None
+        for name, val in meta.items():
+            stated = _stated_hours("", f"{name}: {val}")
+            if stated:
+                n = stated
+                break
     if n is not None and 1 <= n <= 80:
         posting["workHours"] = str(int(n))
     time_type = str(meta.get("time type") or meta.get("employment type") or "").lower()
@@ -5813,8 +5820,8 @@ _HOURS_RE = re.compile(
     r"(?:/|\s*per\s*|\s+a\s+|\s+work[\s-]*|\s+of\s+work(?:\s+(?:a|per))?\s*)?\s*"
     r"(?:wk|week(?:ly)?|workweeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?)\s*(?:per|/)\s*(?:wk|weeks?|weekly)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|weekly\s+hours?\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)",
+    r"|(?:hours?|hrs?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|weekly\s+(?:hours?|hrs?)\s*[:=]?\s*(\d{1,2}(?:\.\d+)?)",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(

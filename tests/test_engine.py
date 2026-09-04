@@ -1040,6 +1040,8 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "Hours per week: 40") == 40
     assert _guess_hours("Engineer", "Weekly hours: 32") == 32
     assert _guess_hours("Engineer", "hours/week: 24") == 24
+    assert _guess_hours("Engineer", "Hours a week: 32") == 32
+    assert _guess_hours("Engineer", "Weekly hrs: 32") == 32
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
@@ -1087,6 +1089,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert labeled.hours_per_week == 32
     assert labeled.score() == 100.0
+    a_week = Opportunity(title="Engineer", url="https://jobs.example/haw")
+    assert _apply_listing(
+        a_week, "<p>$160,000 a year. Hours a week: 32</p>"
+    ) is True
+    assert a_week.hours_per_week == 32
+    assert a_week.score() == 100.0
     frac = Opportunity(title="Engineer", url="https://jobs.example/frac")
     assert _apply_listing(
         frac, "<p>$180,000 a year. 37.5 hours per week.</p>"
@@ -11212,6 +11220,30 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(hyphen_drow, hyphen_dollars)
     assert hyphen_drow.pay_low == 75_000
     assert hyphen_drow.pay_high == 100_000
+    fortnight = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Fortnightly Salary", "value": "$3,000 - $4,000"}],
+        }
+    )
+    fortnight_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/23")
+    assert _apply_listing(fortnight_row, fortnight) is True
+    assert fortnight_row.pay_low == 75_000
+    assert fortnight_row.pay_high == 100_000
+    two_weeks = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "metadata": [{"name": "Every Two Weeks Salary", "value": "$3,000 - $4,000"}],
+        }
+    )
+    two_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/24")
+    assert _apply_listing(two_row, two_weeks) is True
+    assert two_row.pay_low == 75_000
+    assert two_row.pay_high == 100_000
     semi_dollars = _greenhouse_to_html(
         {
             "company_name": "Acme",
@@ -11280,6 +11312,34 @@ def test_greenhouse_metadata_scheduled_hours_and_time_type():
     assert opp.hours_per_week == 40
     assert opp.rate_is_imputed is False
     assert opp.score() == 151.7
+    hpw = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>$80/hour. Office.</p>",
+            "metadata": [
+                {"name": "Hours per week", "value": "32", "value_type": "number"},
+            ],
+        }
+    )
+    hours = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/6960832")
+    assert _apply_listing(hours, hpw) is True
+    assert hours.hours_per_week == 32
+    assert hours.pay_high == 128_000
+    weekly = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>$80/hour. Office.</p>",
+            "metadata": [
+                {"name": "Weekly Hours", "value": "32", "value_type": "number"},
+            ],
+        }
+    )
+    wh = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/6960833")
+    assert _apply_listing(wh, weekly) is True
+    assert wh.hours_per_week == 32
+    assert wh.pay_high == 128_000
 
 
 def test_apply_listing_prefers_remote_geo_band_over_json_ld():
