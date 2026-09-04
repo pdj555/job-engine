@@ -11725,6 +11725,14 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>Hiring has closed for this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Hiring has closed for this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We were unable to find this job.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
@@ -11760,6 +11768,14 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>Recruiting has ended for this role.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Recruiting has ended for this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Recruiting has ended for this meeting.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>The application window ended.</p><p>$180,000</p>"
