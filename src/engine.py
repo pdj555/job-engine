@@ -102,6 +102,11 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and not data.get("error"):
                     return _greenhouse_to_html(data)
+        md = _workable_md_url(url)
+        if md:
+            raw = await fetch(md)
+            if raw.lstrip().startswith("#"):
+                return _workable_to_html(raw)
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
@@ -375,7 +380,7 @@ def _normalize_url(url: str) -> str:
 
 
 def _lever_job_url(url: str) -> str:
-    """Job page, not the apply form (Lever /apply, Ashby /application)."""
+    """Job page, not the apply form (Lever /apply, Ashby /application, Workable .md)."""
     parsed = urlparse(url or "")
     host = (parsed.hostname or "").casefold()
     path = parsed.path.rstrip("/")
@@ -384,6 +389,14 @@ def _lever_job_url(url: str) -> str:
         cut = "/apply"
     elif host.endswith("ashbyhq.com") and path.casefold().endswith("/application"):
         cut = "/application"
+    elif host.endswith("apply.workable.com"):
+        m = re.match(
+            r"(?i)^/([^/]+)/jobs/view/([A-Za-z0-9]+)(?:\.md)?$",
+            path,
+        )
+        if m:
+            path = f"/{m.group(1)}/j/{m.group(2)}"
+            return parsed._replace(path=path, query="", fragment="").geturl()
     if cut:
         path = path[: -len(cut)] or "/"
         return parsed._replace(path=path, query="", fragment="").geturl()
@@ -412,16 +425,25 @@ async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
         return ""
 
 
+_ATS_TITLE_TAIL_RE = re.compile(
+    r"(?i)\s*[-–—|]\s*(?:jobs\.(?:lever\.co|ashbyhq\.com|workable\.com)|jobs by workable)\s*$"
+)
+
+
+def _strip_ats_title(title: str) -> str:
+    t = _ATS_TITLE_TAIL_RE.sub("", title or "")
+    return re.sub(r"(?i)^job application for\s+", "", t)
+
+
 def _title_key(title: str, company: Optional[str] = None) -> str:
     """Role identity across boards: strip ATS suffixes and company wrappers."""
-    t = title or ""
-    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.(?:lever\.co|ashbyhq\.com)\s*$", "", t)
-    t = re.sub(r"(?i)^job application for\s+", "", t)
+    t = _strip_ats_title(title)
     if company and company.strip():
         c = re.escape(company.strip())
         t = re.sub(rf"(?i)^{c}\s*[-:|]\s*", "", t)
         t = re.sub(rf"(?i)\s+at\s+{c}\b.*$", "", t)
         t = re.sub(rf"(?i)\s+@\s+{c}\s*$", "", t)
+        t = re.sub(rf"(?i)\s*[|\-–—]\s*{c}\s*$", "", t)
     t = re.sub(r"(?i)\s+in remote\b.*$", "", t)
     return re.sub(r"\W+", " ", t).casefold().strip()
 
@@ -454,7 +476,13 @@ def _search_angles(query: str) -> list[str]:
         if q not in angles:
             angles.append(q)
     if "site:" not in text:
-        for site in ("greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com"):
+        for site in (
+            "greenhouse.io",
+            "jobs.lever.co",
+            "jobs.ashbyhq.com",
+            "jobs.workable.com",
+            "apply.workable.com",
+        ):
             q = f"{query} site:{site}"
             if q not in angles:
                 angles.append(q)
@@ -554,9 +582,16 @@ _ROLE_START_RE = re.compile(
 )
 
 
+def _clean_company_name(name: str) -> str | None:
+    name = name.strip(" .,-")
+    if not name or _PLACE_RE.search(name) or _ROLE_START_RE.search(name):
+        return None
+    return name
+
+
 def _company_from_title(title: str, url: str = "") -> str | None:
-    """Employer from ` at X`, ` @ X`, or Lever `Company - Role` titles."""
-    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.(?:lever\.co|ashbyhq\.com)\s*$", "", title or "")
+    """Employer from ` at X`, ` @ X`, Lever `Company - Role`, or Workable suffixes."""
+    t = _strip_ats_title(title)
     m = re.search(r"(?i)\bat\s+(.+)$", t)
     if m:
         name = m.group(1).strip(" .,-")
@@ -571,9 +606,21 @@ def _company_from_title(title: str, url: str = "") -> str | None:
     if host.endswith("lever.co"):
         m = re.match(r"^(.+?)\s+[-–—]\s+\S", t)
         if m:
-            name = m.group(1).strip(" .,-")
-            if name and not _PLACE_RE.search(name) and not _ROLE_START_RE.search(name):
+            name = _clean_company_name(m.group(1))
+            if name:
                 return name
+    if host.endswith("workable.com"):
+        parts = [p.strip(" .,-") for p in re.split(r"\s*\|\s*", t) if p.strip(" .,-")]
+        if len(parts) >= 2:
+            name = _clean_company_name(parts[-1])
+            if name:
+                return name
+        if host.endswith("apply.workable.com"):
+            m = re.search(r"\s+[-–—]\s+(.+)$", t)
+            if m:
+                name = _clean_company_name(m.group(1))
+                if name:
+                    return name
     return None
 
 
@@ -591,6 +638,10 @@ def _company_from_url(url: str) -> str | None:
     elif host.endswith("lever.co") or host.endswith("ashbyhq.com"):
         slug = parts[0]
         if host.endswith("ashbyhq.com") and slug in {"jobs", "application"}:
+            return None
+    elif host.endswith("apply.workable.com"):
+        slug = parts[0]
+        if slug in {"j", "jobs", "view"}:
             return None
     else:
         return None
@@ -616,6 +667,8 @@ def _ats_board_key(url: str) -> Optional[str]:
         return f"lever:{parts[0].casefold()}"
     if host.endswith("ashbyhq.com"):
         return f"ashby:{parts[0].casefold()}"
+    if host.endswith("apply.workable.com"):
+        return f"workable:{parts[0].casefold()}"
     return None
 
 
@@ -645,7 +698,9 @@ _INDEX_URL_RE = re.compile(
     r"|upwork\.com/freelance-jobs/apply/)",
     re.I,
 )
-_INDEX_TITLE_RE = re.compile(r"(?i)\bjobs\b(?!\.)|^hire a freelance\b")
+_INDEX_TITLE_RE = re.compile(
+    r"(?i)\bjobs\b(?!\.)(?! by workable)|^hire a freelance\b|\bcurrent openings\b"
+)
 _GH_JOB_RE = re.compile(
     r"(?i)https?://(?:job-boards(?:\.[a-z]+)?|boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)",
 )
@@ -678,6 +733,81 @@ def _greenhouse_to_html(data: dict) -> str:
     )
 
 
+_WORKABLE_JOB_RE = re.compile(
+    r"(?i)https?://apply\.workable\.com/([^/]+)/(?:j|jobs/view)/([A-Za-z0-9]+)",
+)
+_WORKABLE_SALARY_RE = re.compile(
+    r"(?i)\*\*Salary:\*\*\s*(?:USD|US\$)\s*([\d,]+)(?:\s*[–—-]\s*(?:USD|US\$)?\s*([\d,]+))?"
+)
+
+
+def _workable_md_url(url: str) -> Optional[str]:
+    m = _WORKABLE_JOB_RE.search(url or "")
+    if not m:
+        return None
+    return f"https://apply.workable.com/{m.group(1)}/jobs/view/{m.group(2)}.md"
+
+
+def _workable_is_board(url: str) -> bool:
+    """True for apply.workable.com/{org} career home, not /j/{id} listings."""
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    parts = [p for p in parsed.path.split("/") if p]
+    if host.endswith("apply.workable.com"):
+        if not parts:
+            return True
+        if len(parts) >= 3 and parts[1].casefold() == "j":
+            return False
+        if len(parts) >= 4 and parts[1].casefold() == "jobs" and parts[2].casefold() == "view":
+            return False
+        return True
+    if host == "jobs.workable.com" or host.endswith(".jobs.workable.com"):
+        if not parts:
+            return True
+        if parts[0].casefold() == "view" and len(parts) >= 2:
+            return False
+        return True
+    return False
+
+
+def _workable_to_html(md: str) -> str:
+    """Turn Workable job markdown into listing HTML. Never invent pay."""
+    title = ""
+    m = re.search(r"(?m)^#\s+(.+)$", md)
+    if m:
+        title = m.group(1).strip()
+    company = ""
+    m = re.search(r"(?m)^>\s*([^·\n]+)", md)
+    if m:
+        company = m.group(1).strip(" \t-")
+        if company and _PLACE_RE.search(company):
+            company = ""
+    posting = {"@type": "JobPosting", "title": title}
+    if company:
+        posting["hiringOrganization"] = {"@type": "Organization", "name": company}
+    sm = _WORKABLE_SALARY_RE.search(md)
+    if sm:
+        low = int(sm.group(1).replace(",", ""))
+        high = int(sm.group(2).replace(",", "")) if sm.group(2) else None
+        value: dict = {"unitText": "YEAR"}
+        if high:
+            value["minValue"] = low
+            value["maxValue"] = high
+        else:
+            value["value"] = low
+        posting["baseSalary"] = {"currency": "USD", "value": value}
+    if re.search(r"(?i)\bfull-time\b", md):
+        posting["employmentType"] = "FULL_TIME"
+    elif re.search(r"(?i)\bpart-time\b", md):
+        posting["employmentType"] = "PART_TIME"
+    page_title = f"{title} at {company}" if company else title
+    return (
+        f"<title>{page_title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"<pre>{md}</pre>"
+    )
+
+
 _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search",
     re.I,
@@ -702,6 +832,8 @@ def _is_index_page(raw: dict) -> bool:
     if path == "/":
         return True
     if _INDEX_PATH_RE.search(parsed.path):
+        return True
+    if _workable_is_board(url):
         return True
     return False
 
@@ -983,8 +1115,14 @@ _RANGE_FULL_RE = re.compile(
     r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—)\s*\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b",
     re.I,
 )
+_RANGE_USD_RE = re.compile(
+    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+)
 _ANNUAL_K_RE = re.compile(r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k\b", re.I)
 _ANNUAL_FULL_RE = re.compile(r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b")
+_ANNUAL_USD_RE = re.compile(
+    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+)
 _HOURS_RE = re.compile(
     r"\b(\d{1,2})\s*(?:hrs?|hours?)\s*(?:/|\s*per\s*)?\s*(?:wk|week)\b",
     re.I,
@@ -1022,6 +1160,11 @@ def _parse_pay(
         low, high = int(_money(ranged_full.group(1))), int(_money(ranged_full.group(2)))
         if 10_000 <= low <= high <= 2_000_000:
             return low, high
+    ranged_usd = _RANGE_USD_RE.search(text)
+    if ranged_usd:
+        low, high = int(_money(ranged_usd.group(1))), int(_money(ranged_usd.group(2)))
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
     k = _ANNUAL_K_RE.search(text)
     if k:
         annual = int(_money(k.group(1)) * 1000)
@@ -1030,6 +1173,11 @@ def _parse_pay(
     full = _ANNUAL_FULL_RE.search(text)
     if full:
         annual = int(_money(full.group(1)))
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    usd = _ANNUAL_USD_RE.search(text)
+    if usd:
+        annual = int(_money(usd.group(1)))
         if 10_000 <= annual <= 2_000_000:
             return None, annual
     return None, None

@@ -22,6 +22,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Staff Engineer $150,000", "") == 150_000
     assert _guess_pay("Engineer", "$120k-$180k") == 180_000
     assert _guess_pay("Engineer", "$143,000 to 197,000") == 197_000
+    assert _guess_pay("Engineer", "USD 200,000–240,000") == 240_000
+    from src.engine import _parse_pay
+    assert _parse_pay("**Salary:** USD 160,000–190,000") == (160_000, 190_000)
     assert _guess_pay("Software Engineer", "") is None
     assert _guess_pay("Senior Staff Principal Lead", "junior intern") is None
 
@@ -332,6 +335,35 @@ def test_index_pages_are_not_opportunities():
         }
     )
     assert lever is not None
+    workable = _heuristic_opportunity(
+        {
+            "title": "Senior ML Engineer | Canopy | Jobs By Workable",
+            "url": "https://jobs.workable.com/view/7mMjfHgS93LyPeHLK2XeMV/remote-senior-machine-learning-engineer-in-detroit-at-canopy",
+            "description": "Remote role.",
+        }
+    )
+    assert workable is not None
+    assert workable.company == "Canopy"
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Intuition Machines, Inc. - Current Openings",
+                "url": "https://apply.workable.com/imachines",
+                "description": "",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "A2Z Sync - Current Openings",
+                "url": "https://apply.workable.com/a2z-sync/",
+                "description": "",
+            }
+        )
+        is None
+    )
     assert (
         _heuristic_opportunity(
             {
@@ -425,6 +457,8 @@ def test_search_angles_omit_grants_and_equity_unless_asked():
         "senior ML engineer remote site:greenhouse.io",
         "senior ML engineer remote site:jobs.lever.co",
         "senior ML engineer remote site:jobs.ashbyhq.com",
+        "senior ML engineer remote site:jobs.workable.com",
+        "senior ML engineer remote site:apply.workable.com",
     ]
     assert _search_angles("ml site:example.com") == [
         "ml site:example.com",
@@ -549,6 +583,131 @@ def test_apply_listing_ashby_json_ld_pay():
     assert opp.company == "Quilter"
     assert opp.pay_low == 180_000
     assert opp.pay_high == 200_000
+
+
+def test_heuristic_company_from_workable_apply_title():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer - Multi Media LLC",
+            "url": "https://apply.workable.com/multimediallc/j/73CB637EE8",
+            "description": "",
+        }
+    )
+    assert h.company == "Multi Media LLC"
+    assert h.url == "https://apply.workable.com/multimediallc/j/73CB637EE8"
+
+
+def test_heuristic_stores_workable_job_url_not_markdown():
+    h = _heuristic_opportunity(
+        {
+            "title": "Senior Machine Learning Engineer",
+            "url": "https://apply.workable.com/runware/jobs/view/B0A0A14125.md",
+            "description": "",
+        }
+    )
+    assert h.url == "https://apply.workable.com/runware/j/B0A0A14125"
+    assert h.company == "Runware"
+
+
+def test_apply_listing_workable_markdown_pay():
+    from src.engine import _apply_listing, _workable_to_html
+
+    md = """# Senior Machine Learning Engineer
+
+> Multi Media LLC · United States (Remote) · Full-time · Posted 2026-06-01
+
+**Salary:** USD 200,000–240,000
+
+**Workplace:** remote
+"""
+    opp = Opportunity(
+        title="Senior Machine Learning Engineer - Multi Media LLC",
+        url="https://apply.workable.com/multimediallc/j/73CB637EE8",
+    )
+    _apply_listing(opp, _workable_to_html(md))
+    assert opp.company == "Multi Media LLC"
+    assert opp.pay_low == 200_000
+    assert opp.pay_high == 240_000
+    assert opp.hours_per_week == 40
+
+
+def test_listing_text_prefers_workable_markdown_over_spa_shell(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str) -> str:
+        seen.append(url)
+        if url.endswith(".md"):
+            return (
+                "# Senior Engineer, AI/ML\n\n"
+                "> A2Z Sync · United States (Remote) · Full-time\n\n"
+                "**Salary:** USD 160,000–190,000\n"
+            )
+        return "<title>Senior Engineer, AI/ML - A2Z Sync</title><p>Apply</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text("https://apply.workable.com/a2z-sync/j/C95E51CDDA")
+    )
+    assert seen[0] == "https://apply.workable.com/a2z-sync/jobs/view/C95E51CDDA.md"
+    from src.engine import _apply_listing
+
+    opp = Opportunity(
+        title="Senior Engineer, AI/ML - A2Z Sync",
+        url="https://apply.workable.com/a2z-sync/j/C95E51CDDA",
+    )
+    _apply_listing(opp, html)
+    assert opp.company == "A2Z Sync"
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 190_000
+
+
+def test_find_dedupes_workable_apply_and_jobs_board():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Senior Machine Learning Engineer - Multi Media LLC",
+                "url": "https://apply.workable.com/multimediallc/j/73CB637EE8",
+                "description": "USD 200,000–240,000",
+            },
+            {
+                "title": "Senior Machine Learning Engineer | Multi Media LLC | Jobs By Workable",
+                "url": "https://jobs.workable.com/view/bqkqSAJN2W35yHL1WmQ5C9/remote-machine-learning-engineer-in-united-states-at-multi-media-llc",
+                "description": "",
+            },
+        ]
+
+    engine._search_all = fake_search
+
+    async def no_page(_url: str) -> str:
+        return ""
+
+    engine._listing_text = no_page
+    ranked = asyncio.run(engine.find("ml", limit=20))
+    assert [o.url for o in ranked] == [
+        "https://apply.workable.com/multimediallc/j/73CB637EE8"
+    ]
+    assert ranked[0].pay_high == 240_000
+
+
+def test_unify_workable_slug_with_real_name():
+    from src.engine import _unify_board_companies
+
+    named = Opportunity(
+        title="Senior Machine Learning Engineer - Multi Media LLC",
+        url="https://apply.workable.com/multimediallc/j/73CB637EE8",
+        company="Multi Media LLC",
+    )
+    slugged = Opportunity(
+        title="Other Role",
+        url="https://apply.workable.com/multimediallc/j/AAAAAAAAAA",
+        company="Multimediallc",
+    )
+    _unify_board_companies([named, slugged])
+    assert slugged.company == "Multi Media LLC"
 
 
 def test_heuristic_company_from_lever_slug():
