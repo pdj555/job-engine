@@ -4301,7 +4301,11 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
 def _pay_unit(raw) -> Optional[str]:
     token = str(raw or "").rsplit("/", 1)[-1].upper().replace("-", "_").strip()
     token = re.sub(r"^(?:USD|US\$|US|\$)\s*", "", token).strip()
-    return _PAY_UNITS.get(token) or _PAY_UNITS.get(token.replace("_", " "))
+    return (
+        _PAY_UNITS.get(token)
+        or _PAY_UNITS.get(token.replace("_", " "))
+        or _PAY_UNITS.get(_period_unit(raw) or "")
+    )
 
 
 def _usd(currency) -> bool:

@@ -852,6 +852,42 @@ def test_apply_listing_json_ld_biweekly_pay():
     sm = Opportunity(title="Engineer", url="https://jobs.example/ld-sm-k")
     assert _apply_listing(sm, semi_k) is True
     assert sm.pay_high == 72_000
+    two_weeks = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":3000,"maxValue":4000,"unitText":"every two weeks"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    two = Opportunity(title="Engineer", url="https://jobs.example/ld-every-two-weeks")
+    assert _apply_listing(two, two_weeks) is True
+    assert two.pay_low == 75_000
+    assert two.pay_high == 100_000
+    snake = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":3000,"maxValue":4000,"unitText":"EVERY_TWO_WEEKS"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    snake_row = Opportunity(title="Engineer", url="https://jobs.example/ld-EVERY_TWO_WEEKS")
+    assert _apply_listing(snake_row, snake) is True
+    assert snake_row.pay_low == 75_000
+    assert snake_row.pay_high == 100_000
+    twice = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":3000,"maxValue":4000,"unitText":"twice per month"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    twice_row = Opportunity(title="Engineer", url="https://jobs.example/ld-twice-per-month")
+    assert _apply_listing(twice_row, twice) is True
+    assert twice_row.pay_low == 72_000
+    assert twice_row.pay_high == 96_000
 
 
 def test_parse_pay_annualizes_daily_usd():
