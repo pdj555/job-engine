@@ -810,6 +810,36 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff Machine Learning Engineer Job Description, Salary & Career Outlook",
+                "url": "https://jobdescription.org/jobs/artificial-intelligence/staff-machine-learning-engineer",
+                "description": "Staff Machine Learning Engineer salary ($195K–$310K)",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "AI Engineer",
+                "url": "https://ai.engineer/jobs",
+                "description": "$200k–$250k",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Responsibilities: Staff Machine Learning Engineer | Remotely",
+                "url": "https://www.remotely.works/blog/what-are-the-responsibilities-of-a-staff-machine-learning",
+                "description": "",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -947,6 +977,18 @@ def test_search_all_drops_index_pages():
             {
                 "title": "Remote Machine Learning",
                 "url": "https://arc.dev/remote-jobs/machine-learning",
+            },
+            {
+                "title": "Staff Machine Learning Engineer Job Description",
+                "url": "https://jobdescription.org/jobs/artificial-intelligence/staff-machine-learning-engineer",
+            },
+            {
+                "title": "AI Engineer",
+                "url": "https://ai.engineer/jobs",
+            },
+            {
+                "title": "Staff Machine Learning Engineer",
+                "url": "https://www.remotely.works/blog/what-are-the-responsibilities-of-a-staff-machine-learning",
             },
             {"title": "Real role", "url": "https://jobs.example/ml"},
         ]

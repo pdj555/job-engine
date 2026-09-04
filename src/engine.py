@@ -1327,7 +1327,10 @@ _INDEX_URL_RE = re.compile(
     r"|lever\.co/jobgether/"
     r"|jobgether\.com/"
     r"|remotesource\.com/"
-    r"|arc\.dev/remote-jobs)",
+    r"|arc\.dev/remote-jobs"
+    r"|jobdescription\.org/"
+    r"|ai\.engineer/jobs"
+    r"|remotely\.works/blog/)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
