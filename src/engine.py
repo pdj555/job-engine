@@ -4896,6 +4896,9 @@ def _unit_raw(node) -> Optional[str]:
         or _ld_text(node.get("unit"))
         or _ld_text(node.get("salaryUnit"))
         or _ld_text(node.get("salary_unit"))
+        or _ld_text(node.get("period"))
+        or _ld_text(node.get("interval"))
+        or _ld_text(node.get("frequency"))
     )
     if raw:
         return raw
@@ -4908,16 +4911,17 @@ def _unit_raw(node) -> Optional[str]:
 def _unit_text(salary) -> Optional[str]:
     if not isinstance(salary, dict):
         return None
-    value = salary.get("value")
-    if isinstance(value, dict):
-        raw = _unit_raw(value)
-        if raw:
-            return raw
-    if isinstance(value, list):
-        for item in value:
-            raw = _unit_raw(item)
+    for key in ("value", "amount"):
+        nest = salary.get(key)
+        if isinstance(nest, dict):
+            raw = _unit_raw(nest)
             if raw:
                 return raw
+        if isinstance(nest, list):
+            for item in nest:
+                raw = _unit_raw(item)
+                if raw:
+                    return raw
     return _unit_raw(salary)
 
 
@@ -5061,7 +5065,34 @@ def _currency_of(value) -> Optional[str]:
     )
     if cur:
         return cur
-    for key in ("value", "amount"):
+    for key in (
+        "value",
+        "amount",
+        "min",
+        "max",
+        "from",
+        "to",
+        "minValue",
+        "maxValue",
+        "min_value",
+        "max_value",
+        "minimum",
+        "maximum",
+        "low",
+        "high",
+        "lowerBound",
+        "upperBound",
+        "lower_bound",
+        "upper_bound",
+        "rangeStart",
+        "rangeEnd",
+        "range_start",
+        "range_end",
+        "minAmount",
+        "maxAmount",
+        "min_amount",
+        "max_amount",
+    ):
         nested = value.get(key)
         if isinstance(nested, dict) and nested is not value:
             cur = _currency_of(nested)

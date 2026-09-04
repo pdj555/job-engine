@@ -6953,6 +6953,38 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(hour_unit, hourly_unit) is True
     assert hour_unit.pay_low == 160_000
     assert hour_unit.pay_high == 200_000
+    hourly_freq = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"frequency":"HOUR"}}}
+    </script>
+    """
+    hour_freq = Opportunity(title="Engineer", url="https://jobs.example/ld-still-hr-frequency")
+    assert _apply_listing(hour_freq, hourly_freq) is True
+    assert hour_freq.pay_low == 160_000
+    assert hour_freq.pay_high == 200_000
+    hourly_amt = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "amount":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}
+    </script>
+    """
+    hour_amt = Opportunity(title="Engineer", url="https://jobs.example/ld-still-hr-amount-unit")
+    assert _apply_listing(hour_amt, hourly_amt) is True
+    assert hour_amt.pay_low == 160_000
+    assert hour_amt.pay_high == 200_000
+    leftover_freq = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"frequency":"HOUR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    year_over = Opportunity(title="Engineer", url="https://jobs.example/ld-freq-leftover-year")
+    assert _apply_listing(year_over, leftover_freq) is True
+    assert year_over.pay_high == 400_000
     estimated = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -7475,6 +7507,16 @@ def test_apply_listing_ignores_non_usd_salary():
     amount_cur = Opportunity(title="Engineer", url="https://jobs.example/amount-currency-eur")
     _apply_listing(amount_cur, amount_eur)
     assert amount_cur.pay_high is None
+    bound_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"min":{"currency":"EUR","value":80000},"max":{"currency":"EUR","value":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    min_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/min-obj-eur")
+    _apply_listing(min_obj_eur, bound_eur)
+    assert min_obj_eur.pay_high is None
     snake_empty = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
