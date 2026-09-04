@@ -507,6 +507,53 @@ def test_find_dedupes_same_title_keeps_higher_score():
     assert ranked[0].pay_high == 180_000
 
 
+def test_heuristic_company_from_lever_prefix():
+    h = _heuristic_opportunity(
+        {
+            "title": "Lyra Health - Senior ML Engineer (ML/AI) - jobs.lever.co",
+            "url": "https://jobs.lever.co/lyrahealth/d33ddfed-8c69-4e29-966b-0e190190cd6a",
+            "description": "",
+        }
+    )
+    assert h.company == "Lyra Health"
+
+
+def test_find_dedupes_same_role_across_boards():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Senior ML Engineer (ML/AI) in Remote at Lyra Health",
+                "url": "https://careers.example/lyra",
+                "description": "$143,000 to 197,000",
+            },
+            {
+                "title": "Lyra Health - Senior ML Engineer (ML/AI) - jobs.lever.co",
+                "url": "https://jobs.lever.co/lyrahealth/abc",
+                "description": "$100k",
+            },
+            {
+                "title": "Lyra Health - Sr. ML Engineer (MLOps)",
+                "url": "https://jobs.lever.co/lyrahealth/def",
+                "description": "$90k",
+            },
+        ]
+
+    engine._search_all = fake_search
+
+    async def no_page(_url: str) -> str:
+        return ""
+
+    engine._listing_text = no_page
+    ranked = asyncio.run(engine.find("ml", limit=20))
+    assert [o.url for o in ranked] == [
+        "https://careers.example/lyra",
+        "https://jobs.lever.co/lyrahealth/def",
+    ]
+
+
 def test_find_llm_grounds_urls_and_drops_hallucinations():
     engine = Engine()
     engine.openai = _fake_client(

@@ -407,16 +407,25 @@ async def _http_get_text(client: httpx.AsyncClient, url: str) -> str:
         return ""
 
 
-def _title_key(title: str) -> str:
-    return re.sub(r"\W+", " ", title).casefold().strip()
+def _title_key(title: str, company: Optional[str] = None) -> str:
+    """Role identity across boards: strip ATS suffixes and company wrappers."""
+    t = title or ""
+    t = re.sub(r"(?i)\s*[-–—]\s*jobs\.lever\.co\s*$", "", t)
+    t = re.sub(r"(?i)^job application for\s+", "", t)
+    if company and company.strip():
+        c = re.escape(company.strip())
+        t = re.sub(rf"(?i)^{c}\s*[-:|]\s*", "", t)
+        t = re.sub(rf"(?i)\s+at\s+{c}\b.*$", "", t)
+    t = re.sub(r"(?i)\s+in remote\b.*$", "", t)
+    return re.sub(r"\W+", " ", t).casefold().strip()
 
 
 def _dedupe_opportunities(opps: list) -> list:
-    """Keep the first of each title. Call after sorting so the best score wins."""
+    """Keep the first of each role. Call after sorting so the best score wins."""
     seen: set[str] = set()
     unique = []
     for o in opps:
-        key = _title_key(o.title)
+        key = _title_key(o.title, o.company)
         if not key or key in seen:
             continue
         seen.add(key)
@@ -482,7 +491,7 @@ def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
         title=title,
         url=url,
         description=desc,
-        company=raw.get("company") or _company_from_title(title),
+        company=raw.get("company") or _company_from_title(title, url),
         pay_low=pay_low,
         pay_high=pay_high,
         hours_per_week=hours,
@@ -498,7 +507,9 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
     desc = item.get("description") or raw.get("description") or ""
     company = item.get("company") if item.get("company") is not None else raw.get("company")
     if not company:
-        company = _company_from_title(title) or _company_from_title(raw.get("title") or "")
+        company = _company_from_title(title, raw.get("url") or "") or _company_from_title(
+            raw.get("title") or "", raw.get("url") or ""
+        )
     guess_title = raw.get("title") or title
     guess_desc = raw.get("description") or desc
     hours = raw.get("hours")
@@ -529,15 +540,26 @@ def _merge_extracted(raw: dict, item: dict) -> Opportunity:
 _PLACE_RE = re.compile(r"(?i)^(remote|home|office|onsite|hybrid)\b")
 
 
-def _company_from_title(title: str) -> str | None:
-    """Last ` at X` segment when X is a name, not a location."""
+_ROLE_START_RE = re.compile(
+    r"(?i)^(senior|staff|principal|lead|jr|junior|intern|contract|freelance)\b"
+)
+
+
+def _company_from_title(title: str, url: str = "") -> str | None:
+    """Employer from ` at X`, or Lever `Company - Role` titles."""
     m = re.search(r"(?i)\bat\s+(.+)$", title or "")
-    if not m:
-        return None
-    name = m.group(1).strip(" .,-")
-    if not name or _PLACE_RE.search(name):
-        return None
-    return name
+    if m:
+        name = m.group(1).strip(" .,-")
+        if name and not _PLACE_RE.search(name):
+            return name
+    host = (urlparse(url).hostname or "").casefold()
+    if host.endswith("lever.co"):
+        m = re.match(r"^(.+?)\s+[-–—]\s+\S", title or "")
+        if m:
+            name = m.group(1).strip(" .,-")
+            if name and not _PLACE_RE.search(name) and not _ROLE_START_RE.search(name):
+                return name
+    return None
 
 
 _INDEX_URL_RE = re.compile(
@@ -802,7 +824,7 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
                 opp.pay_low = low
                 opp.pay_high = high
     if not opp.company:
-        opp.company = _company_from_title(_html_title(html))
+        opp.company = _company_from_title(_html_title(html), opp.url)
     if opp.pay is None:
         visible = _listing_plain_text(html)
         hours = opp.hours_per_week or _guess_hours(opp.title, visible)

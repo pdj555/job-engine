@@ -36,6 +36,27 @@ def test_rank_dedupes_same_title():
     assert [o.url for o in ranked] == ["https://b.example/2"]
 
 
+def test_rank_dedupes_same_role_across_boards():
+    ranked = _rank(
+        [
+            {
+                "title": "Senior ML Engineer (ML/AI) in Remote at Lyra Health",
+                "url": "https://careers.example/lyra",
+                "company": "Lyra Health",
+                "pay": 197_000,
+                "hours_per_week": 40,
+            },
+            {
+                "title": "Lyra Health - Senior ML Engineer (ML/AI) - jobs.lever.co",
+                "url": "https://jobs.lever.co/lyrahealth/abc",
+                "pay": 100_000,
+                "hours_per_week": 40,
+            },
+        ]
+    )
+    assert [o.url for o in ranked] == ["https://careers.example/lyra"]
+
+
 def test_rank_skips_items_without_url():
     assert _rank([{"title": "no url", "pay": 100_000, "hours_per_week": 10}]) == []
 

@@ -73,7 +73,7 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         opp = Opportunity(
             title=o.get("title", "Unknown"),
             url=url,
-            company=o.get("company") or _company_from_title(o.get("title") or ""),
+            company=o.get("company") or _company_from_title(o.get("title") or "", url),
             pay_high=o.get("pay"),
             hours_per_week=o.get("hours_per_week"),
             remote=o.get("remote", True),
