@@ -1609,7 +1609,7 @@ _INDEX_TITLE_RE = re.compile(
     r"(?i)^hire\b|\bcurrent (?:openings|positions|roles|listings|opportunities)\b"
     r"|\bopen (?:positions|roles|listings|opportunities)\b"
     r"|\bjob openings\b"
-    r"|\ball openings\b"
+    r"|\ball (?:openings|positions|roles|listings|opportunities)\b"
     r"|\bcareer opportunities\b"
     r"|^careers at\b"
     r"|^join our team(?:\s*[|\-–—].*)?$"
@@ -3807,7 +3807,7 @@ _INDEX_PATH_RE = re.compile(
     r"|^/(?:careers|jobs)/?$"
     r"|^/hire(?:/|$)"
     r"|/(?:open[-_]?(?:positions|roles|jobs|listings|opportunities)|current[-_]?(?:openings|positions|roles|listings|opportunities))/?$"
-    r"|/(?:career[-_]?opportunities|job[-_]?openings|all[-_]?openings)/?$"
+    r"|/(?:career[-_]?opportunities|job[-_]?openings|all[-_]?(?:openings|positions|roles|listings|opportunities|jobs))/?$"
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
     r"|/(?:job[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities)|vacancies|explore[-_]?careers|hiring)/?$"
@@ -3928,7 +3928,7 @@ _RELATED_JOBS_RE = re.compile(
     r"|you\s+(?:may|might)\s+(?:also\s+)?like.*$"
     r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
     r"|(?:similar|related|recommended|other|more|featured|popular|suggested)\s+(?:roles|openings|positions).*$"
-    r"|(?:similar|related|recommended|other|featured|suggested|matching)\s+(?:opportunities|listings).*$"
+    r"|(?:similar|related|recommended|other|featured|popular|suggested|matching)\s+(?:opportunities|listings).*$"
     r"|(?:similar|related|recommended|featured|suggested|matching)\s*:?\s*\$.*$"
 )
 _RELATED_HEADING_RE = re.compile(
@@ -5030,6 +5030,9 @@ def _posting_salary(posting: Optional[dict]):
         or _ld_text(posting.get("unit"))
         or _ld_text(posting.get("unitCode"))
         or _ld_text(posting.get("unit_code"))
+        or _ld_text(posting.get("period"))
+        or _ld_text(posting.get("interval"))
+        or _ld_text(posting.get("frequency"))
     )
     if not unit:
         duration = _ld_text(posting.get("duration"))
@@ -5144,7 +5147,16 @@ def _posting_company(posting: dict) -> Optional[str]:
 def _hours_from_node(work) -> Optional[int]:
     n = _num(work)
     if n is None and isinstance(work, dict):
-        n = _num(work.get("value")) or _num(work.get("minValue")) or _num(work.get("min"))
+        n = (
+            _num(work.get("value"))
+            or _num(work.get("minValue"))
+            or _num(work.get("min_value"))
+            or _num(work.get("min"))
+            or _num(work.get("lowerBound"))
+            or _num(work.get("lower_bound"))
+            or _num(work.get("rangeStart"))
+            or _num(work.get("range_start"))
+        )
         if n is None:
             work = _ld_text(work)
     if n is None and isinstance(work, str):
@@ -5169,6 +5181,8 @@ _HOUR_KEYS = (
     "scheduledWeeklyHours",
     "standard_weekly_hours",
     "scheduled_weekly_hours",
+    "minHoursPerWeek",
+    "min_hours_per_week",
 )
 
 

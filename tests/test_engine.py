@@ -1298,6 +1298,39 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert snake_work.hours_per_week == 32
     assert snake_work.pay_high == 128_000
+    qv_min_value = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-min_value")
+    assert _apply_listing(
+        qv_min_value,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"@type":"QuantitativeValue","min_value":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert qv_min_value.hours_per_week == 32
+    assert qv_min_value.pay_high == 128_000
+    qv_lower = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-lowerBound")
+    assert _apply_listing(
+        qv_lower,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"workHours":{"@type":"QuantitativeValue","lowerBound":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert qv_lower.hours_per_week == 32
+    assert qv_lower.pay_high == 128_000
+    min_week = Opportunity(title="Engineer", url="https://jobs.example/ld-min_hours_per_week")
+    assert _apply_listing(
+        min_week,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"min_hours_per_week":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert min_week.hours_per_week == 32
+    assert min_week.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -2448,6 +2481,26 @@ def test_index_pages_are_not_opportunities():
             {
                 "title": "Open Listings | Acme",
                 "url": "https://acme.com/open-listings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "All Listings | Acme",
+                "url": "https://acme.com/all-listings",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "All Opportunities | Acme",
+                "url": "https://acme.com/all-opportunities",
                 "description": "$180,000",
             }
         )
@@ -4159,6 +4212,18 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Open Listings | Acme</title><p>$180,000</p>",
         "https://acme.com/open-listings",
+    )
+    assert _html_is_index(
+        "<title>All Listings | Acme</title><p>$180,000</p>",
+        "https://acme.com/all-listings",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$180,000</p>",
+        "https://acme.com/all-jobs",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/all-listings/senior-engineer",
     )
     assert _html_is_index(
         "<title>Software Engineer</title><p>$180,000</p>",
@@ -6679,6 +6744,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_hour_d, posting_dur) is True
     assert posting_hour_d.pay_low == 160_000
     assert posting_hour_d.pay_high == 200_000
+    posting_freq = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":80,"salaryMax":100,"frequency":"HOUR"}
+    </script>
+    <p>Office.</p>
+    """
+    posting_hour_f = Opportunity(title="Engineer", url="https://jobs.example/ld-post-frequency")
+    assert _apply_listing(posting_hour_f, posting_freq) is True
+    assert posting_hour_f.pay_low == 160_000
+    assert posting_hour_f.pay_high == 200_000
     posting_uc = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -16225,6 +16301,20 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Similar listings Account Executive $400,000</p>",
     ) is False
     assert similar_listings.pay_high is None
+    popular_listings = Opportunity(title="Engineer", url="https://jobs.example/popular-listings-text")
+    assert _apply_listing(
+        popular_listings,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Popular listings Account Executive $400,000</p>",
+    ) is False
+    assert popular_listings.pay_high is None
+    popular_opps = Opportunity(title="Engineer", url="https://jobs.example/popular-opps-text")
+    assert _apply_listing(
+        popular_opps,
+        "<title>Engineer</title><p>Great team. Apply now. "
+        "Popular opportunities Account Executive $400,000</p>",
+    ) is False
+    assert popular_opps.pay_high is None
     related_dollar = (
         "<title>Engineer</title><p>Great team. Apply now.</p><p>Related $400,000</p>"
     )
