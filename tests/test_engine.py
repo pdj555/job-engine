@@ -4121,6 +4121,52 @@ def test_html_is_gone_removed_listing_banner():
         "<p>Once the position has been filled, the team will grow.</p>"
         "<p>$180,000 a year</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job expired on January 1.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job posting expired on March 1, 2026.</p>"
+        "<p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Sorry, this job expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This listing expired.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This job expires on January 1.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This posting will expire on Friday.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Applications for this position are closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Applications for this role are now closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>We are no longer taking applications.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is no longer open to applicants.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This position is no longer open for applications.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This role is no longer open.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This visa is no longer open to contractors.</p><p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -4236,6 +4282,44 @@ def test_enrich_drops_withdrawn_listing_with_leftover_pay():
         hours_per_week=40,
     )
     opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Keep"]
+    assert keep.pay_high == 180_000
+
+
+def test_enrich_drops_expired_listing_with_leftover_pay():
+    engine = Engine()
+
+    async def page(url: str):
+        if "expired" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This job expired on January 1.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "apps-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Applications for this position are closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        return "<title>Senior ML</title><p>$180,000 a year</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Keep", url="https://jobs.example/live")
+    expired = Opportunity(
+        title="Expired",
+        url="https://jobs.example/expired",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    closed = Opportunity(
+        title="ClosedApps",
+        url="https://jobs.example/apps-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [keep, expired, closed]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000

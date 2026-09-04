@@ -4092,8 +4092,17 @@ _GONE_LISTING_RE = re.compile(
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|listing|opening)"
     r"\s+(?:is|has\s+been)\s+closed"
-    r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|accepting\s+applications)"
-    r"|no\s+longer\s+accepting\s+applications"
+    r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|accepting\s+applications|taking\s+applications)"
+    r"|no\s+longer\s+(?:accepting|taking)\s+applications"
+    r"|(?<!once )(?<!after )(?<!when )(?:sorry,\s+)?(?:the|this)\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|listing|opening)"
+    r"\s+expired\b"
+    r"|applications\s+for\s+(?:the|this)\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|listing|opening)"
+    r"\s+(?:are|is)\s+(?:now\s+)?closed"
+    r"|(?:the|this)\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|listing|opening)"
+    r"\s+is\s+no\s+longer\s+open\s+(?:to\s+applicants|for\s+applications)"
 )
 
 
