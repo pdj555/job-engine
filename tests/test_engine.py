@@ -5811,6 +5811,29 @@ def test_apply_listing_json_ld_yearly_thousands():
     base_comp = Opportunity(title="Engineer", url="https://jobs.example/ld-base-comp")
     assert _apply_listing(base_comp, listed_comp) is True
     assert base_comp.pay_high == 180_000
+    compensation_alias = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "compensation":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_alias = Opportunity(title="Engineer", url="https://jobs.example/ld-compensation")
+    assert _apply_listing(posting_alias, compensation_alias) is True
+    assert posting_alias.pay_low == 180_000
+    assert posting_alias.pay_high == 220_000
+    range_ld = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryRange":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_range = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryRange")
+    assert _apply_listing(posting_range, range_ld) is True
+    assert posting_range.pay_low == 180_000
+    assert posting_range.pay_high == 220_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6447,6 +6470,28 @@ def test_apply_listing_ignores_non_usd_salary():
     _apply_listing(comp_eur, eur_comp)
     assert comp_eur.pay_high is None
     assert comp_eur.company == "Acme"
+    eur_alias = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "compensation":{"currency":"EUR",
+       "value":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    alias_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-compensation-eur")
+    _apply_listing(alias_eur, eur_alias)
+    assert alias_eur.pay_high is None
+    eur_range = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "salaryCurrency":"EUR",
+     "salaryRange":{"minValue":120000,"maxValue":180000,"unitText":"YEAR"}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    range_eur = Opportunity(title="Engineer", url="https://jobs.example/ld-salaryRange-eur")
+    _apply_listing(range_eur, eur_range)
+    assert range_eur.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -7256,6 +7301,18 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "Jan-15-2029")
+    ) is False
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Jan. 15, 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "January 15th, 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "15th January 2020")
+    ) is True
+    assert _html_is_gone(
+        expired_ld.replace("2020-01-01", "Jan. 15, 2029")
     ) is False
     assert _html_is_gone(
         expired_ld.replace("2020-01-01", "01-15-2020")

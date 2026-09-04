@@ -4548,10 +4548,17 @@ def _salary_span(items: list) -> dict:
 
 
 def _posting_salary(posting: Optional[dict]):
-    """baseSalary, salary, estimatedSalary, then baseCompensation. Skip empty objects."""
+    """baseSalary, then salary aliases, then salaryMin. Skip empty objects."""
     if not isinstance(posting, dict):
         return None
-    for key in ("baseSalary", "salary", "estimatedSalary", "baseCompensation"):
+    for key in (
+        "baseSalary",
+        "salary",
+        "estimatedSalary",
+        "baseCompensation",
+        "compensation",
+        "salaryRange",
+    ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
         found = [item for item in items if _salary_has_amount(item)]
@@ -4598,7 +4605,14 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         return stated
     if _salary_has_amount(salary):
         return None
-    for key in ("baseSalary", "salary", "estimatedSalary", "baseCompensation"):
+    for key in (
+        "baseSalary",
+        "salary",
+        "estimatedSalary",
+        "baseCompensation",
+        "compensation",
+        "salaryRange",
+    ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
         for item in items:
@@ -5006,12 +5020,12 @@ def _posting_date(raw) -> Optional[date]:
     m = re.match(r"(\d{4})(\d{2})(\d{2})\b", text)
     if m:
         return _ymd(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-    m = re.match(r"([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})", text)
+    m = re.match(r"([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})", text)
     if m:
         month = _MONTH_NUM.get(m.group(1).lower())
         if month:
             return _ymd(int(m.group(3)), month, int(m.group(2)))
-    m = re.match(r"(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})", text)
+    m = re.match(r"(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})", text)
     if m:
         month = _MONTH_NUM.get(m.group(2).lower())
         if month:
