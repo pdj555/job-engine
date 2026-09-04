@@ -1665,6 +1665,7 @@ _INDEX_TITLE_RE = re.compile(
     r"|^graduate programs?(?:\s*[|\-–—].*)?$"
     r"|^university programs?(?:\s*[|\-–—].*)?$"
     r"|^job search(?:\s*[|\-–—].*)?$"
+    r"|^career search(?:\s*[|\-–—].*)?$"
     r"|^careers(?:\s*[|\-–—].*)?$"
     r"|^benefits(?:\s*[|\-–—].*)?$"
     r"|^our benefits(?:\s*[|\-–—].*)?$"
@@ -3840,7 +3841,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/opportunities/?$"
     r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|find[-_]?careers|search[-_]?careers|view[-_]?careers|discover[-_]?careers|see[-_]?careers|apply[-_]?careers|open[-_]?careers|hiring)/?$"
     r"|/(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
-    r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
+    r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|career[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
     re.I,
@@ -4391,8 +4392,14 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
             "job_compensation",
             "offeredSalary",
             "offered_salary",
+            "salaryOffered",
+            "salary_offered",
             "annualSalary",
             "annual_salary",
+            "yearlySalary",
+            "yearly_salary",
+            "annualPay",
+            "annual_pay",
             "jobSalary",
             "job_salary",
             "basePay",
@@ -4812,8 +4819,14 @@ def _salary_blob(salary) -> str:
                 "job_compensation",
                 "offeredSalary",
                 "offered_salary",
+                "salaryOffered",
+                "salary_offered",
+                "yearlySalary",
+                "yearly_salary",
                 "annualSalary",
                 "annual_salary",
+                "annualPay",
+                "annual_pay",
                 "jobSalary",
                 "job_salary",
                 "basePay",
@@ -4903,8 +4916,14 @@ _MONEY_NEST_KEYS = (
     "job_compensation",
     "offeredSalary",
     "offered_salary",
+    "salaryOffered",
+    "salary_offered",
     "annualSalary",
     "annual_salary",
+    "yearlySalary",
+    "yearly_salary",
+    "annualPay",
+    "annual_pay",
     "jobSalary",
     "job_salary",
     "basePay",
@@ -5087,8 +5106,14 @@ def _posting_salary(posting: Optional[dict]):
         "job_compensation",
         "offeredSalary",
         "offered_salary",
+        "salaryOffered",
+        "salary_offered",
         "annualSalary",
         "annual_salary",
+        "yearlySalary",
+        "yearly_salary",
+        "annualPay",
+        "annual_pay",
         "jobSalary",
         "job_salary",
         "basePay",
@@ -5244,8 +5269,14 @@ def _posting_currency(posting: Optional[dict], salary=None) -> Optional[str]:
         "job_compensation",
         "offeredSalary",
         "offered_salary",
+        "salaryOffered",
+        "salary_offered",
         "annualSalary",
         "annual_salary",
+        "yearlySalary",
+        "yearly_salary",
+        "annualPay",
+        "annual_pay",
         "jobSalary",
         "job_salary",
         "basePay",
@@ -5612,7 +5643,7 @@ _GONE_LISTING_RE = re.compile(
     r"\s+was\s+(?:withdrawn|cancelled|canceled|removed|taken\s+down|taken\s+offline|deactivated|unpublished|deleted|unposted|pulled)"
     r"|we(?:'ve|\s+have)\s+decided\s+not\s+to\s+fill\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
-    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:closed|filled)\b"
+    r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:closed|filled|withdrawn|removed)\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?concluded\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
@@ -5624,7 +5655,7 @@ _GONE_LISTING_RE = re.compile(
     r"|we(?:'ve|\s+have)?\s+wrapped\s+up\s+this\s+search\b"
     r"|we(?:'ve|\s+have)?\s+(?:ended|stopped)\s+this\s+search\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:has\s+)?(?:wrapped\s+up|stopped)\b"
-    r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued|pulled)\s+this\s+"
+    r"|we(?:'ve|\s+have)?\s+(?:filled|closed|withdrawn|withdrew|cancelled|canceled|removed|unposted|unpublished|deactivated|archived|deleted|discontinued|pulled)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we\s+filled\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"

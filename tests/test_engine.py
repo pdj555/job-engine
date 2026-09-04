@@ -3748,6 +3748,16 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Career Search | Acme",
+                "url": "https://acme.com/career-search",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Careers | Acme",
                 "url": "https://acme.com/about/careers-overview",
                 "description": "$180,000",
@@ -5299,6 +5309,10 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Job Search | Acme</title><p>$180,000</p>",
         "https://acme.com/job-search",
+    )
+    assert _html_is_index(
+        "<title>Career Search | Acme</title><p>$180,000</p>",
+        "https://acme.com/career-search",
     )
     assert not _html_is_index(
         "<title>Search Engineer</title><p>$180,000</p>",
@@ -7382,6 +7396,44 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_annual, annual) is True
     assert posting_annual.pay_low == 180_000
     assert posting_annual.pay_high == 220_000
+    salary_offered = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "salaryOffered":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_salary_offered = Opportunity(
+        title="Engineer", url="https://jobs.example/ld-salaryOffered"
+    )
+    assert _apply_listing(posting_salary_offered, salary_offered) is True
+    assert posting_salary_offered.pay_low == 180_000
+    assert posting_salary_offered.pay_high == 220_000
+    yearly = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "yearlySalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_yearly = Opportunity(title="Engineer", url="https://jobs.example/ld-yearlySalary")
+    assert _apply_listing(posting_yearly, yearly) is True
+    assert posting_yearly.pay_low == 180_000
+    assert posting_yearly.pay_high == 220_000
+    annual_pay = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "annualPay":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_annual_pay = Opportunity(title="Engineer", url="https://jobs.example/ld-annualPay")
+    assert _apply_listing(posting_annual_pay, annual_pay) is True
+    assert posting_annual_pay.pay_low == 180_000
+    assert posting_annual_pay.pay_high == 220_000
     fromto = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -11159,6 +11211,38 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>This search was filled.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We withdrew this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We withdrew this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has been withdrawn.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search was withdrawn.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This search has been removed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We withdrew this comment.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting was withdrawn.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this search has been withdrawn.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>This meeting was filled.</p><p>$180,000</p>"
