@@ -1061,6 +1061,46 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "John Behling - Staff Engineer, Applied Machine Learning at Greenhouse",
+                "url": "https://www.linkedin.com/in/john-behling-b75ba393",
+                "description": "Greenhouse",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Staff Machine Learning Platform Engineer at Faire",
+                "url": "https://jobquip.com/en/jobs/external-greenhouse-faire-careers-greenhouse-faire-staff-machine-learning-platform-engineer-54",
+                "description": "Greenhouse",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Retrieve a Lead - developers.comeet.com",
+                "url": "https://developers.comeet.com/reference/retrieve-a-lead",
+                "description": "API",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "HR trends and what they mean: The AI job title | Personio",
+                "url": "https://www.personio.com/blog/this-week-in-hr-ai-job-titles/",
+                "description": "Blog",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Software Engineer",
                 "url": "https://wellfound.com/role/l/software-engineer/united-states",
                 "description": "$185k – $218k",
@@ -1214,6 +1254,18 @@ def test_index_pages_are_not_opportunities():
         "<title>WellRithms, Inc. hiring Senior AI/ML Engineer in Portland, OR | LinkedIn</title>"
         "<p>Boomerang Healthcare Portland, OR $125,000.00 - $165,000.00</p>",
         "https://www.linkedin.com/jobs/view/4459896965",
+    )
+    assert _html_is_index(
+        "<title>John Behling - Staff Engineer, Applied Machine Learning at Greenhouse</title>",
+        "https://www.linkedin.com/in/john-behling-b75ba393",
+    )
+    assert _html_is_index(
+        "<title>Retrieve a Lead</title>",
+        "https://developers.comeet.com/reference/retrieve-a-lead",
+    )
+    assert not _html_is_index(
+        "<title>Generative AI Pipeline Engineer (Tech Lead)</title>",
+        "https://www.comeet.com/jobs/capslock/59.001/generative-ai-pipeline-engineer-tech-lead/60.F60-8B.403",
     )
     assert _html_is_index(
         "<title>Senior Machine Learning Engineer | Cloudflare | Hybrid</title>"
