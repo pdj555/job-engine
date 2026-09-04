@@ -3943,8 +3943,8 @@ _RELATED_JOBS_RE = re.compile(
     r"|jobs\s+(?:you\s+(?:may|might)\s+like|near\s+you).*$"
     r"|you\s+(?:may|might)\s+(?:also\s+)?like.*$"
     r"|(?:people|applicants|candidates)\s+also\s+viewed.*$"
-    r"|(?:similar|related|recommended|other|more|featured|popular|suggested|matching|latest|current|available|hot|new|trending|browse|explore|view|discover)\s+(?:roles|openings|positions).*$"
-    r"|(?:similar|related|recommended|other|featured|popular|suggested|matching|latest|current|available|hot|new|trending|browse|explore|view|discover)\s+(?:opportunities|listings).*$"
+    r"|(?:similar|related|recommended|other|more|featured|popular|suggested|matching|latest|current|available|hot|new|trending)\s+(?:roles|openings|positions).*$"
+    r"|(?:similar|related|recommended|other|featured|popular|suggested|matching|latest|current|available|hot|new|trending)\s+(?:opportunities|listings).*$"
     r"|(?:similar|related|recommended|featured|suggested|matching)\s*:?\s*\$.*$"
 )
 _RELATED_HEADING_RE = re.compile(
