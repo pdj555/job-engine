@@ -4453,7 +4453,7 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\b(?:EUR|GBP)\s*\d{1,3}(?:[,'’.\s]\d{3}){1,2}"
     r"|\b(?:EUR|GBP)\s*\d{5,7}\b"
     r"|\b(?:EUR|GBP)\s*\d{2,3}(?:\.\d+)?\s*k\b"
-    r"|(?:₹|¥|₩|₪|฿)\s*\d"
+    r"|(?:₹|¥|₩|₪|฿|₫|₦|₴|₸|₺|₽|₱|৳|₾|₼|₡|₭|៛)\s*\d"
     r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS|CZK|TRY|RON|BGN|THB|TWD|MYR|IDR|RUB|UAH|ISK|HRK|VND|NGN|PKR|BDT|LKR|SAR|QAR|EGP|KES|GHS|KWD|BHD|OMR|JOD|RSD|GEL|KZT|TND|DZD|BAM|AZN|MDL|MKD|BYN|NPR|UZS|KGS|MMK)\s*['’]?\d"
     r"|\bPHP\s*['’]?(?:\d{1,3}(?:[,'’.\s]\d{3}){1,2}|\d{5,7}|\d{2,3}(?:\.\d+)?\s*k\b)"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"

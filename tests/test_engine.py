@@ -575,6 +575,21 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_won is False
     assert won.pay_high is None
+    assert _parse_pay("₫80,000,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>₫80,000,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("₦80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>₦80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("₽80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>₽80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("₱80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>₱80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("Experience with PHP 8. Salary $180,000") == (None, 180_000)
+    dong = Opportunity(title="Engineer", url="https://jobs.example/vn")
+    listed_dong = _apply_listing(
+        dong, "<p>Salary ₫80,000,000. Account Executive $400,000</p>"
+    )
+    assert listed_dong is False
+    assert dong.pay_high is None
     assert _parse_pay("80,000 TWD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>80,000 TWD. Account Executive $220,000</p>") is True
     assert _parse_pay("TWD80,000. Account Executive $220,000") == (None, None)
