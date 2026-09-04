@@ -11386,6 +11386,17 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(text, as_str) is True
     assert text.pay_low == 180_000
     assert text.pay_high == 220_000
+    amt = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "description": "<p>Account Executive $400,000</p>",
+            "salary": {"amount": 180000, "currency": "USD", "period": "YEAR"},
+        }
+    )
+    amount = Opportunity(title="x", url="https://jobs.workable.com/view/stu/engineer")
+    assert _apply_listing(amount, amt) is True
+    assert amount.pay_high == 180_000
     hourly = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -11932,6 +11943,32 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
     ) is True
     assert interval.pay_low == 75_000
     assert interval.pay_high == 100_000
+    amount = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354616",
+    )
+    assert _apply_listing(
+        amount,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "compensation": {
+                    "amount": 180000,
+                    "currency": "USD",
+                    "period": "YEARLY",
+                },
+                "jobAd": {
+                    "sections": {
+                        "jobDescription": {"text": "<p>Office. Account Executive $400,000</p>"}
+                    }
+                },
+            }
+        ),
+    ) is True
+    assert amount.pay_high == 180_000
     text = Opportunity(
         title="x",
         url="https://jobs.smartrecruiters.com/Acme/744000147354613",
@@ -12886,6 +12923,24 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert interval.pay_low == 75_000
     assert interval.pay_high == 100_000
+    amount = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-amount")
+    assert _apply_listing(
+        amount,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "amount": 180000,
+                    "period": "year",
+                    "currency": "USD",
+                },
+                "description": "<p>Office. Account Executive $400,000</p>",
+            }
+        ),
+    ) is True
+    assert amount.pay_high == 180_000
     year_sfx = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-year")
     assert _apply_listing(
         year_sfx,
@@ -15230,6 +15285,11 @@ def test_listing_plain_text_drops_related_job_pay_and_foreign_cards():
         "Keep exploring positions",
         "Opportunities in your area",
         "Jobs similar to this",
+        "Because you searched this role",
+        "Because you searched for this role",
+        "Jobs similar to this job",
+        "Jobs similar to this role",
+        "Recently viewed opportunities",
     ):
         rail = (
             "<title>Engineer</title><p>Great team. Apply now.</p>"

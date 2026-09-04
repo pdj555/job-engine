@@ -3928,7 +3928,7 @@ _RELATED_HEADING_RE = re.compile(
     r"|nearby\s+jobs"
     r"|roles\s+near\s+you"
     r"|opportunities\s+near\s+you"
-    r"|because\s+you\s+searched(?:\s+for)?(?:\s+this(?:\s+job)?)?"
+    r"|because\s+you\s+searched(?:\s+for)?(?:\s+this(?:\s+(?:job|role))?)?"
     r"|because\s+you\s+applied(?:\s+to(?:\s+this(?:\s+(?:job|role))?)?)?"
     r"|because\s+you\s+liked(?:\s+this(?:\s+(?:job|role))?)?"
     r"|because\s+you\s+saved(?:\s+this(?:\s+(?:job|role))?)?"
@@ -3960,14 +3960,14 @@ _RELATED_HEADING_RE = re.compile(
     r"|jobs\s+like\s+this"
     r"|you\s+applied"
     r"|you\s+recently\s+viewed"
-    r"|recently\s+viewed(?:\s+(?:jobs?|roles|positions|listings))?"
+    r"|recently\s+viewed(?:\s+(?:jobs?|roles|positions|listings|opportunities))?"
     r"|others\s+also\s+viewed"
     r"|because\s+you\s+viewed(?:\s+this(?:\s+(?:job|role))?)?"
     r"|jobs\s+you\s+viewed"
     r"|keep\s+browsing(?:\s+(?:jobs|roles))?"
     r"|keep\s+exploring(?:\s+(?:jobs|roles|positions))?"
     r"|continue\s+exploring(?:\s+(?:jobs|roles|positions))?"
-    r"|jobs\s+similar\s+to\s+this"
+    r"|jobs\s+similar\s+to\s+this(?:\s+(?:job|role))?"
     r"|based\s+on\s+your\s+activity"
     r"|jobs\s+based\s+on\s+your\s+activity"
     r"|people\s+also\s+searched"
@@ -4295,6 +4295,9 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
             nested = raw.get(key)
             if isinstance(nested, dict):
                 return _bound_nums(nested)
+        nums = _nums(raw.get("amount"))
+        if nums:
+            return min(nums), max(nums)
     return low, high
 
 
