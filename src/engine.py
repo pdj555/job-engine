@@ -1510,6 +1510,9 @@ _INDEX_URL_RE = re.compile(
     r"|dailyremote\.com/"
     r"|optiveum\.com/"
     r"|salaryexpert\.com/"
+    r"|levels\.fyi/"
+    r"|payscale\.com/"
+    r"|salary\.com/"
     r"|jobera\.com/"
     r"|jobright\.ai/"
     r"|aijobs\.net/"
@@ -3476,6 +3479,7 @@ _INDEX_PATH_RE = re.compile(
     r"^/(?:category|categories|tag|tags|topics?|major)(?:/|$)|/search(?:/|$)"
     r"|^/(?:careers|jobs)/?$"
     r"|^/hire(?:/|$)"
+    r"|/(?:salaries|salary)(?:/|$)"
     r"|/apply/?$",
     re.I,
 )

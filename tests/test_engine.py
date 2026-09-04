@@ -1119,6 +1119,46 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Software Engineer at OpenAI",
+                "url": "https://www.levels.fyi/companies/openai/salaries/software-engineer",
+                "description": "$200,000 - $400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer",
+                "url": "https://www.payscale.com/research/US/Job=Machine_Learning_Engineer/Salary",
+                "description": "$150,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salary",
+                "url": "https://www.salary.com/research/salary/alternate/machine-learning-engineer-salary",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer",
+                "url": "https://www.acme.com/salaries/machine-learning-engineer",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Machine Learning Engineer: Average Salary & Pay Trends 2026",
                 "url": "https://www.glassdoor.com/Salaries/switzerland-machine-learning-engineer-salary-SRCH_IL.0,11_IN226_KO12,37.htm",
                 "description": "$120,000",
@@ -1507,6 +1547,18 @@ def test_index_pages_are_not_opportunities():
         "<title>Staff Machine Learning Engineer</title>"
         '<script type="application/ld+json">{"@type":"JobPosting"}</script>',
         "https://scale.com/careers",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer at OpenAI</title><p>$200,000 - $400,000</p>",
+        "https://www.levels.fyi/companies/openai/salaries/software-engineer",
+    )
+    assert _html_is_index(
+        "<title>Machine Learning Engineer</title><p>$180,000</p>",
+        "https://www.acme.com/salaries/machine-learning-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Salary Transparency Engineer</title><p>$180,000 a year</p>",
+        "https://jobs.example.com/job/salary-transparency-engineer",
     )
     assert _html_is_index(
         "<title>Staff Software Engineer</title>",
