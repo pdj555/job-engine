@@ -48,31 +48,31 @@ class Engine:
     async def _enrich_pay(self, opps: list[Opportunity]) -> None:
         """Fill missing pay/hours/company from the listing page. Never invent."""
         missing = [o for o in opps if o.pay is None or not o.company]
-        if not missing:
-            return
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=8.0,
-            headers=_LISTING_HEADERS,
-        ) as client:
-            self._http_client = client
-            try:
-                texts = await asyncio.gather(
-                    *(self._listing_text(o.url) for o in missing),
-                    return_exceptions=True,
-                )
-            finally:
-                self._http_client = None
-        gone = []
-        for o, text in zip(missing, texts):
-            if not isinstance(text, str) or not text:
-                continue
-            if _html_is_index(text, o.url):
-                gone.append(o)
-                continue
-            _apply_listing(o, text)
-        if gone:
-            opps[:] = [o for o in opps if o not in gone]
+        if missing:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=8.0,
+                headers=_LISTING_HEADERS,
+            ) as client:
+                self._http_client = client
+                try:
+                    texts = await asyncio.gather(
+                        *(self._listing_text(o.url) for o in missing),
+                        return_exceptions=True,
+                    )
+                finally:
+                    self._http_client = None
+            gone = []
+            for o, text in zip(missing, texts):
+                if not isinstance(text, str) or not text:
+                    continue
+                if _html_is_index(text, o.url):
+                    gone.append(o)
+                    continue
+                _apply_listing(o, text)
+            if gone:
+                opps[:] = [o for o in opps if o not in gone]
+        _unify_board_companies(opps)
 
     async def _listing_text(self, url: str) -> str:
         if not _public_http_url(url):
@@ -588,6 +588,39 @@ def _company_from_url(url: str) -> str | None:
 
 def _guess_company(title: str, url: str = "") -> str | None:
     return _company_from_title(title, url) or _company_from_url(url)
+
+
+def _ats_board_key(url: str) -> Optional[str]:
+    parsed = urlparse(url or "")
+    host = (parsed.hostname or "").casefold()
+    parts = [p for p in parsed.path.split("/") if p]
+    if not parts:
+        return None
+    if host.endswith("greenhouse.io"):
+        return f"gh:{parts[0].casefold()}"
+    if host.endswith("lever.co"):
+        return f"lever:{parts[0].casefold()}"
+    return None
+
+
+def _unify_board_companies(opps: list) -> None:
+    """Prefer JSON-LD / title employer over a title-cased URL slug on the same board."""
+    best: dict[str, str] = {}
+    for o in opps:
+        key = _ats_board_key(o.url)
+        if not key or not o.company:
+            continue
+        slug = _company_from_url(o.url)
+        if slug and o.company.casefold() == slug.casefold():
+            continue
+        best[key] = o.company
+    for o in opps:
+        key = _ats_board_key(o.url)
+        if key not in best:
+            continue
+        slug = _company_from_url(o.url)
+        if not o.company or (slug and o.company.casefold() == slug.casefold()):
+            o.company = best[key]
 
 
 _INDEX_URL_RE = re.compile(

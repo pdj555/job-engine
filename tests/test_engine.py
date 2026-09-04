@@ -950,6 +950,48 @@ def test_enrich_fetches_when_company_missing_even_if_paid():
     assert opp.pay_high == 200_000
 
 
+def test_unify_board_companies_prefers_real_name_over_slug():
+    from src.engine import _unify_board_companies
+
+    named = Opportunity(
+        title="Sword Health - Senior ML Engineer (Europe-based/Remote)",
+        url="https://jobs.lever.co/swordhealth/50945411-2f43-421a-8bb8-86aa1de6d890",
+        company="Sword Health",
+    )
+    slugged = Opportunity(
+        title="Senior ML Engineer (Portugal Based Remote/Hybrid)",
+        url="https://jobs.lever.co/swordhealth/770e2ca0-a6a4-4ca9-9c0f-ce419284ddbe",
+        company="Swordhealth",
+    )
+    other = Opportunity(
+        title="Egen - Senior AI Engineer",
+        url="https://jobs.lever.co/egen/1b870652-5768-45e9-b55b-4420e6402314",
+        company="Egen",
+    )
+    _unify_board_companies([named, slugged, other])
+    assert slugged.company == "Sword Health"
+    assert named.company == "Sword Health"
+    assert other.company == "Egen"
+
+
+def test_enrich_unifies_slug_company_when_listings_already_priced():
+    engine = Engine()
+    named = Opportunity(
+        title="Sword Health - Senior ML",
+        url="https://jobs.lever.co/swordhealth/aaa",
+        company="Sword Health",
+        pay_high=100_000,
+    )
+    slugged = Opportunity(
+        title="Senior ML Engineer (Portugal)",
+        url="https://jobs.lever.co/swordhealth/bbb",
+        company="Swordhealth",
+        pay_high=100_000,
+    )
+    asyncio.run(engine._enrich_pay([named, slugged]))
+    assert slugged.company == "Sword Health"
+
+
 def test_apply_listing_reads_json_ld_past_first_80k():
     from src.engine import _apply_listing
 
