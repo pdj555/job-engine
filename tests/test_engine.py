@@ -1243,6 +1243,36 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Open Positions | Stripe",
+                "url": "https://stripe.com/jobs/open-positions",
+                "description": "$180,000 - $270,000. Remote.",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Software Engineer",
+                "url": "https://acme.com/careers/open-roles",
+                "description": "$180,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Open Position: Software Engineer",
+                "url": "https://jobs.example.com/job/open-position-software-engineer",
+                "description": "$180,000",
+            }
+        )
+        is not None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Home | Grants.gov",
                 "url": "https://www.grants.gov/",
                 "description": "Find grants",
@@ -1982,6 +2012,26 @@ def test_index_pages_are_not_opportunities():
         "<title>Machine Learning Engineering freelancers</title>"
         "<p>$50,000</p>",
         "https://contra.com/hire/ml-engineers",
+    )
+    assert _html_is_index(
+        "<title>Open Positions | Stripe</title><p>$180,000 - $270,000</p>",
+        "https://stripe.com/jobs/open-positions",
+    )
+    assert _html_is_index(
+        "<title>Software Engineer</title><p>$180,000</p>",
+        "https://acme.com/careers/open-positions",
+    )
+    assert _html_is_index(
+        "<title>Open Roles | Acme</title><p>$180,000</p>",
+        "https://acme.com/teams/engineering",
+    )
+    assert not _html_is_index(
+        "<title>Open Position: Software Engineer</title><p>$180,000</p>",
+        "https://jobs.example.com/job/open-position-software-engineer",
+    )
+    assert not _html_is_index(
+        "<title>Senior Engineer</title><p>$180,000</p>",
+        "https://acme.com/open-positions/senior-engineer",
     )
     assert not _html_is_index(
         "<title>Senior Machine Learning Engineer - Freelance</title>",
@@ -4197,6 +4247,8 @@ def test_enrich_drops_fetched_board_index_html():
     async def page(url: str) -> str:
         if "grafanalabs" in url:
             return "<title>Jobs at Grafana Labs</title><p>Current openings</p>"
+        if "open-positions" in url:
+            return "<title>Open Positions | Stripe</title><p>$180,000 - $270,000</p>"
         return ""
 
     engine._listing_text = page
@@ -4205,7 +4257,12 @@ def test_enrich_drops_fetched_board_index_html():
         title="Senior Machine Learning Engineer, Developer Advocacy | US | Remote",
         url="https://job-boards.greenhouse.io/grafanalabs/jobs/1",
     )
-    opps = [keep, ghost]
+    catalog = Opportunity(
+        title="Open Positions | Stripe",
+        url="https://stripe.com/jobs/open-positions",
+        pay_high=270_000,
+    )
+    opps = [keep, ghost, catalog]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Real"]
 
