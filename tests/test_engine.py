@@ -6975,6 +6975,69 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(hour_amt, hourly_amt) is True
     assert hour_amt.pay_low == 160_000
     assert hour_amt.pay_high == 200_000
+    bound_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+      "min":{"@type":"QuantitativeValue","value":80,"unitText":"HOUR"},
+      "max":{"@type":"QuantitativeValue","value":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_bounds = Opportunity(title="Engineer", url="https://jobs.example/ld-bound-unit-hour")
+    assert _apply_listing(hour_bounds, bound_hour) is True
+    assert hour_bounds.pay_low == 160_000
+    assert hour_bounds.pay_high == 200_000
+    bound_mv = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD",
+      "minValue":{"value":80,"unitText":"HOUR"},
+      "maxValue":{"value":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_mv = Opportunity(title="Engineer", url="https://jobs.example/ld-bound-minValue-hour")
+    assert _apply_listing(hour_mv, bound_mv) is True
+    assert hour_mv.pay_low == 160_000
+    assert hour_mv.pay_high == 200_000
+    bound_freq = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD",
+      "min":{"value":80,"frequency":"HOUR"},
+      "max":{"value":100,"frequency":"HOUR"}}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_bfreq = Opportunity(title="Engineer", url="https://jobs.example/ld-bound-frequency-hour")
+    assert _apply_listing(hour_bfreq, bound_freq) is True
+    assert hour_bfreq.pay_low == 160_000
+    assert hour_bfreq.pay_high == 200_000
+    posting_smin = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "salaryMin":{"value":80,"unitText":"HOUR"},
+     "salaryMax":{"value":100,"unitText":"HOUR"}}
+    </script>
+    <p>Office. Full time.</p>
+    """
+    hour_smin = Opportunity(title="Engineer", url="https://jobs.example/ld-post-salaryMin-unit")
+    assert _apply_listing(hour_smin, posting_smin) is True
+    assert hour_smin.pay_low == 160_000
+    assert hour_smin.pay_high == 200_000
+    leftover_bound = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD",
+      "min":{"value":80,"unitText":"HOUR"},
+      "max":{"value":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    year_bound = Opportunity(title="Engineer", url="https://jobs.example/ld-bound-leftover-year")
+    assert _apply_listing(year_bound, leftover_bound) is True
+    assert year_bound.pay_high == 400_000
     leftover_freq = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -7517,6 +7580,17 @@ def test_apply_listing_ignores_non_usd_salary():
     min_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/min-obj-eur")
     _apply_listing(min_obj_eur, bound_eur)
     assert min_obj_eur.pay_high is None
+    bound_hour_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"min":{"currency":"EUR","value":80,"unitText":"HOUR"},
+      "max":{"currency":"EUR","value":100,"unitText":"HOUR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    hour_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/min-obj-hour-eur")
+    _apply_listing(hour_obj_eur, bound_hour_eur)
+    assert hour_obj_eur.pay_high is None
     snake_empty = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},

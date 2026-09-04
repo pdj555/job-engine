@@ -4909,9 +4909,42 @@ def _unit_raw(node) -> Optional[str]:
 
 
 def _unit_text(salary) -> Optional[str]:
+    if isinstance(salary, list):
+        for item in salary:
+            raw = _unit_text(item)
+            if raw:
+                return raw
+        return None
     if not isinstance(salary, dict):
         return None
-    for key in ("value", "amount"):
+    for key in (
+        "value",
+        "amount",
+        "min",
+        "max",
+        "from",
+        "to",
+        "minValue",
+        "maxValue",
+        "min_value",
+        "max_value",
+        "minimum",
+        "maximum",
+        "low",
+        "high",
+        "lowerBound",
+        "upperBound",
+        "lower_bound",
+        "upper_bound",
+        "rangeStart",
+        "rangeEnd",
+        "range_start",
+        "range_end",
+        "minAmount",
+        "maxAmount",
+        "min_amount",
+        "max_amount",
+    ):
         nest = salary.get(key)
         if isinstance(nest, dict):
             raw = _unit_raw(nest)
@@ -4985,6 +5018,7 @@ def _posting_salary(posting: Optional[dict]):
             return found[0]
         return _salary_span(found)
     low = high = None
+    bound_unit = None
     for a, b in (
         ("salaryMin", "salaryMax"),
         ("salaryMinimum", "salaryMaximum"),
@@ -5016,16 +5050,20 @@ def _posting_salary(posting: Optional[dict]):
         ("minimum", "maximum"),
         ("low", "high"),
     ):
-        nums = _nums(posting.get(a)) + _nums(posting.get(b))
+        left, right = posting.get(a), posting.get(b)
+        nums = _nums(left) + _nums(right)
         if not nums:
             continue
         low, high = min(nums), max(nums)
+        bound_unit = _unit_text(left) or _unit_text(right)
         break
     if low is None and high is None:
-        nums = _nums(posting.get("amount"))
+        amount = posting.get("amount")
+        nums = _nums(amount)
         if not nums:
             return None
         low, high = min(nums), max(nums)
+        bound_unit = _unit_text(amount)
     unit = (
         _ld_text(posting.get("salaryUnit"))
         or _ld_text(posting.get("salary_unit"))
@@ -5042,6 +5080,8 @@ def _posting_salary(posting: Optional[dict]):
         duration = _ld_text(posting.get("duration"))
         if duration:
             unit = _duration_unit(duration)
+    if not unit:
+        unit = bound_unit
     value: dict = {}
     if unit:
         value["unitText"] = unit
