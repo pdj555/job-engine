@@ -7626,6 +7626,58 @@ def test_apply_listing_ignores_non_usd_salary():
     hour_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/min-obj-hour-eur")
     _apply_listing(hour_obj_eur, bound_hour_eur)
     assert hour_obj_eur.pay_high is None
+    nest_salary_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"salary":{"currency":"EUR","min":80000,"max":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    salary_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/nest-salary-eur")
+    _apply_listing(salary_obj_eur, nest_salary_eur)
+    assert salary_obj_eur.pay_high is None
+    nest_comp_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"compensation":{"currency":"EUR","min":80000,"max":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    comp_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/nest-compensation-eur")
+    _apply_listing(comp_obj_eur, nest_comp_eur)
+    assert comp_obj_eur.pay_high is None
+    nest_range_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"salaryRange":{"currency":"EUR","min":80000,"max":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    range_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/nest-salaryRange-eur")
+    _apply_listing(range_obj_eur, nest_range_eur)
+    assert range_obj_eur.pay_high is None
+    list_min_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"min":[{"currency":"EUR","value":80000}],
+      "max":[{"currency":"EUR","value":100000}]}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    min_list_eur = Opportunity(title="Engineer", url="https://jobs.example/min-list-eur")
+    _apply_listing(min_list_eur, list_min_eur)
+    assert min_list_eur.pay_high is None
+    nest_smin_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"minSalary":{"currency":"EUR","value":80000},
+      "maxSalary":{"currency":"EUR","value":100000}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    smin_obj_eur = Opportunity(title="Engineer", url="https://jobs.example/nest-minSalary-eur")
+    _apply_listing(smin_obj_eur, nest_smin_eur)
+    assert smin_obj_eur.pay_high is None
     snake_empty = """
     <script type="application/ld+json">
     {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},

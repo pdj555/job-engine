@@ -4735,6 +4735,90 @@ def _salary_blob(salary) -> str:
     return ""
 
 
+_MONEY_NEST_KEYS = (
+    "minValue",
+    "maxValue",
+    "value",
+    "min",
+    "max",
+    "from",
+    "to",
+    "minimum",
+    "maximum",
+    "low",
+    "high",
+    "minSalary",
+    "maxSalary",
+    "salaryMin",
+    "salaryMax",
+    "salaryMinimum",
+    "salaryMaximum",
+    "minimumSalary",
+    "maximumSalary",
+    "salaryFrom",
+    "salaryTo",
+    "minCompensation",
+    "maxCompensation",
+    "salaryRangeMin",
+    "salaryRangeMax",
+    "min_salary",
+    "max_salary",
+    "minPay",
+    "maxPay",
+    "payMin",
+    "payMax",
+    "min_pay",
+    "max_pay",
+    "pay_min",
+    "pay_max",
+    "salary_from",
+    "salary_to",
+    "compensationMin",
+    "compensationMax",
+    "salary_min",
+    "salary_max",
+    "compensation_min",
+    "compensation_max",
+    "min_compensation",
+    "max_compensation",
+    "compensation",
+    "salary",
+    "salaryRange",
+    "salary_range",
+    "payRange",
+    "pay_range",
+    "estimatedSalary",
+    "estimated_salary",
+    "baseCompensation",
+    "base_compensation",
+    "jobCompensation",
+    "job_compensation",
+    "offeredSalary",
+    "offered_salary",
+    "annualSalary",
+    "annual_salary",
+    "jobSalary",
+    "job_salary",
+    "basePay",
+    "base_pay",
+    "amount",
+    "minAmount",
+    "maxAmount",
+    "min_amount",
+    "max_amount",
+    "min_value",
+    "max_value",
+    "rangeStart",
+    "rangeEnd",
+    "range_start",
+    "range_end",
+    "lower_bound",
+    "upper_bound",
+    "lowerBound",
+    "upperBound",
+)
+
+
 def _nums(value) -> list[float]:
     """Numbers from a salary node. QuantitativeValue.value may be [min, max]."""
     if isinstance(value, bool) or value is None:
@@ -4754,88 +4838,7 @@ def _nums(value) -> list[float]:
         return out
     if isinstance(value, dict):
         out: list[float] = []
-        for key in (
-            "minValue",
-            "maxValue",
-            "value",
-            "min",
-            "max",
-            "from",
-            "to",
-            "minimum",
-            "maximum",
-            "low",
-            "high",
-            "minSalary",
-            "maxSalary",
-            "salaryMin",
-            "salaryMax",
-            "salaryMinimum",
-            "salaryMaximum",
-            "minimumSalary",
-            "maximumSalary",
-            "salaryFrom",
-            "salaryTo",
-            "minCompensation",
-            "maxCompensation",
-            "salaryRangeMin",
-            "salaryRangeMax",
-            "min_salary",
-            "max_salary",
-            "minPay",
-            "maxPay",
-            "payMin",
-            "payMax",
-            "min_pay",
-            "max_pay",
-            "pay_min",
-            "pay_max",
-            "salary_from",
-            "salary_to",
-            "compensationMin",
-            "compensationMax",
-            "salary_min",
-            "salary_max",
-            "compensation_min",
-            "compensation_max",
-            "min_compensation",
-            "max_compensation",
-            "compensation",
-            "salary",
-            "salaryRange",
-            "salary_range",
-            "payRange",
-            "pay_range",
-            "estimatedSalary",
-            "estimated_salary",
-            "baseCompensation",
-            "base_compensation",
-            "jobCompensation",
-            "job_compensation",
-            "offeredSalary",
-            "offered_salary",
-            "annualSalary",
-            "annual_salary",
-            "jobSalary",
-            "job_salary",
-            "basePay",
-            "base_pay",
-            "amount",
-            "minAmount",
-            "maxAmount",
-            "min_amount",
-            "max_amount",
-            "min_value",
-            "max_value",
-            "rangeStart",
-            "rangeEnd",
-            "range_start",
-            "range_end",
-            "lower_bound",
-            "upper_bound",
-            "lowerBound",
-            "upperBound",
-        ):
+        for key in _MONEY_NEST_KEYS:
             if key in value:
                 out.extend(_nums(value.get(key)))
         return out
@@ -5094,6 +5097,12 @@ def _posting_salary(posting: Optional[dict]):
 
 
 def _currency_of(value) -> Optional[str]:
+    if isinstance(value, list):
+        for item in value:
+            cur = _currency_of(item)
+            if cur:
+                return cur
+        return None
     if not isinstance(value, dict):
         return None
     cur = (
@@ -5105,36 +5114,9 @@ def _currency_of(value) -> Optional[str]:
     )
     if cur:
         return cur
-    for key in (
-        "value",
-        "amount",
-        "min",
-        "max",
-        "from",
-        "to",
-        "minValue",
-        "maxValue",
-        "min_value",
-        "max_value",
-        "minimum",
-        "maximum",
-        "low",
-        "high",
-        "lowerBound",
-        "upperBound",
-        "lower_bound",
-        "upper_bound",
-        "rangeStart",
-        "rangeEnd",
-        "range_start",
-        "range_end",
-        "minAmount",
-        "maxAmount",
-        "min_amount",
-        "max_amount",
-    ):
+    for key in _MONEY_NEST_KEYS:
         nested = value.get(key)
-        if isinstance(nested, dict) and nested is not value:
+        if nested is not value:
             cur = _currency_of(nested)
             if cur:
                 return cur
