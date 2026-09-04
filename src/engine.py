@@ -1879,8 +1879,8 @@ def _workday_to_html(data: dict) -> str:
     elif "full" in time_type:
         posting["employmentType"] = "FULL_TIME"
     place = str(info.get("remoteType") or "").strip()
-    _apply_workplace(posting, place)
     loc = str(info.get("location") or "").strip()
+    _apply_workplace(posting, place or loc)
     desc = str(info.get("jobDescription") or "")
     page_title = f"{title} at {company}" if company else title
     bits = []

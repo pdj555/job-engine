@@ -3608,6 +3608,51 @@ def test_workday_to_html_fills_company_pay_and_flex():
     assert opp.hours_per_week == 40
     assert opp.score() == 84.0
 
+    office = Opportunity(
+        title="x",
+        url="https://adobe.wd5.myworkdayjobs.com/en-US/external_experienced/job/x_R1",
+        remote=True,
+    )
+    _apply_listing(
+        office,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "ADUS-Adobe Inc."},
+                "jobPostingInfo": {
+                    "title": "Staff Machine Learning Engineer",
+                    "timeType": "Full time",
+                    "location": "San Jose",
+                    "jobDescription": "<p>Base Pay Range: $211,800 USD - $306,625 USD</p>",
+                },
+            }
+        ),
+    )
+    assert office.remote is False
+    assert office.pay_high == 306_625
+    assert office.score() == 107.31875
+
+    country = Opportunity(
+        title="x",
+        url="https://sailpoint.wd1.myworkdayjobs.com/en-US/SailPoint/job/x_R1",
+        remote=True,
+    )
+    _apply_listing(
+        country,
+        _workday_to_html(
+            {
+                "hiringOrganization": {"name": "SailPoint Technologies, Inc."},
+                "jobPostingInfo": {
+                    "title": "Staff Machine Learning Engineer",
+                    "timeType": "Full time",
+                    "location": "United States",
+                    "jobDescription": "<p>Base Pay Range: $149,200 USD - $251,576 USD</p>",
+                },
+            }
+        ),
+    )
+    assert country.remote is True
+    assert country.pay_high == 251_576
+
 
 def test_listing_text_reads_workday_cxs(monkeypatch):
     engine = Engine()
