@@ -8702,6 +8702,38 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert country.remote is True
+    hybrid = Opportunity(title="x", url="https://jobs.example/hybrid", remote=True)
+    _apply_listing(
+        hybrid,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":"HYBRID",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        """,
+    )
+    assert hybrid.remote is False
+    assert hybrid.pay_high == 220_000
+    listed = Opportunity(title="x", url="https://jobs.example/hybrid-list", remote=True)
+    _apply_listing(
+        listed,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":["HYBRID"]}
+        </script>
+        """,
+    )
+    assert listed.remote is False
+    both = Opportunity(title="x", url="https://jobs.example/tele-hybrid")
+    _apply_listing(
+        both,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":["TELECOMMUTE","HYBRID"]}
+        </script>
+        """,
+    )
+    assert both.remote is True
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
