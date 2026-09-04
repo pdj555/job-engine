@@ -1172,6 +1172,22 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     assert _foreign_salary("<p>NT$80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("NT$ 80k. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>NT$ 80k. Account Executive $220,000</p>") is True
+    assert _parse_pay("AU$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>AU$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("AU$80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>AU$80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("CA$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CA$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("SG$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>SG$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("MX$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>MX$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("AR$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>AR$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("CL$ 80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CL$ 80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("US$ 180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("S$ 12,000") == (None, None)
     assert _parse_pay("NZ$ 140,000") == (None, None)
     assert _parse_pay("Rs. 12,00,000 or $90,000") == (None, None)
@@ -1193,6 +1209,12 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     )
     assert listed_nt is False
     assert nt.pay_high is None
+    au = Opportunity(title="Engineer", url="https://jobs.example/au")
+    listed_au = _apply_listing(
+        au, "<p>Salary AU$ 80,000. Account Executive $400,000</p>"
+    )
+    assert listed_au is False
+    assert au.pay_high is None
     lpa = Opportunity(title="Engineer", url="https://jobs.example/in")
     listed = _apply_listing(lpa, "<p>15 LPA. US equivalent $90,000</p>")
     assert listed is False

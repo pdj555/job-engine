@@ -4476,7 +4476,7 @@ _FOREIGN_PAY_RE = re.compile(
 )
 _FOREIGN_DOLLAR_RE = re.compile(
     r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\s*\$?\s*\d"
-    r"|(?<![A-Za-z])(?:C|A|R|HK|NZ|S|NT)\$\s*\d"
+    r"|(?<![A-Za-z])(?:AU|CA|SG|MX|AR|CL|HK|NZ|NT|C|A|R|S)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"
