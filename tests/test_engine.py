@@ -11854,6 +11854,47 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert snake_tele.remote is True
+    snake_city = Opportunity(title="x", url="https://jobs.example/city-snake", remote=True)
+    _apply_listing(
+        snake_city,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer",
+         "job_location":{"@type":"Place","address":{"addressLocality":"Mountain View","addressRegion":"California"}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert snake_city.remote is False
+    assert snake_city.pay_low == 180_000
+    assert snake_city.pay_high == 220_000
+    snake_named = Opportunity(title="x", url="https://jobs.example/named-snake", remote=True)
+    _apply_listing(
+        snake_named,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","job_location":{"name":"Seattle, WA"},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        """,
+    )
+    assert snake_named.remote is False
+    assert snake_named.pay_high == 220_000
+    snake_remote_place = Opportunity(title="x", url="https://jobs.example/remote-snake")
+    _apply_listing(
+        snake_remote_place,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","job_location":"Remote (United States)",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert snake_remote_place.remote is True
+    assert snake_remote_place.pay_low == 100_000
+    assert snake_remote_place.pay_high == 120_000
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():

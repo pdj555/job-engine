@@ -4496,7 +4496,7 @@ def _country_from_label(label: str) -> Optional[str]:
 
 
 def _posting_countries(posting: dict) -> list[str]:
-    loc = posting.get("jobLocation")
+    loc = posting.get("jobLocation") or posting.get("job_location")
     rows = loc if isinstance(loc, list) else [loc]
     countries: list[str] = []
 
@@ -6513,8 +6513,8 @@ def _apply_workplace(posting: dict, *places: str) -> None:
 
 
 def _jsonld_place(posting: dict) -> str:
-    """Workplace label from JobPosting jobLocation. Empty if the posting omits one."""
-    loc = posting.get("jobLocation")
+    """Workplace label from JobPosting jobLocation / job_location. Empty if omitted."""
+    loc = posting.get("jobLocation") or posting.get("job_location")
     rows = loc if isinstance(loc, list) else [loc]
     names = []
     for row in rows:
