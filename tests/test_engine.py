@@ -1301,6 +1301,38 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert typed_part.hours_per_week == 20
     assert typed_part.pay_low == 80_000
     assert typed_part.pay_high == 100_000
+    snake_part = Opportunity(title="Engineer", url="https://jobs.example/ld-part-snake")
+    assert _apply_listing(
+        snake_part,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employment_type":"PART_TIME",'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert snake_part.hours_per_week == 20
+    assert snake_part.pay_low == 80_000
+    assert snake_part.pay_high == 100_000
+    snake_typed = Opportunity(title="Engineer", url="https://jobs.example/ld-part-snake-obj")
+    assert _apply_listing(
+        snake_typed,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"employment_type":{"@type":"EmploymentType","name":"PART_TIME"},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert snake_typed.hours_per_week == 20
+    assert snake_typed.pay_high == 100_000
+    snake_full = Opportunity(title="Engineer", url="https://jobs.example/ld-full-snake")
+    assert _apply_listing(
+        snake_full,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employment_type":"FULL_TIME",'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert snake_full.hours_per_week == 40
+    assert snake_full.pay_high == 200_000
     qv_hours = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-qv")
     assert _apply_listing(
         qv_hours,

@@ -5297,7 +5297,7 @@ def _posting_hours(posting: dict) -> Optional[int]:
             return n
     blob = " ".join(
         t.upper().replace("-", " ").replace("_", " ")
-        for t in _ld_types(posting.get("employmentType"))
+        for t in _ld_types(posting.get("employmentType") or posting.get("employment_type"))
     )
     compact = re.sub(r"\s+", "", blob)
     if "PARTTIME" in compact:
