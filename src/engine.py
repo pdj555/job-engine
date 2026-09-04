@@ -4568,7 +4568,7 @@ def _workplace_remote(place: str) -> Optional[bool]:
     compact = re.sub(r"[\s_-]+", "", p)
     if compact in {"remote", "offsite", "telecommute", "distributed"}:
         return True
-    if compact in {"hybrid", "onsite", "office", "inoffice", "flex", "flexible"}:
+    if compact in {"hybrid", "onsite", "office", "inoffice", "flex", "flexible", "officebased"}:
         return False
     return None
 
@@ -4652,6 +4652,9 @@ _HYBRID_WORKPLACE_RE = re.compile(
 )
 _ONSITE_WORKPLACE_RE = re.compile(
     r"(?i)\b(?:onsite|on-site|on site|in-office|in office)\b"
+    r"|office[-\s]based\b"
+    r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?office\b"
+    r"|in\s+our\s+offices?\b"
 )
 
 

@@ -449,6 +449,18 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "Must be hybrid, $80/hr") is False
     assert _guess_remote("Engineer", "must be onsite") is False
     assert _guess_remote("Engineer", "must work on site") is False
+    assert _guess_remote("Engineer", "Work from our office in NYC") is False
+    assert _guess_remote("Engineer", "This is an office-based role") is False
+    assert _guess_remote("Engineer", "in our offices in Austin") is False
+    assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
+    assert _guess_remote("Engineer", "work from home") is True
+    office = Opportunity(title="Engineer", url="https://jobs.example/off")
+    assert _apply_listing(
+        office, "<p>Work from our office in NYC. Salary $180,000</p>"
+    ) is True
+    assert office.remote is False
+    assert office.pay_high == 180_000
+    assert office.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True
@@ -4248,6 +4260,7 @@ def test_workplace_remote_or_hybrid_is_remote():
     assert _workplace_remote("New York, NY (Hybrid)") is False
     assert _workplace_remote("Remote - United States") is True
     assert _workplace_remote("onsite only") is False
+    assert _workplace_remote("Office-based") is False
 
     html = _greenhouse_to_html(
         {
