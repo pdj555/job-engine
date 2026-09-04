@@ -861,6 +861,15 @@ def _ats_period(raw: dict) -> str:
     return ""
 
 
+def _ats_currency(*values, default: str = "USD") -> str:
+    """Occupied currency scalar or {name,@value,@id}. Empty is USD."""
+    for value in values:
+        text = _ld_text(value)
+        if text:
+            return text.upper()
+    return default
+
+
 def _lever_api_url(url: str) -> Optional[str]:
     m = _LEVER_JOB_RE.search(_lever_job_url(url) or "")
     if not m:
@@ -909,7 +918,7 @@ def _lever_to_html(data: dict, company: Optional[str] = None) -> str:
             else:
                 value["value"] = high or low
             posting["baseSalary"] = {
-                "currency": str(rng.get("currency") or "USD").upper(),
+                "currency": _ats_currency(rng.get("currency")),
                 "value": value,
             }
     if "baseSalary" not in posting:
@@ -1874,16 +1883,14 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
             )
             if not spanned:
                 continue
-            cur = str(row.get("currency_type") or "").upper() or str(
-                spanned.get("currency") or "USD"
-            )
+            cur = _ats_currency(row.get("currency_type"), spanned.get("currency"))
             spanned["currency"] = cur
             if _usd(cur):
                 return spanned
             if foreign is None:
                 foreign = spanned
             continue
-        cur = str(row.get("currency_type") or "").upper() or "USD"
+        cur = _ats_currency(row.get("currency_type"))
         value: dict = {"unitText": unit or "YEAR"}
         if low and high:
             value["minValue"] = low
@@ -2012,7 +2019,7 @@ def _workable_pay_ld(data: dict) -> Optional[dict]:
         else:
             value["value"] = high or low
         return {
-            "currency": str(raw.get("currency") or "USD").upper(),
+            "currency": _ats_currency(raw.get("currency")),
             "value": value,
         }
     return None
@@ -2121,7 +2128,7 @@ def _smartrecruiters_pay_ld(data: dict) -> Optional[dict]:
     else:
         amount = high if high is not None else low
         value["value"] = int(amount) if amount == int(amount) else amount
-    currency = str(comp.get("currency") or "").upper() or "USD"
+    currency = _ats_currency(comp.get("currency"))
     return {"currency": currency, "value": value}
 
 
@@ -2577,7 +2584,7 @@ def _recruitee_pay_ld(data: dict) -> Optional[dict]:
         else:
             amount = high if high is not None else low
             value["value"] = int(amount) if amount == int(amount) else amount
-        currency = str(sal.get("currency") or "").upper() or "USD"
+        currency = _ats_currency(sal.get("currency"))
         return {"currency": currency, "value": value}
     return None
 
@@ -2718,7 +2725,7 @@ def _rippling_pay_ld(post: dict) -> Optional[dict]:
             low, high = _bound_nums(row)
         if low is None and high is None:
             continue
-        cur = str(row.get("currency") or "").upper() or "USD"
+        cur = _ats_currency(row.get("currency"))
         value: dict = {}
         unit = _period_unit(_ats_period(row))
         if unit:
@@ -2855,7 +2862,7 @@ def _breezy_pay_ld(job: dict) -> Optional[dict]:
     else:
         amount = high if high is not None else low
         value["value"] = int(amount) if amount == int(amount) else amount
-    currency = str(raw.get("currency") or "").upper() or "USD"
+    currency = _ats_currency(raw.get("currency"))
     return {"currency": currency, "value": value}
 
 
@@ -2975,7 +2982,7 @@ def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
             low, high = _bound_nums(raw)
         if low is None and high is None:
             return None
-    cur = str(job.get("compensation_currency") or "").upper() or "USD"
+    cur = _ats_currency(job.get("compensation_currency"))
     value: dict = {}
     unit = _period_unit(
         job.get("compensation_frequency")
@@ -3222,7 +3229,7 @@ def _bamboohr_pay_ld(job: dict) -> Optional[dict]:
     else:
         amount = high if high is not None else low
         value["value"] = int(amount) if amount == int(amount) else amount
-    currency = str(raw.get("currency") or "").upper() or "USD"
+    currency = _ats_currency(raw.get("currency"))
     return {"currency": currency, "value": value}
 
 
@@ -3378,7 +3385,7 @@ def _dover_pay_ld(job: dict) -> Optional[dict]:
         low, high = _bound_nums(comp)
     if low is None and high is None:
         return None
-    cur = str(comp.get("currency_code") or "").upper() or "USD"
+    cur = _ats_currency(comp.get("currency_code"))
     value: dict = {}
     unit = _period_unit(comp.get("salary_range_type") or _ats_period(comp))
     if unit:
@@ -3644,7 +3651,7 @@ def _walmart_currency(details: dict) -> str:
     cref = plan.get("currencyReference")
     if not isinstance(cref, dict):
         return ""
-    return str(cref.get("currencyId") or "").strip()
+    return (_ld_text(cref.get("currencyId")) or "").strip()
 
 
 def _walmart_to_html(details: dict) -> str:

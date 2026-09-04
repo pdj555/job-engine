@@ -12522,6 +12522,63 @@ def test_lever_eur_salary_range_is_foreign():
     )
     _apply_listing(skipped_str, eur_str)
     assert skipped_str.pay_high is None
+    typed_usd = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 180000,
+                "max": 220000,
+                "currency": {"name": "USD"},
+                "interval": "per-year-salary",
+            },
+        },
+        "Acme",
+    )
+    typed = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-ffffffffffff",
+    )
+    assert _apply_listing(typed, typed_usd) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
+    typed_id = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 180000,
+                "max": 220000,
+                "currency": {"@id": "https://schema.org/USD"},
+                "interval": "per-year-salary",
+            },
+        },
+        "Acme",
+    )
+    id_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-000000000000",
+    )
+    assert _apply_listing(id_row, typed_id) is True
+    assert id_row.pay_high == 220_000
+    typed_eur = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": 80000,
+                "max": 100000,
+                "currency": {"name": "EUR"},
+                "interval": "per-year-salary",
+            },
+            "description": "<p>Account Executive $220,000</p>",
+        },
+        "Acme",
+    )
+    skipped_typed = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-111111111111",
+    )
+    _apply_listing(skipped_typed, typed_eur)
+    assert skipped_typed.pay_high is None
+    assert _foreign_salary(typed_eur) is True
 
 
 def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):
@@ -12823,6 +12880,42 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(skipped, eur_only)
     assert skipped.pay_high is None
     assert _foreign_salary(eur_only) is True
+    typed_usd = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Office. Full time.</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 18000000,
+                    "max_cents": 22000000,
+                    "currency_type": {"name": "USD"},
+                }
+            ],
+        }
+    )
+    typed = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/2")
+    assert _apply_listing(typed, typed_usd) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
+    typed_eur = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $220,000</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 8000000,
+                    "max_cents": 10000000,
+                    "currency_type": {"name": "EUR"},
+                }
+            ],
+        }
+    )
+    skipped_typed = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/3")
+    _apply_listing(skipped_typed, typed_eur)
+    assert skipped_typed.pay_high is None
+    assert _foreign_salary(typed_eur) is True
 
     cad = Opportunity(
         title="x",
@@ -13379,6 +13472,23 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(listed, structured) is True
     assert listed.pay_low == 160_000
     assert listed.pay_high == 190_000
+    typed_usd = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "employmentType": "Full-time",
+            "description": "<p>Office. Full time.</p>",
+            "salary": {
+                "min": 180000,
+                "max": 220000,
+                "currency": {"name": "USD"},
+            },
+        }
+    )
+    typed = Opportunity(title="x", url="https://jobs.workable.com/view/typed/engineer")
+    assert _apply_listing(typed, typed_usd) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     hours = _workable_jobs_to_html(
         {
             "title": "Engineer",
@@ -13988,6 +14098,29 @@ def test_smartrecruiters_api_compensation_ranks_usd_and_drops_foreign():
     assert usd.pay_low == 114_400
     assert usd.pay_high == 165_000
     assert usd.hours_per_week == 40
+    typed_usd = Opportunity(
+        title="x",
+        url="https://jobs.smartrecruiters.com/Acme/744000147354612",
+    )
+    _apply_listing(
+        typed_usd,
+        _smartrecruiters_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "typeOfEmployment": {"label": "Full-time"},
+                "location": {"city": "Austin", "remote": False, "hybrid": False},
+                "compensation": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency": {"name": "USD"},
+                    "period": "YEARLY",
+                },
+            }
+        ),
+    )
+    assert typed_usd.pay_low == 180_000
+    assert typed_usd.pay_high == 220_000
 
     gbp_html = _smartrecruiters_to_html(
         {
@@ -15281,6 +15414,25 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert ranged.pay_low == 180_000
     assert ranged.pay_high == 220_000
+    typed = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-typed")
+    assert _apply_listing(
+        typed,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency": {"name": "USD"},
+                },
+                "description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
 
 
 def test_recruitee_zar_salary_is_foreign():
@@ -15593,6 +15745,31 @@ def test_rippling_office_pay_range_stays_office():
     assert _apply_listing(opp, html) is True
     assert opp.remote is False
     assert opp.pay_high == 275_000
+    typed_html = _rippling_to_html(
+        {
+            "name": "Engineer",
+            "companyName": "Acme",
+            "workLocations": ["Bellevue, WA"],
+            "payRangeDetails": [
+                {
+                    "location": "Bellevue, WA",
+                    "currency": {"name": "USD"},
+                    "frequency": "YEAR",
+                    "rangeStart": 180000,
+                    "rangeEnd": 220000,
+                    "isRemote": False,
+                }
+            ],
+        }
+    )
+    typed = Opportunity(
+        title="x",
+        url="https://ats.rippling.com/acme/jobs/aaaaaaaa-bbbb-cccc-dddd-ffffffffffff",
+    )
+    assert _apply_listing(typed, typed_html) is True
+    assert typed.remote is False
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     bounds = _rippling_to_html(
         {
             "name": "Engineer",
@@ -15873,6 +16050,26 @@ def test_breezy_foreign_salary_is_foreign():
     ) is True
     assert obj.pay_low == 180_000
     assert obj.pay_high == 220_000
+    typed = Opportunity(title="x", url="https://acme.breezy.hr/p/eeeeeeeeeeee")
+    assert _apply_listing(
+        typed,
+        _breezy_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "type": {"id": "fullTime"},
+                "location": {"is_remote": False, "name": "Austin"},
+                "salary": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency": {"name": "USD"},
+                    "period": "year",
+                },
+            }
+        ),
+    ) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     hours = Opportunity(title="x", url="https://acme.breezy.hr/p/dddddddddddd")
     assert _apply_listing(
         hours,
@@ -16027,6 +16224,29 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     ) is True
     assert short.pay_low == 180_000
     assert short.pay_high == 220_000
+    typed = Opportunity(
+        title="x",
+        url="https://clearview.pinpointhq.com/postings/cccccccc-dddd-eeee-ffff-000000000000",
+    )
+    assert _apply_listing(
+        typed,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "compensation_min": 180000,
+                "compensation_max": 220000,
+                "compensation_currency": {"name": "USD"},
+                "compensation_frequency": "year",
+                "description": "<p>Office. Full time.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     k = Opportunity(
         title="x",
         url="https://clearview.pinpointhq.com/postings/bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
@@ -16470,6 +16690,27 @@ def test_listing_text_reads_bamboohr_detail_not_form_pay(monkeypatch):
     assert obj.pay_low == 180_000
     assert obj.pay_high == 220_000
     assert obj.remote is False
+    typed = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/162")
+    assert _apply_listing(
+        typed,
+        _bamboohr_to_html(
+            {
+                "jobOpeningName": "Engineer",
+                "employmentStatusLabel": "Full-Time",
+                "locationType": 0,
+                "compensation": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency": {"name": "USD"},
+                    "period": "year",
+                },
+                "description": "<p>Office. Full time.</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     semi = Opportunity(title="x", url="https://selectorsoftware.bamboohr.com/careers/161")
     assert _apply_listing(
         semi,
@@ -16820,6 +17061,28 @@ def test_listing_text_reads_dover_api_pay_not_form_questions(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    typed = Opportunity(
+        title="x", url="https://app.dover.com/apply/Acme/cccccccc-cccc-cccc-cccc-cccccccccccc"
+    )
+    assert _apply_listing(
+        typed,
+        _dover_to_html(
+            {
+                "title": "Engineer",
+                "client_name": "Acme",
+                "workplace_type": "ONSITE",
+                "compensation": {
+                    "min": 180000,
+                    "max": 220000,
+                    "currency_code": {"name": "USD"},
+                    "salary_range_type": "YEARLY",
+                },
+                "user_provided_description": "<p>Office. Full time.</p>",
+            }
+        ),
+    ) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
     year_sfx = Opportunity(
         title="x", url="https://app.dover.com/apply/Acme/dddddddd-dddd-dddd-dddd-dddddddddddd"
     )
@@ -17218,6 +17481,21 @@ def test_walmart_to_html_fills_company_office_pay():
     assert opp.pay_high == 260_000
     assert opp.score() == 91.0
     assert _foreign_salary(html) is False
+    typed_html = _walmart_to_html(
+        {
+            "title": "Engineer",
+            "brand": "Walmart",
+            "primaryLocation": {"city": "BENTONVILLE", "stateCode": "AR"},
+            "payRange": [{"min": "180000.00", "max": "220000.00"}],
+            "payPlanData": {"currencyReference": {"currencyId": {"name": "USD"}}},
+            "description": "<p>Build models onsite.</p>",
+        }
+    )
+    typed = Opportunity(title="x", url="https://careers.walmart.com/us/en/jobs/R-3")
+    assert _apply_listing(typed, typed_html) is True
+    assert typed.pay_low == 180_000
+    assert typed.pay_high == 220_000
+    assert _foreign_salary(typed_html) is False
 
 
 def test_walmart_to_html_foreign_currency_is_not_usd():
