@@ -61,6 +61,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("signing bonus of $25,000") == (None, None)
     assert _parse_pay("$10,000 relocation bonus") == (None, None)
     assert _parse_pay("relocation bonus of $10,000") == (None, None)
+    assert _parse_pay("$10,000 relocation") == (None, None)
+    assert _parse_pay("$10,000 relocation assistance") == (None, None)
+    assert _parse_pay("relocation of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 relocation") == (None, 180_000)
+    assert _parse_pay("$180,000 relocation to Seattle") == (None, 180_000)
     assert _parse_pay("$25,000 annual bonus") == (None, None)
     assert _parse_pay("target bonus of $25,000") == (None, None)
     assert _parse_pay("$25,000 performance bonus") == (None, None)
@@ -452,6 +457,9 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "Work from our office in NYC") is False
     assert _guess_remote("Engineer", "This is an office-based role") is False
     assert _guess_remote("Engineer", "in our offices in Austin") is False
+    assert _guess_remote("Engineer", "This is an in-person role") is False
+    assert _guess_remote("Engineer", "must work in person") is False
+    assert _guess_remote("Engineer", "in-person in NYC") is False
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
     assert _guess_remote("Engineer", "work from home") is True
     office = Opportunity(title="Engineer", url="https://jobs.example/off")

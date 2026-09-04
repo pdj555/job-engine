@@ -4246,6 +4246,14 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"\s+relocation(?:\s+(?:bonus|assistance|package|stipend))?\b(?!\s+to)"
+    r"|"
+    r"\brelocation(?:\s+(?:bonus|assistance|package|stipend))?\s+(?:of|:)\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:OTE\b|on[- ]target\s+earnings\b|commission\b|TC\b|total\s+comp(?:ensation)?\b)"
     r"|"
     r"\b(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?)\s*(?:of|:)?\s*"
@@ -4655,6 +4663,9 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|office[-\s]based\b"
     r"|work\s+from\s+(?:the\s+|our\s+|an\s+)?office\b"
     r"|in\s+our\s+offices?\b"
+    r"|in[-\s]person\s+(?:role|position|job)\b"
+    r"|work\s+in[-\s]person\b"
+    r"|in[-\s]person\s+in\b"
 )
 
 
