@@ -3781,11 +3781,11 @@ def _html_is_index(html: str, url: str) -> bool:
     """Fetched board shells. ATS posting URLs still drop when the HTML title is a board."""
     if _cloudflare_challenge(html):
         return True
+    if _INDEX_URL_RE.search(url):
+        return True
     title = _html_title(html)
     if not title:
         return False
-    if _INDEX_URL_RE.search(url):
-        return True
     return _title_is_index(title)
 
 

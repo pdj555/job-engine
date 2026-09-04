@@ -1061,6 +1061,10 @@ def test_index_pages_are_not_opportunities():
         "<p>Agent Harness - Meta Factory$262k–$379k/yr</p>",
         "https://jobera.com/job/cloudflare-senior-machine-learning-engineer-6803af37/",
     )
+    assert _html_is_index(
+        "<p>$312K/yr - $351K/yr</p>",
+        "https://jobright.ai/jobs/info/6a96d484455eaf6a08c18b9a",
+    )
     assert not _is_index_page(
         {
             "url": "https://job-boards.eu.greenhouse.io/overstory/jobs/4411330101",
