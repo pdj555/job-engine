@@ -36,6 +36,28 @@ def test_rank_dedupes_same_title():
     assert [o.url for o in ranked] == ["https://b.example/2"]
 
 
+def test_rank_keeps_same_title_at_different_companies():
+    ranked = _rank(
+        [
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://jobs.ashbyhq.com/quilter/aaa",
+                "company": "Quilter",
+                "pay": 200_000,
+                "hours_per_week": 40,
+            },
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://jobs.ashbyhq.com/coralai/bbb",
+                "company": "Coral AI",
+                "pay": 150_000,
+                "hours_per_week": 40,
+            },
+        ]
+    )
+    assert [o.company for o in ranked] == ["Quilter", "Coral AI"]
+
+
 def test_rank_dedupes_same_role_across_boards():
     ranked = _rank(
         [

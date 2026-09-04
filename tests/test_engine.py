@@ -805,6 +805,40 @@ def test_find_dedupes_same_title_keeps_higher_score():
     assert ranked[0].pay_high == 180_000
 
 
+def test_dedupe_keeps_same_title_at_different_companies():
+    from src.engine import _dedupe_opportunities
+
+    quilter_low = Opportunity(
+        title="Senior ML Engineer @ Quilter",
+        url="https://jobs.ashbyhq.com/quilter/low",
+        company="Quilter",
+        pay_high=100_000,
+        hours_per_week=40,
+    )
+    quilter = Opportunity(
+        title="Senior ML Engineer",
+        url="https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1",
+        company="Quilter",
+        pay_low=180_000,
+        pay_high=200_000,
+        hours_per_week=40,
+    )
+    coral = Opportunity(
+        title="Senior ML Engineer",
+        url="https://jobs.ashbyhq.com/coralai/1ce17887-c305-4d77-a659-f75cf74bf8af",
+        company="Coral AI",
+    )
+    ranked = sorted(
+        [coral, quilter_low, quilter],
+        key=lambda o: o.score(),
+        reverse=True,
+    )
+    out = _dedupe_opportunities(ranked)
+    assert [o.company for o in out] == ["Quilter", "Coral AI"]
+    assert out[0].url == quilter.url
+    assert out[0].pay_high == 200_000
+
+
 def test_heuristic_company_from_lever_prefix():
     h = _heuristic_opportunity(
         {

@@ -679,20 +679,24 @@ def _role_title(title: str) -> str:
 
 
 def _title_key(title: str, company: Optional[str] = None) -> str:
-    """Role identity across boards: strip ATS suffixes and company wrappers."""
+    """Role identity across boards: same employer + role, after stripping wrappers."""
     t = _strip_ats_title(title)
-    if company and company.strip():
-        c = re.escape(company.strip())
+    org = re.sub(r"\s+", " ", (company or "").strip())
+    if org:
+        c = re.escape(org)
         t = re.sub(rf"(?i)^{c}\s*[-:|]\s*", "", t)
         t = re.sub(rf"(?i)\s+at\s+{c}\b.*$", "", t)
         t = re.sub(rf"(?i)\s+@\s+{c}\s*$", "", t)
         t = re.sub(rf"(?i)\s*[|\-–—]\s*{c}\s*$", "", t)
     t = re.sub(r"(?i)\s+in remote\b.*$", "", t)
-    return re.sub(r"\W+", " ", t).casefold().strip()
+    role = re.sub(r"\W+", " ", t).casefold().strip()
+    if org:
+        return f"{org.casefold()}\t{role}"
+    return role
 
 
 def _dedupe_opportunities(opps: list) -> list:
-    """Keep the first of each role. Call after sorting so the best score wins."""
+    """Keep the first of each employer+role. Call after sorting so the best score wins."""
     seen: set[str] = set()
     unique = []
     for o in opps:
