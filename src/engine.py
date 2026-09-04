@@ -5,7 +5,7 @@ import json
 import re
 from html import unescape
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 from openai import AsyncOpenAI
@@ -188,7 +188,7 @@ class Engine:
                 return await self._search_ddg(query)
 
     async def _search_ddg(self, query: str) -> list[dict]:
-        """Free web search fallback. Retry DDG 202s; cap in-flight posts so site: angles survive."""
+        """Free web search fallback. Retry DDG 202s; lite HTML when html.duckduckgo is empty."""
         try:
             async with httpx.AsyncClient() as client:
                 for attempt in range(4):
@@ -196,20 +196,29 @@ class Engine:
                         resp = await client.post(
                             "https://html.duckduckgo.com/html/",
                             data={"q": query, "b": ""},
-                            headers={"User-Agent": "Mozilla/5.0 (compatible; JobEngine/1.0)"},
+                            headers=_LISTING_HEADERS,
                             timeout=30.0,
                             follow_redirects=True,
                         )
-                    if resp.status_code == 202 or (
-                        resp.status_code == 200 and "result__a" not in resp.text
-                    ):
-                        if attempt == 3:
-                            break
-                        await asyncio.sleep(0.4 * (attempt + 1))
-                        continue
-                    if resp.status_code >= 400:
+                    rows = _parse_ddg_html(resp.text)
+                    if rows:
+                        return rows
+                    if resp.status_code >= 400 and resp.status_code != 202:
                         return []
-                    return _parse_ddg_html(resp.text)
+                    async with self._ddg_sem:
+                        lite = await client.get(
+                            "https://lite.duckduckgo.com/lite/",
+                            params={"q": query},
+                            headers=_LISTING_HEADERS,
+                            timeout=30.0,
+                            follow_redirects=True,
+                        )
+                    rows = _parse_ddg_html(lite.text)
+                    if rows:
+                        return rows
+                    if attempt == 3:
+                        break
+                    await asyncio.sleep(0.4 * (attempt + 1))
         except Exception as e:
             print(f"DDG error: {e}")
             return []
@@ -1145,6 +1154,18 @@ def _html_is_index(html: str, url: str) -> bool:
     return bool(title) and _is_index_page({"url": url, "title": title, "description": ""})
 
 
+def _ddg_result_url(href: str) -> str:
+    """Unwrap DDG redirect hrefs (`/l/?uddg=`) to the listing URL."""
+    url = unescape(href or "")
+    if url.startswith("//"):
+        url = f"https:{url}"
+    if "uddg=" in url:
+        target = parse_qs(urlparse(url).query).get("uddg", [""])[0]
+        if target:
+            url = unquote(target)
+    return url
+
+
 def _parse_ddg_html(html: str) -> list[dict]:
     """Parse DuckDuckGo HTML results."""
     snippets: dict[str, str] = {}
@@ -1153,38 +1174,58 @@ def _parse_ddg_html(html: str) -> list[dict]:
         html,
         re.DOTALL,
     ):
-        key = _normalize_url(unescape(match.group(1)))
+        key = _normalize_url(_ddg_result_url(match.group(1)))
         if key and key not in snippets:
             snippets[key] = _visible_text(match.group(2))
+    lite_snips = [
+        _visible_text(m.group(1))
+        for m in re.finditer(
+            r"(?is)class=['\"]result-snippet['\"][^>]*>(.*?)</td>",
+            html or "",
+        )
+    ]
 
     results: list[dict] = []
     seen: set[str] = set()
-    for match in re.finditer(
-        r'class="result__a"\s+href="([^"]+)"[^>]*>(.*?)</a>',
-        html,
-        re.DOTALL,
-    ):
-        url = unescape(match.group(1))
-        title = _visible_text(match.group(2))
+
+    def add(url: str, title: str, description: str) -> None:
         if not url or not title:
-            continue
+            return
         if "duckduckgo.com/y.js" in url or "bing.com/aclick" in url:
-            continue
-        if url.startswith("//"):
-            url = f"https:{url}"
+            return
         key = _normalize_url(url)
         if not key or key in seen:
-            continue
+            return
         seen.add(key)
         results.append(
             {
                 "title": title,
                 "url": url,
-                "description": snippets.get(key, ""),
+                "description": description,
                 "source": "duckduckgo",
             }
         )
 
+    for match in re.finditer(
+        r'class="result__a"\s+href="([^"]+)"[^>]*>(.*?)</a>',
+        html,
+        re.DOTALL,
+    ):
+        url = _ddg_result_url(match.group(1))
+        title = _visible_text(match.group(2))
+        add(url, title, snippets.get(_normalize_url(url), ""))
+    if results:
+        return results[:20]
+    for i, match in enumerate(
+        re.finditer(
+            r'(?is)<a[^>]+href="([^"]*uddg=[^"]+)"[^>]*>(.*?)</a>',
+            html or "",
+        )
+    ):
+        url = _ddg_result_url(match.group(1))
+        title = _visible_text(match.group(2))
+        desc = lite_snips[i] if i < len(lite_snips) else ""
+        add(url, title, desc)
     return results[:20]
 
 

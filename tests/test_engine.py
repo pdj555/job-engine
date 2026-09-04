@@ -148,6 +148,9 @@ def test_search_ddg_retries_202_then_parses(monkeypatch):
                 return FakeResp(202, "<html>challenge</html>")
             return FakeResp(200, DDG_HTML)
 
+        async def get(self, _url, **_kwargs):
+            return FakeResp(202, "<html>challenge</html>")
+
     monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
 
     async def no_sleep(_delay):
@@ -180,6 +183,9 @@ def test_search_ddg_gives_up_after_202s(monkeypatch):
 
         async def post(self, _url, **_kwargs):
             hits.append(1)
+            return FakeResp()
+
+        async def get(self, _url, **_kwargs):
             return FakeResp()
 
     monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
@@ -215,6 +221,9 @@ def test_search_ddg_retries_200_without_results(monkeypatch):
                 return FakeResp(200, "<html>challenge</html>")
             return FakeResp(200, DDG_HTML)
 
+        async def get(self, _url, **_kwargs):
+            return FakeResp(202, "<html>challenge</html>")
+
     monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
 
     async def no_sleep(_delay):
@@ -224,6 +233,76 @@ def test_search_ddg_retries_200_without_results(monkeypatch):
     rows = asyncio.run(Engine()._search_ddg("ml"))
     assert len(hits) == 2
     assert rows[0]["url"] == "https://example.com/job1"
+
+
+DDG_LITE_HTML = """
+<table border="0">
+  <tr>
+    <td>1.&nbsp;</td>
+    <td>
+      <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fjobs.ashbyhq.com%2Fquilter%2F2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1&amp;rut=abc" class='result-link'>Senior ML Engineer @ Quilter</a>
+    </td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td class='result-snippet'><b>Senior</b> <b>ML</b> Engineer. Remote. $180K – $200K.</td>
+  </tr>
+  <tr>
+    <td>2.&nbsp;</td>
+    <td>
+      <a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fjobs.lever.co%2Fswordhealth%2F50945411-2f43-421a-8bb8-86aa1de6d890&amp;rut=def" class='result-link'>Sword Health - Senior ML</a>
+    </td>
+  </tr>
+</table>
+"""
+
+
+def test_parse_ddg_lite_unwraps_uddg_and_snippets():
+    results = _parse_ddg_html(DDG_LITE_HTML)
+    assert [r["url"] for r in results] == [
+        "https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1",
+        "https://jobs.lever.co/swordhealth/50945411-2f43-421a-8bb8-86aa1de6d890",
+    ]
+    assert results[0]["title"] == "Senior ML Engineer @ Quilter"
+    assert results[0]["description"] == "Senior ML Engineer. Remote. $180K – $200K."
+    assert results[1]["description"] == ""
+
+
+def test_search_ddg_falls_back_to_lite_when_html_202s(monkeypatch):
+    import httpx
+
+    posts: list[int] = []
+    gets: list[str] = []
+
+    class FakeResp:
+        def __init__(self, status_code: int, text: str):
+            self.status_code = status_code
+            self.text = text
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return None
+
+        async def post(self, _url, **_kwargs):
+            posts.append(1)
+            return FakeResp(202, "<html>challenge</html>")
+
+        async def get(self, url, **kwargs):
+            gets.append(url)
+            assert kwargs.get("params", {}).get("q") == "ml"
+            return FakeResp(200, DDG_LITE_HTML)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_k: FakeClient())
+    rows = asyncio.run(Engine()._search_ddg("ml"))
+    assert posts == [1]
+    assert gets == ["https://lite.duckduckgo.com/lite/"]
+    assert [r["url"] for r in rows] == [
+        "https://jobs.ashbyhq.com/quilter/2b0f95cb-7c8b-4b62-8bcb-b9993344f2f1",
+        "https://jobs.lever.co/swordhealth/50945411-2f43-421a-8bb8-86aa1de6d890",
+    ]
 
 
 def test_heuristic_uses_ddg_snippet_pay_hours_and_remote():
