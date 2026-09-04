@@ -2543,7 +2543,7 @@ def _recruitee_to_html(data: dict) -> str:
         posting["employmentType"] = "PART_TIME"
     elif "full" in code:
         posting["employmentType"] = "FULL_TIME"
-    n = _num(data.get("min_hours_per_week"))
+    n = _num(data.get("min_hours_per_week")) or _num(data.get("hours_per_week"))
     if n is not None and 1 <= n <= 80:
         posting["workHours"] = str(int(n))
     if data.get("remote") is True:
@@ -4983,8 +4983,7 @@ def _posting_company(posting: dict) -> Optional[str]:
     return name
 
 
-def _posting_hours(posting: dict) -> Optional[int]:
-    work = posting.get("workHours")
+def _hours_from_node(work) -> Optional[int]:
     n = _num(work)
     if n is None and isinstance(work, dict):
         n = _num(work.get("value")) or _num(work.get("minValue")) or _num(work.get("min"))
@@ -4998,6 +4997,20 @@ def _posting_hours(posting: dict) -> Optional[int]:
         n = float(m.group(1)) if m else None
     if n is not None and 1 <= n <= 80:
         return int(round(n))
+    return None
+
+
+def _posting_hours(posting: dict) -> Optional[int]:
+    for key in (
+        "workHours",
+        "hoursPerWeek",
+        "weeklyHours",
+        "hours_per_week",
+        "weekly_hours",
+    ):
+        n = _hours_from_node(posting.get(key))
+        if n:
+            return n
     blob = " ".join(
         t.upper().replace("-", " ").replace("_", " ")
         for t in _ld_types(posting.get("employmentType"))
