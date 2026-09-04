@@ -143,6 +143,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 gym membership stipend") == (None, None)
     assert _parse_pay("$10,000 fitness stipend") == (None, None)
     assert _parse_pay("$10,000 gym allowance") == (None, None)
+    assert _parse_pay("$10,000 fitness reimbursement") == (None, None)
+    assert _parse_pay("$10,000 gym reimbursement") == (None, None)
+    assert _parse_pay("$10,000 commuter reimbursement") == (None, None)
+    assert _parse_pay("$10,000 parking reimbursement") == (None, None)
+    assert _parse_pay("$10,000 phone reimbursement") == (None, None)
+    assert _parse_pay("$15,000 home office reimbursement") == (None, None)
+    assert _parse_pay("fitness reimbursement of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 fitness reimbursement") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 fitness in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $10,000 gym stipend") == (
         None,
         180_000,
@@ -455,6 +467,16 @@ def test_guess_pay_annualizes_hourly():
         gym_sal, "<p>Salary $180,000 plus $10,000 gym stipend</p>"
     ) is True
     assert gym_sal.pay_high == 180_000
+    fitness = Opportunity(title="Engineer", url="https://jobs.example/fitness")
+    assert _apply_listing(
+        fitness, "<p>$10,000 fitness reimbursement. Great team.</p>"
+    ) is False
+    assert fitness.pay_high is None
+    fitness_sal = Opportunity(title="Engineer", url="https://jobs.example/fitness-sal")
+    assert _apply_listing(
+        fitness_sal, "<p>Salary $180,000 plus $10,000 fitness reimbursement</p>"
+    ) is True
+    assert fitness_sal.pay_high == 180_000
 
 
 def test_parse_pay_annualizes_monthly_usd():
