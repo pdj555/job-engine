@@ -1630,6 +1630,7 @@ _WORKABLE_JOB_RE = re.compile(
 _WORKABLE_SALARY_RE = re.compile(
     r"(?i)\*\*Salary:\*\*\s*(?:USD|US\$)\s*([\d,]+)(?:\s*[–—-]\s*(?:USD|US\$)?\s*([\d,]+))?"
 )
+_WORKABLE_WORKPLACE_RE = re.compile(r"(?im)^\*\*Workplace:\*\*\s*(.+)$")
 
 
 def _workable_md_url(url: str) -> Optional[str]:
@@ -1814,6 +1815,17 @@ def _workable_to_html(md: str) -> str:
         posting["employmentType"] = "FULL_TIME"
     elif re.search(r"(?i)\bpart-time\b", md):
         posting["employmentType"] = "PART_TIME"
+    place = ""
+    wm = _WORKABLE_WORKPLACE_RE.search(md)
+    if wm:
+        place = wm.group(1).strip()
+    loc = ""
+    hm = re.search(r"(?m)^>\s*(.+)$", md)
+    if hm:
+        fields = [p.strip() for p in hm.group(1).split("·")]
+        if len(fields) > 1:
+            loc = fields[1]
+    _apply_workplace(posting, place, loc)
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"

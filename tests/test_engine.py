@@ -1353,6 +1353,74 @@ def test_apply_listing_workable_markdown_pay():
     assert opp.pay_low == 200_000
     assert opp.pay_high == 240_000
     assert opp.hours_per_week == 40
+    assert opp.remote is True
+
+
+def test_workable_markdown_workplace_wins_over_body_hybrid():
+    from src.engine import _apply_listing, _workable_to_html
+
+    remote = Opportunity(
+        title="x",
+        url="https://apply.workable.com/canopy-7/j/D0F326A019",
+        remote=True,
+    )
+    _apply_listing(
+        remote,
+        _workable_to_html(
+            """# Senior Machine Learning Engineer
+
+> Canopy · Detroit, United States (Remote) · Full-time
+
+**Salary:** USD 126,000–180,000
+
+**Workplace:** remote
+
+Work in a hybrid environment and regularly commute to our Detroit office.
+"""
+        ),
+    )
+    assert remote.remote is True
+    assert remote.pay_high == 180_000
+
+    office = Opportunity(
+        title="x",
+        url="https://apply.workable.com/acme/j/AAAAAAAAAA",
+        remote=True,
+    )
+    _apply_listing(
+        office,
+        _workable_to_html(
+            """# Engineer
+
+> Acme · San Francisco, CA · Full-time
+
+**Salary:** USD 160,000–180,000
+
+**Workplace:** on-site
+
+Remote-friendly team. $160,000 - $180,000
+"""
+        ),
+    )
+    assert office.remote is False
+
+    city = Opportunity(
+        title="x",
+        url="https://apply.workable.com/acme/j/BBBBBBBBBB",
+        remote=True,
+    )
+    _apply_listing(
+        city,
+        _workable_to_html(
+            """# Engineer
+
+> Acme · San Francisco, CA · Full-time
+
+**Salary:** USD 160,000–180,000
+"""
+        ),
+    )
+    assert city.remote is False
 
 
 def test_listing_text_prefers_workable_markdown_over_spa_shell(monkeypatch):
