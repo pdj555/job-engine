@@ -1956,6 +1956,7 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(opp, html)
     assert opp.pay_low == 216_700
     assert opp.pay_high == 303_400
+    assert opp.hours_per_week is None
 
     eur_only = _greenhouse_to_html(
         {
@@ -1970,6 +1971,54 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     skipped = Opportunity(title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/1")
     _apply_listing(skipped, eur_only)
     assert skipped.pay_high is None
+
+
+def test_greenhouse_metadata_scheduled_hours_and_time_type():
+    from src.engine import _apply_listing, _greenhouse_to_html
+
+    html = _greenhouse_to_html(
+        {
+            "company_name": "Reddit",
+            "title": "Senior Machine Learning Engineer",
+            "content": "<p>Apply now. No hours in the body.</p>",
+            "pay_input_ranges": [
+                {
+                    "min_cents": 21670000,
+                    "max_cents": 30340000,
+                    "currency_type": "USD",
+                }
+            ],
+            "metadata": [
+                {"name": "Time Type", "value": "Full time", "value_type": "single_select"},
+                {"name": "Scheduled Weekly Hours", "value": "40.0", "value_type": "number"},
+                {"name": "Worker Sub-Type", "value": "Regular", "value_type": "single_select"},
+            ],
+        }
+    )
+    opp = Opportunity(title="x", url="https://job-boards.greenhouse.io/reddit/jobs/6960831")
+    _apply_listing(opp, html)
+    assert opp.pay_low == 216_700
+    assert opp.pay_high == 303_400
+    assert opp.hours_per_week == 40
+    assert opp.rate_is_imputed is False
+    assert opp.score() == 151.7
+
+
+def test_apply_listing_guesses_hours_when_json_ld_already_has_pay():
+    from src.engine import _apply_listing
+
+    html = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"currency":"USD","value":{"minValue":160000,"maxValue":190000,"unitText":"YEAR"}}}
+    </script>
+    <p>This is a full-time position.</p>
+    """
+    opp = Opportunity(title="x", url="https://jobs.example/x")
+    _apply_listing(opp, html)
+    assert opp.pay_low == 160_000
+    assert opp.pay_high == 190_000
+    assert opp.hours_per_week == 40
 
 
 def test_workable_jobs_api_url_from_view_link():

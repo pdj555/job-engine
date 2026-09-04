@@ -1010,6 +1010,22 @@ def _greenhouse_to_html(data: dict) -> str:
     pay = _greenhouse_pay_ld(data)
     if pay:
         posting["baseSalary"] = pay
+    meta = {}
+    for item in data.get("metadata") or []:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip().casefold()
+        val = item.get("value")
+        if name and val not in (None, ""):
+            meta[name] = val
+    n = _num(meta.get("scheduled weekly hours"))
+    if n is not None and 1 <= n <= 80:
+        posting["workHours"] = str(int(n))
+    time_type = str(meta.get("time type") or meta.get("employment type") or "").lower()
+    if "part" in time_type:
+        posting["employmentType"] = "PART_TIME"
+    elif "full" in time_type:
+        posting["employmentType"] = "FULL_TIME"
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
@@ -1381,15 +1397,17 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
                 opp.pay_high = high
     if not opp.company:
         opp.company = _guess_company(_html_title(html), opp.url)
-    if opp.pay is None:
+    if opp.pay is None or opp.hours_per_week is None:
         visible = _listing_plain_text(html)
-        hours = opp.hours_per_week or _guess_hours(opp.title, visible)
-        low, high = _parse_pay(visible, hours)
-        if high or low:
-            opp.pay_low = low
-            opp.pay_high = high
-            if opp.hours_per_week is None and hours:
+        if opp.hours_per_week is None:
+            hours = _guess_hours(opp.title, visible)
+            if hours:
                 opp.hours_per_week = hours
+        if opp.pay is None:
+            low, high = _parse_pay(visible, opp.hours_per_week)
+            if high or low:
+                opp.pay_low = low
+                opp.pay_high = high
     opp.title = _role_title(opp.title)
     opp.efficiency = opp.refined_rate
 
