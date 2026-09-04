@@ -111,6 +111,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Salary $180,000 plus $10,000 401(k) match") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 profit sharing") == (None, 180_000)
     assert _parse_pay("$180,000") == (None, 180_000)
+    assert _parse_pay("$80/hr overtime") == (None, None)
+    assert _parse_pay("Overtime paid at $80/hr") == (None, None)
+    assert _parse_pay("$25/hr on-call") == (None, None)
+    assert _parse_pay("$5/hr shift differential") == (None, None)
+    assert _parse_pay("Salary $180,000. Overtime at $80/hr") == (None, 180_000)
+    assert _parse_pay("$80/hr") == (None, 160_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -431,6 +437,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         kbase, "<p>Salary $180,000 plus $10,000 401(k) match</p>"
     ) is True
     assert kbase.pay_high == 180_000
+    ot = Opportunity(title="Engineer", url="https://jobs.example/ot")
+    assert _apply_listing(ot, "<p>$80/hr overtime. Apply now.</p>") is False
+    assert ot.pay_high is None
+    otbase = Opportunity(title="Engineer", url="https://jobs.example/otbase")
+    assert _apply_listing(
+        otbase, "<p>Salary $180,000. Overtime paid at $80/hr</p>"
+    ) is True
+    assert otbase.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():

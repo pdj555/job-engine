@@ -4370,6 +4370,16 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\b(?:(?:monthly|housing|living|relocation|car|vehicle|auto|phone|cell|internet|meal|food|travel|commuter|parking)\s+)*allowance\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:" + _HOUR_TAIL + r")?"
+    r"\s+(?:overtime|on[-\s]call|shift\s+differential)\b"
+    r"|"
+    r"\b(?:overtime(?:\s+paid)?|on[-\s]call(?:\s+pay)?|shift\s+differential)\s*(?:at|of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:" + _HOUR_TAIL + r")?"
     r")"
 )
 _HOURS_RE = re.compile(
