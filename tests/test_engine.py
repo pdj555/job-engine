@@ -79,6 +79,22 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$180,000 tuition in NYC") == (None, 180_000)
+    assert _parse_pay("$25,000 professional development budget") == (None, None)
+    assert _parse_pay("$10,000 professional development") == (None, None)
+    assert _parse_pay("$10,000 learning budget") == (None, None)
+    assert _parse_pay("$10,000 learning and development budget") == (None, None)
+    assert _parse_pay("$10,000 learning and development") == (None, None)
+    assert _parse_pay("Salary $180,000 learning opportunities") == (None, 180_000)
+    assert _parse_pay("$10,000 continuing education") == (None, None)
+    assert _parse_pay("$10,000 education budget") == (None, None)
+    assert _parse_pay("professional development budget of $25,000") == (None, None)
+    assert _parse_pay("learning budget of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $25,000 professional development budget") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$180,000 professional in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 per month") == (None, 180_000)
     assert _parse_pay("$15,000 per month") == (None, 180_000)
     assert _parse_pay("$25,000 annual bonus") == (None, None)
     assert _parse_pay("target bonus of $25,000") == (None, None)
@@ -356,6 +372,17 @@ def test_guess_pay_annualizes_hourly():
         tuition_sal, "<p>Salary $180,000 plus $15,000 tuition reimbursement</p>"
     ) is True
     assert tuition_sal.pay_high == 180_000
+    devel = Opportunity(title="Engineer", url="https://jobs.example/lnd")
+    assert _apply_listing(
+        devel, "<p>$25,000 professional development budget. Great team.</p>"
+    ) is False
+    assert devel.pay_high is None
+    devel_sal = Opportunity(title="Engineer", url="https://jobs.example/lnd-sal")
+    assert _apply_listing(
+        devel_sal,
+        "<p>Salary $180,000 plus $25,000 professional development budget</p>",
+    ) is True
+    assert devel_sal.pay_high == 180_000
     phone = Opportunity(title="Engineer", url="https://jobs.example/phone")
     assert _apply_listing(
         phone, "<p>$10,000 monthly internet stipend. Great team.</p>"
