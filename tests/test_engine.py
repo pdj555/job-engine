@@ -914,6 +914,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_kzt is False
     assert kzt.pay_high is None
+    assert _parse_pay("80,000 TND. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 TND. Account Executive $220,000</p>") is True
+    assert _parse_pay("TND80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>TND80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 TND. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 TND. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k TND. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k TND. Account Executive $220,000</p>") is True
+    tnd = Opportunity(title="Engineer", url="https://jobs.example/tn")
+    listed_tnd = _apply_listing(
+        tnd, "<p>Salary 80,000 TND. Account Executive $400,000</p>"
+    )
+    assert listed_tnd is False
+    assert tnd.pay_high is None
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
     assert _parse_pay("90 000 AUD. Account Executive $220,000") == (None, None)
