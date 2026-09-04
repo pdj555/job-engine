@@ -399,6 +399,36 @@ def test_find_ranks_and_limits_without_llm():
     assert ranked[1].score() == 70.0
 
 
+def test_find_dedupes_same_title_keeps_higher_score():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://board-a.example/1",
+                "description": "$100k",
+            },
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://board-b.example/2",
+                "description": "$180k",
+            },
+            {
+                "title": "Other Role $90k",
+                "url": "https://board-c.example/3",
+                "description": "",
+            },
+        ]
+
+    engine._search_all = fake_search
+    ranked = asyncio.run(engine.find("ml", limit=20))
+    assert [o.title for o in ranked] == ["Senior ML Engineer", "Other Role $90k"]
+    assert ranked[0].url == "https://board-b.example/2"
+    assert ranked[0].pay_high == 180_000
+
+
 def test_find_llm_grounds_urls_and_drops_hallucinations():
     engine = Engine()
     engine.openai = _fake_client(

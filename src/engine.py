@@ -42,8 +42,7 @@ class Engine:
 
         # Rank by efficiency ($/hour)
         ranked = sorted(opportunities, key=lambda x: x.score(), reverse=True)
-
-        return ranked[:limit]
+        return _dedupe_opportunities(ranked)[:limit]
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
@@ -313,6 +312,23 @@ Be direct. No fluff."""
 
 def _normalize_url(url: str) -> str:
     return url.strip().rstrip("/").casefold()
+
+
+def _title_key(title: str) -> str:
+    return re.sub(r"\W+", " ", title).casefold().strip()
+
+
+def _dedupe_opportunities(opps: list) -> list:
+    """Keep the first of each title. Call after sorting so the best score wins."""
+    seen: set[str] = set()
+    unique = []
+    for o in opps:
+        key = _title_key(o.title)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(o)
+    return unique
 
 
 def _with_terms(query: str, *terms: str) -> str:

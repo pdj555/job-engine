@@ -16,6 +16,26 @@ def test_rank_orders_by_dollars_per_hour():
     assert [o.title for o in _rank(items)] == ["High", "Low"]
 
 
+def test_rank_dedupes_same_title():
+    ranked = _rank(
+        [
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://a.example/1",
+                "pay": 100_000,
+                "hours_per_week": 40,
+            },
+            {
+                "title": "Senior ML Engineer",
+                "url": "https://b.example/2",
+                "pay": 200_000,
+                "hours_per_week": 20,
+            },
+        ]
+    )
+    assert [o.url for o in ranked] == ["https://b.example/2"]
+
+
 def test_rank_skips_items_without_url():
     assert _rank([{"title": "no url", "pay": 100_000, "hours_per_week": 10}]) == []
 

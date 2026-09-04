@@ -15,7 +15,7 @@ from openai import AsyncOpenAI
 
 from config.settings import settings
 from src.models import Opportunity
-from src.engine import _is_index_page
+from src.engine import _dedupe_opportunities, _is_index_page
 
 PROMPT = """You are an autonomous opportunity scout. Goal: {query}
 
@@ -73,7 +73,9 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         )
         opp.efficiency = opp.refined_rate
         opportunities.append(opp)
-    return sorted(opportunities, key=lambda o: o.score(), reverse=True)
+    return _dedupe_opportunities(
+        sorted(opportunities, key=lambda o: o.score(), reverse=True)
+    )
 
 
 def _parse(content: str) -> dict:
