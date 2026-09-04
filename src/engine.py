@@ -3891,10 +3891,13 @@ def _posting_hours(posting: dict) -> Optional[int]:
     work = posting.get("workHours")
     n = _num(work)
     if n is None and isinstance(work, str):
-        m = re.search(r"\b(\d{1,2})\b", work)
+        stated = _stated_hours("", work)
+        if stated:
+            return stated
+        m = re.search(r"(?<![\d.])(\d{1,2}(?:\.\d+)?)", work)
         n = float(m.group(1)) if m else None
     if n is not None and 1 <= n <= 80:
-        return int(n)
+        return int(round(n))
     types = posting.get("employmentType")
     blob = " ".join(str(t).upper().replace("-", "_") for t in (
         types if isinstance(types, list) else [types]
@@ -4318,6 +4321,23 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\s+(?:OTE\b|on[- ]target\s+earnings\b|commission\b|TC\b|total\s+comp(?:ensation)?\b)"
     r"|"
     r"\b(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?)\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:\s+employer)?"
+    r"\s+401\(?k\)?\s+(?:match|contribution)\b"
+    r"|"
+    r"\b(?:employer\s+)?401\(?k\)?\s+(?:match|contribution)\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"\s+profit[-\s]sharing\b"
+    r"|"
+    r"\bprofit[-\s]sharing\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r"|"

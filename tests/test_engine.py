@@ -103,6 +103,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$200k TC") == (None, None)
     assert _parse_pay("TC: $200,000") == (None, None)
     assert _parse_pay("Base $180,000. TC $250,000") == (None, 180_000)
+    assert _parse_pay("$10,000 401(k) match") == (None, None)
+    assert _parse_pay("$12,000 employer 401k match") == (None, None)
+    assert _parse_pay("401(k) match of $10,000") == (None, None)
+    assert _parse_pay("$15,000 profit sharing") == (None, None)
+    assert _parse_pay("profit-sharing of $15,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $10,000 401(k) match") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $15,000 profit sharing") == (None, 180_000)
+    assert _parse_pay("$180,000") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -412,6 +420,17 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     tcmix = Opportunity(title="Engineer", url="https://jobs.example/tcmix")
     assert _apply_listing(tcmix, "<p>Base $180,000. TC $250,000</p>") is True
     assert tcmix.pay_high == 180_000
+    kmatch = Opportunity(title="Engineer", url="https://jobs.example/401k")
+    assert _apply_listing(kmatch, "<p>$10,000 401(k) match. Apply now.</p>") is False
+    assert kmatch.pay_high is None
+    profit = Opportunity(title="Engineer", url="https://jobs.example/ps")
+    assert _apply_listing(profit, "<p>$15,000 profit sharing. Apply now.</p>") is False
+    assert profit.pay_high is None
+    kbase = Opportunity(title="Engineer", url="https://jobs.example/401base")
+    assert _apply_listing(
+        kbase, "<p>Salary $180,000 plus $10,000 401(k) match</p>"
+    ) is True
+    assert kbase.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
@@ -461,6 +480,16 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert frac.hours_per_week == 38
     assert frac.rate_is_imputed is False
     assert frac.score() == 180_000 / (38 * 50)
+    ld = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","workHours":"37.5 hours per week",
+     "baseSalary":{"currency":"USD","value":{"value":180000,"unitText":"YEAR"}}}
+    </script>
+    """
+    json_hours = Opportunity(title="Engineer", url="https://jobs.example/ld-hrs")
+    assert _apply_listing(json_hours, ld) is True
+    assert json_hours.hours_per_week == 38
+    assert json_hours.score() == 180_000 / (38 * 50)
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
