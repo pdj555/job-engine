@@ -3917,6 +3917,16 @@ _PAY_UNITS = {
     "ANN": "year",
     "PER_YEAR": "year",
     "PER YEAR": "year",
+    "PER_HOUR": "hour",
+    "PER HOUR": "hour",
+    "AN_HOUR": "hour",
+    "AN HOUR": "hour",
+    "PER_WEEK": "week",
+    "PER WEEK": "week",
+    "PER_MONTH": "month",
+    "PER MONTH": "month",
+    "PER_DAY": "day",
+    "PER DAY": "day",
     "WEEK": "week",
     "WEEKLY": "week",
     "WEE": "week",
@@ -3947,6 +3957,8 @@ def _ld_types(value) -> set[str]:
         for item in value:
             out |= _ld_types(item)
         return out
+    if isinstance(value, dict):
+        return _ld_types(value.get("@type")) | _ld_types(_ld_text(value))
     return set()
 
 
@@ -4276,7 +4288,17 @@ def _salary_blob(salary) -> str:
     if isinstance(salary, dict):
         return " ".join(
             _salary_blob(salary.get(key))
-            for key in ("minValue", "maxValue", "value", "min", "max", "from", "to")
+            for key in (
+                "minValue",
+                "maxValue",
+                "value",
+                "min",
+                "max",
+                "from",
+                "to",
+                "minimum",
+                "maximum",
+            )
             if key in salary
         )
     return ""
@@ -4301,7 +4323,17 @@ def _nums(value) -> list[float]:
         return out
     if isinstance(value, dict):
         out: list[float] = []
-        for key in ("minValue", "maxValue", "value", "min", "max", "from", "to"):
+        for key in (
+            "minValue",
+            "maxValue",
+            "value",
+            "min",
+            "max",
+            "from",
+            "to",
+            "minimum",
+            "maximum",
+        ):
             if key in value:
                 out.extend(_nums(value.get(key)))
         return out
@@ -4420,7 +4452,7 @@ def _posting_salary(posting: Optional[dict]):
 
 def _currency_of(value) -> Optional[str]:
     if isinstance(value, dict):
-        return _ld_text(value.get("currency"))
+        return _ld_text(value.get("currency")) or _ld_text(value.get("currencyCode"))
     return None
 
 
@@ -4479,6 +4511,10 @@ def _posting_company(posting: dict) -> Optional[str]:
 def _posting_hours(posting: dict) -> Optional[int]:
     work = posting.get("workHours")
     n = _num(work)
+    if n is None and isinstance(work, dict):
+        n = _num(work.get("value")) or _num(work.get("minValue")) or _num(work.get("min"))
+        if n is None:
+            work = _ld_text(work)
     if n is None and isinstance(work, str):
         stated = _stated_hours("", work)
         if stated:

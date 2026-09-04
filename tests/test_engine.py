@@ -1101,6 +1101,30 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert schema.hours_per_week == 40
     assert schema.pay_high == 200_000
+    typed_part = Opportunity(title="Engineer", url="https://jobs.example/ld-part-obj")
+    assert _apply_listing(
+        typed_part,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"employmentType":{"@type":"EmploymentType","name":"PART_TIME"},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert typed_part.hours_per_week == 20
+    assert typed_part.pay_low == 80_000
+    assert typed_part.pay_high == 100_000
+    qv_hours = Opportunity(title="Engineer", url="https://jobs.example/ld-hours-qv")
+    assert _apply_listing(
+        qv_hours,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"workHours":{"@type":"QuantitativeValue","value":32},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert qv_hours.hours_per_week == 32
+    assert qv_hours.pay_low == 128_000
+    assert qv_hours.pay_high == 160_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -5601,6 +5625,17 @@ def test_apply_listing_prefers_html_yearly_over_json_ld_hourly():
     assert _apply_listing(units, listed_unit) is True
     assert units.pay_low == 160_000
     assert units.pay_high == 200_000
+    per_hour = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minValue":80,"maxValue":100,"unitText":"per hour"}}}
+    </script>
+    """
+    phrased = Opportunity(title="Engineer", url="https://jobs.example/ld-per-hour")
+    assert _apply_listing(phrased, per_hour) is True
+    assert phrased.pay_low == 160_000
+    assert phrased.pay_high == 200_000
 
 
 def test_apply_listing_json_ld_yearly_thousands():
@@ -5673,6 +5708,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(named, currency_obj) is True
     assert named.pay_low == 180_000
     assert named.pay_high == 220_000
+    bounds = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "baseSalary":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"@type":"QuantitativeValue","minimum":180000,"maximum":220000,"unitText":"YEAR"}}}
+    </script>
+    """
+    minmax = Opportunity(title="Engineer", url="https://jobs.example/ld-minimum")
+    assert _apply_listing(minmax, bounds) is True
+    assert minmax.pay_low == 180_000
+    assert minmax.pay_high == 220_000
     hourly = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6215,6 +6261,17 @@ def test_apply_listing_ignores_non_usd_salary():
     named_code = Opportunity(title="Engineer", url="https://jobs.example/salaryCurrency-obj-eur")
     _apply_listing(named_code, eur_salary_cur)
     assert named_code.pay_high is None
+    code_eur = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","hiringOrganization":{"name":"Acme"},
+     "baseSalary":{"currencyCode":"EUR",
+       "value":{"minValue":80000,"maxValue":100000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $220,000</p>
+    """
+    coded = Opportunity(title="Engineer", url="https://jobs.example/ld-currencycode-eur")
+    _apply_listing(coded, code_eur)
+    assert coded.pay_high is None
 
 
 def test_apply_listing_json_ld_amount_without_currency_follows_country():
@@ -9052,6 +9109,31 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert both.remote is True
+    typed_remote = Opportunity(title="x", url="https://jobs.example/tele-obj")
+    _apply_listing(
+        typed_remote,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":{"name":"TELECOMMUTE"},
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}}}
+        </script>
+        <p>Build systems. $180,000 - $200,000</p>
+        """,
+    )
+    assert typed_remote.remote is True
+    typed_hybrid = Opportunity(title="x", url="https://jobs.example/hybrid-obj", remote=True)
+    _apply_listing(
+        typed_hybrid,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","jobLocationType":{"@value":"HYBRID"},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>This is a fully remote role.</p>
+        """,
+    )
+    assert typed_hybrid.remote is False
+    assert typed_hybrid.pay_high == 220_000
 
 
 def test_ashby_to_html_foreign_summary_is_not_usd():
