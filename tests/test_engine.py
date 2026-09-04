@@ -626,6 +626,9 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "40 hours weekly") == 40
     assert _guess_hours("Engineer", "50 hour work week") == 50
     assert _guess_hours("Engineer", "50-hour workweek") == 50
+    assert _guess_hours("Engineer", "50 hours of work a week") == 50
+    assert _guess_hours("Engineer", "50 hours of work per week") == 50
+    assert _guess_hours("Engineer", "40 hours of work weekly") == 40
     assert _guess_hours("Engineer", "50-hour work week") == 50
     assert _guess_hours("Engineer", "45 hour work-week") == 45
     assert _guess_hours("Engineer", "40 hrs. per week") == 40
@@ -704,6 +707,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     assert _apply_listing(json_week, ld_week) is True
     assert json_week.hours_per_week == 50
     assert json_week.score() == 180_000 / (50 * 50)
+    of_work = Opportunity(title="Engineer", url="https://jobs.example/of-work")
+    assert _apply_listing(
+        of_work, "<p>$180,000 a year. 50 hours of work a week.</p>"
+    ) is True
+    assert of_work.hours_per_week == 50
+    assert of_work.score() == 180_000 / (50 * 50)
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():

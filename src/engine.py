@@ -4491,7 +4491,7 @@ _NON_SALARY_MONEY_RE = re.compile(
 )
 _HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*(?:hrs?|hours?)\.?\s*"
-    r"(?:/|\s*per\s*|\s+a\s+|\s+work[\s-]*)?\s*"
+    r"(?:/|\s*per\s*|\s+a\s+|\s+work[\s-]*|\s+of\s+work(?:\s+(?:a|per))?\s*)?\s*"
     r"(?:wk|week(?:ly)?|workweeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
     re.I,
