@@ -74,6 +74,8 @@ class Engine:
                     gone.append(o)
                     continue
                 _apply_listing(o, text)
+                if o.pay is None and _foreign_salary(text):
+                    gone.append(o)
             if gone:
                 opps[:] = [o for o in opps if o not in gone]
         _unify_board_companies(opps)
@@ -1025,6 +1027,25 @@ def _usd(currency) -> bool:
     if not currency:
         return True
     return str(currency).upper().replace("$", "").strip() in {"USD", "US", "USA"}
+
+
+_FOREIGN_PAY_RE = re.compile(
+    r"(?:€|£)\s*\d{1,3}(?:,\d{3}){1,2}"
+    r"|(?:€|£)\s*\d{5,7}\b"
+    r"|\b(?:EUR|GBP)\s+\d{1,3}(?:,\d{3}){1,2}"
+    r"|\b(?:EUR|GBP)\s+\d{5,7}\b",
+    re.I,
+)
+
+
+def _foreign_salary(html: str) -> bool:
+    """True when the listing states a non-USD salary. Ranking is USD $/hour."""
+    posting = _job_posting(html)
+    if posting:
+        salary = posting.get("baseSalary") or posting.get("salary")
+        if isinstance(salary, dict) and salary.get("currency") and not _usd(salary.get("currency")):
+            return True
+    return bool(_FOREIGN_PAY_RE.search(_listing_plain_text(html)))
 
 
 def _posting_company(posting: dict) -> Optional[str]:
