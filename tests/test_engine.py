@@ -9476,6 +9476,31 @@ def test_greenhouse_pay_transparency_fills_json_ld_without_content_dollars():
     _apply_listing(skipped_str, eur_str)
     assert skipped_str.pay_high is None
     assert _foreign_salary(eur_str) is True
+    dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "pay_input_ranges": [
+                {"min": 180000, "max": 220000, "currency_type": "USD"}
+            ],
+        }
+    )
+    dollar_row = Opportunity(title="x", url="https://job-boards.greenhouse.io/acme/jobs/4")
+    _apply_listing(dollar_row, dollars)
+    assert dollar_row.pay_low == 180_000
+    assert dollar_row.pay_high == 220_000
+    eur_dollars = _greenhouse_to_html(
+        {
+            "company_name": "Acme",
+            "title": "Engineer",
+            "content": "<p>Account Executive $400,000</p>",
+            "pay_input_ranges": [{"min": 120000, "max": 180000, "currency_type": "EUR"}],
+        }
+    )
+    skipped_eur = Opportunity(title="Engineer", url="https://job-boards.greenhouse.io/acme/jobs/5")
+    _apply_listing(skipped_eur, eur_dollars)
+    assert skipped_eur.pay_high is None
 
 
 def test_greenhouse_metadata_scheduled_hours_and_time_type():
@@ -10737,6 +10762,21 @@ def test_listing_text_recruitee_usd_salary_ranks(monkeypatch):
     ) is True
     assert span.pay_low == 180_000
     assert span.pay_high == 220_000
+    text_pay = Opportunity(title="x", url="https://acme.recruitee.com/o/staff-engineer-str")
+    assert _apply_listing(
+        text_pay,
+        _recruitee_to_html(
+            {
+                "title": "Staff Engineer",
+                "company_name": "Acme",
+                "on_site": True,
+                "salary": "$180,000 - $220,000",
+                "description": "<p>Office. Account Executive $400,000</p>",
+            }
+        ),
+    ) is True
+    assert text_pay.pay_low == 180_000
+    assert text_pay.pay_high == 220_000
 
 
 def test_recruitee_zar_salary_is_foreign():
@@ -11132,6 +11172,21 @@ def test_breezy_foreign_salary_is_foreign():
     _apply_listing(opp, html)
     assert opp.pay_high is None
     assert _foreign_salary(html) is True
+    obj = Opportunity(title="x", url="https://acme.breezy.hr/p/bbbbbbbbbbbb")
+    assert _apply_listing(
+        obj,
+        _breezy_to_html(
+            {
+                "name": "Engineer",
+                "company": {"name": "Acme"},
+                "type": {"id": "fullTime"},
+                "location": {"is_remote": False, "name": "Austin"},
+                "salary": {"min": 180000, "max": 220000, "currency": "USD", "period": "year"},
+            }
+        ),
+    ) is True
+    assert obj.pay_low == 180_000
+    assert obj.pay_high == 220_000
 
 
 def test_pinpoint_job_urls_are_not_boards():
@@ -11208,6 +11263,28 @@ def test_listing_text_reads_pinpoint_json_pay(monkeypatch):
     assert opp.pay_high == 250_000
     assert opp.hours_per_week == 40
     assert opp.score() == 87.5
+    from src.engine import _pinpoint_to_html
+
+    short = Opportunity(title="x", url="https://clearview.pinpointhq.com/postings/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+    assert _apply_listing(
+        short,
+        _pinpoint_to_html(
+            {
+                "title": "Engineer",
+                "employment_type": "full_time",
+                "workplace_type": "onsite",
+                "location": {"name": "Austin"},
+                "compensation_min": 180000,
+                "compensation_max": 220000,
+                "compensation_currency": "USD",
+                "compensation_frequency": "year",
+                "description": "<p>Office. Account Executive $400,000</p>",
+            },
+            "acme",
+        ),
+    ) is True
+    assert short.pay_low == 180_000
+    assert short.pay_high == 220_000
 
 
 def test_listing_text_pinpoint_missing_id_is_gone(monkeypatch):

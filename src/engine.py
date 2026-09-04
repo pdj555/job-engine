@@ -1769,6 +1769,10 @@ def _greenhouse_pay_ld(data: dict) -> Optional[dict]:
         low = _cents_to_annual(row.get("min_cents"))
         high = _cents_to_annual(row.get("max_cents"))
         if not high and not low:
+            bound_low, bound_high = _bound_nums(row)
+            low = int(bound_low) if bound_low and 10_000 <= bound_low <= 2_000_000 else None
+            high = int(bound_high) if bound_high and 10_000 <= bound_high <= 2_000_000 else None
+        if not high and not low:
             continue
         cur = str(row.get("currency_type") or "").upper() or "USD"
         value: dict = {"unitText": "YEAR"}
@@ -2411,6 +2415,18 @@ def _recruitee_offer(data: dict) -> Optional[dict]:
 def _recruitee_pay_ld(data: dict) -> Optional[dict]:
     """USD or stated foreign salary. Skip currency-only rows with no amounts."""
     sal = data.get("salary")
+    if isinstance(sal, str) and sal.strip():
+        nums = _span_nums(sal)
+        if not nums:
+            return None
+        value: dict = {"unitText": "YEAR"}
+        if len(nums) >= 2:
+            value["minValue"] = int(min(nums))
+            value["maxValue"] = int(max(nums))
+        else:
+            value["value"] = int(nums[0])
+        currency = "EUR" if _foreign_pay_text(sal) else "USD"
+        return {"currency": currency, "value": value}
     if not isinstance(sal, dict):
         return None
     low, high = _bound_nums(sal)
@@ -2698,6 +2714,39 @@ def _breezy_job(data, jid: str) -> Optional[dict]:
     return None
 
 
+def _breezy_pay_ld(job: dict) -> Optional[dict]:
+    """USD or stated foreign salary from a salary object. Strings stay HTML."""
+    raw = job.get("salary")
+    if not isinstance(raw, dict):
+        return None
+    low, high = _bound_nums(raw)
+    if low is None and high is None:
+        return None
+    period = str(raw.get("period") or raw.get("frequency") or "").lower()
+    unit = None
+    for needle, name in (
+        ("hour", "HOUR"),
+        ("month", "MONTH"),
+        ("week", "WEEK"),
+        ("year", "YEAR"),
+        ("annual", "YEAR"),
+    ):
+        if needle in period:
+            unit = name
+            break
+    value: dict = {}
+    if unit:
+        value["unitText"] = unit
+    if low is not None and high is not None:
+        value["minValue"] = int(low) if low == int(low) else low
+        value["maxValue"] = int(high) if high == int(high) else high
+    else:
+        amount = high if high is not None else low
+        value["value"] = int(amount) if amount == int(amount) else amount
+    currency = str(raw.get("currency") or "").upper() or "USD"
+    return {"currency": currency, "value": value}
+
+
 def _breezy_to_html(job: dict) -> str:
     """Turn a Breezy board JSON row into listing HTML. Never invent pay."""
     title = str(job.get("name") or "").strip()
@@ -2729,12 +2778,15 @@ def _breezy_to_html(job: dict) -> str:
         details = loc.get("remote_details") if isinstance(loc.get("remote_details"), dict) else {}
         place = str(details.get("value") or loc.get("name") or "").strip()
     _apply_workplace(posting, place)
+    pay = _breezy_pay_ld(job)
+    if pay:
+        posting["baseSalary"] = pay
     parts = []
     if place:
         parts.append(f"<p>{place}</p>")
-    salary = str(job.get("salary") or "").strip()
-    if salary:
-        parts.append(f"<p>{salary}</p>")
+    salary = job.get("salary")
+    if isinstance(salary, str) and salary.strip():
+        parts.append(f"<p>{salary.strip()}</p>")
     page_title = f"{title} at {company}" if company else title
     return (
         f"<title>{page_title}</title>"
@@ -2806,7 +2858,16 @@ def _pinpoint_job(rows, uuid: str) -> Optional[dict]:
 
 
 def _pinpoint_pay_ld(job: dict) -> Optional[dict]:
-    low, high = _num(job.get("compensation_minimum")), _num(job.get("compensation_maximum"))
+    low = _num(job.get("compensation_minimum"))
+    if low is None:
+        low = _num(job.get("compensation_min"))
+    high = _num(job.get("compensation_maximum"))
+    if high is None:
+        high = _num(job.get("compensation_max"))
+    if low is None and high is None:
+        raw = job.get("compensation")
+        if isinstance(raw, dict):
+            low, high = _bound_nums(raw)
     if low is None and high is None:
         return None
     cur = str(job.get("compensation_currency") or "").upper() or "USD"
