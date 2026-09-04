@@ -661,6 +661,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be onsite") is False
     assert _guess_remote("Engineer", "must work on site") is False
     assert _guess_remote("Engineer", "Work from our office in NYC") is False
+    assert _guess_remote("Engineer", "work from our New York office") is False
+    assert _guess_remote("Engineer", "work from the San Francisco office") is False
+    assert _guess_remote("Engineer", "must work from our Seattle office") is False
+    assert _guess_remote("Engineer", "work out of our New York office") is False
+    assert _guess_remote("Engineer", "work out of the Seattle office") is False
+    assert _guess_remote("Engineer", "based out of our Austin office") is False
+    assert _guess_remote("Engineer", "We're based out of New York. Great team.") is True
     assert _guess_remote("Engineer", "This is an office-based role") is False
     assert _guess_remote("Engineer", "this role is office first") is False
     assert _guess_remote("Engineer", "office-first role") is False
@@ -729,6 +736,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "work from home. work from the lab") is True
     assert _guess_remote("Engineer", "work from home. this is a field role") is True
     assert _guess_remote("Engineer", "work from home. work from HQ") is True
+    assert _guess_remote("Engineer", "work from home. work from our New York office") is True
+    assert _guess_remote("Engineer", "work from home. work out of the Seattle office") is True
     assert _guess_remote(
         "Engineer", "work from home. This role requires you to be in San Francisco"
     ) is True
@@ -745,6 +754,20 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert office.remote is False
     assert office.pay_high == 180_000
     assert office.score() == 0.7 * (180_000 / (40 * 50))
+    city_office = Opportunity(title="Engineer", url="https://jobs.example/city-off")
+    assert _apply_listing(
+        city_office, "<p>Work from our New York office. Salary $180,000</p>"
+    ) is True
+    assert city_office.remote is False
+    assert city_office.pay_high == 180_000
+    assert city_office.score() == 0.7 * (180_000 / (40 * 50))
+    out_of = Opportunity(title="Engineer", url="https://jobs.example/out-of")
+    assert _apply_listing(
+        out_of, "<p>Work out of the Seattle office. Salary $180,000</p>"
+    ) is True
+    assert out_of.remote is False
+    assert out_of.pay_high == 180_000
+    assert out_of.score() == 0.7 * (180_000 / (40 * 50))
     ofirst = Opportunity(title="Engineer", url="https://jobs.example/ofirst")
     assert _apply_listing(
         ofirst, "<p>This is an office-first role. Salary $180,000</p>"
