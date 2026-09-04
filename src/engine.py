@@ -1476,11 +1476,25 @@ _INDEX_URL_RE = re.compile(
     r"|aijobs\.mlyearning\.org/"
     r"|wellfound\.com/role/"
     r"|wellfound\.com/jobs/?(?:\?|$)"
-    r"|angel\.co/role/)",
+    r"|angel\.co/role/"
+    r"|h1bscope\.com/"
+    r"|salarybyrole\.com/"
+    r"|salarysolver\.com/"
+    r"|salarycube\.com/"
+    r"|motionrecruitment\.com/it-salary"
+    r"|hackerx\.org/[^\"'\s]*salary)",
     re.I,
 )
 _INDEX_TITLE_RE = re.compile(
     r"(?i)^hire\b|\bcurrent openings\b"
+    r"|\bsalary guide\b"
+    r"|\bsalary data\b"
+    r"|\bcompensation (?:guide|data|benchmarks?|for)\b"
+    r"|\bh-?1b visa salary\b"
+    r"|\bmedian pay\b"
+    r"|\bhow much do\b"
+    r"|salary 20\d{2}"
+    r"|20\d{2}\b.{0,60}\bsalary\b"
 )
 _JOBS_WORD_RE = re.compile(r"(?i)\bjobs\b(?!\.)(?! by workable)")
 _ROLE_JOBS_AT_RE = re.compile(r"(?i).+\bjobs (?:at|bei) \S")

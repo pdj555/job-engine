@@ -1048,6 +1048,46 @@ def test_index_pages_are_not_opportunities():
         )
         is None
     )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "2026 Machine Learning Engineer Salary Guide: Insights for Senior Engineers",
+                "url": "https://motionrecruitment.com/it-salary/machine-learning",
+                "description": "$120,000 - $200,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Machine Learning Engineer Salary 2026: $108,500 Median Pay",
+                "url": "https://salarybyrole.com/role/machine-learning-engineer",
+                "description": "$108,500",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Senior Machine Learning Engineer H-1B Visa Salary Data",
+                "url": "https://www.h1bscope.com/jobs/senior-machine-learning-engineer/",
+                "description": "$180,000 median salary",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Compensation For AI Employees Is Skyrocketing - Forbes",
+                "url": "https://www.forbes.com/sites/allbusiness/2026/01/07/compensation-for-ai-employees-is-skyrocketing/",
+                "description": "$180,000-$350,000+",
+            }
+        )
+        is None
+    )
     kept_listing = _heuristic_opportunity(
         {
             "title": "Senior Machine Learning Engineer",
@@ -1121,6 +1161,15 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Software Engineer</title><p>$110k – $200k</p>",
         "https://wellfound.com/jobs?role=software-engineer",
+    )
+    assert _html_is_index(
+        "<title>Machine Learning</title><p>$120,000 - $200,000</p>",
+        "https://motionrecruitment.com/it-salary/machine-learning",
+    )
+    assert _html_is_index(
+        "<title>Machine Learning Engineer Salary 2026: $108,500 Median Pay</title>"
+        "<p>$108,500</p>",
+        "https://salarybyrole.com/role/machine-learning-engineer",
     )
     assert not _html_is_index(
         "<title>IT Security Administrator at Bitwarden</title><p>$115,000 - $145,000</p>",
