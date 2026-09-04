@@ -1069,6 +1069,38 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert of_work.hours_per_week == 50
     assert of_work.score() == 180_000 / (50 * 50)
+    part = Opportunity(title="Engineer", url="https://jobs.example/ld-part-space")
+    assert _apply_listing(
+        part,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"Part time",'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert part.hours_per_week == 20
+    assert part.pay_low == 80_000
+    assert part.pay_high == 100_000
+    full = Opportunity(title="Engineer", url="https://jobs.example/ld-full-space")
+    assert _apply_listing(
+        full,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"Full time",'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert full.hours_per_week == 40
+    assert full.pay_low == 160_000
+    assert full.pay_high == 200_000
+    schema = Opportunity(title="Engineer", url="https://jobs.example/ld-schema-full")
+    assert _apply_listing(
+        schema,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"https://schema.org/FullTime",'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":100,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert schema.hours_per_week == 40
+    assert schema.pay_high == 200_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():

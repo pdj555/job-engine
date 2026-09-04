@@ -4222,13 +4222,14 @@ def _posting_hours(posting: dict) -> Optional[int]:
         n = float(m.group(1)) if m else None
     if n is not None and 1 <= n <= 80:
         return int(round(n))
-    types = posting.get("employmentType")
-    blob = " ".join(str(t).upper().replace("-", "_") for t in (
-        types if isinstance(types, list) else [types]
-    ) if t)
-    if "PART_TIME" in blob:
+    blob = " ".join(
+        t.upper().replace("-", " ").replace("_", " ")
+        for t in _ld_types(posting.get("employmentType"))
+    )
+    compact = re.sub(r"\s+", "", blob)
+    if "PARTTIME" in compact:
         return 20
-    if "FULL_TIME" in blob:
+    if "FULLTIME" in compact:
         return 40
     return None
 
