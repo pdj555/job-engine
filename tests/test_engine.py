@@ -431,6 +431,11 @@ def test_foreign_salary_detects_k_suffix_gbp_and_eur():
     for blob in ("£60k", "£60K - £80K", "€85k", "GBP 60k", "EUR 85k"):
         assert _parse_pay(blob) == (None, None)
         assert _foreign_salary(f"<p>{blob} a year</p>") is True
+    for blob in ("80,000 EUR", "80000 GBP", "80k EUR", "80,000 euros"):
+        assert _parse_pay(f"{blob}. Account Executive $220,000") == (None, None)
+        assert _foreign_salary(f"<p>Salary {blob} per year. Account Executive $220,000</p>") is True
+    assert _parse_pay("$180,000") == (None, 180_000)
+    assert _foreign_salary("<p>Salary $180,000</p>") is False
     assert _foreign_salary("<p>$60k a year</p>") is False
     assert _foreign_salary("<p>Apply now. No salary listed.</p>") is False
 
@@ -3121,6 +3126,26 @@ def test_index_pages_are_not_opportunities():
     assert (
         _heuristic_opportunity(
             {
+                "title": "Find Careers | Acme",
+                "url": "https://acme.com/find-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
+                "title": "Search Careers | Acme",
+                "url": "https://acme.com/search-careers",
+                "description": "$400,000",
+            }
+        )
+        is None
+    )
+    assert (
+        _heuristic_opportunity(
+            {
                 "title": "Search Openings | Acme",
                 "url": "https://acme.com/search-openings",
                 "description": "$400,000",
@@ -5068,6 +5093,18 @@ def test_index_pages_are_not_opportunities():
     assert _html_is_index(
         "<title>Explore Careers</title><p>$180,000</p>",
         "https://acme.com/explore-careers",
+    )
+    assert _html_is_index(
+        "<title>Find Careers | Acme</title><p>$400,000</p>",
+        "https://acme.com/find-careers",
+    )
+    assert _html_is_index(
+        "<title>Search Careers | Acme</title><p>$400,000</p>",
+        "https://acme.com/search-careers",
+    )
+    assert not _html_is_index(
+        "<title>Staff Engineer</title><p>$180,000</p>",
+        "https://acme.com/find-careers/staff-engineer",
     )
     assert not _html_is_index(
         "<title>Hiring Manager</title><p>$180,000</p>",
@@ -10750,6 +10787,14 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We took this job down.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We took this comment down.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We are no longer filling this role.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
@@ -12320,6 +12365,35 @@ def test_jsonld_city_location_is_office_when_type_missing():
         """,
     )
     assert remote.remote is True
+    loc_tele = Opportunity(title="x", url="https://jobs.example/loc-tele")
+    _apply_listing(
+        loc_tele,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","locationType":"TELECOMMUTE",
+         "jobLocation":{"@type":"Place","address":{"addressLocality":"Austin","addressRegion":"TX"}},
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>Build systems. All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert loc_tele.remote is True
+    assert loc_tele.pay_low == 100_000
+    assert loc_tele.pay_high == 120_000
+    workplace_hybrid = Opportunity(title="x", url="https://jobs.example/wp-hybrid", remote=True)
+    _apply_listing(
+        workplace_hybrid,
+        """
+        <script type="application/ld+json">
+        {"@type":"JobPosting","title":"Engineer","workplace_type":"HYBRID",
+         "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+        </script>
+        <p>All other: $100,000 - $120,000</p>
+        """,
+    )
+    assert workplace_hybrid.remote is False
+    assert workplace_hybrid.pay_low == 180_000
+    assert workplace_hybrid.pay_high == 220_000
 
     country = Opportunity(title="x", url="https://jobs.example/y", remote=True)
     _apply_listing(

@@ -1641,6 +1641,8 @@ _INDEX_TITLE_RE = re.compile(
     r"|^hiring(?:\s*[|\-–—].*)?$"
     r"|^explore careers\b"
     r"|^browse careers\b"
+    r"|^find careers\b"
+    r"|^search careers\b"
     r"|\b(?:job|role|position|listing) vacancies\b"
     r"|\bavailable (?:positions|roles|listings|opportunities|openings)\b"
     r"|\b(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply) (?:positions|roles|listings|openings|opportunities)\b"
@@ -3831,7 +3833,7 @@ _INDEX_PATH_RE = re.compile(
     r"|/(?:career[-_]?(?:opportunities|listings|roles|positions)|(?:job|role|position|listing)[-_]?openings|all[-_]?(?:openings|positions|roles|listings|opportunities|jobs))/?$"
     r"|/(?:join[-_]?our[-_]?team|work[-_]?with[-_]?us|we(?:re)?[-_]?hiring)/?$"
     r"|/opportunities/?$"
-    r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|hiring)/?$"
+    r"|/(?:(?:job|role|position|listing)[-_]?vacancies|available[-_]?(?:positions|roles|jobs|listings|opportunities|openings)|vacancies|explore[-_]?careers|browse[-_]?careers|find[-_]?careers|search[-_]?careers|hiring)/?$"
     r"|/(?:featured|latest|popular|hot|new|trending|recommended|matching|similar|suggested|related|other|browse|explore|view|discover|see|find|search|apply)[-_]?(?:positions|roles|listings|openings|opportunities)/?$"
     r"|/(?:internships|university[-_]?recruiting|campus[-_]?recruiting|early[-_]?careers?|student[-_]?programs?|graduate[-_]?programs?|university[-_]?programs?|job[-_]?search|life[-_]?at(?:[-_][^/]+)?|team|meet[-_]?(?:the|our)[-_]?team|our[-_]?(?:team|people)|benefits|our[-_]?benefits|culture|our[-_]?culture|leadership|our[-_]?leadership|about[-_]?us|about|our[-_]?values|values|our[-_]?mission|locations|our[-_]?locations|diversity|inclusion|dei|our[-_]?dei|diversity[-_]?equity(?:[-_]?and)?[-_]?inclusion|our[-_]?story|faqs?|news|press|blog|our[-_]?blog|newsroom|press[-_]?releases?|our[-_]?news|investors?|investor[-_]?relations|sustainability|our[-_]?sustainability|esg|impact|our[-_]?impact|community|our[-_]?community|csr|social[-_]?responsibility|purpose|our[-_]?purpose|mission|people|ethics|governance|environment|history|our[-_]?history|media[-_]?center|press[-_]?center|foundation|our[-_]?foundation|giving|our[-_]?giving|philanthropy|citizenship|corporate[-_]?citizenship|volunteering|charity|responsibility)/?$"
     r"|/(?:salaries|salary)(?:/|$)"
@@ -4439,6 +4441,9 @@ _FOREIGN_PAY_RE = re.compile(
     r"|\b(?:EUR|GBP)\s+\d{2,3}(?:\.\d+)?\s*k\b"
     r"|(?:₹|¥)\s*\d"
     r"|\b(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\s+['’]?\d"
+    r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:EUR|GBP|euros?|pounds?)\b"
+    r"|\d{5,7}\s*(?:EUR|GBP)\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:EUR|GBP)\b"
     r"|\d{1,3}(?:[,'’]\d{3}){1,2}\s*(?:CHF|INR|JPY|AED|CNY|KRW|HUF|SEK|NOK|DKK|PLN|BRL|ZAR|ILS)\b"
     r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:kr|zł)\b"
     r"|\d{5,7}\s*(?:kr|zł)\b"
@@ -5596,6 +5601,9 @@ _GONE_LISTING_RE = re.compile(
     r"|we(?:'ve|\s+have)\s+taken\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+(?:down|offline)\b"
+    r"|we\s+took\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
+    r"\s+(?:down|offline)\b"
     r"|(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+is\s+no\s+longer\s+being\s+(?:recruited|advertised)\b"
@@ -6634,7 +6642,14 @@ def _jsonld_place(posting: dict) -> str:
 def _remote_from_posting(posting: dict) -> Optional[bool]:
     types = {
         t.upper().replace("-", "_")
-        for t in _ld_types(posting.get("jobLocationType") or posting.get("job_location_type"))
+        for t in _ld_types(
+            posting.get("jobLocationType")
+            or posting.get("job_location_type")
+            or posting.get("workplaceType")
+            or posting.get("workplace_type")
+            or posting.get("locationType")
+            or posting.get("location_type")
+        )
     }
     if any("TELECOMMUTE" in t for t in types):
         return True
