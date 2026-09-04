@@ -1513,17 +1513,40 @@ def test_listing_text_fetches_lever_job_not_apply_form(monkeypatch):
 
     async def fake_get(_client, url: str) -> str:
         seen.append(url)
+        if "api.lever.co" in url:
+            return json.dumps(
+                {
+                    "id": "0bf1decc-002c-4b0a-b97b-6407d2930fff",
+                    "text": "Senior AI/ML Engineer (GenAI, AWS)",
+                    "categories": {"commitment": "Full-time"},
+                    "salaryRange": {
+                        "min": 159300,
+                        "max": 219245,
+                        "currency": "USD",
+                        "interval": "per-year-salary",
+                    },
+                    "description": "<p>Build GenAI systems.</p>",
+                }
+            )
         return "<title>Provectus - Senior ML</title>"
 
     monkeypatch.setattr("src.engine._http_get_text", fake_get)
-    asyncio.run(
+    html = asyncio.run(
         engine._listing_text(
             "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff/apply"
         )
     )
     assert seen == [
-        "https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
+        "https://api.lever.co/v0/postings/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff"
     ]
+    from src.engine import _apply_listing
+
+    opp = Opportunity(title="x", url="https://jobs.lever.co/provectus/0bf1decc-002c-4b0a-b97b-6407d2930fff")
+    _apply_listing(opp, html)
+    assert opp.title == "Senior AI/ML Engineer (GenAI, AWS)"
+    assert opp.pay_low == 159_300
+    assert opp.pay_high == 219_245
+    assert opp.hours_per_week == 40
 
 
 def test_apply_listing_company_from_html_title():
@@ -1585,6 +1608,51 @@ def test_listing_text_none_when_canonical_page_is_gone(monkeypatch):
         )
     )
     assert html is None
+
+
+def test_listing_text_lever_api_404_is_gone(monkeypatch):
+    engine = Engine()
+    seen: list[str] = []
+
+    async def fake_get(_client, url: str):
+        seen.append(url)
+        if "api.lever.co" in url:
+            return None
+        return "<title>Jobs at Provectus</title><p>Current openings</p>"
+
+    monkeypatch.setattr("src.engine._http_get_text", fake_get)
+    html = asyncio.run(
+        engine._listing_text(
+            "https://jobs.lever.co/provectus/76640225-4aa7-45a3-bcdc-cb156271057b"
+        )
+    )
+    assert seen == [
+        "https://api.lever.co/v0/postings/provectus/76640225-4aa7-45a3-bcdc-cb156271057b"
+    ]
+    assert html is None
+
+
+def test_lever_eur_salary_range_is_foreign():
+    from src.engine import _apply_listing, _foreign_salary, _lever_to_html
+
+    html = _lever_to_html(
+        {
+            "text": "Senior ML Engineer (Europe-based/Remote)",
+            "salaryRange": {
+                "min": 60000,
+                "max": 85000,
+                "currency": "EUR",
+                "interval": "per-year-salary",
+            },
+        }
+    )
+    opp = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/swordhealth/50945411-2f43-421a-8bb8-86aa1de6d890",
+    )
+    _apply_listing(opp, html)
+    assert opp.pay_high is None
+    assert _foreign_salary(html) is True
 
 
 def test_listing_text_greenhouse_api_404_is_gone(monkeypatch):

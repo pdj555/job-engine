@@ -125,6 +125,18 @@ class Engine:
                     data = None
                 if isinstance(data, dict) and data.get("title"):
                     return _workable_jobs_to_html(data)
+        lever_api = _lever_api_url(url)
+        if lever_api:
+            raw = await fetch(lever_api)
+            if raw is None:
+                return None
+            if raw:
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = None
+                if isinstance(data, dict) and (data.get("text") or data.get("id")):
+                    return _lever_to_html(data)
         return await fetch(_lever_job_url(url))
 
     async def _search_all(self, query: str) -> list[dict]:
@@ -446,6 +458,78 @@ def _lever_job_url(url: str) -> str:
         path = path[: -len(cut)] or "/"
         return parsed._replace(path=path, query="", fragment="").geturl()
     return url
+
+
+_LEVER_JOB_RE = re.compile(
+    r"(?i)https?://jobs\.lever\.co/([^/]+)/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+)
+_LEVER_PAY_UNITS = (
+    ("hour", "HOUR"),
+    ("month", "MONTH"),
+    ("week", "WEEK"),
+    ("year", "YEAR"),
+)
+
+
+def _lever_api_url(url: str) -> Optional[str]:
+    m = _LEVER_JOB_RE.search(_lever_job_url(url) or "")
+    if not m:
+        return None
+    return f"https://api.lever.co/v0/postings/{m.group(1)}/{m.group(2)}"
+
+
+def _lever_to_html(data: dict) -> str:
+    """Turn Lever posting JSON into listing HTML. Never invent pay."""
+    title = str(data.get("text") or "").strip()
+    posting: dict = {"@type": "JobPosting", "title": title}
+    cats = data.get("categories")
+    if isinstance(cats, dict):
+        commit = str(cats.get("commitment") or "").lower()
+        if "part" in commit:
+            posting["employmentType"] = "PART_TIME"
+        elif "full" in commit:
+            posting["employmentType"] = "FULL_TIME"
+    rng = data.get("salaryRange")
+    if isinstance(rng, dict) and rng.get("currency"):
+        interval = str(rng.get("interval") or "").lower()
+        unit = "YEAR"
+        for needle, name in _LEVER_PAY_UNITS:
+            if needle in interval:
+                unit = name
+                break
+        value: dict = {"unitText": unit}
+        low, high = rng.get("min"), rng.get("max")
+        if isinstance(low, (int, float)) and isinstance(high, (int, float)):
+            value["minValue"] = low
+            value["maxValue"] = high
+        elif isinstance(high, (int, float)):
+            value["value"] = high
+        elif isinstance(low, (int, float)):
+            value["value"] = low
+        if "value" in value or "minValue" in value:
+            posting["baseSalary"] = {
+                "currency": str(rng.get("currency")).upper(),
+                "value": value,
+            }
+    parts = []
+    for key in ("description", "additional", "salaryDescription"):
+        val = data.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    for item in data.get("lists") or []:
+        if not isinstance(item, dict):
+            continue
+        head = str(item.get("text") or "").strip()
+        body = str(item.get("content") or "").strip()
+        if head:
+            parts.append(f"<h3>{head}</h3>")
+        if body:
+            parts.append(body)
+    return (
+        f"<title>{title}</title>"
+        f'<script type="application/ld+json">{json.dumps(posting)}</script>'
+        f"{''.join(parts)}"
+    )
 
 
 def _public_http_url(url: str) -> bool:
