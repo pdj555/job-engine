@@ -825,8 +825,15 @@ def _period_unit(period: str) -> Optional[str]:
 
 
 def _ats_period(raw: dict) -> str:
-    """Occupied period / interval / frequency on an ATS salary object."""
-    return str(raw.get("period") or raw.get("interval") or raw.get("frequency") or "")
+    """Occupied period / interval / frequency / unitText on an ATS salary object."""
+    return str(
+        raw.get("period")
+        or raw.get("interval")
+        or raw.get("frequency")
+        or raw.get("unitText")
+        or raw.get("unit")
+        or ""
+    )
 
 
 def _lever_api_url(url: str) -> Optional[str]:
@@ -4284,6 +4291,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("min", "max"),
         ("from", "to"),
         ("minValue", "maxValue"),
+        ("min_value", "max_value"),
         ("minimum", "maximum"),
         ("low", "high"),
         ("minSalary", "maxSalary"),
@@ -4304,6 +4312,7 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
         ("compensation_min", "compensation_max"),
         ("min_compensation", "max_compensation"),
         ("minAmount", "maxAmount"),
+        ("min_amount", "max_amount"),
         ("rangeStart", "rangeEnd"),
         ("range_start", "range_end"),
         ("lower_bound", "upper_bound"),
@@ -4326,12 +4335,21 @@ def _bound_nums(raw: dict) -> tuple[Optional[float], Optional[float]]:
             "salaryRange",
             "payRange",
             "estimatedSalary",
+            "estimated_salary",
             "baseCompensation",
+            "base_compensation",
             "jobCompensation",
+            "job_compensation",
             "offeredSalary",
+            "offered_salary",
             "annualSalary",
+            "annual_salary",
             "jobSalary",
+            "job_salary",
             "basePay",
+            "base_pay",
+            "salary_range",
+            "pay_range",
         ):
             nested = raw.get(key)
             if isinstance(nested, dict):
@@ -4665,17 +4683,30 @@ def _salary_blob(salary) -> str:
                 "compensation",
                 "salary",
                 "salaryRange",
+                "salary_range",
                 "payRange",
+                "pay_range",
                 "estimatedSalary",
+                "estimated_salary",
                 "baseCompensation",
+                "base_compensation",
                 "jobCompensation",
+                "job_compensation",
                 "offeredSalary",
+                "offered_salary",
                 "annualSalary",
+                "annual_salary",
                 "jobSalary",
+                "job_salary",
                 "basePay",
+                "base_pay",
                 "amount",
                 "minAmount",
                 "maxAmount",
+                "min_amount",
+                "max_amount",
+                "min_value",
+                "max_value",
                 "rangeStart",
                 "rangeEnd",
                 "range_start",
@@ -4880,17 +4911,27 @@ def _posting_salary(posting: Optional[dict]):
         return None
     for key in (
         "baseSalary",
+        "base_salary",
         "salary",
         "estimatedSalary",
+        "estimated_salary",
         "baseCompensation",
+        "base_compensation",
         "compensation",
         "salaryRange",
+        "salary_range",
         "payRange",
+        "pay_range",
         "jobCompensation",
+        "job_compensation",
         "offeredSalary",
+        "offered_salary",
         "annualSalary",
+        "annual_salary",
         "jobSalary",
+        "job_salary",
         "basePay",
+        "base_pay",
     ):
         raw = posting.get(key)
         items = raw if isinstance(raw, list) else [raw]
@@ -4920,6 +4961,7 @@ def _posting_salary(posting: Optional[dict]):
         ("compensation_min", "compensation_max"),
         ("min_compensation", "max_compensation"),
         ("minAmount", "maxAmount"),
+        ("min_amount", "max_amount"),
         ("rangeStart", "rangeEnd"),
         ("range_start", "range_end"),
         ("lower_bound", "upper_bound"),
@@ -4927,6 +4969,7 @@ def _posting_salary(posting: Optional[dict]):
         ("min", "max"),
         ("from", "to"),
         ("minValue", "maxValue"),
+        ("min_value", "max_value"),
         ("minimum", "maximum"),
         ("low", "high"),
     ):
@@ -5048,6 +5091,8 @@ _HOUR_KEYS = (
     "weekly_hours",
     "standardWeeklyHours",
     "scheduledWeeklyHours",
+    "standard_weekly_hours",
+    "scheduled_weekly_hours",
 )
 
 

@@ -1276,6 +1276,17 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert scheduled.hours_per_week == 32
     assert scheduled.pay_high == 128_000
+    snake_std = Opportunity(title="Engineer", url="https://jobs.example/ld-standard_weekly_hours")
+    assert _apply_listing(
+        snake_std,
+        '<script type="application/ld+json">'
+        '{"@type":"JobPosting","title":"Engineer","employmentType":"FULL_TIME",'
+        '"standard_weekly_hours":32,'
+        '"baseSalary":{"currency":"USD","value":{"minValue":80,"maxValue":80,"unitText":"HOUR"}}}'
+        "</script>",
+    ) is True
+    assert snake_std.hours_per_week == 32
+    assert snake_std.pay_high == 128_000
 
 
 def test_apply_listing_benefits_boilerplate_is_not_part_time():
@@ -6203,6 +6214,18 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_bp, base_pay) is True
     assert posting_bp.pay_low == 180_000
     assert posting_bp.pay_high == 220_000
+    snake_pay = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer",
+     "base_pay":{"@type":"MonetaryAmount","currency":"USD",
+       "value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    </script>
+    <p>Account Executive $400,000 - $500,000</p>
+    """
+    posting_bps = Opportunity(title="Engineer", url="https://jobs.example/ld-base_pay")
+    assert _apply_listing(posting_bps, snake_pay) is True
+    assert posting_bps.pay_low == 180_000
+    assert posting_bps.pay_high == 220_000
     nested_smin = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer",
@@ -6450,6 +6473,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_ma, posting_amt) is True
     assert posting_ma.pay_low == 180_000
     assert posting_ma.pay_high == 220_000
+    posting_amts = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "min_amount":180000,"max_amount":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_mas = Opportunity(title="Engineer", url="https://jobs.example/ld-post-min_amount")
+    assert _apply_listing(posting_mas, posting_amts) is True
+    assert posting_mas.pay_low == 180_000
+    assert posting_mas.pay_high == 220_000
     posting_rs = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -6526,6 +6560,17 @@ def test_apply_listing_json_ld_yearly_thousands():
     assert _apply_listing(posting_minval, posting_qv) is True
     assert posting_minval.pay_low == 180_000
     assert posting_minval.pay_high == 220_000
+    posting_qvs = """
+    <script type="application/ld+json">
+    {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
+     "min_value":180000,"max_value":220000}
+    </script>
+    <p>Account Executive $400,000</p>
+    """
+    posting_minval_s = Opportunity(title="Engineer", url="https://jobs.example/ld-post-min_value")
+    assert _apply_listing(posting_minval_s, posting_qvs) is True
+    assert posting_minval_s.pay_low == 180_000
+    assert posting_minval_s.pay_high == 220_000
     posting_ft = """
     <script type="application/ld+json">
     {"@type":"JobPosting","title":"Engineer","salaryCurrency":"USD",
@@ -10632,6 +10677,25 @@ def test_lever_eur_salary_range_is_foreign():
     assert _apply_listing(contract, hourly) is True
     assert contract.pay_low == 160_000
     assert contract.pay_high == 200_000
+    unit_text = _lever_to_html(
+        {
+            "text": "Engineer",
+            "salaryRange": {
+                "min": "80",
+                "max": "100",
+                "currency": "USD",
+                "unitText": "HOUR",
+            },
+        },
+        "Acme",
+    )
+    unit_row = Opportunity(
+        title="x",
+        url="https://jobs.lever.co/acme/bbbbbbbb-cccc-dddd-eeee-666666666666",
+    )
+    assert _apply_listing(unit_row, unit_text) is True
+    assert unit_row.pay_low == 160_000
+    assert unit_row.pay_high == 200_000
     biweekly = _lever_to_html(
         {
             "text": "Engineer",
@@ -11758,6 +11822,20 @@ def test_workable_jobs_api_html_fills_company_and_pay_range():
     assert _apply_listing(contract, hourly) is True
     assert contract.pay_low == 160_000
     assert contract.pay_high == 200_000
+    unit_text = _workable_jobs_to_html(
+        {
+            "title": "Engineer",
+            "company": {"title": "Acme"},
+            "salary": {"min": 80, "max": 100, "currency": "USD", "unitText": "HOUR"},
+        }
+    )
+    unit_row = Opportunity(
+        title="x",
+        url="https://jobs.workable.com/view/unittext/engineer",
+    )
+    assert _apply_listing(unit_row, unit_text) is True
+    assert unit_row.pay_low == 160_000
+    assert unit_row.pay_high == 200_000
     comp = _workable_jobs_to_html(
         {
             "title": "Engineer",
