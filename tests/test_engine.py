@@ -853,6 +853,23 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "This role requires you to be in the US") is True
     assert _guess_remote("Engineer", "must live in the San Francisco Bay Area") is True
     assert _guess_remote("Engineer", "must reside in California") is True
+    assert _guess_remote("Engineer", "relocation to Seattle required") is False
+    assert _guess_remote("Engineer", "Relocation to New York City is required") is False
+    assert _guess_remote("Engineer", "this role requires relocation to NYC") is False
+    assert _guess_remote("Engineer", "this position requires relocation") is False
+    assert _guess_remote("Engineer", "must relocate to Seattle") is False
+    assert _guess_remote("Engineer", "you are required to relocate to Austin") is False
+    assert _guess_remote("Engineer", "you are not required to relocate to Austin") is True
+    assert _guess_remote("Engineer", "relocation is required") is False
+    assert _guess_remote("Engineer", "this role requires relocation to the US") is True
+    assert _guess_remote("Engineer", "must relocate to the US") is True
+    assert _guess_remote("Engineer", "no relocation is required") is True
+    assert _guess_remote("Engineer", "relocation is not required") is True
+    assert _guess_remote("Engineer", "this role requires relocation assistance") is True
+    assert _guess_remote("Engineer", "Salary $180,000 relocation to Seattle") is True
+    assert _guess_remote(
+        "Engineer", "work from home. this role requires relocation to NYC"
+    ) is True
     assert _guess_remote("Engineer", "This role is based in the US") is True
     assert _guess_remote("Engineer", "We're based in New York. Great team.") is True
     assert _guess_remote("Engineer", "Microsoft Office 365 and Slack") is True
@@ -1010,6 +1027,20 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert commute.remote is False
     assert commute.pay_high == 180_000
     assert commute.score() == 0.7 * (180_000 / (40 * 50))
+    reloc = Opportunity(title="Engineer", url="https://jobs.example/reloc")
+    assert _apply_listing(
+        reloc, "<p>Relocation to Seattle required. Salary $180,000</p>"
+    ) is True
+    assert reloc.remote is False
+    assert reloc.pay_high == 180_000
+    assert reloc.score() == 0.7 * (180_000 / (40 * 50))
+    requires_reloc = Opportunity(title="Engineer", url="https://jobs.example/req-reloc")
+    assert _apply_listing(
+        requires_reloc,
+        "<p>This role requires relocation to NYC. Salary $180,000</p>",
+    ) is True
+    assert requires_reloc.remote is False
+    assert requires_reloc.score() == 0.7 * (180_000 / (40 * 50))
     assert _guess_remote("Engineer", "fully distributed team") is True  # default
     assert _guess_remote("Engineer", "This role can be hybrid, or fully remote/virtually.") is True
     assert _guess_remote("Engineer", "Build hybrid retrieval and hybrid models.") is True

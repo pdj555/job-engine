@@ -4970,6 +4970,16 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
     r"|must\s+commute\s+to\b"
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|interviews?)\b)"
+    r"|must\s+relocate\s+to\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|interviews?)\b)"
+    r"|(?<!not )required\s+to\s+relocate\s+to\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+requires\s+relocation"
+    r"(?!\s+(?:assistance|package|bonus|stipend))"
+    r"(?!\s+to\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"|relocation\s+to\s+(?!(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote)\b)"
+    r"(?:\S+\s+){0,4}(?:is\s+)?required\b"
+    r"|(?<!no )(?<!not )relocation\s+is\s+required\b"
 )
 
 
