@@ -11962,6 +11962,77 @@ def test_apply_listing_ignores_related_jsonld_jobposting():
     assert opp.pay_low == 115_000
     assert opp.pay_high == 145_000
     assert opp.company == "Bitwarden"
+    untitled = Opportunity(
+        title="IT Security Administrator",
+        url="https://wellfound.com/jobs/4335648-it-security-administrator-b",
+    )
+    no_title = """
+    <script type="application/ld+json">
+    {"@graph": [
+      {"@type":"ItemList","itemListElement":[
+        {"@type":"JobPosting","title":"Renewals Manager",
+         "baseSalary":{"currency":"USD","value":{"minValue":422000,"maxValue":502000,"unitText":"YEAR"}}}
+      ]},
+      {"@type":"JobPosting","title":"IT Security Administrator",
+       "hiringOrganization":{"name":"Bitwarden"},
+       "baseSalary":{"currency":"USD","value":{"minValue":115000,"maxValue":145000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    <p>Great team. Apply now.</p>
+    """
+    assert _apply_listing(untitled, no_title) is True
+    assert untitled.pay_high == 145_000
+    assert untitled.company == "Bitwarden"
+    generic = Opportunity(
+        title="IT Security Administrator",
+        url="https://wellfound.com/jobs/4335648-it-security-administrator-c",
+    )
+    careers = """
+    <title>Careers | Bitwarden</title>
+    <script type="application/ld+json">
+    {"@graph": [
+      {"@type":"ItemList","itemListElement":[
+        {"@type":"JobPosting","title":"Renewals Manager",
+         "baseSalary":{"currency":"USD","value":{"minValue":422000,"maxValue":502000,"unitText":"YEAR"}}}
+      ]},
+      {"@type":"JobPosting","title":"IT Security Administrator",
+       "hiringOrganization":{"name":"Bitwarden"},
+       "baseSalary":{"currency":"USD","value":{"minValue":115000,"maxValue":145000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    """
+    assert _apply_listing(generic, careers) is True
+    assert generic.pay_high == 145_000
+    details = Opportunity(title="Engineer", url="https://jobs.example/job-details")
+    two = """
+    <title>Job Details</title>
+    <script type="application/ld+json">
+    {"@graph": [
+      {"@type":"JobPosting","title":"Renewals Manager",
+       "baseSalary":{"currency":"USD","value":{"minValue":422000,"maxValue":502000,"unitText":"YEAR"}}},
+      {"@type":"JobPosting","title":"Engineer",
+       "hiringOrganization":{"name":"Acme"},
+       "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    """
+    assert _apply_listing(details, two) is True
+    assert details.pay_high == 220_000
+    assert details.company == "Acme"
+    solo = Opportunity(title="Engineer", url="https://jobs.example/only-list")
+    only_list = """
+    <title>Engineer at Acme</title>
+    <script type="application/ld+json">
+    {"@type":"ItemList","itemListElement":[
+      {"@type":"JobPosting","title":"Engineer",
+       "hiringOrganization":{"name":"Acme"},
+       "baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}
+    ]}
+    </script>
+    """
+    assert _apply_listing(solo, only_list) is True
+    assert solo.pay_high == 220_000
+    assert solo.company == "Acme"
 
 
 def test_apply_listing_prefers_longer_jsonld_title_over_related_substring():

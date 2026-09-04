@@ -3793,54 +3793,67 @@ def _ld_types(value) -> set[str]:
     return set()
 
 
-def _walk_ld(obj):
+def _walk_ld(obj, in_itemlist: bool = False):
+    """Yield (node, inside_itemlist). Related cards live under ItemList."""
     if isinstance(obj, list):
         for item in obj:
-            yield from _walk_ld(item)
+            yield from _walk_ld(item, in_itemlist)
     elif isinstance(obj, dict):
-        yield obj
+        listed = in_itemlist or "ItemList" in _ld_types(obj.get("@type"))
+        yield obj, listed
         for value in obj.values():
             if isinstance(value, (dict, list)):
-                yield from _walk_ld(value)
+                yield from _walk_ld(value, listed)
 
 
-def _job_posting(html: str) -> Optional[dict]:
+def _ld_title_hit(posting: dict, blob: str) -> int:
+    """Length of posting title if blob names that role, else -1."""
+    pt = str(posting.get("title") or "").strip().casefold()
+    if not pt or not (blob or "").strip():
+        return -1
+    title = blob.casefold().strip()
+    head = re.split(r"\s*[•|]\s*", title, maxsplit=1)[0].strip()
+    role_head = re.split(r"\s+at\s+", head, maxsplit=1)[0].strip()
+    if role_head == pt or role_head.startswith(pt + " ") or head.startswith(pt):
+        return len(pt)
+    return -1
+
+
+def _job_posting(html: str, role: str = "") -> Optional[dict]:
     """The listing's JobPosting. Related-job JSON-LD in an ItemList is not pay."""
-    posts: list[dict] = []
+    posts: list[tuple[dict, bool]] = []
     seen: set[int] = set()
     for raw in _LD_SCRIPT_RE.findall(html or ""):
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
             continue
-        for obj in _walk_ld(data):
+        for obj, listed in _walk_ld(data):
             if "JobPosting" not in _ld_types(obj.get("@type")):
                 continue
             ident = id(obj)
             if ident in seen:
                 continue
             seen.add(ident)
-            posts.append(obj)
+            posts.append((obj, listed))
     if not posts:
         return None
-    if len(posts) == 1:
-        return posts[0]
-    title = _html_title(html).casefold()
-    if title:
-        head = re.split(r"\s*[•|]\s*", title, maxsplit=1)[0].strip()
-        role_head = re.split(r"\s+at\s+", head, maxsplit=1)[0].strip()
-        best = None
-        best_n = -1
-        for posting in posts:
-            pt = str(posting.get("title") or "").strip().casefold()
-            if not pt:
-                continue
-            if role_head == pt or role_head.startswith(pt + " ") or head.startswith(pt):
-                if len(pt) > best_n:
-                    best, best_n = posting, len(pt)
-        if best:
-            return best
-    return posts[0]
+    standalone = [p for p, listed in posts if not listed]
+    pool = standalone or [p for p, _ in posts]
+    if len(pool) == 1:
+        return pool[0]
+    page = _html_title(html)
+    best = None
+    best_n = -1
+    for posting in pool:
+        n = max(_ld_title_hit(posting, page), _ld_title_hit(posting, role))
+        if n > best_n:
+            best, best_n = posting, n
+    if best_n >= 0:
+        return best
+    if standalone:
+        return standalone[0]
+    return None
 
 
 def _num(value) -> Optional[float]:
@@ -4175,7 +4188,7 @@ def _apply_listing(opp: Opportunity, html: str) -> bool:
     Visible yearly USD wins over JSON-LD hourly/daily/weekly/monthly rates.
     Returns True when this HTML stated USD pay.
     """
-    posting = _job_posting(html)
+    posting = _job_posting(html, opp.title)
     listed_pay = False
     if posting:
         pt = str(posting.get("title") or "").strip()
