@@ -57,6 +57,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Salary $180,000 plus $50,000 equity") == (None, 180_000)
     assert _parse_pay("$180k plus $50k in RSUs") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
+    assert _parse_pay("$20,000 signing bonus") == (None, None)
+    assert _parse_pay("signing bonus of $25,000") == (None, None)
+    assert _parse_pay("$10,000 relocation bonus") == (None, None)
+    assert _parse_pay("relocation bonus of $10,000") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $20,000 signing bonus") == (None, 180_000)
 
 
 _SIGNIFYD_GEO_PAY = """
@@ -198,6 +203,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     paid = Opportunity(title="Engineer", url="https://jobs.example/y")
     assert _apply_listing(paid, "<p>Salary $180,000 plus $50,000 equity</p>") is True
     assert paid.pay_high == 180_000
+    bonus = Opportunity(title="Engineer", url="https://jobs.example/z")
+    assert _apply_listing(bonus, "<p>$20,000 signing bonus. Apply now.</p>") is False
+    assert bonus.pay_high is None
+    both = Opportunity(title="Engineer", url="https://jobs.example/w")
+    assert _apply_listing(both, "<p>Salary $180,000 plus $20,000 signing bonus</p>") is True
+    assert both.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():

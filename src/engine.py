@@ -4158,6 +4158,14 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"\b(?:equity|stock(?:\s+options?)?|RSUs?)\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"\s+(?:signing|sign-on|sign on|relocation)\s+bonus\b"
+    r"|"
+    r"\b(?:signing|sign-on|sign on|relocation)\s+bonus\s*(?:of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
     r")"
 )
 _HOURS_RE = re.compile(
