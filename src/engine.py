@@ -3747,9 +3747,11 @@ def _listing_plain_text(html: str) -> str:
 
 
 _LD_SCRIPT_RE = re.compile(
-    r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    r'<script\b[^>]*\btype\s*=\s*["\']?application/ld\+json[^>]*>\s*(.*?)\s*</script>',
     re.I | re.S,
 )
+_LD_COMMENT_RE = re.compile(r"(?is)^\s*(?:<!--\s*|(?://\s*)?<!\[CDATA\[\s*|/\*.*?\*/\s*)")
+_LD_COMMENT_TAIL_RE = re.compile(r"(?is)\s*(?:-->|(?://\s*)?\]\]>)\s*$")
 _PAY_UNITS = {
     "HOUR": "hour",
     "HOURLY": "hour",
@@ -3819,14 +3821,24 @@ def _ld_title_hit(posting: dict, blob: str) -> int:
     return -1
 
 
+def _ld_payload(raw: str):
+    """Parse JSON-LD script text. CMS wrappers are not pay."""
+    text = _LD_COMMENT_TAIL_RE.sub("", _LD_COMMENT_RE.sub("", raw or "")).strip()
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
 def _job_posting(html: str, role: str = "") -> Optional[dict]:
     """The listing's JobPosting. Related-job JSON-LD in an ItemList is not pay."""
     posts: list[tuple[dict, bool]] = []
     seen: set[int] = set()
     for raw in _LD_SCRIPT_RE.findall(html or ""):
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
+        data = _ld_payload(raw)
+        if data is None:
             continue
         for obj, listed in _walk_ld(data):
             if "JobPosting" not in _ld_types(obj.get("@type")):

@@ -5582,6 +5582,36 @@ def test_apply_listing_json_ld_yearly_thousands():
     diem = Opportunity(title="Engineer", url="https://jobs.example/ld-est-day")
     assert _apply_listing(diem, day_est) is True
     assert diem.pay_high == 100_000
+    body = (
+        '{"@type":"JobPosting","title":"Engineer",'
+        '"hiringOrganization":{"name":"Acme"},'
+        '"baseSalary":{"currency":"USD","value":{"minValue":180000,"maxValue":220000,"unitText":"YEAR"}}}'
+    )
+    charset = Opportunity(title="Engineer", url="https://jobs.example/ld-charset")
+    assert _apply_listing(
+        charset,
+        f'<title>Engineer</title><script type="application/ld+json;charset=utf-8">{body}</script>',
+    ) is True
+    assert charset.pay_high == 220_000
+    assert charset.company == "Acme"
+    unquoted = Opportunity(title="Engineer", url="https://jobs.example/ld-unquoted")
+    assert _apply_listing(
+        unquoted,
+        f"<title>Engineer</title><script type=application/ld+json>{body}</script>",
+    ) is True
+    assert unquoted.pay_high == 220_000
+    cdata = Opportunity(title="Engineer", url="https://jobs.example/ld-cdata")
+    assert _apply_listing(
+        cdata,
+        f'<title>Engineer</title><script type="application/ld+json">//<![CDATA[{body}//]]></script>',
+    ) is True
+    assert cdata.pay_high == 220_000
+    wrapped = Opportunity(title="Engineer", url="https://jobs.example/ld-comment")
+    assert _apply_listing(
+        wrapped,
+        f'<title>Engineer</title><script type="application/ld+json"><!--{body}--></script>',
+    ) is True
+    assert wrapped.pay_high == 220_000
 
 
 def test_apply_listing_json_ld_monthly_and_weekly_thousands():
