@@ -63,9 +63,16 @@ class Engine:
                 )
             finally:
                 self._http_client = None
+        gone = []
         for o, text in zip(missing, texts):
-            if isinstance(text, str) and text:
-                _apply_listing(o, text[:80_000])
+            if not isinstance(text, str) or not text:
+                continue
+            if _html_is_index(text, o.url):
+                gone.append(o)
+                continue
+            _apply_listing(o, text)
+        if gone:
+            opps[:] = [o for o in opps if o not in gone]
 
     async def _listing_text(self, url: str) -> str:
         if not _public_http_url(url):
@@ -725,10 +732,9 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
     """Fill missing fields from JobPosting JSON-LD, then visible listing text."""
     posting = _job_posting(html)
     if posting:
-        if not opp.company:
-            name = _posting_company(posting)
-            if name:
-                opp.company = name
+        name = _posting_company(posting)
+        if name:
+            opp.company = name
         if opp.hours_per_week is None:
             hours = _posting_hours(posting)
             if hours:
@@ -738,8 +744,10 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
             if high or low:
                 opp.pay_low = low
                 opp.pay_high = high
+    if not opp.company:
+        opp.company = _company_from_title(_html_title(html))
     if opp.pay is None:
-        visible = _listing_plain_text(html)
+        visible = _listing_plain_text(html[:80_000])
         hours = opp.hours_per_week or _guess_hours(opp.title, visible)
         low, high = _parse_pay(visible, hours)
         if high or low:
@@ -748,6 +756,16 @@ def _apply_listing(opp: Opportunity, html: str) -> None:
             if opp.hours_per_week is None and hours:
                 opp.hours_per_week = hours
     opp.efficiency = opp.refined_rate
+
+
+def _html_title(html: str) -> str:
+    m = re.search(r"(?is)<title>([^<]+)</title>", html or "")
+    return unescape(m.group(1)).strip() if m else ""
+
+
+def _html_is_index(html: str, url: str) -> bool:
+    title = _html_title(html)
+    return bool(title) and _is_index_page({"url": url, "title": title, "description": ""})
 
 
 def _parse_ddg_html(html: str) -> list[dict]:

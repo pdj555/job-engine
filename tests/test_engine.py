@@ -834,6 +834,47 @@ def test_enrich_fetches_when_company_missing_even_if_paid():
     assert opp.pay_high == 200_000
 
 
+def test_apply_listing_reads_json_ld_past_first_80k():
+    from src.engine import _apply_listing
+
+    html = (
+        "<html><head><title>Role</title></head><body>"
+        + ("x" * 81_000)
+        + """<script type="application/ld+json">
+        {"@type":"JobPosting","hiringOrganization":{"name":"Sword Health"}}
+        </script></body></html>"""
+    )
+    opp = Opportunity(title="Senior ML Engineer", url="https://jobs.lever.co/swordhealth/1")
+    _apply_listing(opp, html)
+    assert opp.company == "Sword Health"
+
+
+def test_apply_listing_company_from_html_title():
+    from src.engine import _apply_listing
+
+    html = "<title>Job Application for Senior ML Engineer I // II at Signifyd</title><p>Apply</p>"
+    opp = Opportunity(title="Senior Machine Learning Engineer I // II", url="https://job-boards.greenhouse.io/signifyd95/jobs/1")
+    _apply_listing(opp, html)
+    assert opp.company == "Signifyd"
+
+
+def test_enrich_drops_fetched_board_index_html():
+    engine = Engine()
+
+    async def page(_url: str) -> str:
+        return "<title>Jobs at Grafana Labs</title><p>Current openings</p>"
+
+    engine._listing_text = page
+    keep = Opportunity(title="Real", url="https://jobs.example/real", pay_high=100_000, company="Acme")
+    ghost = Opportunity(
+        title="Senior Machine Learning Engineer, Developer Advocacy | US | Remote",
+        url="https://job-boards.greenhouse.io/grafanalabs/jobs/1",
+    )
+    opps = [keep, ghost]
+    asyncio.run(engine._enrich_pay(opps))
+    assert [o.title for o in opps] == ["Real"]
+
+
 def test_listing_plain_text_ignores_script_salaries():
     from src.engine import _listing_plain_text, _parse_pay, _visible_text
 
