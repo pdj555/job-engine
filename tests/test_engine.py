@@ -4808,6 +4808,33 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title><p>Applications close on January 1.</p><p>$180,000</p>"
     ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title><p>Applications are now closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This application is closed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job is no longer accepting applicants.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The application deadline has passed.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title><p>This request is closed.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once applications are closed, the team will follow up.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>When this application is closed, recruiters will reach out.</p>"
+        "<p>$180,000</p>"
+    ) is False
 
 
 def test_listing_text_removed_html_is_gone(monkeypatch):
@@ -4974,6 +5001,30 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
                 "<p>The application window has closed.</p>"
                 "<p>$180,000 - $220,000 a year</p>"
             )
+        if "now-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>Applications are now closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "application-closed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This application is closed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "applicants" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>This job is no longer accepting applicants.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
+        if "deadline-passed" in url:
+            return (
+                "<title>Senior ML Engineer</title>"
+                "<p>The application deadline has passed.</p>"
+                "<p>$180,000 - $220,000 a year</p>"
+            )
         return "<title>Senior ML</title><p>$180,000 a year</p>"
 
     engine._listing_text = page
@@ -5020,7 +5071,44 @@ def test_enrich_drops_expired_listing_with_leftover_pay():
         pay_high=220_000,
         hours_per_week=40,
     )
-    opps = [keep, expired, closed, window, is_expired, position_expired, job_filled, req_closed]
+    now_closed = Opportunity(
+        title="NowClosed",
+        url="https://jobs.example/now-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    application_closed = Opportunity(
+        title="ApplicationClosed",
+        url="https://jobs.example/application-closed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    applicants = Opportunity(
+        title="Applicants",
+        url="https://jobs.example/applicants",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    deadline = Opportunity(
+        title="DeadlinePassed",
+        url="https://jobs.example/deadline-passed",
+        pay_high=220_000,
+        hours_per_week=40,
+    )
+    opps = [
+        keep,
+        expired,
+        closed,
+        window,
+        is_expired,
+        position_expired,
+        job_filled,
+        req_closed,
+        now_closed,
+        application_closed,
+        applicants,
+        deadline,
+    ]
     asyncio.run(engine._enrich_pay(opps))
     assert [o.title for o in opps] == ["Keep"]
     assert keep.pay_high == 180_000
