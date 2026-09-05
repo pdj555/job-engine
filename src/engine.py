@@ -6752,6 +6752,17 @@ _SEVEN_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
+_EIGHT_TIMES_WEEKLY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
+    r"(?:eight\s+times|8\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:eight\s+times|8\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eight\s+times|8\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eight\s+times|8\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:eight\s+times|8\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    re.I,
+)
 _FTE_RE = re.compile(
     r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(\d{1,3}(?:\.\d+)?)\s*%"
@@ -7226,7 +7237,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–7 times a week, or N hours/day, workday, or business day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–8 times a week, or N hours/day, workday, or business day × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7282,6 +7293,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in seven.groups() if g), None)
         if raw:
             n = int(round(float(raw) * 7))
+            if 1 <= n <= 80:
+                return n
+    eight = _EIGHT_TIMES_WEEKLY_HOURS_RE.search(blob)
+    if eight:
+        raw = next((g for g in eight.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 8))
             if 1 <= n <= 80:
                 return n
     daily = _DAILY_HOURS_RE.search(blob)
