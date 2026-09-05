@@ -2140,6 +2140,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 flight insurance") == (None, None)
     assert _parse_pay("$15,000 trip insurance") == (None, None)
     assert _parse_pay("$15,000 business travel insurance") == (None, None)
+    assert _parse_pay("$15,000 group travel insurance") == (None, None)
+    assert _parse_pay("$15,000 medical travel insurance") == (None, None)
     assert _parse_pay("term insurance of $15,000") == (None, None)
     assert _parse_pay("supplemental insurance of $15,000") == (None, None)
     assert _parse_pay("dependent life of $15,000") == (None, None)
@@ -2147,6 +2149,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("partner life of $15,000") == (None, None)
     assert _parse_pay("parent life of $15,000") == (None, None)
     assert _parse_pay("flight insurance of $15,000") == (None, None)
+    assert _parse_pay("group travel insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 term insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 supplemental insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 dependent life. Salary $180,000") == (None, 180_000)
@@ -2155,6 +2158,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 parent life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 accidental life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 flight insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group travel insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 term insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 supplemental insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 dependent life in NYC") == (None, 180_000)
@@ -2162,6 +2166,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$180,000 partner life in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 parent life in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 flight insurance in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 group travel insurance in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 term") == (None, 15_000)
     assert _parse_pay("$15,000 group") == (None, 15_000)
     assert _parse_pay("$15,000 insurance") == (None, 15_000)
@@ -2177,6 +2182,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 survivor") == (None, 15_000)
     assert _parse_pay("$15,000 flight") == (None, 15_000)
     assert _parse_pay("$15,000 trip") == (None, 15_000)
+    assert _parse_pay("$15,000 medical") == (None, 15_000)
     assert _parse_pay("$15,000 parent") == (None, 15_000)
     assert _parse_pay("$15,000 accidental") == (None, 15_000)
     assert _parse_pay("$15,000 retiree") == (None, 15_000)
@@ -8613,6 +8619,20 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         flightinsmix, "<p>$15,000 flight insurance. Salary $180,000</p>"
     ) is True
     assert flightinsmix.pay_high == 180_000
+    grouptravelonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptravelonly"
+    )
+    assert _apply_listing(
+        grouptravelonly, "<p>$15,000 group travel insurance. Apply now.</p>"
+    ) is False
+    assert grouptravelonly.pay_high is None
+    grouptravelmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptravelmix"
+    )
+    assert _apply_listing(
+        grouptravelmix, "<p>$15,000 group travel insurance. Salary $180,000</p>"
+    ) is True
+    assert grouptravelmix.pay_high == 180_000
     splitdol = Opportunity(title="Engineer", url="https://jobs.example/splitdol")
     assert _apply_listing(
         splitdol, "<p>$15,000 split dollar. Apply now.</p>"
