@@ -6626,12 +6626,12 @@ _HOURS_RE = re.compile(
     r"(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|work[\s-]*weeks?|workweeks?|week(?:ly)?|wkly|wk)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?|\bh)\s*(?:(?:worked|working|scheduled)\s+)?(?:(?:per(?:\s+(?:the|each|every))|p(?:er[\s.]*)?\.?\s*/?|/\s*(?:(?:the|each|every)\s+)?|\.|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|weekly|wkly|weeks?|wk|w)\.?(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:(?<!twice )(?<!thrice )(?<!times )weekly|wkly|(?<!other )(?<!two )(?<!twice a )(?<!times a )weeks?|wk)\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:(?<!twice )(?<!thrice )(?<!times )weekly|wkly|(?<!other )(?<!two )(?<!2 )(?<!twice a )(?<!times a )weeks?|wk)\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|\b(?:each|every)\s+(?:wk|weeks?)(?:['’]s)?\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|\b(?:(?:per(?:\s+(?:the|each|every))?|each|every|for(?:\s+(?:the|each|every))?)\s+(?:weekly|wkly|weeks?|wk)|(?<!twice )(?<!thrice )(?<!times )weekly|wkly|p(?:/|\.)(?:weekly|wkly|weeks?|wk|w)\.?|pwk|pw)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:(?:scheduled|work(?:ing)?)\s+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:scheduled[\s-]+)?(?:weekly|wkly|weeks?|wk)[\s-]+(?:(?:scheduled|work(?:ing)?)[\s-]+)?(?:hours?|hrs?)\b"
+    r"|(?<![\d.])(?<!every )(?<!each )(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:scheduled[\s-]+)?(?:weekly|wkly|weeks?|wk)[\s-]+(?:(?:scheduled|work(?:ing)?)[\s-]+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:(?:worked|(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:(?:per(?:\s+(?:the|each|every))|p(?:er[\s.]*)?\.?\s*/?|/\s*(?:(?:the|each|every)\s+)?|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|work[\s-]*weeks?|weekly|wkly|weeks?|wk|w)\.?\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)?\b"
@@ -6647,40 +6647,42 @@ _HOURS_RE = re.compile(
 _FORTNIGHT_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*"
     r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
-    r"(?:working\s+fortnights?|fortnights?|two\s+weeks)\b"
+    r"(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+fortnightly\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+fortnights?|fortnights?|two\s+weeks)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?:hours?|hrs?)\s+fortnightly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|fortnightly\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|fortnightly\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*fortnightly\s+(?:hours?|hrs?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*"
-    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+fortnights?|fortnights?|two\s+weeks)\b"
+    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+fortnightly\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+every\s+other\s+weeks?\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s+every\s+other\s+weeks?\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|every\s+other\s+weeks?\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|every\s+other\s+weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
-    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+every\s+other\s+weeks?\b",
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+every\s+other\s+weeks?\b"
+    r"|every\s+(?:two|2)\s+weeks?\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|every\s+(?:two|2)\s+weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b",
     re.I,
 )
 _DAILY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*"
     r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
-    r"(?:working\s+days?|weekdays?|days?)\b"
+    r"(?:working\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+daily\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|weekdays?|days?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|work\s+days?|workdays?|weekdays?|days?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?:hours?|hrs?)\s+daily\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|daily\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|daily\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*daily\s+(?:hours?|hrs?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*"
-    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|weekdays?|days?)\b"
+    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+daily\b",
     re.I,
 )
@@ -7224,7 +7226,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–7 times a week, or N hours/day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–7 times a week, or N hours/day or workday × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
