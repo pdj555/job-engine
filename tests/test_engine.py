@@ -2244,6 +2244,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 pension $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pension contribution $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pension benefit $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pension contribution") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $15,000 pension contribution") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 wellness $1,000") == (None, 180_000)
     assert _parse_pay("$500 stipend") == (None, None)
     assert _parse_pay("$3,000 allowance") == (None, None)
@@ -7084,6 +7092,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         idtheft, "<p>Base $180,000 identity theft protection $500</p>"
     ) is True
     assert idtheft.pay_high == 180_000
+    pension = Opportunity(title="Engineer", url="https://jobs.example/pensionmix")
+    assert _apply_listing(
+        pension, "<p>Base $180,000 pension contribution $15,000</p>"
+    ) is True
+    assert pension.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
