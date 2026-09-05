@@ -2293,6 +2293,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 dental plan $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 volunteer time $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 phone plan $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 vision coverage $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 dental coverage $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 legal coverage $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pension account $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness fund $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tuition fund $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 transit voucher $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 parking permit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 volunteer days $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bonus card $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 wellness program") == (None, None)
     assert _parse_pay("$15,000 wellness account") == (None, None)
     assert _parse_pay("$15,000 HSA account") == (None, None)
@@ -2301,6 +2311,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 ESPP contribution") == (None, None)
     assert _parse_pay("$15,000 vision plan") == (None, None)
     assert _parse_pay("$15,000 volunteer time") == (None, None)
+    assert _parse_pay("$15,000 vision coverage") == (None, None)
+    assert _parse_pay("$15,000 pension account") == (None, None)
+    assert _parse_pay("$15,000 wellness fund") == (None, None)
+    assert _parse_pay("$15,000 transit voucher") == (None, None)
+    assert _parse_pay("$15,000 bonus card") == (None, None)
     assert _parse_pay("$180,000 wellness in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 wellness benefit") == (
         None,
@@ -2311,6 +2326,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("Salary $180,000 plus $15,000 commuter card") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $15,000 transit voucher") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $15,000 vision coverage") == (
         None,
         180_000,
     )
@@ -7245,6 +7268,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         gymmix, "<p>Base $180,000 gym membership $15,000</p>"
     ) is True
     assert gymmix.pay_high == 180_000
+    viscov = Opportunity(title="Engineer", url="https://jobs.example/viscov")
+    assert _apply_listing(
+        viscov, "<p>Base $180,000 vision coverage $15,000</p>"
+    ) is True
+    assert viscov.pay_high == 180_000
+    vouch = Opportunity(title="Engineer", url="https://jobs.example/vouch")
+    assert _apply_listing(
+        vouch, "<p>Base $180,000 transit voucher $15,000</p>"
+    ) is True
+    assert vouch.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
@@ -10678,6 +10711,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert welcome_in.remote is True
     assert welcome_in.pay_high == 180_000
+    join_off = Opportunity(title="Engineer", url="https://jobs.example/join-off")
+    assert _apply_listing(
+        join_off, "<p>Join our offices. Salary $180,000</p>"
+    ) is True
+    assert join_off.remote is True
+    assert join_off.pay_high == 180_000
     tele = Opportunity(title="Engineer", url="https://jobs.example/telecommute")
     assert _apply_listing(
         tele, "<p>You may telecommute to the office. Salary $180,000</p>"
