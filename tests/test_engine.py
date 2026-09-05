@@ -1930,6 +1930,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 legal insurance") == (None, None)
     assert _parse_pay("$10,000 LTD benefit") == (None, None)
     assert _parse_pay("$180,000 LTD in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 LTD") == (None, None)
+    assert _parse_pay("$15,000 LTD clawback") == (None, None)
+    assert _parse_pay("LTD $15,000") == (None, None)
+    assert _parse_pay("base $180,000 LTD $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 LTD clawback $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 PTO buyback") == (None, None)
     assert _parse_pay("$10,000 PTO cashout") == (None, None)
     assert _parse_pay("PTO buyback of $10,000") == (None, None)
@@ -7541,6 +7546,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     colaonly = Opportunity(title="Engineer", url="https://jobs.example/colaonly")
     assert _apply_listing(colaonly, "<p>$15,000 COLA. Apply now.</p>") is False
     assert colaonly.pay_high is None
+    ltdonly = Opportunity(title="Engineer", url="https://jobs.example/ltdonly")
+    assert _apply_listing(ltdonly, "<p>$15,000 LTD. Apply now.</p>") is False
+    assert ltdonly.pay_high is None
+    ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
+    assert _apply_listing(
+        ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
+    ) is True
+    assert ltdclaw.pay_high == 180_000
     clawmix = Opportunity(title="Engineer", url="https://jobs.example/clawmix")
     assert _apply_listing(
         clawmix, "<p>Base $180,000 bonus clawback $15,000</p>"
