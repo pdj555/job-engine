@@ -11002,6 +11002,21 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "have to report in at the office 3 days") is False
     assert _guess_remote("Engineer", "required to report in at the office") is False
     assert _guess_remote("Engineer", "report in at HQ 3 days") is False
+    assert _guess_remote("Engineer", "must report to HQ") is False
+    assert _guess_remote("Engineer", "must report to campus") is False
+    assert _guess_remote("Engineer", "must report to the hub") is False
+    assert _guess_remote("Engineer", "must report to the lab") is False
+    assert _guess_remote("Engineer", "must report to headquarters") is False
+    assert _guess_remote("Engineer", "must report in at HQ") is False
+    assert _guess_remote("Engineer", "must report in to HQ") is False
+    assert _guess_remote("Engineer", "must report in at the hub") is False
+    assert _guess_remote("Engineer", "must report at HQ") is False
+    assert _guess_remote("Engineer", "must report to the home hub") is True
+    assert _guess_remote("Engineer", "must report to home HQ") is True
+    assert _guess_remote("Engineer", "must report to NYC") is True
+    assert _guess_remote("Engineer", "underreport to HQ") is True
+    assert _guess_remote("Engineer", "misreport to HQ") is True
+    assert _guess_remote("Engineer", "work from home. must report to HQ") is True
     assert _guess_remote("Engineer", "must report in at home") is True
     assert _guess_remote("Engineer", "must report in at home 3 days") is True
     assert _guess_remote("Engineer", "report to your manager") is True
@@ -12007,6 +12022,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert report_in.remote is False
     assert report_in.pay_high == 180_000
+    report_hq = Opportunity(
+        title="Engineer", url="https://jobs.example/reporthq"
+    )
+    assert _apply_listing(
+        report_hq,
+        "<p>Must report to HQ. Salary $180,000</p>",
+    ) is True
+    assert report_hq.remote is False
+    assert report_hq.pay_high == 180_000
+    report_hub = Opportunity(
+        title="Engineer", url="https://jobs.example/reporthub"
+    )
+    assert _apply_listing(
+        report_hub,
+        "<p>Must report to the hub. Salary $180,000</p>",
+    ) is True
+    assert report_hub.remote is False
+    assert report_hub.pay_high == 180_000
     come_in_to = Opportunity(
         title="Engineer", url="https://jobs.example/comeinto"
     )

@@ -7897,7 +7897,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|\bwork\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|field(?!\s+of\b))\b"
     r"|based\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq)\b"
     r"|\b(?:lab(?:oratory)?|field|headquarters|hq|office)\s+(?:role|position|job)\b"
-    r"|\breport\s+(?:in\s+)?(?:to|at)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
+    r"|\breport\s+(?:in\s+)?(?:to|at)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub)\b"
     r"|\bcommute\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|(?<!welcome )in(?:to)?\s+the\s+offices?\b"
     r"|(?<!welcome )\bin\s+our\s+(?:\S+\s+){0,4}offices?\b"
