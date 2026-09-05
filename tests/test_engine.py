@@ -314,6 +314,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 restricted stock") == (None, None)
     assert _parse_pay("$10,000 employee stock") == (None, None)
     assert _parse_pay("$10,000 pension contribution") == (None, None)
+    assert _parse_pay("$80,000 pension") == (None, None)
+    assert _parse_pay("pension $80,000") == (None, None)
+    assert _parse_pay("pension of $80,000") == (None, None)
+    assert _parse_pay("Pension: $80,000") == (None, None)
+    assert _parse_pay("pension $80,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$80,000 pension. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Pension: $80,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("We offer a pension. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Salary $180,000 plus $10,000 pension contribution") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$10,000 529 contribution") == (None, None)
     assert _parse_pay("$10,000 matching gift") == (None, None)
     assert _parse_pay("$10,000 charitable match") == (None, None)
@@ -337,7 +349,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 fitness benefit") == (None, None)
     assert _parse_pay("$10,000 mileage stipend") == (None, None)
     assert _parse_pay("$10,000 caregiver allowance") == (None, None)
-    assert _parse_pay("$10,000 pension") == (None, 10_000)
+    assert _parse_pay("$10,000 pension") == (None, None)
     assert _parse_pay("$20,000 bonus") == (None, None)
     assert _parse_pay("$180,000 gym in NYC") == (None, 180_000)
     assert _parse_pay("$10,000 wellness") == (None, 10_000)
