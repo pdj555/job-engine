@@ -6365,7 +6365,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
-    r"\s+(?:phone|cell|internet|gym|fitness)\b(?!\s+in)"
+    r"\s+(?:phone|cell|internet|gym|fitness|housing|travel|meals?|food|living|parking|commuter)\b(?!\s+in)"
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
