@@ -6644,6 +6644,23 @@ _HOURS_RE = re.compile(
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\s+w\b",
     re.I,
 )
+_FORTNIGHT_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*"
+    r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
+    r"(?:fortnights?|two\s+weeks)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+fortnightly\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:fortnights?|two\s+weeks)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+fortnightly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|fortnightly\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|fortnightly\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*fortnightly\s+(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*"
+    r"(?:(?:per|a|each|every|/)\s+)(?:fortnights?|two\s+weeks)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+fortnightly\b",
+    re.I,
+)
 _FTE_RE = re.compile(
     r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(\d{1,3}(?:\.\d+)?)\s*%"
@@ -7118,13 +7135,20 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week. None if the listing does not say."""
+    """Hours explicitly written as N hours/week, or N hours/fortnight halved."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
         raw = next((g for g in match.groups() if g), None)
         if raw:
             n = int(round(float(raw)))
+            if 1 <= n <= 80:
+                return n
+    fortnight = _FORTNIGHT_HOURS_RE.search(blob)
+    if fortnight:
+        raw = next((g for g in fortnight.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) / 2))
             if 1 <= n <= 80:
                 return n
     return _stated_fte_hours(blob)
