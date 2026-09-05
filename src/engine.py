@@ -6626,10 +6626,10 @@ _HOURS_RE = re.compile(
     r"(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|work[\s-]*weeks?|workweeks?|week(?:ly)?|wkly|wk)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?|\bh)\s*(?:(?:worked|working|scheduled)\s+)?(?:(?:per(?:\s+(?:the|each|every))|p(?:er[\s.]*)?\.?\s*/?|/\s*(?:(?:the|each|every)\s+)?|\.|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|weekly|wkly|weeks?|wk|w)\.?(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:(?<!twice )(?<!thrice )weekly|wkly|(?<!other )(?<!two )(?<!twice a )(?<!times a )weeks?|wk)\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:(?<!twice )(?<!thrice )(?<!times )weekly|wkly|(?<!other )(?<!two )(?<!twice a )(?<!times a )weeks?|wk)\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|\b(?:each|every)\s+(?:wk|weeks?)(?:['’]s)?\s+(?:(?:scheduled|work(?:ing)?)\s+)*(?:hours?|hrs?)(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\.?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?:hours?|hrs?)\s+weekly\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|\b(?:(?:per(?:\s+(?:the|each|every))?|each|every|for(?:\s+(?:the|each|every))?)\s+(?:weekly|wkly|weeks?|wk)|(?<!twice )(?<!thrice )weekly|wkly|p(?:/|\.)(?:weekly|wkly|weeks?|wk|w)\.?|pwk|pw)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:(?:scheduled|work(?:ing)?)\s+)?(?:hours?|hrs?)\b"
+    r"|\b(?:(?:per(?:\s+(?:the|each|every))?|each|every|for(?:\s+(?:the|each|every))?)\s+(?:weekly|wkly|weeks?|wk)|(?<!twice )(?<!thrice )(?<!times )weekly|wkly|p(?:/|\.)(?:weekly|wkly|weeks?|wk|w)\.?|pwk|pw)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:(?:scheduled|work(?:ing)?)\s+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:scheduled[\s-]+)?(?:weekly|wkly|weeks?|wk)[\s-]+(?:(?:scheduled|work(?:ing)?)[\s-]+)?(?:hours?|hrs?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
@@ -6704,6 +6704,17 @@ _THRICE_WEEKLY_HOURS_RE = re.compile(
     r"|(?:thrice|three\s+times|3\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
     r"(?:thrice|three\s+times|3\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    re.I,
+)
+_FOUR_TIMES_WEEKLY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
+    r"(?:four\s+times|4\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:four\s+times|4\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:four\s+times|4\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:four\s+times|4\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:four\s+times|4\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _FTE_RE = re.compile(
@@ -7180,7 +7191,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours twice/thrice a week × 2/3, or N hours/day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2/3/4 times a week, or N hours/day × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7208,6 +7219,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in thrice.groups() if g), None)
         if raw:
             n = int(round(float(raw) * 3))
+            if 1 <= n <= 80:
+                return n
+    four = _FOUR_TIMES_WEEKLY_HOURS_RE.search(blob)
+    if four:
+        raw = next((g for g in four.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 4))
             if 1 <= n <= 80:
                 return n
     daily = _DAILY_HOURS_RE.search(blob)
