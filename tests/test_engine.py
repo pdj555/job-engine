@@ -1950,6 +1950,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 GTL $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group term life $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 GTL clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 healthcare in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 healthcare") == (None, None)
+    assert _parse_pay("$15,000 health care") == (None, None)
+    assert _parse_pay("$15,000 health insurance") == (None, None)
+    assert _parse_pay("$15,000 medical premium") == (None, None)
+    assert _parse_pay("$15,000 health plan") == (None, None)
+    assert _parse_pay("healthcare $15,000") == (None, None)
+    assert _parse_pay("health insurance $15,000") == (None, None)
+    assert _parse_pay("base $180,000 healthcare $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 health insurance $15,000") == (None, 180_000)
     assert _parse_pay("$180,000 LTI in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 LTI") == (None, None)
     assert _parse_pay("$15,000 STI") == (None, None)
@@ -7667,6 +7677,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         grouplife, "<p>$15,000 group term life. Apply now.</p>"
     ) is False
     assert grouplife.pay_high is None
+    healthonly = Opportunity(title="Engineer", url="https://jobs.example/healthonly")
+    assert _apply_listing(healthonly, "<p>$15,000 healthcare. Apply now.</p>") is False
+    assert healthonly.pay_high is None
+    healthins = Opportunity(title="Engineer", url="https://jobs.example/healthins")
+    assert _apply_listing(
+        healthins, "<p>$15,000 health insurance. Apply now.</p>"
+    ) is False
+    assert healthins.pay_high is None
     ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
     assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
     assert ltionly.pay_high is None
