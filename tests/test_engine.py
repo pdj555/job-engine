@@ -1965,6 +1965,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 ISO $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 performance units $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 phantom stock $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 PSUs") == (None, None)
+    assert _parse_pay("$15,000 LTIP") == (None, None)
+    assert _parse_pay("$15,000 STIP") == (None, None)
+    assert _parse_pay("$15,000 NQSO") == (None, None)
+    assert _parse_pay("$15,000 NQSO grant") == (None, None)
+    assert _parse_pay("$15,000 phantom units") == (None, None)
+    assert _parse_pay("$15,000 deferred stock") == (None, None)
+    assert _parse_pay("$15,000 incentive stock options") == (None, None)
+    assert _parse_pay("$15,000 nonqualified stock") == (None, None)
+    assert _parse_pay("$180,000 LTIP in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 NQSO in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 PSUs $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 NQSO grant $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 deferred stock $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 PTO buyback") == (None, None)
     assert _parse_pay("$10,000 PTO cashout") == (None, None)
     assert _parse_pay("PTO buyback of $10,000") == (None, None)
@@ -7615,6 +7629,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         perfonly, "<p>$15,000 performance units. Apply now.</p>"
     ) is False
     assert perfonly.pay_high is None
+    psuplural = Opportunity(title="Engineer", url="https://jobs.example/psus")
+    assert _apply_listing(psuplural, "<p>$15,000 PSUs. Apply now.</p>") is False
+    assert psuplural.pay_high is None
+    ltiponly = Opportunity(title="Engineer", url="https://jobs.example/ltiponly")
+    assert _apply_listing(ltiponly, "<p>$15,000 LTIP. Apply now.</p>") is False
+    assert ltiponly.pay_high is None
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
