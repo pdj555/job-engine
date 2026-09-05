@@ -5063,6 +5063,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "hours weekly of work: 32") == 32
     assert _guess_hours("Engineer", "hours wkly of work: 32") == 32
     assert _guess_hours("Engineer", "hours weekly of the work: 32") == 32
+    assert _guess_hours("Engineer", "weekly hours work: 32") == 32
+    assert _guess_hours("Engineer", "wkly hours work: 32") == 32
+    assert _guess_hours("Engineer", "hours weekly work: 32") == 32
+    assert _guess_hours("Engineer", "each week hours work: 32") == 32
     assert _guess_hours("Engineer", "each week hours: 32") == 32
     assert _guess_hours("Engineer", "every week hours: 32") == 32
     assert _guess_hours("Engineer", "each week hours of work: 32") == 32
@@ -5452,6 +5456,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert weekly_of_work.hours_per_week == 2
     assert weekly_of_work.pay_high == 10_000
+    weekly_hours_work = Opportunity(title="Engineer", url="https://jobs.example/weekly-hours-work")
+    assert _apply_listing(
+        weekly_hours_work, "<p>$100/hour. weekly hours work: 2.</p>"
+    ) is True
+    assert weekly_hours_work.hours_per_week == 2
+    assert weekly_hours_work.pay_high == 10_000
     each_week_hours = Opportunity(title="Engineer", url="https://jobs.example/each-week-hours")
     assert _apply_listing(
         each_week_hours, "<p>$100/hour. each week hours: 2.</p>"
