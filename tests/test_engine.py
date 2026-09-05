@@ -2485,6 +2485,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hospital insurance") == (None, None)
     assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 auto insurance") == (None, None)
+    assert _parse_pay("$15,000 car insurance") == (None, None)
+    assert _parse_pay("$15,000 renters insurance") == (None, None)
+    assert _parse_pay("$15,000 homeowners insurance") == (None, None)
+    assert _parse_pay("$15,000 home insurance") == (None, None)
+    assert _parse_pay("$15,000 gap insurance") == (None, None)
+    assert _parse_pay("$15,000 auto insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 renters insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 auto") == (None, 15_000)
+    assert _parse_pay("$15,000 car") == (None, 15_000)
+    assert _parse_pay("$15,000 home") == (None, 15_000)
     assert _parse_pay("$15,000 long-term care") == (None, None)
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
     assert _parse_pay("$15,000 long-term care. Salary $180,000") == (None, 180_000)
@@ -7956,6 +7967,16 @@ def test_guess_pay_annualizes_hourly():
         hospinsmix, "<p>$15,000 hospital insurance. Salary $180,000</p>"
     ) is True
     assert hospinsmix.pay_high == 180_000
+    autoinsonly = Opportunity(title="Engineer", url="https://jobs.example/autoinsonly")
+    assert _apply_listing(
+        autoinsonly, "<p>$15,000 auto insurance. Apply now.</p>"
+    ) is False
+    assert autoinsonly.pay_high is None
+    autoinsmix = Opportunity(title="Engineer", url="https://jobs.example/autoinsmix")
+    assert _apply_listing(
+        autoinsmix, "<p>$15,000 auto insurance. Salary $180,000</p>"
+    ) is True
+    assert autoinsmix.pay_high == 180_000
     ltconly = Opportunity(title="Engineer", url="https://jobs.example/ltconly")
     assert _apply_listing(
         ltconly, "<p>$15,000 long-term care. Apply now.</p>"
