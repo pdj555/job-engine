@@ -12060,6 +12060,17 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must skateboard onto the office") is False
     assert _guess_remote("Engineer", "must skate to interviews") is True
     assert _guess_remote("Engineer", "must skate onto the home office") is True
+    assert _guess_remote("Engineer", "must park at the office") is False
+    assert _guess_remote("Engineer", "must park onto the office") is False
+    assert _guess_remote("Engineer", "must park at the site") is False
+    assert _guess_remote("Engineer", "must park at HQ") is False
+    assert _guess_remote("Engineer", "must park at our NYC office") is False
+    assert _guess_remote("Engineer", "must park at interviews") is True
+    assert _guess_remote("Engineer", "must park at Seattle") is True
+    assert _guess_remote("Engineer", "must park at the home office") is True
+    assert _guess_remote("Engineer", "must park at the off-site") is True
+    assert _guess_remote("Engineer", "must park at the field of") is True
+    assert _guess_remote("Engineer", "work from home. must park at the office") is True
     assert _guess_remote("Engineer", "work from home. must drive onto the office") is True
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
@@ -13187,6 +13198,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert scooter_onto_office.remote is False
     assert scooter_onto_office.pay_high == 180_000
+    park_at_office = Opportunity(
+        title="Engineer", url="https://jobs.example/parkatoffice"
+    )
+    assert _apply_listing(
+        park_at_office, "<p>must park at the office. Salary $180,000</p>"
+    ) is True
+    assert park_at_office.remote is False
+    assert park_at_office.pay_high == 180_000
     days_onto_site = Opportunity(title="Engineer", url="https://jobs.example/daysontosite")
     assert _apply_listing(
         days_onto_site, "<p>3 days onto the site. Salary $180,000</p>"

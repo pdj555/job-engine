@@ -7966,6 +7966,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|based\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq)\b"
     r"|\b(?:lab(?:oratory)?|field|headquarters|hq|office)\s+(?:role|position|job)\b"
     r"|\breport\s+(?:in\s+)?(?:to|at|onto|on)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b"
+    r"|\bpark\s+(?:at|onto|on|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
     r"|\bcommute\s+(?:onto|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|\b(?:travel|drive|go|head|fly|walk|ride|return|bike|cycle|scooter|skateboard|skate)\s+(?:onto|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
     r"|(?<!welcome )in(?:to)?\s+the\s+offices?\b"
