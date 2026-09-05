@@ -6735,6 +6735,19 @@ _HOURS_RE = re.compile(
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\s+w\b",
     re.I,
 )
+_SPELLED_WEEKLY_HOURS = {
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+}
+_SPELLED_WEEKLY_HOURS_RE = re.compile(
+    r"\b(eight|nine|ten|eleven|twelve|thirteen)\s+"
+    r"(?:hours?|hrs?)\.?\s*(?:/\s*weeks?|(?:a|per)\s+weeks?|weekly)\b",
+    re.I,
+)
 _FORTNIGHT_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s*"
     r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
@@ -7506,6 +7519,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in match.groups() if g), None)
         if raw:
             n = int(round(float(raw)))
+            if 1 <= n <= 80:
+                return n
+    spelled = _SPELLED_WEEKLY_HOURS_RE.search(blob)
+    if spelled:
+        word = next((g for g in spelled.groups() if g), None)
+        if word:
+            n = _SPELLED_WEEKLY_HOURS[word.casefold()]
             if 1 <= n <= 80:
                 return n
     fortnight = _FORTNIGHT_HOURS_RE.search(blob)

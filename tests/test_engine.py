@@ -7767,6 +7767,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
 def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20 hrs/week") == 20
     assert _guess_hours("Engineer", "32 hours a week") == 32
+    assert _guess_hours("Engineer", "eight hours a week") == 8
+    assert _guess_hours("Engineer", "nine hours per week") == 9
+    assert _guess_hours("Engineer", "ten hours a week") == 10
+    assert _guess_hours("Engineer", "eleven hours a week") == 11
+    assert _guess_hours("Engineer", "twelve hours weekly") == 12
+    assert _guess_hours("Engineer", "thirteen hours a week") == 13
+    assert _guess_hours("Engineer", "thirteen hours a fortnight") is None
+    assert _guess_hours("Engineer", "fourteen hours a week") is None
     assert _guess_hours("Engineer", "32 hours a week. This is a full-time role.") == 32
     assert _guess_hours("Engineer", "32 hours each week") == 32
     assert _guess_hours("Engineer", "32 hrs each week") == 32
