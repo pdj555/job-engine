@@ -5847,7 +5847,7 @@ _GONE_LISTING_RE = re.compile(
     r"\s+(?:are|is|have|has)\s+(?:now\s+)?closed"
     r"|(?:the\s+)?application\s+(?:window|period)\s+(?:has\s+closed|is\s+closed|has\s+ended|ended(?!\s+up))"
     r"|applications\s+closed\s+for\s+this\s+search\b"
-    r"|(?<!once )(?<!after )(?<!when )applications\s+are\s+(?:now\s+)?closed\b"
+    r"|(?<!once )(?<!after )(?<!when )applications\s+(?:are|have|has)\s+(?:now\s+)?closed\b(?!\s+from)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+application\s+(?:is|has\s+been)\s+closed\b"
     r"|(?:the\s+)?application\s+deadline\s+has\s+(?:passed|expired|lapsed)\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
