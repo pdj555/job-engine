@@ -231,6 +231,31 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 pre-tax parking. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 pre-tax transit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 pre-tax") == (None, 15_000)
+    assert _parse_pay("$15,000 ORCA card") == (None, None)
+    assert _parse_pay("ORCA card $15,000") == (None, None)
+    assert _parse_pay("ORCA card of $15,000") == (None, None)
+    assert _parse_pay("$15,000 metrocard") == (None, None)
+    assert _parse_pay("$15,000 metro card") == (None, None)
+    assert _parse_pay("metrocard $15,000") == (None, None)
+    assert _parse_pay("$15,000 EZ-Pass") == (None, None)
+    assert _parse_pay("$15,000 E-ZPass") == (None, None)
+    assert _parse_pay("EZ-Pass $15,000") == (None, None)
+    assert _parse_pay("$15,000 Clipper card") == (None, None)
+    assert _parse_pay("$15,000 Ventra card") == (None, None)
+    assert _parse_pay("$15,000 TAP card") == (None, None)
+    assert _parse_pay("$15,000 OMNY card") == (None, None)
+    assert _parse_pay("$15,000 CharlieCard") == (None, None)
+    assert _parse_pay("$15,000 SmarTrip") == (None, None)
+    assert _parse_pay("$180,000 ORCA card in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 ORCA card $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ORCA card. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 metrocard. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 EZ-Pass. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ORCA") == (None, 15_000)
+    assert _parse_pay("$15,000 Clipper") == (None, 15_000)
+    assert _parse_pay("$15,000 metro") == (None, 15_000)
+    assert _parse_pay("$15,000 card") == (None, 15_000)
+    assert _parse_pay("$15,000 pass") == (None, 15_000)
     assert _parse_pay("$15,000 parking") == (None, None)
     assert _parse_pay("$15,000 parking. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 parking in NYC") == (None, 180_000)
@@ -7345,6 +7370,20 @@ def test_guess_pay_annualizes_hourly():
         pretaxmix, "<p>$15,000 pre-tax commuter. Salary $180,000</p>"
     ) is True
     assert pretaxmix.pay_high == 180_000
+    orca = Opportunity(title="Engineer", url="https://jobs.example/orca")
+    assert _apply_listing(orca, "<p>$15,000 ORCA card. Apply now.</p>") is False
+    assert orca.pay_high is None
+    metrocard = Opportunity(title="Engineer", url="https://jobs.example/metrocard")
+    assert _apply_listing(metrocard, "<p>$15,000 metrocard. Apply now.</p>") is False
+    assert metrocard.pay_high is None
+    ezpass = Opportunity(title="Engineer", url="https://jobs.example/ezpass")
+    assert _apply_listing(ezpass, "<p>$15,000 EZ-Pass. Apply now.</p>") is False
+    assert ezpass.pay_high is None
+    orcamix = Opportunity(title="Engineer", url="https://jobs.example/orcamix")
+    assert _apply_listing(
+        orcamix, "<p>$15,000 ORCA card. Salary $180,000</p>"
+    ) is True
+    assert orcamix.pay_high == 180_000
     gym_mem = Opportunity(title="Engineer", url="https://jobs.example/gym-mem")
     assert _apply_listing(
         gym_mem, "<p>$10,000 gym membership. Great team.</p>"
