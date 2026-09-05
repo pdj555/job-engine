@@ -5683,6 +5683,8 @@ _GONE_LISTING_RE = re.compile(
     r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|recruiting\s+for\s+this|advertising\s+for\s+this|accepting\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)|taking\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from))"
     r"|we(?:'re| are)\s+no\s+longer\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
+    r"|we(?:(?:'re| are)\s+not| aren't)\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+stopped\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+closed\s+recruiting\s+for\s+this\s+"

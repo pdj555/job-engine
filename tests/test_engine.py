@@ -11331,6 +11331,26 @@ def test_html_is_gone_removed_listing_banner():
         "<p>We are no longer posting this update.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not posting this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We aren't listing this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not publishing this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not advertising this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not posting this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
         "<title>Engineer</title><p>The position has been filled.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
