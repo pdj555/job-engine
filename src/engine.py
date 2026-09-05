@@ -6648,6 +6648,13 @@ _FTE_RE = re.compile(
     r"|\bfte\s*[:=\-–—]?\s*(0?\.\d+|1(?:\.0+)?)\b",
     re.I,
 )
+_FTE_FRAC_RE = re.compile(
+    r"(?<![\d.])(\d)/(\d)\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(\d)/(\d)\b"
+    r"|(?<![\d.])\b(half)(?:[-\s]time)?\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(half)\b",
+    re.I,
+)
 _DUAL_TIME_RE = re.compile(
     r"(?i)(?:full[\s-]*time\s*(?:and|or|/|&|,)\s*(?:and\s+)?part[\s-]*time"
     r"|part[\s-]*time\s*(?:and|or|/|&|,)\s*(?:and\s+)?full[\s-]*time)"
@@ -6941,6 +6948,20 @@ def _guess_pay(title: str, description: str, hours: Optional[int] = None) -> Opt
 
 def _stated_fte_hours(text: str) -> Optional[int]:
     """Hours from an FTE fraction or percent. None if the listing does not say."""
+    frac = _FTE_FRAC_RE.search(text)
+    if frac:
+        num, den, num_after, den_after, half, half_after = frac.groups()
+        if half or half_after:
+            hours = 20
+        else:
+            n = int(num or num_after)
+            d = int(den or den_after)
+            if d == 0 or not 0 < n / d <= 1:
+                return None
+            hours = int(round(n / d * 40))
+        if 1 <= hours <= 80:
+            return hours
+        return None
     match = _FTE_RE.search(text)
     if not match:
         return None
