@@ -2239,6 +2239,30 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 cash balance plan") == (None, None)
+    assert _parse_pay("$15,000 cash-balance plan") == (None, None)
+    assert _parse_pay("cash balance plan $15,000") == (None, None)
+    assert _parse_pay("cash balance plan of $15,000") == (None, None)
+    assert _parse_pay("$15,000 defined benefit plan") == (None, None)
+    assert _parse_pay("$15,000 defined-benefit plan") == (None, None)
+    assert _parse_pay("defined benefit plan $15,000") == (None, None)
+    assert _parse_pay("$15,000 money purchase plan") == (None, None)
+    assert _parse_pay("$15,000 money-purchase plan") == (None, None)
+    assert _parse_pay("money purchase plan $15,000") == (None, None)
+    assert _parse_pay("$15,000 target benefit plan") == (None, None)
+    assert _parse_pay("$15,000 target-benefit plan") == (None, None)
+    assert _parse_pay("$180,000 cash balance plan in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 defined benefit plan in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 cash balance plan $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cash balance plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 defined benefit plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 money purchase plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 target benefit plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cash") == (None, 15_000)
+    assert _parse_pay("$15,000 cash balance") == (None, 15_000)
+    assert _parse_pay("$15,000 defined benefit") == (None, 15_000)
+    assert _parse_pay("$15,000 money purchase") == (None, 15_000)
+    assert _parse_pay("$15,000 target benefit") == (None, 15_000)
     assert _parse_pay("$10,000 529 contribution") == (None, None)
     assert _parse_pay("$10,000 matching gift") == (None, None)
     assert _parse_pay("$10,000 charitable match") == (None, None)
@@ -7357,6 +7381,31 @@ def test_guess_pay_annualizes_hourly():
     popplan = Opportunity(title="Engineer", url="https://jobs.example/popplan")
     assert _apply_listing(popplan, "<p>$15,000 POP plan. Apply now.</p>") is False
     assert popplan.pay_high is None
+    cashbal = Opportunity(title="Engineer", url="https://jobs.example/cashbal")
+    assert _apply_listing(
+        cashbal, "<p>$15,000 cash balance plan. Apply now.</p>"
+    ) is False
+    assert cashbal.pay_high is None
+    defben = Opportunity(title="Engineer", url="https://jobs.example/defben")
+    assert _apply_listing(
+        defben, "<p>$15,000 defined benefit plan. Apply now.</p>"
+    ) is False
+    assert defben.pay_high is None
+    mpplan = Opportunity(title="Engineer", url="https://jobs.example/mpplan")
+    assert _apply_listing(
+        mpplan, "<p>$15,000 money purchase plan. Apply now.</p>"
+    ) is False
+    assert mpplan.pay_high is None
+    tgtben = Opportunity(title="Engineer", url="https://jobs.example/tgtben")
+    assert _apply_listing(
+        tgtben, "<p>$15,000 target benefit plan. Apply now.</p>"
+    ) is False
+    assert tgtben.pay_high is None
+    cashbalmix = Opportunity(title="Engineer", url="https://jobs.example/cashbalmix")
+    assert _apply_listing(
+        cashbalmix, "<p>$15,000 cash balance plan. Salary $180,000</p>"
+    ) is True
+    assert cashbalmix.pay_high == 180_000
     lti = Opportunity(title="Engineer", url="https://jobs.example/lti")
     assert _apply_listing(lti, "<p>$10,000 long-term incentive. Apply now.</p>") is False
     assert lti.pay_high is None
