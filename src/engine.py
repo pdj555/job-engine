@@ -4476,17 +4476,18 @@ _FOREIGN_PAY_RE = re.compile(
     re.I,
 )
 _FOREIGN_DOLLAR_RE = re.compile(
-    r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\s*\$?\s*\d"
+    r"\b(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD)\s*\$?\s*\d"
+    r"|\b(?:PHP|CRC|BSD|SDG|CDF|NIO|MRO|IRR|SVC|TMT|SHP)\s*\$\s*\d"
     r"|(?<![A-Za-z])(?:AU|CA|SG|MX|AR|CL|HK|NZ|NT|COL|CO|PE|C|A|R|S)\$\s*\d"
     r"|\b(?:salario|mensual|pesos?)\b.{0,80}\$\s*\d"
     r"|\$\s*\d[\d,]*.{0,80}salary\s+monthly"
     r"|\$\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?"
     r"(?:\s*[—–-]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b)?)?"
-    r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|pesos?)\b"
-    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\)"
-    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b"
-    r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b"
-    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN)\b",
+    r"\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD|pesos?)\b"
+    r"|\$\s*\d[\d,]*.{0,40}\((?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD|PHP|CRC|BSD|SDG|CDF|NIO|MRO|IRR|SVC|TMT|SHP)\)"
+    r"|\d{1,3}(?:[,'’.\s]\d{3}){1,2}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD)\b"
+    r"|\d{5,7}\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD)\b"
+    r"|\d{2,3}(?:\.\d+)?\s*k\s*(?:MXN|CAD|AUD|NZD|SGD|HKD|ARS|CLP|COP|PEN|TTD|JMD|BBD|BZD|KYD|XCD|FJD|SBD|GYD|SRD|LRD|NAD|ZWL|UYU|BRL|DOP|CUC|AWG|BMD)\b",
     re.I | re.S,
 )
 

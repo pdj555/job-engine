@@ -515,6 +515,17 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary(f"<p>{mx}</p>") is True
     assert _parse_pay("CAD $160,000 - $180,000") == (None, None)
     assert _foreign_salary("<p>CAD $160,000 - $180,000</p>") is True
+    assert _parse_pay("TTD $80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>TTD $80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("JMD $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("BMD $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("BRL $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("$80,000 (TTD). Account Executive $220,000") == (None, None)
+    assert _parse_pay("BSD $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("PHP $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("$80,000 (BSD). Account Executive $220,000") == (None, None)
+    assert _parse_pay("Experience with BSD 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Experience with PHP 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("CAD80,000. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>CAD80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("NZD90,000. Account Executive $220,000") == (None, None)
