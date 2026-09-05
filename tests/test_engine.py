@@ -133,16 +133,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Divvy Bike") == (None, None)
     assert _parse_pay("$15,000 Lime Bike") == (None, None)
     assert _parse_pay("$15,000 Jump Bike") == (None, None)
+    assert _parse_pay("$15,000 Bay Wheels") == (None, None)
     assert _parse_pay("Capital Bikeshare of $15,000") == (None, None)
     assert _parse_pay("Lime Bike of $15,000") == (None, None)
+    assert _parse_pay("Bay Wheels of $15,000") == (None, None)
     assert _parse_pay("$15,000 bikeshare. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Citi Bike. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Capital Bikeshare. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Lime Bike. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 Bay Wheels. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 bikeshare in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Citi Bike in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Capital Bikeshare in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Lime Bike in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 Bay Wheels in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 share") == (None, 15_000)
     assert _parse_pay("$15,000 Citi") == (None, 15_000)
     assert _parse_pay("$15,000 Capital") == (None, 15_000)
@@ -150,6 +154,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Divvy") == (None, 15_000)
     assert _parse_pay("$15,000 Lime") == (None, 15_000)
     assert _parse_pay("$15,000 Jump") == (None, 15_000)
+    assert _parse_pay("$15,000 Bay") == (None, 15_000)
+    assert _parse_pay("$15,000 Wheels") == (None, 15_000)
     assert _parse_pay("Salary $180,000 plus $15,000 tuition reimbursement") == (
         None,
         180_000,
@@ -8207,6 +8213,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         limebikemix, "<p>$15,000 Lime Bike. Salary $180,000</p>"
     ) is True
     assert limebikemix.pay_high == 180_000
+    baywheelsonly = Opportunity(title="Engineer", url="https://jobs.example/baywheelsonly")
+    assert _apply_listing(baywheelsonly, "<p>$15,000 Bay Wheels. Apply now.</p>") is False
+    assert baywheelsonly.pay_high is None
+    baywheelsmix = Opportunity(title="Engineer", url="https://jobs.example/baywheelsmix")
+    assert _apply_listing(
+        baywheelsmix, "<p>$15,000 Bay Wheels. Salary $180,000</p>"
+    ) is True
+    assert baywheelsmix.pay_high == 180_000
     ptomix = Opportunity(title="Engineer", url="https://jobs.example/ptomix")
     assert _apply_listing(ptomix, "<p>Base $180,000 unused PTO $500</p>") is True
     assert ptomix.pay_high == 180_000
