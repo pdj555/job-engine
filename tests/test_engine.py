@@ -124,9 +124,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 bikeshare") == (None, None)
     assert _parse_pay("bikeshare of $15,000") == (None, None)
     assert _parse_pay("$15,000 bike share") == (None, None)
+    assert _parse_pay("$15,000 Citi Bike") == (None, None)
+    assert _parse_pay("$15,000 Citibike") == (None, None)
+    assert _parse_pay("Citi Bike of $15,000") == (None, None)
     assert _parse_pay("$15,000 bikeshare. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 Citi Bike. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 bikeshare in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 Citi Bike in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 share") == (None, 15_000)
+    assert _parse_pay("$15,000 Citi") == (None, 15_000)
     assert _parse_pay("Salary $180,000 plus $15,000 tuition reimbursement") == (
         None,
         180_000,
@@ -8149,6 +8155,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         bikemix, "<p>$15,000 bikeshare. Salary $180,000</p>"
     ) is True
     assert bikemix.pay_high == 180_000
+    citibikeonly = Opportunity(title="Engineer", url="https://jobs.example/citibikeonly")
+    assert _apply_listing(citibikeonly, "<p>$15,000 Citi Bike. Apply now.</p>") is False
+    assert citibikeonly.pay_high is None
+    citibikemix = Opportunity(title="Engineer", url="https://jobs.example/citibikemix")
+    assert _apply_listing(
+        citibikemix, "<p>$15,000 Citi Bike. Salary $180,000</p>"
+    ) is True
+    assert citibikemix.pay_high == 180_000
     ptomix = Opportunity(title="Engineer", url="https://jobs.example/ptomix")
     assert _apply_listing(ptomix, "<p>Base $180,000 unused PTO $500</p>") is True
     assert ptomix.pay_high == 180_000
