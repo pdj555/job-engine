@@ -2311,6 +2311,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 referral award $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 parental leave $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 gym membership $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 fitness membership $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 volunteer grant $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 referral award") == (None, None)
+    assert _parse_pay("$15,000 gym membership") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $15,000 referral award") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$500 stipend") == (None, None)
     assert _parse_pay("$3,000 allowance") == (None, None)
     assert _parse_pay("Salary $180,000 plus $500 stipend") == (None, 180_000)
@@ -7182,6 +7193,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         addmix, "<p>Base $180,000 AD&D insurance $15,000</p>"
     ) is True
     assert addmix.pay_high == 180_000
+    refmix = Opportunity(title="Engineer", url="https://jobs.example/refmix")
+    assert _apply_listing(
+        refmix, "<p>Base $180,000 referral award $15,000</p>"
+    ) is True
+    assert refmix.pay_high == 180_000
+    gymmix = Opportunity(title="Engineer", url="https://jobs.example/gymmix")
+    assert _apply_listing(
+        gymmix, "<p>Base $180,000 gym membership $15,000</p>"
+    ) is True
+    assert gymmix.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
