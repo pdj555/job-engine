@@ -1947,6 +1947,24 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 STI $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 PSU $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 LTI clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 NSO in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 ISO in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 NSO") == (None, None)
+    assert _parse_pay("$15,000 ISO") == (None, None)
+    assert _parse_pay("$15,000 RSA") == (None, None)
+    assert _parse_pay("$15,000 DSU") == (None, None)
+    assert _parse_pay("$15,000 NSO grant") == (None, None)
+    assert _parse_pay("$15,000 performance units") == (None, None)
+    assert _parse_pay("$15,000 performance shares") == (None, None)
+    assert _parse_pay("$15,000 restricted shares") == (None, None)
+    assert _parse_pay("$15,000 phantom stock") == (None, None)
+    assert _parse_pay("NSO $15,000") == (None, None)
+    assert _parse_pay("ISO $15,000") == (None, None)
+    assert _parse_pay("performance units of $15,000") == (None, None)
+    assert _parse_pay("base $180,000 NSO $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 ISO $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 performance units $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 phantom stock $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 PTO buyback") == (None, None)
     assert _parse_pay("$10,000 PTO cashout") == (None, None)
     assert _parse_pay("PTO buyback of $10,000") == (None, None)
@@ -7586,6 +7604,17 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     psuonly = Opportunity(title="Engineer", url="https://jobs.example/psuonly")
     assert _apply_listing(psuonly, "<p>$15,000 PSU. Apply now.</p>") is False
     assert psuonly.pay_high is None
+    nsoonly = Opportunity(title="Engineer", url="https://jobs.example/nsoonly")
+    assert _apply_listing(nsoonly, "<p>$15,000 NSO. Apply now.</p>") is False
+    assert nsoonly.pay_high is None
+    isoonly = Opportunity(title="Engineer", url="https://jobs.example/isoonly")
+    assert _apply_listing(isoonly, "<p>$15,000 ISO. Apply now.</p>") is False
+    assert isoonly.pay_high is None
+    perfonly = Opportunity(title="Engineer", url="https://jobs.example/perfunits")
+    assert _apply_listing(
+        perfonly, "<p>$15,000 performance units. Apply now.</p>"
+    ) is False
+    assert perfonly.pay_high is None
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
