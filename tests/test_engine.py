@@ -659,6 +659,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("yubikey $15,000") == (None, None)
     assert _parse_pay("$15,000 yubikey. Salary $180,000") == (None, 180_000)
     assert _parse_pay("yubikey $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("yubikey 5 $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 yubikey in NYC") == (None, 180_000)
     assert _parse_pay("security key $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 yubikey in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 security key in NYC") == (None, 180_000)
