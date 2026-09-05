@@ -3384,6 +3384,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 AD and D. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 AD & D. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 AD") == (None, 15_000)
+    assert _parse_pay("$15,000 dismemberment insurance") == (None, None)
+    assert _parse_pay("$15,000 accidental dismemberment") == (None, None)
+    assert _parse_pay("$15,000 accidental dismemberment insurance") == (None, None)
+    assert _parse_pay("dismemberment insurance of $15,000") == (None, None)
+    assert _parse_pay("accidental dismemberment of $15,000") == (None, None)
+    assert _parse_pay("$15,000 dismemberment insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 accidental dismemberment. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 dismemberment") == (None, 15_000)
     assert _parse_pay("Salary $180,000 plus $15,000 AD&D insurance") == (
         None,
         180_000,
@@ -8941,6 +8955,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         adanddmix, "<p>$15,000 AD and D. Salary $180,000</p>"
     ) is True
     assert adanddmix.pay_high == 180_000
+    disminsonly = Opportunity(title="Engineer", url="https://jobs.example/disminsonly")
+    assert _apply_listing(
+        disminsonly, "<p>$15,000 dismemberment insurance. Apply now.</p>"
+    ) is False
+    assert disminsonly.pay_high is None
+    disminsmix = Opportunity(title="Engineer", url="https://jobs.example/disminsmix")
+    assert _apply_listing(
+        disminsmix, "<p>$15,000 dismemberment insurance. Salary $180,000</p>"
+    ) is True
+    assert disminsmix.pay_high == 180_000
+    accdismonly = Opportunity(title="Engineer", url="https://jobs.example/accdismonly")
+    assert _apply_listing(
+        accdismonly, "<p>$15,000 accidental dismemberment. Apply now.</p>"
+    ) is False
+    assert accdismonly.pay_high is None
     refmix = Opportunity(title="Engineer", url="https://jobs.example/refmix")
     assert _apply_listing(
         refmix, "<p>Base $180,000 referral award $15,000</p>"
