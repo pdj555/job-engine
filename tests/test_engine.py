@@ -4297,6 +4297,20 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "2 hour weekly meeting") is None
     assert _guess_hours("Engineer", "2-hour weekly standup") is None
     assert _guess_hours("Engineer", "12 weeks of parental leave") is None
+    assert _guess_hours("Engineer", "20hpw") == 20
+    assert _guess_hours("Engineer", "20 HPW") == 20
+    assert _guess_hours("Engineer", "20 hpw") == 20
+    assert _guess_hours("Engineer", "0.5 FTE") == 20
+    assert _guess_hours("Engineer", "FTE 0.5") == 20
+    assert _guess_hours("Engineer", "50% FTE") == 20
+    assert _guess_hours("Engineer", "0.8 FTE") == 32
+    assert _guess_hours("Engineer", "1.0 FTE") == 40
+    assert _guess_hours("Engineer", "FTE: 1") == 40
+    assert _guess_hours("Engineer", "80% FTE") == 32
+    assert _guess_hours("Engineer", "20 HP") is None
+    assert _guess_hours("Engineer", "20hp") is None
+    assert _guess_hours("Engineer", "2 FTE headcount") is None
+    assert _guess_hours("Engineer", "FTE benefits") is None
     assert _guess_hours("Part-time role", "") == 20
     assert _guess_hours("Full-time Engineer", "") == 40
     assert _guess_hours("Contract Engineer", "") is None
@@ -4335,6 +4349,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert compact.hours_per_week == 40
     assert compact.score() == 80.0
+    hpw = Opportunity(title="Engineer", url="https://jobs.example/20hpw")
+    assert _apply_listing(
+        hpw, "<p>$80/hour. 20hpw.</p>"
+    ) is True
+    assert hpw.hours_per_week == 20
+    assert hpw.pay_high == 80_000
+    fte = Opportunity(title="Engineer", url="https://jobs.example/half-fte")
+    assert _apply_listing(
+        fte, "<p>$80/hour. 0.5 FTE.</p>"
+    ) is True
+    assert fte.hours_per_week == 20
+    assert fte.pay_high == 80_000
     labeled = Opportunity(title="Engineer", url="https://jobs.example/hpw")
     assert _apply_listing(
         labeled, "<p>$160,000 a year. Hours per week: 32</p>"

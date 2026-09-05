@@ -6594,7 +6594,15 @@ _HOURS_RE = re.compile(
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:worked\s*)?[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
-    r"|(?:hours?|hrs?)\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)",
+    r"|(?:hours?|hrs?)\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*hpw\b",
+    re.I,
+)
+_FTE_RE = re.compile(
+    r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(\d{1,3}(?:\.\d+)?)\s*%"
+    r"|(?<![\d.])(0?\.\d+|1(?:\.0+)?)\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(0?\.\d+|1(?:\.0+)?)\b",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
@@ -6859,16 +6867,38 @@ def _guess_pay(title: str, description: str, hours: Optional[int] = None) -> Opt
     return high or low
 
 
+def _stated_fte_hours(text: str) -> Optional[int]:
+    """Hours from an FTE fraction or percent. None if the listing does not say."""
+    match = _FTE_RE.search(text)
+    if not match:
+        return None
+    pct, pct_after, fte, fte_after = match.groups()
+    if pct or pct_after:
+        n = float(pct or pct_after)
+        if not 1 <= n <= 100:
+            return None
+        hours = int(round(n / 100 * 40))
+    else:
+        n = float(fte or fte_after)
+        if not 0 < n <= 1:
+            return None
+        hours = int(round(n * 40))
+    if 1 <= hours <= 80:
+        return hours
+    return None
+
+
 def _stated_hours(title: str, description: str) -> Optional[int]:
     """Hours explicitly written as N hours/week. None if the listing does not say."""
-    match = _HOURS_RE.search(f"{title} {description}")
+    blob = f"{title} {description}"
+    match = _HOURS_RE.search(blob)
     if match:
         raw = next((g for g in match.groups() if g), None)
         if raw:
             n = int(round(float(raw)))
             if 1 <= n <= 80:
                 return n
-    return None
+    return _stated_fte_hours(blob)
 
 
 def _employment_hours(text: str) -> Optional[int]:
