@@ -4199,6 +4199,25 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _foreign_salary("<p>The salary range for this role is $160,000 - 200,000 (CAD)</p>") is True
     assert _parse_pay("$196,000—$269,500 CAD") == (None, None)
     assert _foreign_salary("<p>Annual Base Salary$196,000—$269,500 CAD</p>") is True
+    assert _parse_pay("$45/hour CAD") == (None, None)
+    assert _foreign_salary("<p>$45/hour CAD</p>") is True
+    assert _parse_pay("$45/hr CAD") == (None, None)
+    assert _parse_pay("$45 / hour CAD") == (None, None)
+    assert _parse_pay("$45 per hour CAD") == (None, None)
+    assert _parse_pay("$45 an hour CAD") == (None, None)
+    assert _parse_pay("$80/hour AUD") == (None, None)
+    assert _parse_pay("$80/hour NZD") == (None, None)
+    assert _parse_pay("$45/hr AUD") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $45/hour CAD") == (None, None)
+    assert _parse_pay("$45/hour. CAD experience required") == (None, 90_000)
+    assert _parse_pay("$80/hour") == (None, 160_000)
+    assert _foreign_salary("<p>$80/hour</p>") is False
+    cad_hour = Opportunity(title="Engineer", url="https://jobs.example/cadhour")
+    assert _apply_listing(cad_hour, "<p>$45/hour CAD</p>") is False
+    assert cad_hour.pay_high is None
+    usd_hour = Opportunity(title="Engineer", url="https://jobs.example/usdhour")
+    assert _apply_listing(usd_hour, "<p>$80/hour</p>") is True
+    assert usd_hour.pay_high == 160_000
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
     mixed = "UK £45,000 – £60,000. US $240,000 - $500,000"
