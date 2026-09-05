@@ -14917,12 +14917,32 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>A hire was made for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>A hire was made for this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We've made a hire for this meeting.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>A candidate has been selected for this role.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>A candidate was selected for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>A candidate was hired for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>A candidate was selected for this meeting.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>An applicant has been selected for this search.</p><p>$180,000</p>"
@@ -14972,6 +14992,14 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>Someone has been hired for this role.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Someone was hired for this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Someone was hired for this meeting.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We've selected another candidate for this role.</p><p>$180,000</p>"
