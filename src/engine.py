@@ -5660,6 +5660,8 @@ _GONE_LISTING_RE = re.compile(
     r"\s+was\s+(?:already\s+)?(?:filled|expired|lapsed|closed|withdrawn|cancelled|canceled|taken\s+down|taken\s+offline|ended(?!\s+up)|removed|discontinued|archived|unpublished|deactivated|deleted|unposted|pulled|hired\s+internally|rescinded|abandoned|called\s+off)"
     r"|(?<!once )(?<!after )(?<!when )we(?:'ve|\s+have)?\s+(?:decided|chosen|chose|opted|elected)\s+(?:not\s+to\s+(?:fill|(?:(?:proceed|move\s+forward)\s+with|continue(?:\s+with)?)|hire\s+for|pursue)|against(?:\s+(?:filling|(?:(?:proceeding|moving\s+forward)\s+with|continuing(?:\s+with)?)|hiring\s+for|pursuing))?)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
+    r"|(?<!once )(?<!after )(?<!when )we(?:'ve|\s+have)?\s+declined\s+to\s+(?:fill|(?:(?:proceed|move\s+forward)\s+with|continue(?:\s+with)?)|hire\s+for|pursue)\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+(?:moved\s+on|stepped\s+away|withdrawn|withdrew)\s+from\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:closed|filled|expired|lapsed|withdrawn|removed|taken\s+down|taken\s+offline|unpublished|archived|deactivated|deleted|unposted|pulled|discontinued)\b"
