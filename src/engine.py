@@ -6224,10 +6224,15 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
+_NOT_PERIOD_CONTEXT = (
+    r"(?!\s+(?:meetings?|standup|stand-up|sync|call|all-?hands|contractors?|team|payroll|pay\s+dates?|bonus)\b)"
+)
 _HOUR_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*h(?:(?:r|our)s?)?|p\s*/\s*h(?:(?:r|our)s?)?|p\.\s*h(?:r|our)s?|p\s+h(?:r|our)s?|(?:per|an|a)\s*/?\s*h(?:(?:r|our)s?)?|h(?:r|our)s?)\b"
-    r"|(?:p\s+|/\s*|(?:per|an|a)\s+/?\s*)?(?:hourly|hrly)\b)"
+    r"|\.?\s*(?:p\s+|/\s*|(?:per|an|a)\s+/?\s*)?(?:hourly|hrly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _HOURLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:\.\d+)?)"
@@ -6241,7 +6246,9 @@ _HOURLY_RE = re.compile(
 _MONTH_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*m(?:o(?:nth)?s?)?|p\s*/\s*m(?:o(?:nth)?s?)?|p\.\s*mo(?:nth)?s?(?!\s+(?:of|in)\b)|p\s+mo(?:nth)?s?(?!\s+(?:of|in)\b)|(?:per|a)\s*/?\s*m(?:o(?:nth)?s?)?|mo(?:nth)?s?(?!\s+(?:of|in)\b))\b"
-    r"|(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:monthly|mthly)\b)"
+    r"|\.?\s*(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:monthly|mthly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _MONTHLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6255,7 +6262,9 @@ _MONTHLY_RE = re.compile(
 _WEEK_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*w(?:(?:ee)?ks?)?|p\s*/\s*w(?:(?:ee)?ks?)?|p\.\s*w(?:ee)?ks?(?!\s+(?:of|in)\b)(?!-)|p\s+w(?:ee)?ks?(?!\s+(?:of|in)\b)(?!-)|(?:per|a)\s*/?\s*w(?:(?:ee)?ks?)?|w(?:ee)?ks?(?!\s+(?:of|in)\b)(?!-))\b"
-    r"|(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:weekly|wkly)\b)"
+    r"|\.?\s*(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:weekly|wkly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _WEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6270,8 +6279,10 @@ _BIWEEK_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
     r"(?:every[-\s]+(?:two|2|other)[-\s]+weeks?|fortnights?)\b"
-    r"|(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
-    r"(?:bi[-\s]?weekly|bi[-\s]?wkly|fortnightly)\b)"
+    r"|\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
+    r"(?:bi[-\s]?weekly|bi[-\s]?wkly|fortnightly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _BIWEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6286,8 +6297,10 @@ _SEMIMONTH_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
     r"(?:twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
-    r"|(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
-    r"(?:semi[-\s]?monthly|semi[-\s]?mthly|smthly)\b)"
+    r"|\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
+    r"(?:semi[-\s]?monthly|semi[-\s]?mthly|smthly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _SEMIMONTHLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6301,7 +6314,9 @@ _SEMIMONTHLY_RE = re.compile(
 _DAY_TAIL = (
     r"\s*(?:"
     r"\.?\s*(?:/\s*(?:d(?:ays?)?|diem)|p\s*/\s*(?:d(?:ays?)?|diem)|p\.\s*(?:days?|diem)|p\s+(?:days?|diem)|(?:per|a)\s*/?\s*(?:d(?:ays?)?|diem)|days?(?!\s+(?:one|of|in)\b))\b"
-    r"|(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:daily|dly)\b)"
+    r"|\.?\s*(?:p\s+|/\s*|(?:per|a)\s+/?\s*)?(?:daily|dly)\b"
+    + _NOT_PERIOD_CONTEXT
+    + r")"
 )
 _DAILY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
