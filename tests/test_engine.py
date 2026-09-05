@@ -124,6 +124,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$180,000 childcare in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 childcare") == (None, None)
+    assert _parse_pay("$15,000 child care") == (None, None)
+    assert _parse_pay("$15,000 child-care") == (None, None)
+    assert _parse_pay("$15,000 caregiver") == (None, None)
+    assert _parse_pay("$15,000 childcare. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 caregiver. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("childcare of $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("childcare: $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Childcare $180,000 a year") == (None, 180_000)
+    assert _parse_pay("Caregiver $180,000 a year") == (None, 180_000)
+    assert _parse_pay("$180,000 caregiver in NYC") == (None, 180_000)
     assert _parse_pay("conference budget of $10,000") == (None, None)
     assert _parse_pay("parental leave of $15,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 conference budget") == (
