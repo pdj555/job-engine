@@ -7699,6 +7699,13 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "three quarters FTE") == 30
     assert _guess_hours("Engineer", "three-quarters FTE") == 30
     assert _guess_hours("Engineer", "FTE three quarters") == 30
+    assert _guess_hours("Engineer", "two fifths FTE") == 16
+    assert _guess_hours("Engineer", "two-fifths FTE") == 16
+    assert _guess_hours("Engineer", "two-fifths time FTE") == 16
+    assert _guess_hours("Engineer", "FTE two fifths") == 16
+    assert _guess_hours("Engineer", "three fifths FTE") == 24
+    assert _guess_hours("Engineer", "four fifths FTE") == 32
+    assert _guess_hours("Engineer", "four-fifths FTE") == 32
     assert _guess_hours("Engineer", "third-time FTE") == 13
     assert _guess_hours("Engineer", "third time FTE") == 13
     assert _guess_hours("Engineer", "one-third-time FTE") == 13
@@ -7818,6 +7825,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "seventh FTE") is None
     assert _guess_hours("Engineer", "sixth FTE") is None
     assert _guess_hours("Engineer", "fifth FTE") is None
+    assert _guess_hours("Engineer", "two-fifth FTE") is None
     assert _guess_hours("Engineer", "eighth FTE") is None
     assert _guess_hours("Engineer", "two-thirds FTE") is None
     assert _guess_hours("Engineer", "third FTE") is None

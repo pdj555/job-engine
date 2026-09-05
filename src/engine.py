@@ -6868,7 +6868,9 @@ _FTE_FRAC_RE = re.compile(
     r"|(?<![\d.])\b((?:one[-\s])?twenty[-\s](?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth))[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?twenty[-\s](?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth))[-\s]time\b"
     r"|(?<![\d.])(?<!three-)(?<!three )\b(quarter)[-\s]time\s*fte\b"
-    r"|\bfte\s*[:=\-–—]?\s*(?<!three-)(?<!three )(quarter)[-\s]time\b",
+    r"|\bfte\s*[:=\-–—]?\s*(?<!three-)(?<!three )(quarter)[-\s]time\b"
+    r"|(?<![\d.])\b(two|three|four)[-\s]fifths(?:[-\s]time)?\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(two|three|four)[-\s]fifths(?:[-\s]time)?\b",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
@@ -7215,9 +7217,13 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             twenty_first_after,
             quarter,
             quarter_after,
+            fifths,
+            fifths_after,
         ) = frac.groups()
         if three_q or three_q_after:
             hours = 30
+        elif fifths or fifths_after:
+            hours = {"two": 16, "three": 24, "four": 32}[(fifths or fifths_after).lower()]
         elif two_thirds or two_thirds_after:
             hours = 27
         elif third or third_after:
