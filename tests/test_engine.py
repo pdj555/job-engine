@@ -10381,6 +10381,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "don't have to work in NYC 3 days") is True
     assert _guess_remote("Engineer", "do not have to work in NYC 3 days") is True
     assert _guess_remote("Engineer", "have to work in NYC") is True
+    assert _guess_remote("Engineer", "told to work in NYC 3 days") is False
+    assert _guess_remote("Engineer", "instructed to work in NYC 3 days") is False
+    assert _guess_remote("Engineer", "directed to work out of NYC 3 days") is False
+    assert _guess_remote("Engineer", "mandated to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "ordered to work in NYC 3 days") is False
+    assert _guess_remote("Engineer", "told to work from home 3 days") is True
+    assert _guess_remote("Engineer", "told to work in the US 3 days") is True
+    assert _guess_remote("Engineer", "told to work in meetings 3 days") is True
+    assert _guess_remote("Engineer", "not told to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "told to work in NYC") is True
     assert _guess_remote("Engineer", "should work out of home 3 days") is True
     assert _guess_remote("Engineer", "should work out of the US 3 days") is True
     assert _guess_remote("Engineer", "should work out of meetings 3 days") is True
@@ -10956,6 +10966,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert asked_days.remote is False
     assert asked_days.pay_high == 180_000
+    told_days = Opportunity(title="Engineer", url="https://jobs.example/tolddays")
+    assert _apply_listing(
+        told_days,
+        "<p>Told to work in NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert told_days.remote is False
+    assert told_days.pay_high == 180_000
     requested_days = Opportunity(
         title="Engineer", url="https://jobs.example/requesteddays"
     )
