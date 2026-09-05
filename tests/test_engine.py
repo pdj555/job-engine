@@ -2739,11 +2739,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cycling benefit") == (None, None)
     assert _parse_pay("$15,000 e-bike benefit") == (None, None)
     assert _parse_pay("$15,000 bicycle reimbursement") == (None, None)
+    assert _parse_pay("$15,000 bicycle perk") == (None, None)
+    assert _parse_pay("$15,000 cycling perk") == (None, None)
+    assert _parse_pay("$15,000 e-bike perk") == (None, None)
+    assert _parse_pay("$15,000 bicycle perks") == (None, None)
     assert _parse_pay("bicycle benefit of $15,000") == (None, None)
+    assert _parse_pay("bicycle perk of $15,000") == (None, None)
     assert _parse_pay("$15,000 bicycle stipend. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cycling stipend. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 bicycle benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 bicycle perk. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 bicycle benefit in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 bicycle perk in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 bicycle") == (None, 15_000)
     assert _parse_pay("$15,000 cycling") == (None, 15_000)
     assert _parse_pay("$15,000 e-bike") == (None, 15_000)
@@ -7680,6 +7687,20 @@ def test_guess_pay_annualizes_hourly():
         bicyclebenefitmix, "<p>$15,000 bicycle benefit. Salary $180,000</p>"
     ) is True
     assert bicyclebenefitmix.pay_high == 180_000
+    bicycleperkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/bicycleperkonly"
+    )
+    assert _apply_listing(
+        bicycleperkonly, "<p>$15,000 bicycle perk. Apply now.</p>"
+    ) is False
+    assert bicycleperkonly.pay_high is None
+    bicycleperkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/bicycleperkmix"
+    )
+    assert _apply_listing(
+        bicycleperkmix, "<p>$15,000 bicycle perk. Salary $180,000</p>"
+    ) is True
+    assert bicycleperkmix.pay_high == 180_000
     fitness = Opportunity(title="Engineer", url="https://jobs.example/fitness")
     assert _apply_listing(
         fitness, "<p>$10,000 fitness reimbursement. Great team.</p>"
