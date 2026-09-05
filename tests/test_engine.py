@@ -2546,12 +2546,19 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 option grant") == (None, None)
     assert _parse_pay("$15,000 carried interest") == (None, None)
     assert _parse_pay("$15,000 refresh grant") == (None, None)
+    assert _parse_pay("$15,000 SARs") == (None, None)
+    assert _parse_pay("$15,000 stock appreciation rights") == (None, None)
     assert _parse_pay("carried interest of $15,000") == (None, None)
     assert _parse_pay("refresh grant $15,000") == (None, None)
+    assert _parse_pay("SARs of $15,000") == (None, None)
+    assert _parse_pay("stock appreciation rights $15,000") == (None, None)
     assert _parse_pay("base $180,000 carried interest $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 refresh grant $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 SARs $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 carried interest. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 SARs. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 carried interest in NYC") == (None, None)
+    assert _parse_pay("$15,000 SAR") == (None, None)
     assert _parse_pay("$15,000 carry") == (None, 15_000)
     assert _parse_pay("$15,000 refresh") == (None, 15_000)
     assert _parse_pay("$10,000 variable bonus") == (None, None)
@@ -7619,6 +7626,9 @@ def test_guess_pay_annualizes_hourly():
     refreshonly = Opportunity(title="Engineer", url="https://jobs.example/refreshonly")
     assert _apply_listing(refreshonly, "<p>$15,000 refresh grant. Apply now.</p>") is False
     assert refreshonly.pay_high is None
+    sarsonly = Opportunity(title="Engineer", url="https://jobs.example/sarsonly")
+    assert _apply_listing(sarsonly, "<p>$15,000 SARs. Apply now.</p>") is False
+    assert sarsonly.pay_high is None
     ownplan = Opportunity(title="Engineer", url="https://jobs.example/ownplan")
     assert _apply_listing(
         ownplan, "<p>employee stock ownership plan of $15,000. Apply now.</p>"
