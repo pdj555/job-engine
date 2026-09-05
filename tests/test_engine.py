@@ -2486,6 +2486,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 sickness insurance") == (None, None)
     assert _parse_pay("$15,000 illness insurance") == (None, None)
     assert _parse_pay("$15,000 disease insurance") == (None, None)
+    assert _parse_pay("$15,000 group cancer") == (None, None)
+    assert _parse_pay("$15,000 voluntary cancer") == (None, None)
     assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hospital insurance") == (None, None)
     assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
@@ -2521,6 +2523,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
     assert _parse_pay("$15,000 long-term care. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 sickness insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group cancer. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cancer") == (None, 15_000)
     assert _parse_pay("$15,000 disease") == (None, 15_000)
     assert _parse_pay("$15,000 hospital") == (None, 15_000)
@@ -7990,6 +7993,20 @@ def test_guess_pay_annualizes_hourly():
         sickinsmix, "<p>$15,000 sickness insurance. Salary $180,000</p>"
     ) is True
     assert sickinsmix.pay_high == 180_000
+    groupcanceronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanceronly"
+    )
+    assert _apply_listing(
+        groupcanceronly, "<p>$15,000 group cancer. Apply now.</p>"
+    ) is False
+    assert groupcanceronly.pay_high is None
+    groupcancermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcancermix"
+    )
+    assert _apply_listing(
+        groupcancermix, "<p>$15,000 group cancer. Salary $180,000</p>"
+    ) is True
+    assert groupcancermix.pay_high == 180_000
     hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
     assert _apply_listing(
         hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
