@@ -2314,9 +2314,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 bonus clawback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 HSA max $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 HSA offset $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA catch-up $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pension offset $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness clawback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 tuition offset $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bonus recoupment $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bonus holdback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 relocation clawback $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 ESPP clawback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 dental premium $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commuter pre-tax $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 monthly premium $15,000") == (None, 180_000)
@@ -2342,11 +2347,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 wellness credit") == (None, None)
     assert _parse_pay("$15,000 commuter subsidy") == (None, None)
     assert _parse_pay("$15,000 wellness rebate") == (None, None)
+    assert _parse_pay("$15,000 pension offset") == (None, None)
+    assert _parse_pay("$15,000 HSA catch-up") == (None, None)
     assert _parse_pay("$15,000 dental premium") == (None, None)
     assert _parse_pay("$15,000 monthly premium") == (None, None)
     assert _parse_pay("$180,000 monthly") == (None, None)
     assert _parse_pay("$15,000 stock grant") == (None, None)
     assert _parse_pay("$180,000 wellness in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 pension in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 wellness benefit") == (
         None,
         180_000,
@@ -7337,6 +7345,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         clawmix, "<p>Base $180,000 bonus clawback $15,000</p>"
     ) is True
     assert clawmix.pay_high == 180_000
+    penoff = Opportunity(title="Engineer", url="https://jobs.example/penoff")
+    assert _apply_listing(
+        penoff, "<p>Base $180,000 pension offset $15,000</p>"
+    ) is True
+    assert penoff.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
