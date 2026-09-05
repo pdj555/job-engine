@@ -4548,6 +4548,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20+ hrs/week") == 20
     assert _guess_hours("Engineer", "20+ hpw") == 20
     assert _guess_hours("Engineer", "Hours: 20+ per week") == 20
+    assert _guess_hours("Engineer", "Hours: 20 per.week") == 20
+    assert _guess_hours("Engineer", "Hours: 20+ per.week") == 20
+    assert _guess_hours("Engineer", "Hours: 20 per.wk") == 20
+    assert _guess_hours("Engineer", "Hours per.week: 20") == 20
+    assert _guess_hours("Engineer", "Hours: 20+") is None
     assert _guess_hours("Engineer", "Hours per week: 20+") == 20
     assert _guess_hours("Engineer", "Weekly hours: 20+") == 20
     assert _guess_hours("Engineer", "Hours weekly: 20+") == 20
@@ -4651,6 +4656,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert per_dot.hours_per_week == 20
     assert per_dot.pay_high == 80_000
+    labeled_dot = Opportunity(title="Engineer", url="https://jobs.example/hours-per-dot")
+    assert _apply_listing(
+        labeled_dot, "<p>$80/hour. Hours: 20 per.week.</p>"
+    ) is True
+    assert labeled_dot.hours_per_week == 20
+    assert labeled_dot.pay_high == 80_000
     fte = Opportunity(title="Engineer", url="https://jobs.example/half-fte")
     assert _apply_listing(
         fte, "<p>$80/hour. 0.5 FTE.</p>"
