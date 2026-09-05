@@ -2094,6 +2094,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_kmf is False
     assert kmf.pay_high is None
+    assert _parse_pay("80,000 BIF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 BIF. Account Executive $220,000</p>") is True
+    assert _parse_pay("BIF80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>BIF80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 BIF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 BIF. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k BIF. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k BIF. Account Executive $220,000</p>") is True
+    bif = Opportunity(title="Engineer", url="https://jobs.example/bi")
+    listed_bif = _apply_listing(
+        bif, "<p>Salary 80,000 BIF. Account Executive $400,000</p>"
+    )
+    assert listed_bif is False
+    assert bif.pay_high is None
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
