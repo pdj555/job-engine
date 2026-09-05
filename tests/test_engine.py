@@ -1541,6 +1541,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Ayaneo $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 Ayaneo in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 OneXPlayer") == (None, None)
+    assert _parse_pay("$15,000 One X Player") == (None, None)
+    assert _parse_pay("$15,000 OneX Player") == (None, None)
     assert _parse_pay("OneXPlayer $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 OneXPlayer in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 OneXFly") == (None, None)
