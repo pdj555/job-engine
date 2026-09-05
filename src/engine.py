@@ -6657,6 +6657,8 @@ _FTE_FRAC_RE = re.compile(
     r"|\bfte\s*[:=\-–—]?\s*(three[-\s]quarter)[-\s]time\b"
     r"|(?<![\d.])\b((?:one[-\s])?third)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?third)[-\s]time\b"
+    r"|(?<![\d.])\b(two[-\s]thirds?)[-\s]time\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(two[-\s]thirds?)[-\s]time\b"
     r"|(?<![\d.])(?<!three-)(?<!three )\b(quarter)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(?<!three-)(?<!three )(quarter)[-\s]time\b",
     re.I,
@@ -6967,11 +6969,15 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             three_q_after,
             third,
             third_after,
+            two_thirds,
+            two_thirds_after,
             quarter,
             quarter_after,
         ) = frac.groups()
         if three_q or three_q_after:
             hours = 30
+        elif two_thirds or two_thirds_after:
+            hours = 27
         elif third or third_after:
             hours = 13
         elif quarter or quarter_after:
