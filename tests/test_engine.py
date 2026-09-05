@@ -12320,6 +12320,39 @@ def test_html_is_gone_removed_listing_banner():
         "<p>Once this role is no longer vacant, we grow.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job page is no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting page is no longer active.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This listing page no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Sorry, this job page is no longer available.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This page is no longer available.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This career page is no longer available.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting page is no longer available.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this job page is no longer available, we archive.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
         "<title>Engineer</title><p>We're no longer hiring for this role.</p>"
     ) is True
     assert _html_is_gone(
@@ -13467,6 +13500,26 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We're deciding against filling this role.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've moved on from this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We moved on from this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've moved on from this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've moved on.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're moving on from this role.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
