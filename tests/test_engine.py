@@ -2283,6 +2283,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 clothing stipend") == (None, None)
     assert _parse_pay("$10,000 long-term incentive") == (None, None)
     assert _parse_pay("$10,000 option grant") == (None, None)
+    assert _parse_pay("$15,000 carried interest") == (None, None)
+    assert _parse_pay("$15,000 refresh grant") == (None, None)
+    assert _parse_pay("carried interest of $15,000") == (None, None)
+    assert _parse_pay("refresh grant $15,000") == (None, None)
+    assert _parse_pay("base $180,000 carried interest $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 refresh grant $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 carried interest. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 carried interest in NYC") == (None, None)
+    assert _parse_pay("$15,000 carry") == (None, 15_000)
+    assert _parse_pay("$15,000 refresh") == (None, 15_000)
     assert _parse_pay("$10,000 variable bonus") == (None, None)
     assert _parse_pay("$10,000 cell phone reimbursement") == (None, None)
     assert _parse_pay("$10,000 donation match") == (None, None)
@@ -7299,6 +7309,12 @@ def test_guess_pay_annualizes_hourly():
     esoponly = Opportunity(title="Engineer", url="https://jobs.example/esoponly")
     assert _apply_listing(esoponly, "<p>$15,000 ESOP. Apply now.</p>") is False
     assert esoponly.pay_high is None
+    carryonly = Opportunity(title="Engineer", url="https://jobs.example/carryonly")
+    assert _apply_listing(carryonly, "<p>$15,000 carried interest. Apply now.</p>") is False
+    assert carryonly.pay_high is None
+    refreshonly = Opportunity(title="Engineer", url="https://jobs.example/refreshonly")
+    assert _apply_listing(refreshonly, "<p>$15,000 refresh grant. Apply now.</p>") is False
+    assert refreshonly.pay_high is None
     ownplan = Opportunity(title="Engineer", url="https://jobs.example/ownplan")
     assert _apply_listing(
         ownplan, "<p>employee stock ownership plan of $15,000. Apply now.</p>"
