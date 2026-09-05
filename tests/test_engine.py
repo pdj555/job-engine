@@ -10922,8 +10922,20 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must clock on at the office 3 days") is False
     assert _guess_remote("Engineer", "must clock off at the office 3 days") is False
     assert _guess_remote("Engineer", "must be seated at the office 3 days") is False
+    assert _guess_remote("Engineer", "must be seated on campus 3 days") is False
+    assert _guess_remote("Engineer", "must be seated on-campus 3 days") is False
+    assert _guess_remote("Engineer", "must be present on campus 3 days") is False
+    assert _guess_remote("Engineer", "must be present on-campus") is False
+    assert _guess_remote("Engineer", "have to be seated on campus 3 days") is False
+    assert _guess_remote("Engineer", "should be seated on campus 3 days") is False
+    assert _guess_remote("Engineer", "required to be seated on campus 3 days") is False
+    assert _guess_remote("Engineer", "told to be seated on campus 3 days") is False
+    assert _guess_remote("Engineer", "required to be present on campus") is False
     assert _guess_remote("Engineer", "must swipe in at home 3 days") is True
     assert _guess_remote("Engineer", "must be seated at home 3 days") is True
+    assert _guess_remote("Engineer", "must be seated on the US 3 days") is True
+    assert _guess_remote("Engineer", "shouldn't be seated on campus 3 days") is True
+    assert _guess_remote("Engineer", "work from home. must be seated on campus 3 days") is True
     assert _guess_remote("Engineer", "must badge in at the office 3 days") is False
     assert _guess_remote("Engineer", "must clock out at the office 3 days") is False
     assert _guess_remote("Engineer", "must punch in at home 3 days") is True
@@ -11575,6 +11587,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert sit_office.remote is False
     assert sit_office.pay_high == 180_000
+    seated_campus = Opportunity(
+        title="Engineer", url="https://jobs.example/seatedcampus"
+    )
+    assert _apply_listing(
+        seated_campus,
+        "<p>Must be seated on campus 3 days. Salary $180,000</p>",
+    ) is True
+    assert seated_campus.remote is False
+    assert seated_campus.pay_high == 180_000
+    present_campus = Opportunity(
+        title="Engineer", url="https://jobs.example/presentcampus"
+    )
+    assert _apply_listing(
+        present_campus,
+        "<p>Must be present on-campus. Salary $180,000</p>",
+    ) is True
+    assert present_campus.remote is False
+    assert present_campus.pay_high == 180_000
     clock_office = Opportunity(
         title="Engineer", url="https://jobs.example/clockoffice"
     )
