@@ -5908,6 +5908,15 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "weekly hours of work. 32") == 32
     assert _guess_hours("Engineer", "weekly hours work. 32") == 32
     assert _guess_hours("Engineer", "each week hours. 32") == 32
+    assert _guess_hours("Engineer", "weekly: 32 hours") == 32
+    assert _guess_hours("Engineer", "wkly: 32 hours") == 32
+    assert _guess_hours("Engineer", "weekly:32 hours") == 32
+    assert _guess_hours("Engineer", "weekly: 32 hrs") == 32
+    assert _guess_hours("Engineer", "weekly: 32 scheduled hours") == 32
+    assert _guess_hours("Engineer", "weekly: 32") is None
+    assert _guess_hours("Engineer", "week: 32 hours") is None
+    assert _guess_hours("Engineer", "this week: 32 hours") is None
+    assert _guess_hours("Engineer", "weekly: 32 hours meeting") is None
     assert _guess_hours("Engineer", "hours/with: 32") is None
     assert _guess_hours("Engineer", "a week's hours: 32") is None
     assert _guess_hours("Engineer", "the week's hours: 32") is None
@@ -6363,6 +6372,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert each_week_hours_dot.hours_per_week == 2
     assert each_week_hours_dot.pay_high == 10_000
+    weekly_colon_hours = Opportunity(title="Engineer", url="https://jobs.example/weekly-colon-hours")
+    assert _apply_listing(
+        weekly_colon_hours, "<p>$100/hour. weekly: 2 hours.</p>"
+    ) is True
+    assert weekly_colon_hours.hours_per_week == 2
+    assert weekly_colon_hours.pay_high == 10_000
     each_week_hours = Opportunity(title="Engineer", url="https://jobs.example/each-week-hours")
     assert _apply_listing(
         each_week_hours, "<p>$100/hour. each week hours: 2.</p>"
