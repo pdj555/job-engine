@@ -9541,6 +9541,10 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "this role requires 3 days in the US") is True
     assert _guess_remote("Engineer", "3 days office per week") is False
     assert _guess_remote("Engineer", "3 days a week from the office") is False
+    assert _guess_remote("Engineer", "3 days/week from the office") is False
+    assert _guess_remote("Engineer", "3 days weekly from the office") is False
+    assert _guess_remote("Engineer", "3 days/week from home") is True
+    assert _guess_remote("Engineer", "3 days/week from Microsoft Office") is True
     assert _guess_remote("Engineer", "hybrid 3 days office") is False
     assert _guess_remote("Engineer", "3 days a week from home office") is True
     assert _guess_remote("Engineer", "3 days from the office each week") is False
@@ -9587,6 +9591,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "field 3 days in NYC") is False
     assert _guess_remote("Engineer", "in the field 3 days a week") is False
     assert _guess_remote("Engineer", "3 days a week from the site") is False
+    assert _guess_remote("Engineer", "3 days/week from the site") is False
+    assert _guess_remote("Engineer", "3 days/week from the hub") is False
+    assert _guess_remote("Engineer", "3 days/week from the field") is False
+    assert _guess_remote("Engineer", "3 days/week from the lab") is False
+    assert _guess_remote("Engineer", "3 days/week from campus") is False
+    assert _guess_remote("Engineer", "3 days/week from HQ") is False
+    assert _guess_remote("Engineer", "3 days/week at the site") is False
+    assert _guess_remote("Engineer", "3 days/week from the website") is True
+    assert _guess_remote("Engineer", "3 days/week from the off-site") is True
     assert _guess_remote("Engineer", "3 days a week from the hub") is False
     assert _guess_remote("Engineer", "3 days a week from the field") is False
     assert _guess_remote("Engineer", "3 days a week at the site") is False
