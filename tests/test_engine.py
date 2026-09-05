@@ -4540,7 +4540,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "1/2 FTE") == 20
     assert _guess_hours("Engineer", "FTE 1/2") == 20
     assert _guess_hours("Engineer", "FTE: 1/2") == 20
+    assert _guess_hours("Engineer", "1/2 time FTE") == 20
+    assert _guess_hours("Engineer", "1/2-time FTE") == 20
+    assert _guess_hours("Engineer", "FTE 1/2 time") == 20
+    assert _guess_hours("Engineer", "1/4 time FTE") == 10
     assert _guess_hours("Engineer", "3/4 FTE") == 30
+    assert _guess_hours("Engineer", "1/2 time") is None
     assert _guess_hours("Engineer", "half FTE") == 20
     assert _guess_hours("Engineer", "half-time FTE") == 20
     assert _guess_hours("Engineer", "FTE half") == 20
@@ -4628,6 +4633,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert frac.hours_per_week == 20
     assert frac.pay_high == 80_000
+    frac_time = Opportunity(title="Engineer", url="https://jobs.example/half-time-frac-fte")
+    assert _apply_listing(
+        frac_time, "<p>$80/hour. 1/2 time FTE.</p>"
+    ) is True
+    assert frac_time.hours_per_week == 20
+    assert frac_time.pay_high == 80_000
     labeled = Opportunity(title="Engineer", url="https://jobs.example/hpw")
     assert _apply_listing(
         labeled, "<p>$160,000 a year. Hours per week: 32</p>"
