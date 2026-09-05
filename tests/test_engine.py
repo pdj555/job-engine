@@ -7331,15 +7331,26 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "bi-weekly: 32 hours") == 32
     assert _guess_hours("Engineer", "32 hours/fn") == 16
     assert _guess_hours("Engineer", "32 hrs/fn") == 16
+    assert _guess_hours("Engineer", "32 h/fn") == 16
+    assert _guess_hours("Engineer", "32h/fn") == 16
+    assert _guess_hours("Engineer", "32 h / fn") == 16
+    assert _guess_hours("Engineer", "32 h per fn") == 16
+    assert _guess_hours("Engineer", "32h fortnightly") == 16
+    assert _guess_hours("Engineer", "32 h fortnightly") == 16
     assert _guess_hours("Engineer", "32 hours / fn") == 16
     assert _guess_hours("Engineer", "32 hours per fn") == 16
     assert _guess_hours("Engineer", "hours per fn: 32") == 16
     assert _guess_hours("Engineer", "hours: 32 per fn") == 16
+    assert _guess_hours("Engineer", "h per fn: 32") == 16
     assert _guess_hours("Engineer", "32 hours per fn meeting") is None
+    assert _guess_hours("Engineer", "32 h/fn meeting") is None
     assert _guess_hours("Engineer", "32 hours fn") is None
+    assert _guess_hours("Engineer", "32 h fn") is None
     assert _guess_hours("Engineer", "fn: 32 hours") is None
     assert _guess_hours("Engineer", "40 hours a week. 32 hours/fn") == 40
+    assert _guess_hours("Engineer", "40 hours a week. 32 h/fn") == 40
     assert _guess_hours("Engineer", "32 hours per function") is None
+    assert _guess_hours("Engineer", "32 h per function") is None
     assert _guess_hours("Engineer", "32 hours every other week meeting") is None
     assert _guess_hours("Engineer", "32 hours every 2 weeks meeting") is None
     assert _guess_hours("Engineer", "32 hours for 2 weeks") is None
@@ -8704,6 +8715,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert fn.hours_per_week == 16
     assert fn.pay_high == 64_000
+    compact_fn = Opportunity(title="Engineer", url="https://jobs.example/hfn")
+    assert _apply_listing(
+        compact_fn, "<p>$80/hour. 32 h/fn.</p>"
+    ) is True
+    assert compact_fn.hours_per_week == 16
+    assert compact_fn.pay_high == 64_000
     daily = Opportunity(title="Engineer", url="https://jobs.example/dailyhours")
     assert _apply_listing(
         daily, "<p>$80/hour. 8 hours a day.</p>"
