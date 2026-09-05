@@ -7578,6 +7578,24 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "10 hours three times a week meeting") is None
     assert _guess_hours("Engineer", "8 hours thrice weekly meeting") is None
     assert _guess_hours("Engineer", "2 hour three times a week meeting") is None
+    assert _guess_hours("Engineer", "16 hours thrice a fortnight") == 24
+    assert _guess_hours("Engineer", "16 hours three times a fortnight") == 24
+    assert _guess_hours("Engineer", "16 hours three times per fortnight") == 24
+    assert _guess_hours("Engineer", "8 hours thrice fortnightly") == 12
+    assert _guess_hours("Engineer", "10 hours 3 times a fortnight") == 15
+    assert _guess_hours("Engineer", "8 hrs three times a fortnight") == 12
+    assert _guess_hours("Engineer", "hours three times a fortnight: 16") == 24
+    assert _guess_hours("Engineer", "three times a fortnight hours: 16") == 24
+    assert _guess_hours("Engineer", "thrice a fortnight: 16 hours") == 24
+    assert _guess_hours("Engineer", "hours: 16 three times a fortnight") == 24
+    assert _guess_hours("Engineer", "16 hours thrice a fn") == 24
+    assert _guess_hours("Engineer", "16 hours three times every two weeks") == 24
+    assert _guess_hours("Engineer", "8 hours thrice a week") == 24
+    assert _guess_hours("Engineer", "16 hours twice a fortnight") == 16
+    assert _guess_hours("Engineer", "40 hours a week. 16 hours thrice a fortnight") == 40
+    assert _guess_hours("Engineer", "16 hours thrice a fortnight meeting") is None
+    assert _guess_hours("Engineer", "16 hours thrice a function") is None
+    assert _guess_hours("Engineer", "16 hours thrice fn") is None
     assert _guess_hours("Engineer", "8 hours three times a day") is None
     assert _guess_hours("Engineer", "8 hours thrice") is None
     assert _guess_hours("Engineer", "thrice: 8 hours") is None
@@ -8855,6 +8873,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert thrice_week.hours_per_week == 30
     assert thrice_week.pay_high == 120_000
+    thrice_fn = Opportunity(title="Engineer", url="https://jobs.example/thricefn")
+    assert _apply_listing(
+        thrice_fn, "<p>$80/hour. 16 hours thrice a fortnight.</p>"
+    ) is True
+    assert thrice_fn.hours_per_week == 24
+    assert thrice_fn.pay_high == 96_000
     thrice_weekly = Opportunity(title="Engineer", url="https://jobs.example/thriceweeklyhours")
     assert _apply_listing(
         thrice_weekly, "<p>$100/hour. 8 hours thrice weekly.</p>"
