@@ -2391,6 +2391,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$80/hr afternoon") == (None, 160_000)
     assert _parse_pay("$80/hr late") == (None, 160_000)
     assert _parse_pay("$80/hr early") == (None, 160_000)
+    assert _parse_pay("$80/hr twilight premium") == (None, None)
+    assert _parse_pay("$80/hr twilight shift premium") == (None, None)
+    assert _parse_pay("$80/hr split premium") == (None, None)
+    assert _parse_pay("$80/hr twilight") == (None, 160_000)
+    assert _parse_pay("$80/hr split") == (None, 160_000)
     assert _parse_pay("$80/hr mid shift premium") == (None, None)
     assert _parse_pay("$80/hr midshift premium") == (None, None)
     assert _parse_pay("weekday premium $80/hr") == (None, None)
@@ -9524,9 +9529,17 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "office 3 days in NYC") is False
     assert _guess_remote("Engineer", "office in NYC 3 days") is False
     assert _guess_remote("Engineer", "office in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "lab in NYC 3 days") is False
+    assert _guess_remote("Engineer", "campus in NYC 3 days") is False
+    assert _guess_remote("Engineer", "HQ in NYC 3 days") is False
+    assert _guess_remote("Engineer", "site in NYC 3 days") is False
+    assert _guess_remote("Engineer", "hub in NYC 3 days") is False
+    assert _guess_remote("Engineer", "field in NYC 3 days") is False
     assert _guess_remote("Engineer", "home office in NYC 3 days") is True
     assert _guess_remote("Engineer", "Microsoft Office in NYC 3 days") is True
     assert _guess_remote("Engineer", "office in the US 3 days") is True
+    assert _guess_remote("Engineer", "lab in the US 3 days") is True
+    assert _guess_remote("Engineer", "off-site in NYC 3 days") is True
     assert _guess_remote("Engineer", "office two days in Seattle") is False
     assert _guess_remote("Engineer", "3 days office in NYC") is False
     assert _guess_remote("Engineer", "office 3 days in the US") is True
