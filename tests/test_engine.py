@@ -6150,6 +6150,15 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "32 hours of each week meeting") is None
     assert _guess_hours("Engineer", "hours of this week: 32") is None
     assert _guess_hours("Engineer", "32 hours of this week") is None
+    assert _guess_hours("Engineer", "32 hours for each week") == 32
+    assert _guess_hours("Engineer", "32 hours for every week") == 32
+    assert _guess_hours("Engineer", "hours for each week: 32") == 32
+    assert _guess_hours("Engineer", "hours for every week: 32") == 32
+    assert _guess_hours("Engineer", "hours: 32 for each week") == 32
+    assert _guess_hours("Engineer", "hours: 32 for every week") == 32
+    assert _guess_hours("Engineer", "32 hours for each week meeting") is None
+    assert _guess_hours("Engineer", "hours for this week: 32") is None
+    assert _guess_hours("Engineer", "32 hours for this week") is None
     assert _guess_hours("Engineer", "32 hours for the week meeting") is None
     assert _guess_hours("Engineer", "per wk: 32 hours") == 32
     assert _guess_hours("Engineer", "every week: 32 hours") == 32
@@ -6665,6 +6674,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert hours_of_every_week.hours_per_week == 2
     assert hours_of_every_week.pay_high == 10_000
+    hours_for_each_week = Opportunity(title="Engineer", url="https://jobs.example/hours-for-each-week")
+    assert _apply_listing(
+        hours_for_each_week, "<p>$100/hour. 2 hours for each week.</p>"
+    ) is True
+    assert hours_for_each_week.hours_per_week == 2
+    assert hours_for_each_week.pay_high == 10_000
+    hours_for_every_week = Opportunity(title="Engineer", url="https://jobs.example/hours-for-every-week")
+    assert _apply_listing(
+        hours_for_every_week, "<p>$100/hour. 2 hours for every week.</p>"
+    ) is True
+    assert hours_for_every_week.hours_per_week == 2
+    assert hours_for_every_week.pay_high == 10_000
     pw_colon_hours = Opportunity(title="Engineer", url="https://jobs.example/pw-colon-hours")
     assert _apply_listing(
         pw_colon_hours, "<p>$100/hour. p/w: 2 hours.</p>"
