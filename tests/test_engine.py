@@ -2287,6 +2287,25 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 multiple employer") == (None, 15_000)
     assert _parse_pay("$15,000 pooled employer") == (None, 15_000)
     assert _parse_pay("$15,000 employer plan") == (None, 15_000)
+    assert _parse_pay("$15,000 age-weighted plan") == (None, None)
+    assert _parse_pay("$15,000 age weighted plan") == (None, None)
+    assert _parse_pay("age-weighted plan $15,000") == (None, None)
+    assert _parse_pay("$15,000 new comparability plan") == (None, None)
+    assert _parse_pay("$15,000 new-comparability plan") == (None, None)
+    assert _parse_pay("$15,000 comparability plan") == (None, None)
+    assert _parse_pay("new comparability plan $15,000") == (None, None)
+    assert _parse_pay("$15,000 cross-tested plan") == (None, None)
+    assert _parse_pay("$15,000 cross tested plan") == (None, None)
+    assert _parse_pay("cross-tested plan $15,000") == (None, None)
+    assert _parse_pay("$180,000 age-weighted plan in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 new comparability plan in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 age-weighted plan $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 age-weighted plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 new comparability plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cross-tested plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 age-weighted") == (None, 15_000)
+    assert _parse_pay("$15,000 new comparability") == (None, 15_000)
+    assert _parse_pay("$15,000 cross-tested") == (None, 15_000)
     assert _parse_pay("$15,000 cash") == (None, 15_000)
     assert _parse_pay("$15,000 cash balance") == (None, 15_000)
     assert _parse_pay("$15,000 defined benefit") == (None, 15_000)
@@ -7464,6 +7483,26 @@ def test_guess_pay_annualizes_hourly():
         mepmix, "<p>$15,000 multiple employer plan. Salary $180,000</p>"
     ) is True
     assert mepmix.pay_high == 180_000
+    agewtd = Opportunity(title="Engineer", url="https://jobs.example/agewtd")
+    assert _apply_listing(
+        agewtd, "<p>$15,000 age-weighted plan. Apply now.</p>"
+    ) is False
+    assert agewtd.pay_high is None
+    newcomp = Opportunity(title="Engineer", url="https://jobs.example/newcomp")
+    assert _apply_listing(
+        newcomp, "<p>$15,000 new comparability plan. Apply now.</p>"
+    ) is False
+    assert newcomp.pay_high is None
+    xtest = Opportunity(title="Engineer", url="https://jobs.example/xtest")
+    assert _apply_listing(
+        xtest, "<p>$15,000 cross-tested plan. Apply now.</p>"
+    ) is False
+    assert xtest.pay_high is None
+    agewtdmix = Opportunity(title="Engineer", url="https://jobs.example/agewtdmix")
+    assert _apply_listing(
+        agewtdmix, "<p>$15,000 age-weighted plan. Salary $180,000</p>"
+    ) is True
+    assert agewtdmix.pay_high == 180_000
     lti = Opportunity(title="Engineer", url="https://jobs.example/lti")
     assert _apply_listing(lti, "<p>$10,000 long-term incentive. Apply now.</p>") is False
     assert lti.pay_high is None
