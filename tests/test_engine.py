@@ -10092,6 +10092,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "welcome in our offices") is True
     assert _guess_remote("Engineer", "welcome in our downtown office") is True
     assert _guess_remote("Engineer", "you are welcome in our NYC office") is True
+    assert _guess_remote("Engineer", "join our offices") is True
+    assert _guess_remote("Engineer", "within our offices we collaborate") is True
+    assert _guess_remote("Engineer", "within our NYC office") is True
+    assert _guess_remote("Engineer", "underreport to the office") is True
+    assert _guess_remote("Engineer", "misreport to the office") is True
+    assert _guess_remote("Engineer", "report to the office") is False
     assert _guess_remote("Engineer", "telecommute to the office") is True
     assert _guess_remote("Engineer", "telecommute to our NYC office") is True
     assert _guess_remote("Engineer", "you may telecommute to the office") is True
