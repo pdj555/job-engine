@@ -12478,6 +12478,34 @@ def test_html_is_gone_removed_listing_banner():
         "<p>This meeting is now closed.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is cancelled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This position is now canceled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is now withdrawn.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This opening is rescinded.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Role is cancelled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is cancelled.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this role is cancelled, we archive.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
         "<title>Engineer</title><p>This posting has been closed.</p>"
     ) is True
     assert _html_is_gone(
