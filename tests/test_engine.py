@@ -2480,7 +2480,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cancer insurance") == (None, None)
     assert _parse_pay("cancer insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 cancer insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cancer benefit") == (None, None)
+    assert _parse_pay("$15,000 cancer coverage") == (None, None)
+    assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 hospital insurance") == (None, None)
+    assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 long-term care") == (None, None)
+    assert _parse_pay("$15,000 long term care insurance") == (None, None)
+    assert _parse_pay("$15,000 long-term care. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cancer") == (None, 15_000)
+    assert _parse_pay("$15,000 hospital") == (None, 15_000)
+    assert _parse_pay("$15,000 LTC") == (None, 15_000)
     assert _parse_pay("pet insurance of $10,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 pet insurance") == (None, 180_000)
     assert _parse_pay("$180,000 medical in NYC") == (None, 180_000)
@@ -7929,6 +7939,33 @@ def test_guess_pay_annualizes_hourly():
         cancerinsmix, "<p>$15,000 cancer insurance. Salary $180,000</p>"
     ) is True
     assert cancerinsmix.pay_high == 180_000
+    cancerbenonly = Opportunity(
+        title="Engineer", url="https://jobs.example/cancerbenonly"
+    )
+    assert _apply_listing(
+        cancerbenonly, "<p>$15,000 cancer benefit. Apply now.</p>"
+    ) is False
+    assert cancerbenonly.pay_high is None
+    hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
+    assert _apply_listing(
+        hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
+    ) is False
+    assert hospinsonly.pay_high is None
+    hospinsmix = Opportunity(title="Engineer", url="https://jobs.example/hospinsmix")
+    assert _apply_listing(
+        hospinsmix, "<p>$15,000 hospital insurance. Salary $180,000</p>"
+    ) is True
+    assert hospinsmix.pay_high == 180_000
+    ltconly = Opportunity(title="Engineer", url="https://jobs.example/ltconly")
+    assert _apply_listing(
+        ltconly, "<p>$15,000 long-term care. Apply now.</p>"
+    ) is False
+    assert ltconly.pay_high is None
+    ltcmix = Opportunity(title="Engineer", url="https://jobs.example/ltcmix")
+    assert _apply_listing(
+        ltcmix, "<p>$15,000 long-term care. Salary $180,000</p>"
+    ) is True
+    assert ltcmix.pay_high == 180_000
     assert pet.pay_high is None
     wfh_stip = Opportunity(title="Engineer", url="https://jobs.example/wfh-stip")
     assert _apply_listing(
