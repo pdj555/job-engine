@@ -2130,6 +2130,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 domestic partner life") == (None, None)
     assert _parse_pay("$15,000 family life") == (None, None)
     assert _parse_pay("$15,000 survivor life") == (None, None)
+    assert _parse_pay("$15,000 parent life") == (None, None)
+    assert _parse_pay("$15,000 parents life") == (None, None)
+    assert _parse_pay("$15,000 grandchild life") == (None, None)
+    assert _parse_pay("$15,000 retiree life") == (None, None)
+    assert _parse_pay("$15,000 executive life") == (None, None)
+    assert _parse_pay("$15,000 portable life") == (None, None)
+    assert _parse_pay("$15,000 accidental life") == (None, None)
     assert _parse_pay("$15,000 flight insurance") == (None, None)
     assert _parse_pay("$15,000 trip insurance") == (None, None)
     assert _parse_pay("$15,000 business travel insurance") == (None, None)
@@ -2138,18 +2145,22 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("dependent life of $15,000") == (None, None)
     assert _parse_pay("travel insurance of $15,000") == (None, None)
     assert _parse_pay("partner life of $15,000") == (None, None)
+    assert _parse_pay("parent life of $15,000") == (None, None)
     assert _parse_pay("flight insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 term insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 supplemental insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 dependent life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 travel insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 partner life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 parent life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 accidental life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 flight insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 term insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 supplemental insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 dependent life in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 travel insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 partner life in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 parent life in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 flight insurance in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 term") == (None, 15_000)
     assert _parse_pay("$15,000 group") == (None, 15_000)
@@ -2166,6 +2177,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 survivor") == (None, 15_000)
     assert _parse_pay("$15,000 flight") == (None, 15_000)
     assert _parse_pay("$15,000 trip") == (None, 15_000)
+    assert _parse_pay("$15,000 parent") == (None, 15_000)
+    assert _parse_pay("$15,000 accidental") == (None, 15_000)
+    assert _parse_pay("$15,000 retiree") == (None, 15_000)
+    assert _parse_pay("$15,000 portable") == (None, 15_000)
     assert _parse_pay("$15,000 whole life") == (None, None)
     assert _parse_pay("$15,000 universal life") == (None, None)
     assert _parse_pay("$15,000 variable life") == (None, None)
@@ -8557,6 +8572,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         partnerlifemix, "<p>$15,000 partner life. Salary $180,000</p>"
     ) is True
     assert partnerlifemix.pay_high == 180_000
+    parentlifeonly = Opportunity(title="Engineer", url="https://jobs.example/parentlifeonly")
+    assert _apply_listing(
+        parentlifeonly, "<p>$15,000 parent life. Apply now.</p>"
+    ) is False
+    assert parentlifeonly.pay_high is None
+    parentlifemix = Opportunity(title="Engineer", url="https://jobs.example/parentlifemix")
+    assert _apply_listing(
+        parentlifemix, "<p>$15,000 parent life. Salary $180,000</p>"
+    ) is True
+    assert parentlifemix.pay_high == 180_000
     flightinsonly = Opportunity(title="Engineer", url="https://jobs.example/flightinsonly")
     assert _apply_listing(
         flightinsonly, "<p>$15,000 flight insurance. Apply now.</p>"
