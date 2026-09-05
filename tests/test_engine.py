@@ -10032,6 +10032,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "based in NYC") is True
     assert _guess_remote("Engineer", "located in NYC") is True
     assert _guess_remote("Engineer", "work from home. based in NYC 3 days") is True
+    assert _guess_remote("Engineer", "presence in NYC 3 days") is False
+    assert _guess_remote("Engineer", "presence in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "presence in New York 3 days") is False
+    assert _guess_remote("Engineer", "attendance in NYC 3 days") is False
+    assert _guess_remote("Engineer", "physical presence in NYC 3 days") is False
+    assert _guess_remote("Engineer", "your presence in NYC 3 days") is False
+    assert _guess_remote("Engineer", "office presence NYC 3 days") is False
+    assert _guess_remote("Engineer", "office presence in NYC 3 days") is False
+    assert _guess_remote("Engineer", "office attendance NYC 3 days") is False
+    assert _guess_remote("Engineer", "presence in the US 3 days") is True
+    assert _guess_remote("Engineer", "presence in meetings 3 days") is True
+    assert _guess_remote("Engineer", "presence in NYC") is True
+    assert _guess_remote("Engineer", "online presence in NYC 3 days") is True
+    assert _guess_remote("Engineer", "digital presence in NYC 3 days") is True
+    assert _guess_remote("Engineer", "social media presence in NYC 3 days") is True
+    assert _guess_remote("Engineer", "office presence in the US 3 days") is True
+    assert _guess_remote("Engineer", "office presence meetings 3 days") is True
+    assert _guess_remote("Engineer", "work from home. presence in NYC 3 days") is True
     assert _guess_remote("Engineer", "site 3 days a week") is False
     assert _guess_remote("Engineer", "site 3 days in NYC") is False
     assert _guess_remote("Engineer", "hub 3 days a week") is False
@@ -10191,6 +10209,25 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert presence.remote is False
     assert presence.pay_high == 180_000
     assert presence.score() == 0.7 * (180_000 / (40 * 50))
+    presence_days = Opportunity(
+        title="Engineer", url="https://jobs.example/presencedays"
+    )
+    assert _apply_listing(
+        presence_days,
+        "<p>Presence in NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert presence_days.remote is False
+    assert presence_days.pay_high == 180_000
+    assert presence_days.score() == 0.7 * (180_000 / (40 * 50))
+    office_presence_city = Opportunity(
+        title="Engineer", url="https://jobs.example/officepresencecity"
+    )
+    assert _apply_listing(
+        office_presence_city,
+        "<p>Office presence NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert office_presence_city.remote is False
+    assert office_presence_city.pay_high == 180_000
     located = Opportunity(title="Engineer", url="https://jobs.example/located")
     assert _apply_listing(
         located, "<p>You must be located in New York. Salary $180,000</p>"
