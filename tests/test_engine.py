@@ -2520,6 +2520,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 quake insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 windstorm insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hurricane insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 tornado insurance") == (None, None)
+    assert _parse_pay("$15,000 tornadoes insurance") == (None, None)
+    assert _parse_pay("$15,000 cyclone insurance") == (None, None)
+    assert _parse_pay("$15,000 typhoon insurance") == (None, None)
+    assert _parse_pay("tornado insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 tornado insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cyclone insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 typhoon insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 commuter insurance") == (None, None)
     assert _parse_pay("$15,000 transit insurance") == (None, None)
     assert _parse_pay("commuter insurance of $15,000") == (None, None)
@@ -2538,6 +2546,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 quake") == (None, 15_000)
     assert _parse_pay("$15,000 windstorm") == (None, 15_000)
     assert _parse_pay("$15,000 hurricane") == (None, 15_000)
+    assert _parse_pay("$15,000 tornado") == (None, 15_000)
+    assert _parse_pay("$15,000 cyclone") == (None, 15_000)
+    assert _parse_pay("$15,000 typhoon") == (None, 15_000)
     assert _parse_pay("$15,000 boat") == (None, 15_000)
     assert _parse_pay("$15,000 long-term care") == (None, None)
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
@@ -8099,6 +8110,21 @@ def test_guess_pay_annualizes_hourly():
         windinsonly, "<p>$15,000 windstorm insurance. Apply now.</p>"
     ) is False
     assert windinsonly.pay_high is None
+    torninsonly = Opportunity(title="Engineer", url="https://jobs.example/torninsonly")
+    assert _apply_listing(
+        torninsonly, "<p>$15,000 tornado insurance. Apply now.</p>"
+    ) is False
+    assert torninsonly.pay_high is None
+    torninsmix = Opportunity(title="Engineer", url="https://jobs.example/torninsmix")
+    assert _apply_listing(
+        torninsmix, "<p>$15,000 tornado insurance. Salary $180,000</p>"
+    ) is True
+    assert torninsmix.pay_high == 180_000
+    cyclinsonly = Opportunity(title="Engineer", url="https://jobs.example/cyclinsonly")
+    assert _apply_listing(
+        cyclinsonly, "<p>$15,000 cyclone insurance. Apply now.</p>"
+    ) is False
+    assert cyclinsonly.pay_high is None
     umbrellainsonly = Opportunity(
         title="Engineer", url="https://jobs.example/umbrellainsonly"
     )
