@@ -1377,6 +1377,21 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_mur is False
     assert mur.pay_high is None
+    assert _parse_pay("80,000 CRC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 CRC. Account Executive $220,000</p>") is True
+    assert _parse_pay("CRC80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CRC80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 CRC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 CRC. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k CRC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k CRC. Account Executive $220,000</p>") is True
+    crc = Opportunity(title="Engineer", url="https://jobs.example/cr")
+    listed_crc = _apply_listing(
+        crc, "<p>Salary 80,000 CRC. Account Executive $400,000</p>"
+    )
+    assert listed_crc is False
+    assert crc.pay_high is None
+    assert _parse_pay("Experience with CRC 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
