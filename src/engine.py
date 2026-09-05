@@ -6667,6 +6667,8 @@ _FTE_FRAC_RE = re.compile(
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?sixth)[-\s]time\b"
     r"|(?<![\d.])\b((?:one[-\s])?seventh)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?seventh)[-\s]time\b"
+    r"|(?<![\d.])\b((?:one[-\s])?ninth)[-\s]time\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?ninth)[-\s]time\b"
     r"|(?<![\d.])\b((?:one[-\s])?tenth)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?tenth)[-\s]time\b"
     r"|(?<![\d.])(?<!three-)(?<!three )\b(quarter)[-\s]time\s*fte\b"
@@ -6989,6 +6991,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             sixth_after,
             seventh,
             seventh_after,
+            ninth,
+            ninth_after,
             tenth,
             tenth_after,
             quarter,
@@ -7008,6 +7012,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             hours = 7
         elif seventh or seventh_after:
             hours = 6
+        elif ninth or ninth_after:
+            hours = 4
         elif tenth or tenth_after:
             hours = 4
         elif quarter or quarter_after:
