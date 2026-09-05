@@ -2312,6 +2312,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 grantor trust $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 grantor trust. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 secular trust. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 excess benefit") == (None, None)
+    assert _parse_pay("$15,000 excess-benefit plan") == (None, None)
+    assert _parse_pay("excess benefit $15,000") == (None, None)
+    assert _parse_pay("excess benefit plan of $15,000") == (None, None)
+    assert _parse_pay("$15,000 restoration plan") == (None, None)
+    assert _parse_pay("$15,000 benefit restoration plan") == (None, None)
+    assert _parse_pay("restoration plan $15,000") == (None, None)
+    assert _parse_pay("$180,000 excess benefit in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 restoration plan in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 excess benefit $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 excess benefit plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 restoration plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 excess") == (None, 15_000)
+    assert _parse_pay("$15,000 restoration") == (None, 15_000)
     assert _parse_pay("$15,000 trust") == (None, 15_000)
     assert _parse_pay("$15,000 grantor") == (None, 15_000)
     assert _parse_pay("$15,000 secular") == (None, 15_000)
@@ -7997,6 +8011,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         grantormix, "<p>$15,000 grantor trust. Salary $180,000</p>"
     ) is True
     assert grantormix.pay_high == 180_000
+    excessben = Opportunity(title="Engineer", url="https://jobs.example/excessben")
+    assert _apply_listing(
+        excessben, "<p>$15,000 excess benefit plan. Apply now.</p>"
+    ) is False
+    assert excessben.pay_high is None
+    restplan = Opportunity(title="Engineer", url="https://jobs.example/restplan")
+    assert _apply_listing(
+        restplan, "<p>$15,000 restoration plan. Apply now.</p>"
+    ) is False
+    assert restplan.pay_high is None
+    excessmix = Opportunity(title="Engineer", url="https://jobs.example/excessmix")
+    assert _apply_listing(
+        excessmix, "<p>$15,000 excess benefit plan. Salary $180,000</p>"
+    ) is True
+    assert excessmix.pay_high == 180_000
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
