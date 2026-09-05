@@ -6232,27 +6232,27 @@ _HOURLY_RANGE_RE = re.compile(
     + _HOUR_TAIL
 )
 _HOURLY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)" + _HOUR_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)" + _HOUR_TAIL
 )
 _MONTH_TAIL = r"\s*(?:/\s*m(?:o(?:nth)?s?)?|(?:per|a)\s+mo(?:nth)?s?|monthly|mo(?:nth)?s?(?!\s+(?:of|in)\b))\b"
 _MONTHLY_RANGE_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
-    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     + _MONTH_TAIL
 )
 _MONTHLY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _MONTH_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _MONTH_TAIL
 )
 _WEEK_TAIL = r"\s*(?:/\s*w(?:(?:ee)?ks?)?|(?:per|a)\s+w(?:ee)?ks?|weekly|w(?:ee)?ks?(?!\s+(?:of|in)\b))\b"
 _WEEKLY_RANGE_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
-    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     + _WEEK_TAIL
 )
 _WEEKLY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
 )
 _BIWEEK_TAIL = (
     r"\s*(?:bi[-\s]?weekly|"
@@ -6261,33 +6261,33 @@ _BIWEEK_TAIL = (
     r"fortnightly)\b"
 )
 _BIWEEKLY_RANGE_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
-    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     + _BIWEEK_TAIL
 )
 _BIWEEKLY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _BIWEEK_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _BIWEEK_TAIL
 )
 _SEMIMONTH_TAIL = r"\s*(?:semi[-\s]?monthly|twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
 _SEMIMONTHLY_RANGE_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
-    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     + _SEMIMONTH_TAIL
 )
 _SEMIMONTHLY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _SEMIMONTH_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _SEMIMONTH_TAIL
 )
 _DAY_TAIL = r"\s*(?:/\s*(?:d(?:ays?)?|diem)|(?:per|a)\s+(?:days?|diem)|daily|days?(?!\s+(?:one|of|in)\b))\b"
 _DAILY_RANGE_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
-    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?"
+    r"(?:USD|US\$|\$)?\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     + _DAY_TAIL
 )
 _DAILY_RE = re.compile(
-    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _DAY_TAIL
+    r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _DAY_TAIL
 )
 _NOT_PERIOD_UNIT = (
     r"(?!"
@@ -6311,9 +6311,9 @@ _RANGE_K_RE = re.compile(
     re.I,
 )
 _RANGE_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:USD|US\$)?"
+    r"\$\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\s*(?:USD|US\$)?"
     r"\s*(?:to|-|–|—|and)\s*"
-    r"\$?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    r"\$?\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})(?!\d)"
     + _NOT_PERIOD_UNIT,
     re.I,
 )
@@ -6323,12 +6323,12 @@ _RANGE_SPACE_K_RE = re.compile(
     re.I,
 )
 _RANGE_SPACE_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s+\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    r"\$\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\s+\$\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})(?!\d)"
     + _NOT_PERIOD_UNIT,
     re.I,
 )
 _RANGE_USD_RE = re.compile(
-    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})(?!\d)"
+    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})(?!\d)"
     + _NOT_PERIOD_UNIT
 )
 _ANNUAL_K_RE = re.compile(
@@ -6336,13 +6336,13 @@ _ANNUAL_K_RE = re.compile(
     re.I,
 )
 _ANNUAL_FULL_RE = re.compile(
-    r"\$\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+    r"\$\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\b"
     + _NOT_RANGE_CONT
     + _NOT_PERIOD_UNIT,
     re.I,
 )
 _ANNUAL_USD_RE = re.compile(
-    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:,\d{3}){1,2}|\d{5,7})\b"
+    r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\b"
     + _NOT_RANGE_CONT
     + _NOT_PERIOD_UNIT
 )
@@ -6350,190 +6350,190 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?i)(?:"
     r"\b(?:without|no|not|nor|except(?:\s+for)?|excluding|instead\s+of|rather\s+than|versus|vs\.?)\s+"
     r"(?:a\s+|an\s+|any\s+|the\s+)?"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*\$?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*\$?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"\bup\s+to\s+(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?\+"
+    r"\bup\s+to\s+(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?\+"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:in\s+)?(?:equity|stock(?:\s+options?)?|RSUs?|ESPP|employee\s+stock(?:\s+purchase(?:\s+plan)?)?|restricted\s+stock|option\s+grant|severance)\b"
     r"|"
     r"\b(?:equity|stock(?:\s+options?)?|RSUs?|ESPP|employee\s+stock(?:\s+purchase(?:\s+plan)?)?|restricted\s+stock|option\s+grant|severance)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:(?:employee\s+)?(?:signing|sign-on|sign on|signon|relocation|annual|target|performance|retention|referral|spot|cash|year-end|year end|holiday|discretionary|quarterly|incentive|sales|monthly|stay|completion|anniversary|hiring|welcome|joining|new[-\s]hire|baby|new[-\s]parent|peer|patent|tenure|christmas|moving|variable|recognition|employee)\s+bonus|(?:signing|sign-on|sign on|signon)\b|(?:employee\s+)?referral\s+award|employee\s+referral\b|(?:spot|recognition)\s+award|holiday\s+gift|bonus\b)"
     r"|"
     r"\b(?:bonus|(?:employee\s+)?(?:signing|sign-on|sign on|signon|relocation|annual|target|performance|retention|referral|spot|cash|year-end|year end|holiday|discretionary|quarterly|incentive|sales|monthly|stay|completion|anniversary|hiring|welcome|joining|new[-\s]hire|baby|new[-\s]parent|peer|patent|tenure|christmas|moving|variable|recognition|employee)\s+bonus|(?:signing|sign-on|sign on|signon)|(?:employee\s+)?referral\s+award|employee\s+referral|(?:spot|recognition)\s+award|holiday\s+gift)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+relocation(?:\s+(?:bonus|assistance|package|stipend))?\b(?!\s+to)"
     r"|"
     r"\brelocation(?:\s+(?:bonus|assistance|package|stipend))?\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:tuition(?:\s+(?:reimbursement|assistance|benefit))?(?!\s+in)|education\s+(?:reimbursement|assistance|benefit|budget)|student[-\s]loans?(?:\s+repayment)?|professional\s+development(?:\s+(?:budget|reimbursement|allowance|benefit))?|learning(?:\s+and\s+development(?:\s+(?:budget|reimbursement|allowance|benefit))?|\s+(?:budget|reimbursement|allowance|benefit))|continuing\s+education(?:\s+(?:budget|reimbursement|allowance|benefit))?|conference\s+(?:budget|reimbursement|allowance|benefit)|training\s+(?:budget|reimbursement|allowance|benefit)|(?:annual\s+)?wellness\s+(?:budget|reimbursement|allowance|benefit|program)|annual\s+wellness|fertility\s+(?:benefit|coverage|assistance|budget)|adoption\s+(?:assistance|benefit|coverage)|parental\s+leave|family\s+leave|backup\s+care|child(?:[-\s])?care\s+(?:benefit|stipend|allowance|assistance|budget|FSA)|dependent\s+care\s+(?:benefit|stipend|allowance|assistance|budget|FSA)|mental\s+health\s+(?:benefit|stipend|allowance)|life\s+insurance|legal\s+insurance|legal\s+plan|pet\s+insurance|accident\s+insurance|vision\s+insurance|dental\s+insurance|medical\s+insurance|AD&D(?:\s+insurance)?|accidental\s+death(?:\s+and\s+dismemberment)?(?:\s+insurance)?|critical\s+illness(?:\s+insurance)?|hospital\s+indemnity(?:\s+insurance)?|legal\s+benefit|(?:short|long)[-\s]term\s+disability|disability\s+insurance|(?:LTD|STD)\s+insurance|(?:gym|fitness)\s+membership|(?:fitness|gym(?:\s+membership)?|commuter|parking|phone|cell(?:\s+phone)?|internet|home\s+office|mileage|gas|transit)\s+reimbursement|(?:commuter|parking|phone|cell(?:\s+phone)?|internet|transit|vision|dental|medical|EAP|LTD|STD|gym|fitness|caregiver|pet|accident)\s+benefit)\b"
     r"|"
     r"\b(?:tuition(?:\s+(?:reimbursement|assistance|benefit))?|education\s+(?:reimbursement|assistance|benefit|budget)|student[-\s]loans?(?:\s+repayment)?|professional\s+development(?:\s+(?:budget|reimbursement|allowance|benefit))?|learning(?:\s+and\s+development(?:\s+(?:budget|reimbursement|allowance|benefit))?|\s+(?:budget|reimbursement|allowance|benefit))|continuing\s+education(?:\s+(?:budget|reimbursement|allowance|benefit))?|conference\s+(?:budget|reimbursement|allowance|benefit)|training\s+(?:budget|reimbursement|allowance|benefit)|(?:annual\s+)?wellness\s+(?:budget|reimbursement|allowance|benefit|program)|annual\s+wellness|fertility\s+(?:benefit|coverage|assistance|budget)|adoption\s+(?:assistance|benefit|coverage)|parental\s+leave|family\s+leave|backup\s+care|child(?:[-\s])?care\s+(?:benefit|stipend|allowance|assistance|budget|FSA)|dependent\s+care\s+(?:benefit|stipend|allowance|assistance|budget|FSA)|mental\s+health\s+(?:benefit|stipend|allowance)|life\s+insurance|legal\s+insurance|legal\s+plan|pet\s+insurance|accident\s+insurance|vision\s+insurance|dental\s+insurance|medical\s+insurance|AD&D(?:\s+insurance)?|accidental\s+death(?:\s+and\s+dismemberment)?(?:\s+insurance)?|critical\s+illness(?:\s+insurance)?|hospital\s+indemnity(?:\s+insurance)?|legal\s+benefit|(?:short|long)[-\s]term\s+disability|disability\s+insurance|(?:LTD|STD)\s+insurance|(?:gym|fitness)\s+membership|(?:fitness|gym(?:\s+membership)?|commuter|parking|phone|cell(?:\s+phone)?|internet|home\s+office|mileage|gas|transit)\s+reimbursement|(?:commuter|parking|phone|cell(?:\s+phone)?|internet|transit|vision|dental|medical|EAP|LTD|STD|gym|fitness|caregiver|pet|accident)\s+benefit)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:OTE\b|on[- ]target\s+earnings\b|commission\b|TC\b|total\s+comp(?:ensation)?\b|incentive\s+compensation\b|variable\s+(?:pay|compensation)\b|deferred\s+compensation\b|(?:long|short)[-\s]term\s+incentive\b|(?:target|sales|cash|annual|performance)\s+incentive\b)"
     r"|"
     r"\b(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?|incentive\s+compensation|variable\s+(?:pay|compensation)|deferred\s+compensation|(?:long|short)[-\s]term\s+incentive|(?:target|sales|cash|annual|performance)\s+incentive)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:\s+(?:employer|annual))*"
     r"\s+401\(?k\)?\s+(?:match|matching|contribution)\b"
     r"|"
     r"\b(?:(?:employer|annual)\s+)*401\(?k\)?\s+(?:match|matching|contribution)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+matching\s+401\(?k\)?\b"
     r"|"
     r"\bmatching\s+401\(?k\)?\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:matching\s+gift|charitable\s+match|charitable\s+contribution|donation\s+match|giving\s+match|volunteer\s+grant|COBRA\s+subsidy)\b"
     r"|"
     r"\b(?:matching\s+gift|charitable\s+match|charitable\s+contribution|donation\s+match|giving\s+match|volunteer\s+grant|COBRA\s+subsidy)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:HSA|FSA|HRA|QSEHRA|ICHRA|pension|529|401\(?k\)?|health\s+savings\s+account|health\s+reimbursement\s+arrangement)(?:\s+(?:contribution|benefit))?\b(?!\s+in)"
     r"|"
     r"\b(?:HSA|FSA|HRA|QSEHRA|ICHRA|pension|529|401\(?k\)?|health\s+savings\s+account|health\s+reimbursement\s+arrangement)(?:\s+(?:contribution|benefit))?\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+pension\b"
     r"|"
     r"\bpension\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+wellness\b(?!\s+in)"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:phone|cell(?:phone)?|internet|wifi|wi-fi|broadband|gym|fitness|housing|travel|meals?|food|living|parking|commuter|transit|mileage|clothing|equipment|laptop|macbook|chromebook|thinkpad|surface\s+go|surface\s+pro|surface\s+book|moving|child(?:[-\s])?care|caregiver|uniform|volunteer|bike|coworking|adoption|fertility|parental|WFH|tools|home\s+office|remote\s+work|work\s+from\s+home|dependent\s+care|EAP|sabbatical|PTO|bereavement|options|disability|dental|vision|mental\s+health|transportation|certification|referral|reimbursement|retention|membership|licens(?:e|ing)|dues|copay|deductible|coinsurance|out(?:-|\s+)of(?:-|\s+)pocket|subsidy|perk|voucher|gift|discount|grant|premium|award|subscription|gear|headset|headphones?|earbuds?|earphones?|airpods|external\s+monitor|second\s+monitor|monitor|keyboard|ergonomic\s+mouse|wireless\s+mouse|mouse|mousepad|mouse\s+pad|trackpad|dock|docking\s+station|thunderbolt\s+dock|thunderbolt\s+\d\s+cable|firewire\s+cable|fire\s+wire\s+cable|optical\s+cable|toslink\s+cable|audio\s+cable|aux\s+cable|thunderbolt\s+cable|thunderbolt\s+adapter|hdmi\s+dongle|usb[-\s]?c\s+dongle|display(?:\s+|-)?port\s+dongle|thunderbolt\s+dongle|dp\s+dongle|ethernet\s+dongle|dongle|usb[-\s]?c\s+hub|thunderbolt\s+hub|display\s+hub|hdmi\s+hub|usb\s+hub|usb[-\s]?c\s+cable|usb\s+cable|hdmi\s+cable|charging\s+cable|charge\s+cable|lightning\s+cable|vga\s+(?:cable|adapter)|dvi\s+(?:cable|adapter)|display\s+cable|video\s+cable|power\s+cable|extension\s+cable|usb[-\s]?c\s+adapter|usb\s+adapter|hdmi\s+adapter|display(?:\s+|-)?port\s+(?:hub|cable|adapter|switch)|dp\s+(?:hub|cable|adapter|switch)|mini(?:\s+|-)?displayport\s+cable|mini\s+dp\s+cable|minidp\s+cable|sata\s+(?:hub|cable|adapter)|flash\s+drive|thumb\s+drive|usb\s+drive|micro[\s-]?sd\s+card|sd\s+card|memory\s+card|external\s+ssd|external\s+hdd|hard\s+drive|hard\s+disk|yubikey\s+\d|yubikey|security\s+key|ethernet\s+(?:hub|cable|adapter|switch)|hdmi\s+(?:switch(?:er)?|splitter|extender|repeater)|usb[-\s]?c\s+switch|usb\s+switch|kvm\s+switch|wireless\s+charger|usb[-\s]?c\s+charger|magsafe\s+charger|wall\s+charger|car\s+charger|charger|power\s+bank|powerbank|power\s+brick|chair|desk|standing\s+desk|webcam|microphones?|mic|printer|scanner|copier|ergonomic\s+chair|hotspot|router|modem|smartphone|iphone|ipad|tablet|kindle|data\s+plan|cellular\s+plan|mobile\s+plan|privacy\s+screen|privacy\s+filter|screen\s+protector|wrist\s+rest|palm\s+rest|cooling\s+pad|standing\s+mat|anti[\s-]?fatigue\s+mat|cable\s+sleeve|cable\s+organizer|ring\s+light|key\s+light|softbox|capture\s+card|stream\s+deck|port\s+replicator|boom\s+arm|pop\s+filter|shock\s+mount|foot\s*rest|lumbar\s+pillow|seat\s+cushion|blue\s+light\s+glasses|apple\s+pencil|stylus|elgato|usb[-\s]?c\s+dock|usb\s+microphone|condenser\s+mic|midi\s+keyboard|drawing\s+tablet|graphics\s+tablet|xlr\s+cable|trs\s+cable|instrument\s+cable|midi\s+cable|light\s+stand|boom\s+stand|sd\s+reader|card\s+reader|apple\s+watch(?:\s+(?:ultra|se|\d))*|apple\s+tv|apple\s+vision|vision\s+pro|homepod|cintiq|mx\s+keys|mx\s+master(?:\s+\d[a-z]?)?|trackball|logitech\s+mx|magic\s+keyboard|magic\s+mouse|magic\s+trackpad|watch\s+charger|pixel\s+\d+[a-z]?(?:\s+pro)?|pixel\s+buds|pixelbook|pixel\s+charger|studio\s+display|pro\s+display|ultrafine\s+display|hyperdrive|airtag|tile\s+tracker|caldigit\s+dock|anker\s+dock|belkin\s+dock|owc\s+dock|satechi\s+dock|wacom\s+cintiq|wacom\s+tablet|huion\s+tablet|sim\s+card)\b(?!\s+in)"
     r"|"
     r"\b(?:mileage|clothing|equipment|laptop\s+stand|laptop\s+sleeve|laptop\s+bag|laptop\s+case|laptop\s+backpack|laptop\s+cover|laptop\s+pouch|laptop\s+riser|laptop\s+caddy|laptop\s+lock|laptop\s+mount|laptop\s+tray|laptop\s+cooler|laptop\s+fan|laptop\s+skin|laptop|macbook\s+(?:pro|air)(?:\s+\d{1,2})?|macbook|chromebook|thinkpad|surface\s+go|surface\s+pro|surface\s+book|moving|uniform|bike|coworking|adoption|fertility|parental|WFH|tools|EAP|sabbatical|PTO|bereavement|options|copay|deductible|coinsurance|out(?:-|\s+)of(?:-|\s+)pocket|subsidy|perk|voucher|discount|cellphone|wifi|wi-fi|broadband|gear|headset\s+stand|headset|headphone\s+stand|headphone\s+hook|headphones?|earbuds?|earphones?|airpods\s+(?:pro|max|\d)(?:\s+\d)?|airpods|external\s+monitor|second\s+monitor|webcam\s+cover|webcam\s+mount|webcam\s+clip|webcam\s+stand|webcam\s+light|webcam\s+tripod|phone\s+case|phone\s+cover|phone\s+mount|phone\s+stand|phone\s+tripod|tablet\s+cover|tablet\s+case|tablet\s+mount|tablet\s+stand|ipad\s+(?:pro|air|mini)(?:\s+\d{1,2})?|ipad\s+cover|ipad\s+case|ipad\s+mount|ipad\s+stand|ipad\s+pencil|kindle\s+(?:oasis|paperwhite|colorsoft)|kindle\s+cover|kindle\s+case|kindle\s+stand|kindle\s+scribe|keyboard\s+cover|keyboard\s+tray|keyboard\s+stand|monitor\s+arm|monitor\s+stand|monitor\s+mount|monitor\s+riser|monitor\s+hood|monitor\s+light|monitor\s+lamp|monitor|keyboard|ergonomic\s+mouse|wireless\s+mouse|mouse\s+bungee|mouse|mousepad|mouse\s+pad|trackpad|dock|docking\s+station|thunderbolt\s+dock|thunderbolt\s+\d\s+cable|firewire\s+cable|fire\s+wire\s+cable|optical\s+cable|toslink\s+cable|audio\s+cable|aux\s+cable|thunderbolt\s+cable|thunderbolt\s+adapter|hdmi\s+dongle|usb[-\s]?c\s+dongle|display(?:\s+|-)?port\s+dongle|thunderbolt\s+dongle|dp\s+dongle|ethernet\s+dongle|dongle|usb[-\s]?c\s+hub|thunderbolt\s+hub|display\s+hub|hdmi\s+hub|usb\s+hub|usb[-\s]?c\s+cable|usb\s+cable|hdmi\s+cable|charging\s+cable|charge\s+cable|lightning\s+cable|vga\s+(?:cable|adapter)|dvi\s+(?:cable|adapter)|display\s+cable|video\s+cable|power\s+cable|extension\s+cable|usb[-\s]?c\s+adapter|usb\s+adapter|hdmi\s+adapter|display(?:\s+|-)?port\s+(?:hub|cable|adapter|switch)|dp\s+(?:hub|cable|adapter|switch)|mini(?:\s+|-)?displayport\s+cable|mini\s+dp\s+cable|minidp\s+cable|sata\s+(?:hub|cable|adapter)|flash\s+drive|thumb\s+drive|usb\s+drive|micro[\s-]?sd\s+card|sd\s+card|memory\s+card|external\s+ssd|external\s+hdd|hard\s+drive|hard\s+disk|yubikey\s+\d|yubikey|security\s+key|ethernet\s+(?:hub|cable|adapter|switch)|hdmi\s+(?:switch(?:er)?|splitter|extender|repeater)|usb[-\s]?c\s+switch|usb\s+switch|kvm\s+switch|wireless\s+charger|usb[-\s]?c\s+charger|magsafe\s+charger|wall\s+charger|car\s+charger|charger|power\s+bank|powerbank|power\s+brick|chair|desk\s+mat|desk\s+pad|desk\s+lamp|desk\s+fan|desk\s+tripod|standing\s+desk|webcam|microphones?|mic\s+stand|mic\s+arm|mic\s+boom|mic|printer|scanner|copier|ergonomic\s+chair|hotspot|router|modem|smartphone|iphone\s+(?:pro|\d{1,2}(?:\s+pro)?)|iphone|ipad|tablet|kindle|data\s+plan|cellular\s+plan|mobile\s+plan|phone\s+plan|cell\s+plan|privacy\s+screen|privacy\s+filter|screen\s+protector|wrist\s+rest|palm\s+rest|cooling\s+pad|standing\s+mat|anti[\s-]?fatigue\s+mat|cable\s+sleeve|cable\s+organizer|ring\s+light|key\s+light|softbox|capture\s+card|stream\s+deck|port\s+replicator|boom\s+arm|pop\s+filter|shock\s+mount|foot\s*rest|lumbar\s+pillow|seat\s+cushion|blue\s+light\s+glasses|apple\s+pencil|stylus|elgato|usb[-\s]?c\s+dock|usb\s+microphone|condenser\s+mic|midi\s+keyboard|drawing\s+tablet|graphics\s+tablet|xlr\s+cable|trs\s+cable|instrument\s+cable|midi\s+cable|light\s+stand|boom\s+stand|sd\s+reader|card\s+reader|apple\s+watch(?:\s+(?:ultra|se|\d))*|apple\s+tv|apple\s+vision|vision\s+pro|homepod\s+mini|homepod|cintiq|mx\s+keys|mx\s+master(?:\s+\d[a-z]?)?|trackball|logitech\s+mx|magic\s+keyboard|magic\s+mouse|magic\s+trackpad|watch\s+charger|pixel\s+\d+[a-z]?(?:\s+pro)?|pixel\s+buds|pixelbook|pixel\s+charger|studio\s+display|pro\s+display|ultrafine\s+display|hyperdrive|airtag|tile\s+tracker|caldigit\s+dock|anker\s+dock|belkin\s+dock|owc\s+dock|satechi\s+dock|wacom\s+cintiq|wacom\s+tablet|huion\s+tablet|sim\s+card)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
     r"\bchild(?:[-\s])?care\s*(?:of|:)\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+pet\b(?!\s+in)"
     r"|"
     r"\bpet\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+legal\b(?!\s+in)"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+(?:PTO|vacation|sick)\s+(?:buyback|cash[- ]?out|payout)\b"
     r"|"
     r"\b(?:PTO|vacation|sick)\s+(?:buyback|cash[- ]?out|payout)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+unused\s+(?:PTO|vacation)\b"
     r"|"
     r"\bunused\s+(?:PTO|vacation)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+identity\s+theft(?:\s+protection)?\b"
     r"|"
     r"\bidentity\s+theft(?:\s+protection)?\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"\s+profit[-\s]shar(?:e|ing)\b"
     r"|"
     r"\bprofit[-\s]shar(?:e|ing)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly))?"
     r"(?:\s+(?:housing|living|relocation|meal|food|travel|wellness|phone|cell(?:phone)?|mobile|internet|commuter|parking|home\s+office|gym(?:\s+membership)?|fitness|child(?:[-\s])?care|dependent\s+care|health(?:care)?|clothing|uniform|WFH|work\s+from\s+home|remote\s+work|equipment|laptop|volunteer|tools|transit|education|moving|fertility|adoption|caregiver|parental|tech(?:nology)?|coworking|EAP|bike|mileage))*"
     r"\s+stipend\b"
     r"|"
     r"\b(?:monthly\s+)?stipend\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly))?"
     r"(?:\s+(?:housing|living|relocation|car|vehicle|auto|phone|cell(?:phone)?|mobile|internet|meal|food|travel|commuter|parking|home\s+office|gym(?:\s+membership)?|fitness|child(?:[-\s])?care|dependent\s+care|health(?:care)?|clothing|uniform|WFH|work\s+from\s+home|remote|equipment|laptop|tech(?:nology)?|coworking|transit|mileage|caregiver))*"
     r"\s+allowance\b"
     r"|"
     r"\b(?:(?:monthly|housing|living|relocation|car|vehicle|auto|phone|cell(?:phone)?|mobile|internet|meal|food|travel|commuter|parking|clothing|uniform|WFH|work\s+from\s+home|remote|equipment|laptop|tech(?:nology)?|coworking|transit|mileage|caregiver)\s+)*allowance\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r")"
     r"\s+(?:for\s+)?(?:housing|travel|meals?|food|living|phone|cell|internet|parking|gym|commuter|wellness|fitness)\b"
     r"|"
     r"\b(?:housing|travel|meals?|food|living|phone|cell|internet|parking|gym|commuter|wellness|fitness)\s*(?:of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r")?"
     r"|"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _HOUR_TAIL + r")?"
     r"\s+(?:overtime|on[-\s]call|shift\s+differential)\b"
     r"|"
     r"\b(?:overtime(?:\s+paid)?|on[-\s]call(?:\s+pay)?|shift\s+differential)\s*(?:at|of|:)?\s*"
-    r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
-    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _HOUR_TAIL + r")?"
     r")"
 )
@@ -6584,7 +6584,7 @@ _REMOTE_BAND_RE = re.compile(
 
 
 def _money(raw: str) -> float:
-    return float(raw.replace(",", ""))
+    return float(raw.replace(",", "").replace(" ", ""))
 
 
 def _labeled_annual(raw: str, k: Optional[str]) -> int:
