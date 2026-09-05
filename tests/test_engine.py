@@ -2042,6 +2042,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 key person life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 key person") == (None, 15_000)
     assert _parse_pay("$15,000 key") == (None, 15_000)
+    assert _parse_pay("$15,000 key person insurance") == (None, None)
+    assert _parse_pay("$15,000 key-person insurance") == (None, None)
+    assert _parse_pay("$15,000 key man insurance") == (None, None)
+    assert _parse_pay("key person insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 irrevocable life") == (None, None)
+    assert _parse_pay("$15,000 irrevocable life insurance") == (None, None)
+    assert _parse_pay("$15,000 irrevocable life insurance trust") == (None, None)
+    assert _parse_pay("irrevocable life $15,000") == (None, None)
+    assert _parse_pay("$180,000 key person insurance in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 irrevocable life in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 key person insurance $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 key person insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 irrevocable life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 irrevocable") == (None, 15_000)
+    assert _parse_pay("$15,000 ILIT") == (None, 15_000)
     assert _parse_pay("$15,000 corporate owned life") == (None, None)
     assert _parse_pay("$15,000 corporate-owned life") == (None, None)
     assert _parse_pay("$15,000 corporate owned life insurance") == (None, None)
@@ -8141,6 +8156,26 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         keylifemix, "<p>$15,000 key-person life. Salary $180,000</p>"
     ) is True
     assert keylifemix.pay_high == 180_000
+    keyins = Opportunity(title="Engineer", url="https://jobs.example/keyins")
+    assert _apply_listing(
+        keyins, "<p>$15,000 key person insurance. Apply now.</p>"
+    ) is False
+    assert keyins.pay_high is None
+    keyinsmix = Opportunity(title="Engineer", url="https://jobs.example/keyinsmix")
+    assert _apply_listing(
+        keyinsmix, "<p>$15,000 key person insurance. Salary $180,000</p>"
+    ) is True
+    assert keyinsmix.pay_high == 180_000
+    ilitlife = Opportunity(title="Engineer", url="https://jobs.example/ilitlife")
+    assert _apply_listing(
+        ilitlife, "<p>$15,000 irrevocable life. Apply now.</p>"
+    ) is False
+    assert ilitlife.pay_high is None
+    ilitmix = Opportunity(title="Engineer", url="https://jobs.example/ilitmix")
+    assert _apply_listing(
+        ilitmix, "<p>$15,000 irrevocable life. Salary $180,000</p>"
+    ) is True
+    assert ilitmix.pay_high == 180_000
     coli = Opportunity(title="Engineer", url="https://jobs.example/coli")
     assert _apply_listing(
         coli, "<p>$15,000 corporate owned life. Apply now.</p>"
