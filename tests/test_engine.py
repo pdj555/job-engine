@@ -4581,6 +4581,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "Hours p.week: 20") == 20
     assert _guess_hours("Engineer", "Hours: 20 p.wk") == 20
     assert _guess_hours("Engineer", "Hours: 20+ p.wk") == 20
+    assert _guess_hours("Engineer", "Hours of the work p.wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of work p.wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of the scheduled p.wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of the work p.m.: 20") is None
     assert _guess_hours("Engineer", "Hours: 20 p.m.") is None
     assert _guess_hours("Engineer", "Hours p.m.: 20") is None
     assert _guess_hours("Engineer", "Hours: 20+") is None
@@ -4705,6 +4709,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert labeled_p_dot.hours_per_week == 20
     assert labeled_p_dot.pay_high == 80_000
+    of_work_p_dot = Opportunity(title="Engineer", url="https://jobs.example/hours-of-work-p-dot")
+    assert _apply_listing(
+        of_work_p_dot, "<p>$80/hour. Hours of the work p.wk: 20.</p>"
+    ) is True
+    assert of_work_p_dot.hours_per_week == 20
+    assert of_work_p_dot.pay_high == 80_000
     fte = Opportunity(title="Engineer", url="https://jobs.example/half-fte")
     assert _apply_listing(
         fte, "<p>$80/hour. 0.5 FTE.</p>"
