@@ -6518,7 +6518,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _ANY_PERIOD + r")?"
-    r"\s+wellness\b(?!\s+in)(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
+    r"\s+wellness(?:\s+(?:program|stipend|benefit|budget|reimbursement|allowance))?+\b(?!\s+in)(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
