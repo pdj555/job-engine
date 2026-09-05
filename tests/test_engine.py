@@ -3314,6 +3314,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 ID theft") == (None, None)
+    assert _parse_pay("$15,000 ID theft insurance") == (None, None)
+    assert _parse_pay("$15,000 ID theft protection") == (None, None)
+    assert _parse_pay("ID theft of $15,000") == (None, None)
+    assert _parse_pay("ID theft protection of $15,000") == (None, None)
+    assert _parse_pay("$15,000 ID theft insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ID theft. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 ID theft $500") == (None, 180_000)
+    assert _parse_pay("base $180,000 ID theft insurance $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ID") == (None, 15_000)
+    assert _parse_pay("$15,000 identity") == (None, 15_000)
+    assert _parse_pay("$15,000 theft") == (None, 15_000)
     assert _parse_pay("$15,000 AD&D insurance") == (None, None)
     assert _parse_pay("$15,000 AD and D") == (None, None)
     assert _parse_pay("$15,000 AD & D") == (None, None)
@@ -8565,6 +8577,19 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         idforf, "<p>Base $180,000 identity theft forfeiture $15,000</p>"
     ) is True
     assert idforf.pay_high == 180_000
+    idthonly = Opportunity(title="Engineer", url="https://jobs.example/idthonly")
+    assert _apply_listing(
+        idthonly, "<p>$15,000 ID theft insurance. Apply now.</p>"
+    ) is False
+    assert idthonly.pay_high is None
+    idthmix = Opportunity(title="Engineer", url="https://jobs.example/idthmix")
+    assert _apply_listing(
+        idthmix, "<p>$15,000 ID theft insurance. Salary $180,000</p>"
+    ) is True
+    assert idthmix.pay_high == 180_000
+    idbare = Opportunity(title="Engineer", url="https://jobs.example/idbare")
+    assert _apply_listing(idbare, "<p>$15,000 ID. Apply now.</p>") is True
+    assert idbare.pay_high == 15_000
     pension = Opportunity(title="Engineer", url="https://jobs.example/pensionmix")
     assert _apply_listing(
         pension, "<p>Base $180,000 pension contribution $15,000</p>"
