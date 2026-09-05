@@ -11001,6 +11001,19 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be located at home 3 days") is True
     assert _guess_remote("Engineer", "must be stationed in meetings 3 days") is True
     assert _guess_remote("Engineer", "must sit at the office 3 days") is False
+    assert _guess_remote("Engineer", "must sit at the hub 3 days") is False
+    assert _guess_remote("Engineer", "must stay at the hub 3 days") is False
+    assert _guess_remote("Engineer", "must remain at the hub 3 days") is False
+    assert _guess_remote("Engineer", "must sit at the hub") is False
+    assert _guess_remote("Engineer", "required to sit at the hub 3 days") is False
+    assert _guess_remote("Engineer", "have to stay at the hub 3 days") is False
+    assert _guess_remote("Engineer", "told to remain at the hub 3 days") is False
+    assert _guess_remote("Engineer", "must clock in at the hub 3 days") is False
+    assert _guess_remote("Engineer", "must sit at the home hub") is True
+    assert _guess_remote("Engineer", "must stay at home 3 days") is True
+    assert _guess_remote("Engineer", "must sit in NYC 3 days") is True
+    assert _guess_remote("Engineer", "shouldn't sit at the hub 3 days") is True
+    assert _guess_remote("Engineer", "work from home. must sit at the hub 3 days") is True
     assert _guess_remote("Engineer", "must clock in at the office 3 days") is False
     assert _guess_remote("Engineer", "must clock in on campus 3 days") is False
     assert _guess_remote("Engineer", "must clock in on-campus 3 days") is False
@@ -11687,6 +11700,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert sit_office.remote is False
     assert sit_office.pay_high == 180_000
+    sit_hub = Opportunity(
+        title="Engineer", url="https://jobs.example/sithub"
+    )
+    assert _apply_listing(
+        sit_hub,
+        "<p>Must sit at the hub 3 days. Salary $180,000</p>",
+    ) is True
+    assert sit_hub.remote is False
+    assert sit_hub.pay_high == 180_000
+    stay_hub = Opportunity(
+        title="Engineer", url="https://jobs.example/stayhub"
+    )
+    assert _apply_listing(
+        stay_hub,
+        "<p>Must stay at the hub 3 days. Salary $180,000</p>",
+    ) is True
+    assert stay_hub.remote is False
+    assert stay_hub.pay_high == 180_000
     seated_campus = Opportunity(
         title="Engineer", url="https://jobs.example/seatedcampus"
     )
