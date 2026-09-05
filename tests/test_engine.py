@@ -2281,9 +2281,36 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 wellness program $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 wellness benefit $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 wellness budget $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness account $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA account $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 FSA account $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter card $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 transit pass $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 parking pass $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 meal card $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 ESPP contribution $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 vision plan $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 dental plan $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 volunteer time $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 phone plan $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 wellness program") == (None, None)
+    assert _parse_pay("$15,000 wellness account") == (None, None)
+    assert _parse_pay("$15,000 HSA account") == (None, None)
+    assert _parse_pay("$15,000 commuter card") == (None, None)
+    assert _parse_pay("$15,000 transit pass") == (None, None)
+    assert _parse_pay("$15,000 ESPP contribution") == (None, None)
+    assert _parse_pay("$15,000 vision plan") == (None, None)
+    assert _parse_pay("$15,000 volunteer time") == (None, None)
     assert _parse_pay("$180,000 wellness in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 wellness benefit") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $15,000 wellness account") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $15,000 commuter card") == (
         None,
         180_000,
     )
@@ -7185,6 +7212,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         wellmix, "<p>Base $180,000 wellness program $15,000</p>"
     ) is True
     assert wellmix.pay_high == 180_000
+    wellacct = Opportunity(title="Engineer", url="https://jobs.example/wellacct")
+    assert _apply_listing(
+        wellacct, "<p>Base $180,000 wellness account $15,000</p>"
+    ) is True
+    assert wellacct.pay_high == 180_000
+    commcard = Opportunity(title="Engineer", url="https://jobs.example/commcard")
+    assert _apply_listing(
+        commcard, "<p>Base $180,000 commuter card $15,000</p>"
+    ) is True
+    assert commcard.pay_high == 180_000
+    esppmix = Opportunity(title="Engineer", url="https://jobs.example/esppmix")
+    assert _apply_listing(
+        esppmix, "<p>Base $180,000 ESPP contribution $15,000</p>"
+    ) is True
+    assert esppmix.pay_high == 180_000
     petmix = Opportunity(title="Engineer", url="https://jobs.example/petmix")
     assert _apply_listing(petmix, "<p>Base $180,000 pet $15,000</p>") is True
     assert petmix.pay_high == 180_000
