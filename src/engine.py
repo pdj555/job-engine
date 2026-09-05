@@ -7901,7 +7901,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|\bcommute\s+to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
     r"|(?<!welcome )in(?:to)?\s+the\s+offices?\b"
     r"|(?<!welcome )\bin\s+our\s+(?:\S+\s+){0,4}offices?\b"
-    r"|\bcome\s+(?:in)?to\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b(?!\s+hours)"
+    r"|\bcome\s+(?:in(?:to|\s+to)|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b(?!\s+hours)"
     r"|in[-\s]person\s+(?:role|position|job)\b"
     r"|\bwork\s+in[-\s]person\b"
     r"|in[-\s]person\s+in\b"
