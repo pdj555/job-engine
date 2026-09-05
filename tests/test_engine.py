@@ -2192,6 +2192,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("on-target earnings of $250,000") == (None, None)
     assert _parse_pay("$180,000-$250,000 OTE") == (None, None)
     assert _parse_pay("Base $180,000. OTE $250,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 OTE $220,000") == (None, 180_000)
+    assert _parse_pay("Base $180,000 OTE $220,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 on-target earnings $220,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 OTE of $220,000") == (None, 180_000)
     assert _parse_pay("$80,000 commission") == (None, None)
     assert _parse_pay("commission of $80,000") == (None, None)
     assert _parse_pay("$200,000 total compensation") == (None, None)
@@ -6979,6 +6983,9 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     base = Opportunity(title="Account Executive", url="https://jobs.example/base")
     assert _apply_listing(base, "<p>Base $180,000. OTE $250,000</p>") is True
     assert base.pay_high == 180_000
+    base_ote = Opportunity(title="Account Executive", url="https://jobs.example/baseote")
+    assert _apply_listing(base_ote, "<p>Base $180,000 OTE $220,000</p>") is True
+    assert base_ote.pay_high == 180_000
     comm = Opportunity(title="Account Executive", url="https://jobs.example/comm")
     assert _apply_listing(comm, "<p>$80,000 commission. Apply now.</p>") is False
     assert comm.pay_high is None
