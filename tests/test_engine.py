@@ -5976,6 +5976,13 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "p.w.: 32 hours") == 32
     assert _guess_hours("Engineer", "p.w: 32 hours") == 32
     assert _guess_hours("Engineer", "pw: 32 hours") == 32
+    assert _guess_hours("Engineer", "p/wk: 32 hours") == 32
+    assert _guess_hours("Engineer", "p.wk.: 32 hours") == 32
+    assert _guess_hours("Engineer", "pwk: 32 hours") == 32
+    assert _guess_hours("Engineer", "for the week: 32 hours") == 32
+    assert _guess_hours("Engineer", "for the week: 32 hrs") == 32
+    assert _guess_hours("Engineer", "for week: 32 hours") == 32
+    assert _guess_hours("Engineer", "for the wk: 32 hours") == 32
     assert _guess_hours("Engineer", "p/with: 32 hours") is None
     assert _guess_hours("Engineer", "32 hours for the week") == 32
     assert _guess_hours("Engineer", "32 hours for week") == 32
@@ -6484,6 +6491,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert pw_colon_hours.hours_per_week == 2
     assert pw_colon_hours.pay_high == 10_000
+    pwk_colon_hours = Opportunity(title="Engineer", url="https://jobs.example/pwk-colon-hours")
+    assert _apply_listing(
+        pwk_colon_hours, "<p>$100/hour. p/wk: 2 hours.</p>"
+    ) is True
+    assert pwk_colon_hours.hours_per_week == 2
+    assert pwk_colon_hours.pay_high == 10_000
+    for_the_week_colon_hours = Opportunity(title="Engineer", url="https://jobs.example/for-the-week-colon-hours")
+    assert _apply_listing(
+        for_the_week_colon_hours, "<p>$100/hour. for the week: 2 hours.</p>"
+    ) is True
+    assert for_the_week_colon_hours.hours_per_week == 2
+    assert for_the_week_colon_hours.pay_high == 10_000
     each_week_hours = Opportunity(title="Engineer", url="https://jobs.example/each-week-hours")
     assert _apply_listing(
         each_week_hours, "<p>$100/hour. each week hours: 2.</p>"
