@@ -2023,6 +2023,23 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 key person life. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 key person") == (None, 15_000)
     assert _parse_pay("$15,000 key") == (None, 15_000)
+    assert _parse_pay("$15,000 corporate owned life") == (None, None)
+    assert _parse_pay("$15,000 corporate-owned life") == (None, None)
+    assert _parse_pay("$15,000 corporate owned life insurance") == (None, None)
+    assert _parse_pay("$15,000 bank owned life") == (None, None)
+    assert _parse_pay("$15,000 bank-owned life") == (None, None)
+    assert _parse_pay("$15,000 company-owned life") == (None, None)
+    assert _parse_pay("$15,000 employer owned life") == (None, None)
+    assert _parse_pay("corporate owned life $15,000") == (None, None)
+    assert _parse_pay("bank-owned life of $15,000") == (None, None)
+    assert _parse_pay("$180,000 corporate owned life in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 corporate-owned life $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 corporate owned life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 bank-owned life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 corporate") == (None, 15_000)
+    assert _parse_pay("$15,000 bank owned") == (None, 15_000)
+    assert _parse_pay("$15,000 COLI") == (None, 15_000)
+    assert _parse_pay("$15,000 BOLI") == (None, 15_000)
     assert _parse_pay("$180,000 healthcare in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 healthcare") == (None, None)
     assert _parse_pay("$15,000 health care") == (None, None)
@@ -8086,6 +8103,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         keylifemix, "<p>$15,000 key-person life. Salary $180,000</p>"
     ) is True
     assert keylifemix.pay_high == 180_000
+    coli = Opportunity(title="Engineer", url="https://jobs.example/coli")
+    assert _apply_listing(
+        coli, "<p>$15,000 corporate owned life. Apply now.</p>"
+    ) is False
+    assert coli.pay_high is None
+    boli = Opportunity(title="Engineer", url="https://jobs.example/boli")
+    assert _apply_listing(
+        boli, "<p>$15,000 bank-owned life. Apply now.</p>"
+    ) is False
+    assert boli.pay_high is None
+    colimix = Opportunity(title="Engineer", url="https://jobs.example/colimix")
+    assert _apply_listing(
+        colimix, "<p>$15,000 corporate-owned life. Salary $180,000</p>"
+    ) is True
+    assert colimix.pay_high == 180_000
     healthonly = Opportunity(title="Engineer", url="https://jobs.example/healthonly")
     assert _apply_listing(healthonly, "<p>$15,000 healthcare. Apply now.</p>") is False
     assert healthonly.pay_high is None
