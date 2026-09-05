@@ -2524,6 +2524,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$15,000 overtime clawback") == (None, None)
+    assert _parse_pay("base $180,000 meal penalty $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 meal penalty clawback $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 meal penalty clawback") == (None, None)
     assert _parse_pay("$25/hr on-call") == (None, None)
     assert _parse_pay("$80/hr differential") == (None, None)
     assert _parse_pay("differential $80/hr") == (None, None)
@@ -7358,6 +7364,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         otclaw, "<p>Base $180,000 overtime clawback $15,000</p>"
     ) is True
     assert otclaw.pay_high == 180_000
+    mealclaw = Opportunity(title="Engineer", url="https://jobs.example/mealclaw")
+    assert _apply_listing(
+        mealclaw, "<p>Base $180,000 meal penalty clawback $15,000</p>"
+    ) is True
+    assert mealclaw.pay_high == 180_000
     stip = Opportunity(title="Engineer", url="https://jobs.example/stipmix")
     assert _apply_listing(stip, "<p>Base $180,000 stipend $500</p>") is True
     assert stip.pay_high == 180_000
