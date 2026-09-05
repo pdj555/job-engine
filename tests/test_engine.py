@@ -10961,6 +10961,17 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be stationed in meetings 3 days") is True
     assert _guess_remote("Engineer", "must sit at the office 3 days") is False
     assert _guess_remote("Engineer", "must clock in at the office 3 days") is False
+    assert _guess_remote("Engineer", "must clock in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must clock in on-campus 3 days") is False
+    assert _guess_remote("Engineer", "must swipe in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must punch in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must badge in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must tap in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must scan in on campus 3 days") is False
+    assert _guess_remote("Engineer", "must clock out on campus 3 days") is False
+    assert _guess_remote("Engineer", "have to clock in on campus 3 days") is False
+    assert _guess_remote("Engineer", "required to clock in on campus 3 days") is False
+    assert _guess_remote("Engineer", "told to swipe in on campus 3 days") is False
     assert _guess_remote("Engineer", "must punch in at the office 3 days") is False
     assert _guess_remote("Engineer", "must swipe in at the office 3 days") is False
     assert _guess_remote("Engineer", "must tap in at the office 3 days") is False
@@ -10992,6 +11003,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "required to check in at the office 3 days") is False
     assert _guess_remote("Engineer", "must clock in at home 3 days") is True
     assert _guess_remote("Engineer", "must check in at the hotel 3 days") is True
+    assert _guess_remote("Engineer", "shouldn't clock in on campus 3 days") is True
+    assert _guess_remote("Engineer", "work from home. must clock in on campus 3 days") is True
     assert _guess_remote("Engineer", "must sit out of the office 3 days") is False
     assert _guess_remote("Engineer", "must remain out of the office 3 days") is False
     assert _guess_remote("Engineer", "must stay out of the office 3 days") is False
@@ -11660,6 +11673,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert clock_office.remote is False
     assert clock_office.pay_high == 180_000
+    clock_campus = Opportunity(
+        title="Engineer", url="https://jobs.example/clockcampus"
+    )
+    assert _apply_listing(
+        clock_campus,
+        "<p>Must clock in on campus 3 days. Salary $180,000</p>",
+    ) is True
+    assert clock_campus.remote is False
+    assert clock_campus.pay_high == 180_000
+    swipe_campus = Opportunity(
+        title="Engineer", url="https://jobs.example/swipecampus"
+    )
+    assert _apply_listing(
+        swipe_campus,
+        "<p>Must swipe in on-campus. Salary $180,000</p>",
+    ) is True
+    assert swipe_campus.remote is False
+    assert swipe_campus.pay_high == 180_000
     punch_office = Opportunity(
         title="Engineer", url="https://jobs.example/punchoffice"
     )

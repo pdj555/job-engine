@@ -7978,6 +7978,8 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq)\b"
     r"|(?<!not )(?:required|expected|expects?|need(?:s|ed)?|asked|requested|requests?|invited|encouraged|preferred|prefer|supposed|ought|instructed|directed|mandated|obligated|compelled|ordered|told)\s+to\s+(?:clock|check|sign|punch|badge|swipe|tap|scan)\s+(?:in|out|on|off)\s+at\s+"
     r"(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq)\b"
+    r"|(?:must|should(?!n't)(?!\s+not)|(?<!not )(?<!n't )ha(?:ve|s|d)\s+to)\s+(?:clock|check|sign|punch|badge|swipe|tap|scan)\s+(?:in|out|on|off)\s+on[-\s]campus\b"
+    r"|(?<!not )(?:required|expected|expects?|need(?:s|ed)?|asked|requested|requests?|invited|encouraged|preferred|prefer|supposed|ought|instructed|directed|mandated|obligated|compelled|ordered|told)\s+to\s+(?:clock|check|sign|punch|badge|swipe|tap|scan)\s+(?:in|out|on|off)\s+on[-\s]campus\b"
     r"|(?<!home )(?<!back )(?<!front )(?<!microsoft )\boffice\s+"
     r"(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?(?:\s+(?:(?:a|per)\s+week|weekly)|\s*/\s*weeks?)\b"
     r"|(?<!home )(?<!back )(?<!front )(?<!microsoft )\boffice\s+"
