@@ -6745,6 +6745,17 @@ _TWICE_WEEKLY_HOURS_RE = re.compile(
     r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
+_TWICE_FORTNIGHT_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
+    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
+    re.I,
+)
 _THRICE_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
     r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
@@ -7313,7 +7324,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight or biweekly halved, N hours 2–10 times a week, N hours/day × 5, or 2–7 days at N hours."""
+    """Hours explicitly written as N hours/week, N hours/fortnight or biweekly halved, N hours twice a fortnight, N hours 2–10 times a week, N hours/day × 5, or 2–7 days at N hours."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7334,6 +7345,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in twice.groups() if g), None)
         if raw:
             n = int(round(float(raw) * 2))
+            if 1 <= n <= 80:
+                return n
+    twice_fn = _TWICE_FORTNIGHT_HOURS_RE.search(blob)
+    if twice_fn:
+        raw = next((g for g in twice_fn.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 2 / 2))
             if 1 <= n <= 80:
                 return n
     thrice = _THRICE_WEEKLY_HOURS_RE.search(blob)
