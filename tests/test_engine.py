@@ -10046,6 +10046,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "welcome to the office") is True
     assert _guess_remote("Engineer", "welcome into the office") is True
     assert _guess_remote("Engineer", "welcome to our NYC office") is True
+    assert _guess_remote("Engineer", "welcome in our NYC office") is True
+    assert _guess_remote("Engineer", "welcome in our offices") is True
+    assert _guess_remote("Engineer", "welcome in our downtown office") is True
+    assert _guess_remote("Engineer", "you are welcome in our NYC office") is True
+    assert _guess_remote("Engineer", "telecommute to the office") is True
+    assert _guess_remote("Engineer", "telecommute to our NYC office") is True
+    assert _guess_remote("Engineer", "you may telecommute to the office") is True
+    assert _guess_remote("Engineer", "telecommute to NYC 3 days") is True
     assert _guess_remote("Engineer", "become to the office") is True
     assert _guess_remote("Engineer", "income to the office") is True
     assert _guess_remote("Engineer", "network from the office") is True
@@ -10616,6 +10624,18 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert welcome_off.remote is True
     assert welcome_off.pay_high == 180_000
+    welcome_in = Opportunity(title="Engineer", url="https://jobs.example/welcome-in")
+    assert _apply_listing(
+        welcome_in, "<p>Welcome in our NYC office. Salary $180,000</p>"
+    ) is True
+    assert welcome_in.remote is True
+    assert welcome_in.pay_high == 180_000
+    tele = Opportunity(title="Engineer", url="https://jobs.example/telecommute")
+    assert _apply_listing(
+        tele, "<p>You may telecommute to the office. Salary $180,000</p>"
+    ) is True
+    assert tele.remote is True
+    assert tele.pay_high == 180_000
     ofirst = Opportunity(title="Engineer", url="https://jobs.example/ofirst")
     assert _apply_listing(
         ofirst, "<p>This is an office-first role. Salary $180,000</p>"
