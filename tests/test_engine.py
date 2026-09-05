@@ -2069,6 +2069,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 basic life") == (None, None)
     assert _parse_pay("$15,000 voluntary life") == (None, None)
     assert _parse_pay("$15,000 term life") == (None, None)
+    assert _parse_pay("$15,000 term insurance") == (None, None)
+    assert _parse_pay("$15,000 group insurance") == (None, None)
+    assert _parse_pay("$15,000 group term insurance") == (None, None)
+    assert _parse_pay("term insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 term insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 term insurance in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 term") == (None, 15_000)
+    assert _parse_pay("$15,000 group") == (None, 15_000)
+    assert _parse_pay("$15,000 insurance") == (None, 15_000)
     assert _parse_pay("$15,000 whole life") == (None, None)
     assert _parse_pay("$15,000 universal life") == (None, None)
     assert _parse_pay("$15,000 variable life") == (None, None)
@@ -8321,6 +8330,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         wholemix, "<p>$15,000 whole life. Salary $180,000</p>"
     ) is True
     assert wholemix.pay_high == 180_000
+    terminsonly = Opportunity(title="Engineer", url="https://jobs.example/terminsonly")
+    assert _apply_listing(
+        terminsonly, "<p>$15,000 term insurance. Apply now.</p>"
+    ) is False
+    assert terminsonly.pay_high is None
+    terminsmix = Opportunity(title="Engineer", url="https://jobs.example/terminsmix")
+    assert _apply_listing(
+        terminsmix, "<p>$15,000 term insurance. Salary $180,000</p>"
+    ) is True
+    assert terminsmix.pay_high == 180_000
     splitdol = Opportunity(title="Engineer", url="https://jobs.example/splitdol")
     assert _apply_listing(
         splitdol, "<p>$15,000 split dollar. Apply now.</p>"
