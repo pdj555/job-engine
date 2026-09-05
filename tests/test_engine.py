@@ -2011,6 +2011,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 split dollar. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 split") == (None, 15_000)
     assert _parse_pay("$15,000 dollar") == (None, 15_000)
+    assert _parse_pay("$15,000 key person life") == (None, None)
+    assert _parse_pay("$15,000 key-person life") == (None, None)
+    assert _parse_pay("$15,000 keyperson life") == (None, None)
+    assert _parse_pay("$15,000 key man life") == (None, None)
+    assert _parse_pay("$15,000 key-man life") == (None, None)
+    assert _parse_pay("key person life $15,000") == (None, None)
+    assert _parse_pay("key-person life of $15,000") == (None, None)
+    assert _parse_pay("$180,000 key person life in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 key person life $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 key person life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 key person") == (None, 15_000)
+    assert _parse_pay("$15,000 key") == (None, 15_000)
     assert _parse_pay("$180,000 healthcare in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 healthcare") == (None, None)
     assert _parse_pay("$15,000 health care") == (None, None)
@@ -8064,6 +8076,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         splitmix, "<p>$15,000 split-dollar life. Salary $180,000</p>"
     ) is True
     assert splitmix.pay_high == 180_000
+    keylife = Opportunity(title="Engineer", url="https://jobs.example/keylife")
+    assert _apply_listing(
+        keylife, "<p>$15,000 key person life. Apply now.</p>"
+    ) is False
+    assert keylife.pay_high is None
+    keylifemix = Opportunity(title="Engineer", url="https://jobs.example/keylifemix")
+    assert _apply_listing(
+        keylifemix, "<p>$15,000 key-person life. Salary $180,000</p>"
+    ) is True
+    assert keylifemix.pay_high == 180_000
     healthonly = Opportunity(title="Engineer", url="https://jobs.example/healthonly")
     assert _apply_listing(healthonly, "<p>$15,000 healthcare. Apply now.</p>") is False
     assert healthonly.pay_high is None
