@@ -2207,6 +2207,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 total compensation $250,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commission $40,000") == (None, 180_000)
     assert _parse_pay("base $180,000 variable pay $40,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bonus $20,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 annual bonus $20,000") == (None, 180_000)
+    assert _parse_pay("salary $180,000 bonus $20,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bonus of $20,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 401(k) match $10,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 401k match $10,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 401(k) $10,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 profit sharing $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 equity $50,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 RSU $50,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 stock options $50,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 signing bonus $10,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 sign-on $10,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 relocation bonus $10,000") == (None, 180_000)
     assert _parse_pay("$10,000 401(k) match") == (None, None)
     assert _parse_pay("$12,000 employer 401k match") == (None, None)
     assert _parse_pay("401(k) match of $10,000") == (None, None)
@@ -7002,6 +7016,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     base_tc = Opportunity(title="Engineer", url="https://jobs.example/basetc")
     assert _apply_listing(base_tc, "<p>Base $180,000 TC $250,000</p>") is True
     assert base_tc.pay_high == 180_000
+    base_bonus = Opportunity(title="Engineer", url="https://jobs.example/basebonus")
+    assert _apply_listing(base_bonus, "<p>Base $180,000 bonus $20,000</p>") is True
+    assert base_bonus.pay_high == 180_000
+    base_equity = Opportunity(title="Engineer", url="https://jobs.example/baseeq")
+    assert _apply_listing(base_equity, "<p>Base $180,000 equity $50,000</p>") is True
+    assert base_equity.pay_high == 180_000
+    base_sign = Opportunity(title="Engineer", url="https://jobs.example/basesign")
+    assert _apply_listing(base_sign, "<p>Base $180,000 signing bonus $10,000</p>") is True
+    assert base_sign.pay_high == 180_000
+    base_k = Opportunity(title="Engineer", url="https://jobs.example/base401")
+    assert _apply_listing(base_k, "<p>Base $180,000 401(k) match $10,000</p>") is True
+    assert base_k.pay_high == 180_000
+    base_ps = Opportunity(title="Engineer", url="https://jobs.example/baseps")
+    assert _apply_listing(base_ps, "<p>Base $180,000 profit sharing $15,000</p>") is True
+    assert base_ps.pay_high == 180_000
     kmatch = Opportunity(title="Engineer", url="https://jobs.example/401k")
     assert _apply_listing(kmatch, "<p>$10,000 401(k) match. Apply now.</p>") is False
     assert kmatch.pay_high is None
