@@ -8152,7 +8152,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?(?:\s+(?:(?:each|a|per)\s+week|weekly)|\s*/\s*weeks?)\s+from\s+"
     r"(?:the\s+|our\s+|an\s+)?field(?!\s+of\b)\b"
     r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?(?:\s+(?:(?:each|a|per)\s+week|weekly)|\s*/\s*weeks?)?\s+at\s+"
-    r"(?:the\s+|our\s+|an\s+)?(?:office|campus|lab(?:oratory)?|headquarters|HQ|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b"
+    r"(?:the\s+|our\s+|an\s+)?(?:(?!home\b)(?!off\b)\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|HQ|hub|(?<!off-)(?<!off )(?<!home )(?<!home-)site|field(?!\s+of\b))\b"
     r"|\breport\s+(?:in\s+)?(?:to|at)\s+(?:the\s+|our\s+|an\s+)?(?:headquarters|HQ)\s+"
     r"(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?(?:\s+(?:(?:a|per)\s+week|weekly)|\s*/\s*weeks?)\b"
     r"|\breport\s+(?:in\s+)?(?:to|at)\s+"
