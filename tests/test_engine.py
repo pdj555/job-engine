@@ -2142,6 +2142,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("We offer an HSA. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 HSA in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 401k in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 403b in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 403b") == (None, None)
+    assert _parse_pay("$15,000 403B") == (None, None)
+    assert _parse_pay("$15,000 457b") == (None, None)
+    assert _parse_pay("$15,000 457f") == (None, None)
+    assert _parse_pay("403b $15,000") == (None, None)
+    assert _parse_pay("457b $15,000") == (None, None)
+    assert _parse_pay("$15,000 403b contribution") == (None, None)
+    assert _parse_pay("base $180,000 403b $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 457b $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 monthly internet stipend") == (None, None)
     assert _parse_pay("$10,000 cell phone allowance") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 cell phone stipend") == (
@@ -7383,6 +7393,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     kmatch = Opportunity(title="Engineer", url="https://jobs.example/401k")
     assert _apply_listing(kmatch, "<p>$10,000 401(k) match. Apply now.</p>") is False
     assert kmatch.pay_high is None
+    b403 = Opportunity(title="Engineer", url="https://jobs.example/403bonly")
+    assert _apply_listing(b403, "<p>$15,000 403b. Apply now.</p>") is False
+    assert b403.pay_high is None
+    b457 = Opportunity(title="Engineer", url="https://jobs.example/457bonly")
+    assert _apply_listing(b457, "<p>$15,000 457b. Apply now.</p>") is False
+    assert b457.pay_high is None
     profit = Opportunity(title="Engineer", url="https://jobs.example/ps")
     assert _apply_listing(profit, "<p>$15,000 profit sharing. Apply now.</p>") is False
     assert profit.pay_high is None
