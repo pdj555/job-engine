@@ -1490,6 +1490,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     )
     assert listed_aoa is False
     assert aoa.pay_high is None
+    assert _parse_pay("80,000 GMD. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 GMD. Account Executive $220,000</p>") is True
+    assert _parse_pay("GMD80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>GMD80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 GMD. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 GMD. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k GMD. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k GMD. Account Executive $220,000</p>") is True
+    gmd = Opportunity(title="Engineer", url="https://jobs.example/gm")
+    listed_gmd = _apply_listing(
+        gmd, "<p>Salary 80,000 GMD. Account Executive $400,000</p>"
+    )
+    assert listed_gmd is False
+    assert gmd.pay_high is None
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
