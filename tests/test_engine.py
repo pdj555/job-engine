@@ -2258,6 +2258,24 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 defined benefit plan. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 money purchase plan. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 target benefit plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 multiple employer plan") == (None, None)
+    assert _parse_pay("$15,000 multiple-employer plan") == (None, None)
+    assert _parse_pay("multiple employer plan $15,000") == (None, None)
+    assert _parse_pay("multiple employer plan of $15,000") == (None, None)
+    assert _parse_pay("$15,000 pooled employer plan") == (None, None)
+    assert _parse_pay("$15,000 pooled-employer plan") == (None, None)
+    assert _parse_pay("pooled employer plan $15,000") == (None, None)
+    assert _parse_pay("pooled employer plan of $15,000") == (None, None)
+    assert _parse_pay("$180,000 multiple employer plan in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 pooled employer plan in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 multiple employer plan $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 multiple employer plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pooled employer plan. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 MEP") == (None, 15_000)
+    assert _parse_pay("$15,000 PEP") == (None, 15_000)
+    assert _parse_pay("$15,000 multiple employer") == (None, 15_000)
+    assert _parse_pay("$15,000 pooled employer") == (None, 15_000)
+    assert _parse_pay("$15,000 employer plan") == (None, 15_000)
     assert _parse_pay("$15,000 cash") == (None, 15_000)
     assert _parse_pay("$15,000 cash balance") == (None, 15_000)
     assert _parse_pay("$15,000 defined benefit") == (None, 15_000)
@@ -7420,6 +7438,21 @@ def test_guess_pay_annualizes_hourly():
         cashbalmix, "<p>$15,000 cash balance plan. Salary $180,000</p>"
     ) is True
     assert cashbalmix.pay_high == 180_000
+    mepplan = Opportunity(title="Engineer", url="https://jobs.example/mepplan")
+    assert _apply_listing(
+        mepplan, "<p>$15,000 multiple employer plan. Apply now.</p>"
+    ) is False
+    assert mepplan.pay_high is None
+    pepplan = Opportunity(title="Engineer", url="https://jobs.example/pepplan")
+    assert _apply_listing(
+        pepplan, "<p>$15,000 pooled employer plan. Apply now.</p>"
+    ) is False
+    assert pepplan.pay_high is None
+    mepmix = Opportunity(title="Engineer", url="https://jobs.example/mepmix")
+    assert _apply_listing(
+        mepmix, "<p>$15,000 multiple employer plan. Salary $180,000</p>"
+    ) is True
+    assert mepmix.pay_high == 180_000
     lti = Opportunity(title="Engineer", url="https://jobs.example/lti")
     assert _apply_listing(lti, "<p>$10,000 long-term incentive. Apply now.</p>") is False
     assert lti.pay_high is None
