@@ -400,6 +400,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("headphones $15,000") == (None, None)
     assert _parse_pay("$15,000 headphones. Salary $180,000") == (None, 180_000)
     assert _parse_pay("headphones $15,000. Salary $180,000") == (None, 180_000)
+    from src.engine import _apply_listing, _listing_plain_text
+    smashed = (
+        "<title>Engineer</title>"
+        "<p>headphones $15,000. Salary $180,000 a year</p>"
+    )
+    assert "Engineerheadphones" not in _listing_plain_text(smashed)
+    assert "headphones $15,000" in _listing_plain_text(smashed)
+    smashed_opp = Opportunity(
+        title="Engineer", company="Acme", url="https://example.com/job/1"
+    )
+    assert _apply_listing(smashed_opp, smashed) is True
+    assert smashed_opp.pay_high == 180_000
     assert _parse_pay("$15,000 earbuds") == (None, None)
     assert _parse_pay("earbuds $15,000") == (None, None)
     assert _parse_pay("$15,000 earphones") == (None, None)

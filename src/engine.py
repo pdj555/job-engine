@@ -4074,8 +4074,15 @@ _RELATED_HEADING_RE = re.compile(
 )
 
 
+_BLOCK_CLOSE_RE = re.compile(
+    r"(?:<br\s*/?>|</(?:p|div|h[1-6]|li|tr|td|th|title|header|section|article|ul|ol|table|thead|tbody|blockquote)\s*>)",
+    re.I,
+)
+
+
 def _visible_text(html: str) -> str:
-    return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))).strip()
+    text = _BLOCK_CLOSE_RE.sub(". ", html)
+    return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text))).strip()
 
 
 def _listing_plain_text(html: str) -> str:
