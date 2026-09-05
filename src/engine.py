@@ -6234,7 +6234,7 @@ _HOURLY_RANGE_RE = re.compile(
 _HOURLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)" + _HOUR_TAIL
 )
-_MONTH_TAIL = r"\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly)\b"
+_MONTH_TAIL = r"\s*(?:/\s*mo(?:nth)?s?|(?:per|a)\s+mo(?:nth)?s?|monthly|mo(?:nth)?s?(?!\s+(?:of|in)\b))\b"
 _MONTHLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
@@ -6244,7 +6244,7 @@ _MONTHLY_RANGE_RE = re.compile(
 _MONTHLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _MONTH_TAIL
 )
-_WEEK_TAIL = r"\s*(?:/\s*w(?:ee)?ks?|(?:per|a)\s+w(?:ee)?ks?|weekly)\b"
+_WEEK_TAIL = r"\s*(?:/\s*w(?:ee)?ks?|(?:per|a)\s+w(?:ee)?ks?|weekly|w(?:ee)?ks?(?!\s+(?:of|in)\b))\b"
 _WEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
@@ -6279,7 +6279,7 @@ _SEMIMONTHLY_RANGE_RE = re.compile(
 _SEMIMONTHLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?" + _SEMIMONTH_TAIL
 )
-_DAY_TAIL = r"\s*(?:/\s*(?:days?|diem)|(?:per|a)\s+(?:days?|diem)|daily)\b"
+_DAY_TAIL = r"\s*(?:/\s*(?:days?|diem)|(?:per|a)\s+(?:days?|diem)|daily|days?(?!\s+(?:one|of|in)\b))\b"
 _DAILY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
