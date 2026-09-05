@@ -2477,6 +2477,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 pet insurance") == (None, None)
     assert _parse_pay("$10,000 vision insurance") == (None, None)
     assert _parse_pay("$10,000 medical insurance") == (None, None)
+    assert _parse_pay("$15,000 cancer insurance") == (None, None)
+    assert _parse_pay("cancer insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 cancer insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cancer") == (None, 15_000)
     assert _parse_pay("pet insurance of $10,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 pet insurance") == (None, 180_000)
     assert _parse_pay("$180,000 medical in NYC") == (None, 180_000)
@@ -7911,6 +7915,20 @@ def test_guess_pay_annualizes_hourly():
     assert sev.pay_high is None
     pet = Opportunity(title="Engineer", url="https://jobs.example/pet")
     assert _apply_listing(pet, "<p>$10,000 pet insurance. Great team.</p>") is False
+    cancerinsonly = Opportunity(
+        title="Engineer", url="https://jobs.example/cancerinsonly"
+    )
+    assert _apply_listing(
+        cancerinsonly, "<p>$15,000 cancer insurance. Apply now.</p>"
+    ) is False
+    assert cancerinsonly.pay_high is None
+    cancerinsmix = Opportunity(
+        title="Engineer", url="https://jobs.example/cancerinsmix"
+    )
+    assert _apply_listing(
+        cancerinsmix, "<p>$15,000 cancer insurance. Salary $180,000</p>"
+    ) is True
+    assert cancerinsmix.pay_high == 180_000
     assert pet.pay_high is None
     wfh_stip = Opportunity(title="Engineer", url="https://jobs.example/wfh-stip")
     assert _apply_listing(
