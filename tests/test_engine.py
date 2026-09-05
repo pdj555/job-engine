@@ -9910,6 +9910,22 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "required in NYC") is True
     assert _guess_remote("Engineer", "not required in NYC 3 days") is True
     assert _guess_remote("Engineer", "work from home. required in NYC 3 days") is True
+    assert _guess_remote("Engineer", "expected in NYC 3 days") is False
+    assert _guess_remote("Engineer", "expected in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "you are expected in NYC 3 days") is False
+    assert _guess_remote("Engineer", "expected in the US 3 days") is True
+    assert _guess_remote("Engineer", "expected in meetings 3 days") is True
+    assert _guess_remote("Engineer", "expected in NYC") is True
+    assert _guess_remote("Engineer", "not expected in NYC 3 days") is True
+    assert _guess_remote("Engineer", "work from home. expected in NYC 3 days") is True
+    assert _guess_remote("Engineer", "needed in NYC 3 days") is False
+    assert _guess_remote("Engineer", "needed in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "you are needed in NYC 3 days") is False
+    assert _guess_remote("Engineer", "needed in the US 3 days") is True
+    assert _guess_remote("Engineer", "needed in meetings 3 days") is True
+    assert _guess_remote("Engineer", "needed in NYC") is True
+    assert _guess_remote("Engineer", "not needed in NYC 3 days") is True
+    assert _guess_remote("Engineer", "work from home. needed in NYC 3 days") is True
     assert _guess_remote("Engineer", "expected to be in NYC 3 days") is False
     assert _guess_remote("Engineer", "expected to be in NYC 3 days a week") is False
     assert _guess_remote("Engineer", "expect to be in NYC 3 days") is False
