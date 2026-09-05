@@ -9559,9 +9559,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "come in to work 3 days a week") is False
     assert _guess_remote("Engineer", "come to work 3 days a week") is False
     assert _guess_remote("Engineer", "come in 3 days a week") is False
+    assert _guess_remote("Engineer", "come in 3 days/week") is False
+    assert _guess_remote("Engineer", "come in 3 days weekly") is False
+    assert _guess_remote("Engineer", "come into work 3 days/week") is False
+    assert _guess_remote("Engineer", "come to work 3 days/week") is False
     assert _guess_remote("Engineer", "you'll come in 3 days a week") is False
     assert _guess_remote("Engineer", "expected to come in 3 days a week") is False
     assert _guess_remote("Engineer", "results come in 3 days a week") is True
+    assert _guess_remote("Engineer", "results come in 3 days/week") is True
     assert _guess_remote("Engineer", "office 3 days weekly") is False
     assert _guess_remote("Engineer", "hybrid 3 days weekly") is False
     assert _guess_remote("Engineer", "lab 3 days a week") is False
