@@ -6595,7 +6595,8 @@ _HOURS_RE = re.compile(
     r"|(?:hours?|hrs?)\s*(?:worked\s*)?[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:per|/|a)\s*(?:wk|weeks?|weekly)\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\s*(?:hours?|hrs?)?\b"
     r"|(?:hours?|hrs?)\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)\s*(?:(?:per|/|a)\s*)?(?:wk|weeks?|weekly)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)"
-    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*hpw\b",
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*hpw\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)[\s-]*h(?:p)?\s*/\s*w\b",
     re.I,
 )
 _FTE_RE = re.compile(
