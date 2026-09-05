@@ -412,6 +412,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _apply_listing(smashed_opp, smashed) is True
     assert smashed_opp.pay_high == 180_000
+    spanned = (
+        "<span>Engineer</span><span>headphones $15,000. Salary $180,000 a year</span>"
+    )
+    assert "Engineerheadphones" not in _listing_plain_text(spanned)
+    spanned_opp = Opportunity(
+        title="Engineer", company="Acme", url="https://example.com/job/2"
+    )
+    assert _apply_listing(spanned_opp, spanned) is True
+    assert spanned_opp.pay_high == 180_000
     assert _parse_pay("$15,000 earbuds") == (None, None)
     assert _parse_pay("earbuds $15,000") == (None, None)
     assert _parse_pay("$15,000 earphones") == (None, None)
