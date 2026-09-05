@@ -2308,6 +2308,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 HSA credit $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 tuition credit $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commuter subsidy $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter rebate $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness offset $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tuition refund $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bonus clawback $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA max $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 dental premium $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter pre-tax $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 monthly premium $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 transit perk $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commuter benefits $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 stock grant $15,000") == (None, 180_000)
@@ -2329,6 +2337,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 commuter credit") == (None, None)
     assert _parse_pay("$15,000 wellness credit") == (None, None)
     assert _parse_pay("$15,000 commuter subsidy") == (None, None)
+    assert _parse_pay("$15,000 wellness rebate") == (None, None)
+    assert _parse_pay("$15,000 dental premium") == (None, None)
+    assert _parse_pay("$15,000 monthly premium") == (None, None)
+    assert _parse_pay("$180,000 monthly") == (None, None)
     assert _parse_pay("$15,000 stock grant") == (None, None)
     assert _parse_pay("$180,000 wellness in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 wellness benefit") == (
@@ -7306,6 +7318,21 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         submix, "<p>Base $180,000 commuter subsidy $15,000</p>"
     ) is True
     assert submix.pay_high == 180_000
+    rebate = Opportunity(title="Engineer", url="https://jobs.example/rebate")
+    assert _apply_listing(
+        rebate, "<p>Base $180,000 commuter rebate $15,000</p>"
+    ) is True
+    assert rebate.pay_high == 180_000
+    moprem = Opportunity(title="Engineer", url="https://jobs.example/moprem")
+    assert _apply_listing(
+        moprem, "<p>Base $180,000 monthly premium $15,000</p>"
+    ) is True
+    assert moprem.pay_high == 180_000
+    clawmix = Opportunity(title="Engineer", url="https://jobs.example/clawmix")
+    assert _apply_listing(
+        clawmix, "<p>Base $180,000 bonus clawback $15,000</p>"
+    ) is True
+    assert clawmix.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
