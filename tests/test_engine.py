@@ -6716,6 +6716,23 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "this workday: 8 hours") is None
     assert _guess_hours("Engineer", "workday: 8 hours") is None
     assert _guess_hours("Engineer", "8 hours for the workday") is None
+    assert _guess_hours("Engineer", "8 hours a business day") == 40
+    assert _guess_hours("Engineer", "8 hours per business day") == 40
+    assert _guess_hours("Engineer", "8 hours each business day") == 40
+    assert _guess_hours("Engineer", "8 hours / business day") == 40
+    assert _guess_hours("Engineer", "hours a business day: 8") == 40
+    assert _guess_hours("Engineer", "hours per business day: 8") == 40
+    assert _guess_hours("Engineer", "hours: 8 a business day") == 40
+    assert _guess_hours("Engineer", "hours: 8 per business day") == 40
+    assert _guess_hours("Engineer", "4 hours a business day") == 20
+    assert _guess_hours("Engineer", "16 hours a business day") == 80
+    assert _guess_hours("Engineer", "40 hours a week. 8 hours a business day") == 40
+    assert _guess_hours("Engineer", "17 hours a business day") is None
+    assert _guess_hours("Engineer", "8 hours a business day meeting") is None
+    assert _guess_hours("Engineer", "2 hour a business day meeting") is None
+    assert _guess_hours("Engineer", "this business day: 8 hours") is None
+    assert _guess_hours("Engineer", "business day: 8 hours") is None
+    assert _guess_hours("Engineer", "8 hours for the business day") is None
     assert _guess_hours("Engineer", "4 hours a day") == 20
     assert _guess_hours("Engineer", "32 hours a week") == 32
     assert _guess_hours("Engineer", "2 hour daily meeting") is None
@@ -7812,6 +7829,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert work_day.hours_per_week == 20
     assert work_day.pay_high == 100_000
+    business_day = Opportunity(title="Engineer", url="https://jobs.example/businessdayhours")
+    assert _apply_listing(
+        business_day, "<p>$80/hour. 8 hours a business day.</p>"
+    ) is True
+    assert business_day.hours_per_week == 40
+    assert business_day.pay_high == 160_000
+    per_business = Opportunity(title="Engineer", url="https://jobs.example/perbusinessdayhours")
+    assert _apply_listing(
+        per_business, "<p>$100/hour. 4 hours per business day.</p>"
+    ) is True
+    assert per_business.hours_per_week == 20
+    assert per_business.pay_high == 100_000
     per_day = Opportunity(title="Engineer", url="https://jobs.example/perdayhours")
     assert _apply_listing(
         per_day, "<p>$100/hour. 4 hours per day.</p>"
