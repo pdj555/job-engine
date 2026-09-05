@@ -6358,6 +6358,14 @@ _RANGE_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\s*(?:to|-|–|—|and)\s*(?:USD|US\$)?\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})(?!\d)"
     + _NOT_PERIOD_UNIT
 )
+_RANGE_USD_K_RE = re.compile(
+    r"(?i)(?:USD|US\$)\s*(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*(?:USD|US\$)?\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)"
+    + _NOT_PERIOD_UNIT
+)
+_RANGE_K_USD_RE = re.compile(
+    r"(?i)(?<![\d.])(\d{2,3}(?:\.\d+)?)\s*k?\s*(?:[-–—]|to|and)\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)\s*USD\b"
+    + _NOT_PERIOD_UNIT
+)
 _ANNUAL_K_RE = re.compile(
     r"\$\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)" + _NOT_RANGE_CONT + _NOT_PERIOD_UNIT,
     re.I,
@@ -6370,6 +6378,21 @@ _ANNUAL_FULL_RE = re.compile(
 )
 _ANNUAL_USD_RE = re.compile(
     r"(?i)(?:USD|US\$)\s*(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\b"
+    + _NOT_RANGE_CONT
+    + _NOT_PERIOD_UNIT
+)
+_ANNUAL_USD_K_RE = re.compile(
+    r"(?i)(?:USD|US\$)\s*(\d{2,3}(?:\.\d+)?)\s*k(?!\d)"
+    + _NOT_RANGE_CONT
+    + _NOT_PERIOD_UNIT
+)
+_ANNUAL_K_USD_RE = re.compile(
+    r"(?i)(?<![\d.])(\d{2,3}(?:\.\d+)?)\s*k(?!\d)\s*USD\b"
+    + _NOT_RANGE_CONT
+    + _NOT_PERIOD_UNIT
+)
+_ANNUAL_FULL_USD_RE = re.compile(
+    r"(?i)(?<![\d.])(\d{1,3}(?:[,\s]\d{3}){1,2}|\d{5,7})\s*USD\b"
     + _NOT_RANGE_CONT
     + _NOT_PERIOD_UNIT
 )
@@ -6826,6 +6849,20 @@ def _annual_pay(text: str) -> tuple[Optional[int], Optional[int]]:
         low, high = int(_money(ranged_usd.group(1))), int(_money(ranged_usd.group(2)))
         if 10_000 <= low <= high <= 2_000_000:
             return low, high
+    ranged_usd_k = _RANGE_USD_K_RE.search(text)
+    if ranged_usd_k:
+        low, high = int(_money(ranged_usd_k.group(1)) * 1000), int(
+            _money(ranged_usd_k.group(2)) * 1000
+        )
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
+    ranged_k_usd = _RANGE_K_USD_RE.search(text)
+    if ranged_k_usd:
+        low, high = int(_money(ranged_k_usd.group(1)) * 1000), int(
+            _money(ranged_k_usd.group(2)) * 1000
+        )
+        if 10_000 <= low <= high <= 2_000_000:
+            return low, high
     k = _ANNUAL_K_RE.search(text)
     if k:
         annual = int(_money(k.group(1)) * 1000)
@@ -6839,6 +6876,21 @@ def _annual_pay(text: str) -> tuple[Optional[int], Optional[int]]:
     usd = _ANNUAL_USD_RE.search(text)
     if usd:
         annual = int(_money(usd.group(1)))
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    usd_k = _ANNUAL_USD_K_RE.search(text)
+    if usd_k:
+        annual = int(_money(usd_k.group(1)) * 1000)
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    k_usd = _ANNUAL_K_USD_RE.search(text)
+    if k_usd:
+        annual = int(_money(k_usd.group(1)) * 1000)
+        if 10_000 <= annual <= 2_000_000:
+            return None, annual
+    full_usd = _ANNUAL_FULL_USD_RE.search(text)
+    if full_usd:
+        annual = int(_money(full_usd.group(1)))
         if 10_000 <= annual <= 2_000_000:
             return None, annual
     return None, None

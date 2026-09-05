@@ -23,8 +23,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _guess_pay("Engineer", "$120k-$180k") == 180_000
     assert _guess_pay("Engineer", "$143,000 to 197,000") == 197_000
     assert _guess_pay("Engineer", "USD 200,000–240,000") == 240_000
+    assert _guess_pay("Engineer", "USD 80k-100k") == 100_000
+    assert _guess_pay("Engineer", "USD 180k") == 180_000
     from src.engine import _parse_pay
     assert _parse_pay("**Salary:** USD 160,000–190,000") == (160_000, 190_000)
+    assert _parse_pay("USD 80k-100k") == (80_000, 100_000)
+    assert _parse_pay("USD 80k – 100k") == (80_000, 100_000)
+    assert _parse_pay("USD 80k to 100k") == (80_000, 100_000)
+    assert _parse_pay("USD 180k") == (None, 180_000)
+    assert _parse_pay("USD180k") == (None, 180_000)
+    assert _parse_pay("80k-100k USD") == (80_000, 100_000)
+    assert _parse_pay("180k USD") == (None, 180_000)
+    assert _parse_pay("180,000 USD a year") == (None, 180_000)
+    assert _parse_pay("80k-100k") == (None, None)
+    assert _parse_pay("CAD 80k-100k") == (None, None)
+    assert _parse_pay("Experience with USD 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("Base Salary: $126,000 - $180,000Diversity") == (126_000, 180_000)
     assert _parse_pay("proposed band b/t US$175k and $250k annually") == (175_000, 250_000)
     assert _parse_pay("$160,000 and $190,000") == (160_000, 190_000)
