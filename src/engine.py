@@ -6224,7 +6224,7 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
-_HOUR_TAIL = r"\s*(?:/\s*h(?:r|our)s?|(?:per|an|a)\s+h(?:r|our)s?|hourly)\b"
+_HOUR_TAIL = r"\s*(?:/\s*h(?:r|our)s?|(?:per|an|a)\s+h(?:r|our)s?|hourly|h(?:r|our)s?)\b"
 _HOURLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:\.\d+)?)"
     r"\s*(?:[-–—]|to)\s*"

@@ -3543,6 +3543,12 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$80 - $100 / Hour") == (160_000, 200_000)
     assert _parse_pay("$80–$100/hr") == (160_000, 200_000)
     assert _parse_pay("$80 an hour") == (None, 160_000)
+    assert _parse_pay("$80 hr") == (None, 160_000)
+    assert _parse_pay("$80hr") == (None, 160_000)
+    assert _parse_pay("$80 hrs") == (None, 160_000)
+    from src.engine import _visible_text
+    assert _parse_pay(_visible_text("$80<b>hr</b>")) == (None, 160_000)
+    assert _parse_pay("$80/hr overtime") == (None, None)
     assert _parse_pay("$80 hourly") == (None, 160_000)
     assert _parse_pay("$80 an hr") == (None, 160_000)
     assert _parse_pay("USD 80 per hour") == (None, 160_000)
