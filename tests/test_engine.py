@@ -4410,6 +4410,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20+ hours/week") == 20
     assert _guess_hours("Engineer", "20+ hrs/week") == 20
     assert _guess_hours("Engineer", "20+ hpw") == 20
+    assert _guess_hours("Engineer", "Hours: 20+ per week") == 20
+    assert _guess_hours("Engineer", "Hours per week: 20+") == 20
+    assert _guess_hours("Engineer", "Weekly hours: 20+") == 20
+    assert _guess_hours("Engineer", "Hours weekly: 20+") == 20
+    assert _guess_hours("Engineer", "Hours: 20+") is None
     assert _guess_hours("Engineer", "2+ hour weekly meeting") is None
     assert _guess_hours("Engineer", "20 hrs password") is None
     assert _guess_hours("Engineer", "0.5 FTE") == 20
@@ -4497,6 +4502,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert colon.hours_per_week == 32
     assert colon.score() == 100.0
+    plus = Opportunity(title="Engineer", url="https://jobs.example/hplus")
+    assert _apply_listing(
+        plus, "<p>$80/hour. Hours: 20+ per week</p>"
+    ) is True
+    assert plus.hours_per_week == 20
+    assert plus.pay_high == 80_000
     dash = Opportunity(title="Engineer", url="https://jobs.example/hdash")
     assert _apply_listing(
         dash, "<p>$80/hour. Hours per week — 32</p>"
