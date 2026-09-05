@@ -6837,7 +6837,10 @@ _ELEVEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
 _TWELVE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
     r"(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)"
 )
-_FOUR_TO_TWELVE_FORTNIGHT_HOURS = (
+_THIRTEEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)"
+)
+_FOUR_TO_THIRTEEN_FORTNIGHT_HOURS = (
     (_FOUR_TIMES_FORTNIGHT_HOURS_RE, 4),
     (_FIVE_TIMES_FORTNIGHT_HOURS_RE, 5),
     (_SIX_TIMES_FORTNIGHT_HOURS_RE, 6),
@@ -6847,6 +6850,7 @@ _FOUR_TO_TWELVE_FORTNIGHT_HOURS = (
     (_TEN_TIMES_FORTNIGHT_HOURS_RE, 10),
     (_ELEVEN_TIMES_FORTNIGHT_HOURS_RE, 11),
     (_TWELVE_TIMES_FORTNIGHT_HOURS_RE, 12),
+    (_THIRTEEN_TIMES_FORTNIGHT_HOURS_RE, 13),
 )
 _FOUR_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
@@ -6945,6 +6949,17 @@ _TWELVE_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"|(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
     r"(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    re.I,
+)
+_THIRTEEN_TIMES_WEEKLY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
+    r"(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?|\bh)\s+(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:thirteen\s+times|(?<![\d.])13\s+times|(?<![\d.])13\s*[x×]|[x×]\s*13)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _FTE_RE = re.compile(
@@ -7534,7 +7549,14 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
             n = int(round(float(raw) * 12))
             if 1 <= n <= 80:
                 return n
-    for regex, times in _FOUR_TO_TWELVE_FORTNIGHT_HOURS:
+    thirteen = _THIRTEEN_TIMES_WEEKLY_HOURS_RE.search(blob)
+    if thirteen:
+        raw = next((g for g in thirteen.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 13))
+            if 1 <= n <= 80:
+                return n
+    for regex, times in _FOUR_TO_THIRTEEN_FORTNIGHT_HOURS:
         fortnight_n = regex.search(blob)
         if fortnight_n:
             raw = next((g for g in fortnight_n.groups() if g), None)
