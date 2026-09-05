@@ -5807,7 +5807,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?<!this )(?<!the )(?<!a )(?:sorry,\s+)?"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening)"
     r"\s+is\s+(?:(?:un|de[-\s]?)published|(?:un|de[-\s]?)released|(?:un|de[-\s]?)syndicated|(?:un|de[-\s]?)promoted|(?:un|de[-\s]?)featured|(?:un|de[-\s]?)broadcast|(?:un|de[-\s]?)indexed|(?:un|de[-\s]?)circulated|(?:un|de[-\s]?)shared|(?:un|de[-\s]?)boosted|(?:un|de[-\s]?)sponsored|(?:un|de[-\s]?)endorsed|(?:un|de[-\s]?)advertised|(?:un|de[-\s]?)posted|archived|(?:un|de[-\s]?)activated)\b"
-    r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|recruiting\s+for\s+this|advertising\s+for\s+this|(?:accepting|taking|receiving|collecting|processing|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from))"
+    r"|we(?:'re| are)\s+no\s+longer\s+(?:hiring\s+for\s+this|recruiting\s+for\s+this|advertising\s+for\s+this|(?:accepting|taking|receiving|collecting|processing|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging|admitting)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from))"
     r"|we(?:'re| are)\s+no\s+longer\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:(?:'re| are)\s+not| aren't)\s+(?:recruiting|advertising|posting|listing|publishing)\s+this\s+"
@@ -5816,7 +5816,7 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we(?:'ve|\s+have)?\s+closed\s+recruiting\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
-    r"|we(?:'ve|\s+have)?\s+stopped\s+(?:accepting|taking|receiving|collecting|processing|considering|evaluating|assessing|screening|shortlisting|interviewing|reviewing|seeking|sourcing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)"
+    r"|we(?:'ve|\s+have)?\s+stopped\s+(?:accepting|taking|receiving|collecting|processing|considering|evaluating|assessing|screening|shortlisting|interviewing|reviewing|seeking|sourcing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging|admitting)\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)"
     r"|we(?:(?:'re| are)\s+(?:no\s+longer|not)| aren't)\s+considering\s+(?:applications|applicants|candidates)\b(?!\s+from)"
     r"|(?<!once )(?<!after )(?<!when )we(?:(?:'re| are)\s+no\s+longer|(?:'ve|\s+have)?\s+stopped)\s+considering\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)(?!\s+for)"
@@ -5845,9 +5845,9 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"\s+is\s+not\s+being\s+(?:recruited|advertised|filled|posted|listed|published|shared|boosted|sponsored|endorsed|circulated|indexed|featured|promoted|syndicated|broadcast|pursued(?!\s+as\b)|considered(?!\s+for\b))\b"
-    r"|we(?:(?:'re| are)\s+not| aren't)\s+(?:accepting|taking|receiving|collecting|processing|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging)\s+(?:new\s+)?(?:applications|applicants)\s+for\s+this\s+"
+    r"|we(?:(?:'re| are)\s+not| aren't)\s+(?:accepting|taking|receiving|collecting|processing|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging|admitting)\s+(?:new\s+)?(?:applications|applicants)\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
-    r"|no\s+longer\s+(?:accepting|taking|receiving|collecting|processing|considering|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging)\s+(?:new\s+)?(?:applications|applicants|candidates)\b(?!\s+from)"
+    r"|no\s+longer\s+(?:accepting|taking|receiving|collecting|processing|considering|evaluating|assessing|screening|shortlisting|interviewing|seeking|sourcing|reviewing|inviting|welcoming|soliciting|requesting|encouraging|onboarding|enrolling|registering|contacting|scheduling|approaching|engaging|admitting)\s+(?:new\s+)?(?:applications|applicants|candidates)\b(?!\s+from)"
     r"|no\s+longer\s+reviewing\s+(?:new\s+)?(?:applications|applicants)\b(?!\s+from)"
     r"|we(?:(?:'re| are)\s+not| aren't)\s+reviewing\s+(?:new\s+)?(?:applications|applicants)\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
@@ -6739,6 +6739,17 @@ _SIX_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?:six\s+times|6\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
+_SEVEN_TIMES_WEEKLY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
+    r"(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:seven\s+times|7\s+times)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    re.I,
+)
 _FTE_RE = re.compile(
     r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(\d{1,3}(?:\.\d+)?)\s*%"
@@ -7213,7 +7224,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–6 times a week, or N hours/day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–7 times a week, or N hours/day × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7262,6 +7273,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in six.groups() if g), None)
         if raw:
             n = int(round(float(raw) * 6))
+            if 1 <= n <= 80:
+                return n
+    seven = _SEVEN_TIMES_WEEKLY_HOURS_RE.search(blob)
+    if seven:
+        raw = next((g for g in seven.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 7))
             if 1 <= n <= 80:
                 return n
     daily = _DAILY_HOURS_RE.search(blob)

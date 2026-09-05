@@ -6801,6 +6801,27 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours six times a day") is None
     assert _guess_hours("Engineer", "8 hours six times") is None
     assert _guess_hours("Engineer", "six times: 8 hours") is None
+    assert _guess_hours("Engineer", "8 hours seven times a week") == 56
+    assert _guess_hours("Engineer", "8 hours seven times per week") == 56
+    assert _guess_hours("Engineer", "8 hours seven times weekly") == 56
+    assert _guess_hours("Engineer", "8 hours 7 times a week") == 56
+    assert _guess_hours("Engineer", "8 hrs seven times a week") == 56
+    assert _guess_hours("Engineer", "hours seven times a week: 8") == 56
+    assert _guess_hours("Engineer", "seven times a week hours: 8") == 56
+    assert _guess_hours("Engineer", "seven times weekly hours: 8") == 56
+    assert _guess_hours("Engineer", "seven times a week: 8 hours") == 56
+    assert _guess_hours("Engineer", "seven times weekly: 8 hours") == 56
+    assert _guess_hours("Engineer", "hours: 8 seven times a week") == 56
+    assert _guess_hours("Engineer", "hours: 8 seven times weekly") == 56
+    assert _guess_hours("Engineer", "11 hours seven times a week") == 77
+    assert _guess_hours("Engineer", "40 hours a week. 8 hours seven times a week") == 40
+    assert _guess_hours("Engineer", "12 hours seven times a week") is None
+    assert _guess_hours("Engineer", "8 hours seven times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours seven times weekly meeting") is None
+    assert _guess_hours("Engineer", "2 hour seven times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours seven times a day") is None
+    assert _guess_hours("Engineer", "8 hours seven times") is None
+    assert _guess_hours("Engineer", "seven times: 8 hours") is None
     assert _guess_hours("Engineer", "this day: 8 hours") is None
     assert _guess_hours("Engineer", "day: 8 hours") is None
     assert _guess_hours("Engineer", "8 hours for the day") is None
@@ -7805,6 +7826,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert six_weekly.hours_per_week == 36
     assert six_weekly.pay_high == 180_000
+    seven_week = Opportunity(title="Engineer", url="https://jobs.example/sevenweekhours")
+    assert _apply_listing(
+        seven_week, "<p>$80/hour. 8 hours seven times a week.</p>"
+    ) is True
+    assert seven_week.hours_per_week == 56
+    assert seven_week.pay_high == 224_000
+    seven_weekly = Opportunity(title="Engineer", url="https://jobs.example/sevenweeklyhours")
+    assert _apply_listing(
+        seven_weekly, "<p>$100/hour. 8 hours 7 times a week.</p>"
+    ) is True
+    assert seven_weekly.hours_per_week == 56
+    assert seven_weekly.pay_high == 280_000
     labeled_working_week = Opportunity(title="Engineer", url="https://jobs.example/lworkingweek")
     assert _apply_listing(
         labeled_working_week, "<p>$80/hour. Hours per working week: 32</p>"
@@ -18569,6 +18602,36 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We're not engaging applicants for this meeting.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer admitting applicants.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We are no longer admitting applicants.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stopped admitting applicants.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not admitting applicants for this role.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is admitting applicants.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're no longer admitting applicants from recruiters.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're not admitting applicants for this meeting.</p>"
         "<p>$180,000</p>"
     ) is False
     assert _html_is_gone(
