@@ -4218,6 +4218,20 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     usd_hour = Opportunity(title="Engineer", url="https://jobs.example/usdhour")
     assert _apply_listing(usd_hour, "<p>$80/hour</p>") is True
     assert usd_hour.pay_high == 160_000
+    assert _parse_pay("$80/hour GBP") == (None, None)
+    assert _parse_pay("$80/hr GBP") == (None, None)
+    assert _parse_pay("$80 per hour GBP") == (None, None)
+    assert _parse_pay("$80/hour EUR") == (None, None)
+    assert _parse_pay("$80/hour CHF") == (None, None)
+    assert _parse_pay("$80/hr CHF") == (None, None)
+    assert _parse_pay("$80/hour INR") == (None, None)
+    assert _parse_pay("$80/hour JPY") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $80/hour GBP") == (None, None)
+    assert _parse_pay("$80/hour. GBP experience required") == (None, 160_000)
+    assert _parse_pay("$80/hour. EUR office") == (None, 160_000)
+    gbp_hour = Opportunity(title="Engineer", url="https://jobs.example/gbphour")
+    assert _apply_listing(gbp_hour, "<p>$80/hour GBP</p>") is False
+    assert gbp_hour.pay_high is None
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _foreign_salary("<p>$180,000 a year</p>") is False
     mixed = "UK £45,000 – £60,000. US $240,000 - $500,000"
