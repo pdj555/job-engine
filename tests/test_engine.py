@@ -15770,6 +15770,22 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We've wound this role down.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stood this role down.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've wound this meeting down.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've stood this meeting down.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We've pulled the plug on this meeting.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
@@ -15831,6 +15847,22 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>We've packed up this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've packed this role up.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've boxed up this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've packed this meeting up.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've boxed up this meeting.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
