@@ -6667,6 +6667,23 @@ _FORTNIGHT_HOURS_RE = re.compile(
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+every\s+other\s+weeks?\b",
     re.I,
 )
+_DAILY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*"
+    r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
+    r"(?:working\s+days?|weekdays?|days?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+daily\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|weekdays?|days?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+daily\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|daily\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|daily\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*daily\s+(?:hours?|hrs?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*"
+    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|weekdays?|days?)\b"
+    r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+daily\b",
+    re.I,
+)
 _FTE_RE = re.compile(
     r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(\d{1,3}(?:\.\d+)?)\s*%"
@@ -7141,7 +7158,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, or N hours/fortnight halved."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, or N hours/day × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7155,6 +7172,13 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw = next((g for g in fortnight.groups() if g), None)
         if raw:
             n = int(round(float(raw) / 2))
+            if 1 <= n <= 80:
+                return n
+    daily = _DAILY_HOURS_RE.search(blob)
+    if daily:
+        raw = next((g for g in daily.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 5))
             if 1 <= n <= 80:
                 return n
     return _stated_fte_hours(blob)
