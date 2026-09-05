@@ -6778,6 +6778,68 @@ _THRICE_FORTNIGHT_HOURS_RE = re.compile(
     r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
     re.I,
 )
+_FORTNIGHT_TIMES_PERIOD = (
+    r"(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)"
+    r"(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))"
+)
+
+
+def _times_fortnight_hours_re(count: str) -> re.Pattern:
+    return re.compile(
+        r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
+        + count
+        + _FORTNIGHT_TIMES_PERIOD
+        + r"\b(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+        r"|(?:hours?|hrs?)\s+"
+        + count
+        + _FORTNIGHT_TIMES_PERIOD
+        + r"\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+        r"|"
+        + count
+        + _FORTNIGHT_TIMES_PERIOD
+        + r"\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+        r"|"
+        + count
+        + _FORTNIGHT_TIMES_PERIOD
+        + r"\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
+        r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+        + count
+        + _FORTNIGHT_TIMES_PERIOD
+        + r"\b",
+        re.I,
+    )
+
+
+_FOUR_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)"
+)
+_FIVE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)"
+)
+_SIX_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)"
+)
+_SEVEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)"
+)
+_EIGHT_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)"
+)
+_NINE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)"
+)
+_TEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)"
+)
+_FOUR_TO_TEN_FORTNIGHT_HOURS = (
+    (_FOUR_TIMES_FORTNIGHT_HOURS_RE, 4),
+    (_FIVE_TIMES_FORTNIGHT_HOURS_RE, 5),
+    (_SIX_TIMES_FORTNIGHT_HOURS_RE, 6),
+    (_SEVEN_TIMES_FORTNIGHT_HOURS_RE, 7),
+    (_EIGHT_TIMES_FORTNIGHT_HOURS_RE, 8),
+    (_NINE_TIMES_FORTNIGHT_HOURS_RE, 9),
+    (_TEN_TIMES_FORTNIGHT_HOURS_RE, 10),
+)
 _FOUR_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
     r"(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
@@ -7335,7 +7397,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight or biweekly halved, N hours twice or thrice a fortnight, N hours 2–10 times a week, N hours/day × 5, or 2–7 days at N hours."""
+    """Hours explicitly written as N hours/week, N hours/fortnight or biweekly halved, N hours 2–10 times a fortnight, N hours 2–10 times a week, N hours/day × 5, or 2–7 days at N hours."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7428,6 +7490,14 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
             n = int(round(float(raw) * 10))
             if 1 <= n <= 80:
                 return n
+    for regex, times in _FOUR_TO_TEN_FORTNIGHT_HOURS:
+        fortnight_n = regex.search(blob)
+        if fortnight_n:
+            raw = next((g for g in fortnight_n.groups() if g), None)
+            if raw:
+                n = int(round(float(raw) * times / 2))
+                if 1 <= n <= 80:
+                    return n
     daily = _DAILY_HOURS_RE.search(blob)
     if daily:
         raw = next((g for g in daily.groups() if g), None)
