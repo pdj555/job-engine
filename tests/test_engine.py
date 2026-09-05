@@ -4653,6 +4653,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "one-eighth-time FTE") == 5
     assert _guess_hours("Engineer", "FTE eighth-time") == 5
     assert _guess_hours("Engineer", "1/8 FTE") == 5
+    assert _guess_hours("Engineer", "fifth-time FTE") == 8
+    assert _guess_hours("Engineer", "fifth time FTE") == 8
+    assert _guess_hours("Engineer", "one-fifth-time FTE") == 8
+    assert _guess_hours("Engineer", "FTE fifth-time") == 8
+    assert _guess_hours("Engineer", "1/5 FTE") == 8
+    assert _guess_hours("Engineer", "fifth FTE") is None
     assert _guess_hours("Engineer", "eighth FTE") is None
     assert _guess_hours("Engineer", "two-thirds FTE") is None
     assert _guess_hours("Engineer", "third FTE") is None
@@ -4809,6 +4815,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert eighth_time.hours_per_week == 5
     assert eighth_time.pay_high == 20_000
+    fifth_time = Opportunity(title="Engineer", url="https://jobs.example/fifth-time-fte")
+    assert _apply_listing(
+        fifth_time, "<p>$80/hour. fifth-time FTE.</p>"
+    ) is True
+    assert fifth_time.hours_per_week == 8
+    assert fifth_time.pay_high == 32_000
     labeled = Opportunity(title="Engineer", url="https://jobs.example/hpw")
     assert _apply_listing(
         labeled, "<p>$160,000 a year. Hours per week: 32</p>"
