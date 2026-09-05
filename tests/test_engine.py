@@ -113,6 +113,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("tuition reimbursement of $15,000") == (None, None)
     assert _parse_pay("education reimbursement of $15,000") == (None, None)
     assert _parse_pay("$10,000 student loan repayment") == (None, None)
+    assert _parse_pay("$15,000 PSLF") == (None, None)
+    assert _parse_pay("$15,000 public service loan") == (None, None)
+    assert _parse_pay("$15,000 public service loan forgiveness") == (None, None)
+    assert _parse_pay("PSLF of $15,000") == (None, None)
+    assert _parse_pay("$15,000 PSLF. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 PSLF in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 public") == (None, 15_000)
+    assert _parse_pay("$15,000 public service") == (None, 15_000)
     assert _parse_pay("Salary $180,000 plus $15,000 tuition reimbursement") == (
         None,
         180_000,
@@ -2773,6 +2781,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 student loan $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 PSLF $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 student loan repayment $15,000") == (
         None,
         180_000,
@@ -8108,6 +8117,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         eapmix, "<p>$15,000 employee assistance. Salary $180,000</p>"
     ) is True
     assert eapmix.pay_high == 180_000
+    pslfonly = Opportunity(title="Engineer", url="https://jobs.example/pslfonly")
+    assert _apply_listing(pslfonly, "<p>$15,000 PSLF. Apply now.</p>") is False
+    assert pslfonly.pay_high is None
+    pslfmix = Opportunity(title="Engineer", url="https://jobs.example/pslfmix")
+    assert _apply_listing(
+        pslfmix, "<p>$15,000 PSLF. Salary $180,000</p>"
+    ) is True
+    assert pslfmix.pay_high == 180_000
     ptomix = Opportunity(title="Engineer", url="https://jobs.example/ptomix")
     assert _apply_listing(ptomix, "<p>Base $180,000 unused PTO $500</p>") is True
     assert ptomix.pay_high == 180_000
