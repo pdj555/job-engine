@@ -11970,6 +11970,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must cycle to the office") is False
     assert _guess_remote("Engineer", "must cycle to interviews") is True
     assert _guess_remote("Engineer", "must cycle onto the home office") is True
+    assert _guess_remote("Engineer", "must scooter onto the office") is False
+    assert _guess_remote("Engineer", "must scooter to the office") is False
+    assert _guess_remote("Engineer", "must scooter to NYC") is True
+    assert _guess_remote("Engineer", "must scooter onto the home office") is True
+    assert _guess_remote("Engineer", "must skate onto the office") is False
+    assert _guess_remote("Engineer", "must skateboard onto the office") is False
+    assert _guess_remote("Engineer", "must skate to interviews") is True
+    assert _guess_remote("Engineer", "must skate onto the home office") is True
     assert _guess_remote("Engineer", "work from home. must drive onto the office") is True
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
@@ -13089,6 +13097,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert bike_onto_office.remote is False
     assert bike_onto_office.pay_high == 180_000
+    scooter_onto_office = Opportunity(
+        title="Engineer", url="https://jobs.example/scooterontooffice"
+    )
+    assert _apply_listing(
+        scooter_onto_office, "<p>must scooter onto the office. Salary $180,000</p>"
+    ) is True
+    assert scooter_onto_office.remote is False
+    assert scooter_onto_office.pay_high == 180_000
     days_onto_site = Opportunity(title="Engineer", url="https://jobs.example/daysontosite")
     assert _apply_listing(
         days_onto_site, "<p>3 days onto the site. Salary $180,000</p>"
