@@ -6736,46 +6736,46 @@ _DAYS_X_HOURS_RE = re.compile(
 )
 _TWICE_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _TWICE_FORTNIGHT_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b"
+    r"(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
+    r"(?:twice|two\s+times|(?<![\d.])2\s+times|(?<![\d.])2\s*[x×]|[x×]\s*2)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
     re.I,
 )
 _THRICE_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _THRICE_FORTNIGHT_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b"
+    r"(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:thrice|three\s+times|3\s+times|3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
+    r"(?:thrice|three\s+times|(?<![\d.])3\s+times|(?<![\d.])3\s*[x×]|[x×]\s*3)(?:\s+fortnightly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)(?:working\s+fortnights?|fortnights?|two\s+weeks|2\s+weeks|fn))\b",
     re.I,
 )
 _FORTNIGHT_TIMES_PERIOD = (
@@ -6811,30 +6811,33 @@ def _times_fortnight_hours_re(count: str) -> re.Pattern:
 
 
 _FOUR_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)"
+    r"(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)"
 )
 _FIVE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)"
+    r"(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)"
 )
 _SIX_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)"
+    r"(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)"
 )
 _SEVEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)"
+    r"(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)"
 )
 _EIGHT_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)"
+    r"(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)"
 )
 _NINE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)"
+    r"(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)"
 )
 _TEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)"
+    r"(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)"
 )
 _ELEVEN_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
-    r"(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)"
+    r"(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)"
 )
-_FOUR_TO_ELEVEN_FORTNIGHT_HOURS = (
+_TWELVE_TIMES_FORTNIGHT_HOURS_RE = _times_fortnight_hours_re(
+    r"(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)"
+)
+_FOUR_TO_TWELVE_FORTNIGHT_HOURS = (
     (_FOUR_TIMES_FORTNIGHT_HOURS_RE, 4),
     (_FIVE_TIMES_FORTNIGHT_HOURS_RE, 5),
     (_SIX_TIMES_FORTNIGHT_HOURS_RE, 6),
@@ -6843,93 +6846,105 @@ _FOUR_TO_ELEVEN_FORTNIGHT_HOURS = (
     (_NINE_TIMES_FORTNIGHT_HOURS_RE, 9),
     (_TEN_TIMES_FORTNIGHT_HOURS_RE, 10),
     (_ELEVEN_TIMES_FORTNIGHT_HOURS_RE, 11),
+    (_TWELVE_TIMES_FORTNIGHT_HOURS_RE, 12),
 )
 _FOUR_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:four\s+times|4\s+times|4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:four\s+times|(?<![\d.])4\s+times|(?<![\d.])4\s*[x×]|[x×]\s*4)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _FIVE_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:five\s+times|5\s+times|5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:five\s+times|(?<![\d.])5\s+times|(?<![\d.])5\s*[x×]|[x×]\s*5)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _SIX_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:six\s+times|6\s+times|6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:six\s+times|(?<![\d.])6\s+times|(?<![\d.])6\s*[x×]|[x×]\s*6)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _SEVEN_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:seven\s+times|7\s+times|7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:seven\s+times|(?<![\d.])7\s+times|(?<![\d.])7\s*[x×]|[x×]\s*7)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _EIGHT_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:eight\s+times|8\s+times|8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:eight\s+times|(?<![\d.])8\s+times|(?<![\d.])8\s*[x×]|[x×]\s*8)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _NINE_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:nine\s+times|9\s+times|9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:nine\s+times|(?<![\d.])9\s+times|(?<![\d.])9\s*[x×]|[x×]\s*9)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _TEN_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:ten\s+times|10\s+times|10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:ten\s+times|(?<![\d.])10\s+times|(?<![\d.])10\s*[x×]|[x×]\s*10)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _ELEVEN_TIMES_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
-    r"(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?|\bh)\s+(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
-    r"|(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s+(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
     r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
-    r"(?:eleven\s+times|11\s+times|11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    r"(?:eleven\s+times|(?<![\d.])11\s+times|(?<![\d.])11\s*[x×]|[x×]\s*11)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
+    re.I,
+)
+_TWELVE_TIMES_WEEKLY_HOURS_RE = re.compile(
+    r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+"
+    r"(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?:hours?|hrs?|\bh)\s+(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s+(?:hours?|hrs?|\bh)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?|h)\b"
+    r"|(?:hours?|hrs?|\bh)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+"
+    r"(?:twelve\s+times|(?<![\d.])12\s+times|(?<![\d.])12\s*[x×]|[x×]\s*12)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b",
     re.I,
 )
 _FTE_RE = re.compile(
@@ -7512,7 +7527,14 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
             n = int(round(float(raw) * 11))
             if 1 <= n <= 80:
                 return n
-    for regex, times in _FOUR_TO_ELEVEN_FORTNIGHT_HOURS:
+    twelve = _TWELVE_TIMES_WEEKLY_HOURS_RE.search(blob)
+    if twelve:
+        raw = next((g for g in twelve.groups() if g), None)
+        if raw:
+            n = int(round(float(raw) * 12))
+            if 1 <= n <= 80:
+                return n
+    for regex, times in _FOUR_TO_TWELVE_FORTNIGHT_HOURS:
         fortnight_n = regex.search(blob)
         if fortnight_n:
             raw = next((g for g in fortnight_n.groups() if g), None)
