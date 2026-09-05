@@ -8,11 +8,12 @@ Opportunity.score() owns the $/hour either way. See docs/AGENT.md.
 
 import json
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
 from config.settings import settings
-from src.engine import Engine
+from src.engine import Engine, _normalize_url
 from src.models import Opportunity
 
 INSTRUCTIONS = """You are an opportunity scout. Use search_web to research the
@@ -20,7 +21,8 @@ open web across remote roles, contracts/freelance, grants, and cofounder/equity.
 Then return searches you actually ran plus opportunities you found.
 
 pay = annual USD (null if unknown). hours_per_week = number (null if unknown).
-Only include http(s) listing URLs, never search-result homepages."""
+Only include http(s) listing URLs that appeared in search_web results.
+Copy those URLs exactly. Never invent listings or search-result homepages."""
 
 
 @dataclass
@@ -54,6 +56,38 @@ def _angles(query: str) -> list[str]:
     ]
 
 
+def _http_url(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+
+
+def _ground_to_search_hits(items: list[dict], search_hits: list[dict]) -> list[dict]:
+    """Keep only opportunities whose URL appeared in search_web hits."""
+    by_url = {_normalize_url(r["url"]): r for r in search_hits if r.get("url")}
+    grounded: list[dict] = []
+    seen: set[str] = set()
+    for item in items:
+        url = item.get("url") or ""
+        if not _http_url(url):
+            continue
+        key = _normalize_url(url)
+        raw = by_url.get(key)
+        if not raw or key in seen:
+            continue
+        seen.add(key)
+        grounded.append(
+            {
+                "title": item.get("title") or raw.get("title") or "Unknown",
+                "url": raw["url"],
+                "company": item.get("company") or raw.get("company"),
+                "pay": item.get("pay"),
+                "hours_per_week": item.get("hours_per_week"),
+                "remote": item.get("remote", raw.get("remote", True)),
+            }
+        )
+    return grounded
+
+
 def _rank(items: list[dict]) -> list[Opportunity]:
     """Build Opportunity models and order by $/hour (highest first). Deterministic."""
     opportunities = [
@@ -69,6 +103,8 @@ def _rank(items: list[dict]) -> list[Opportunity]:
         for o in items
         if o.get("url")
     ]
+    for opp in opportunities:
+        opp.efficiency = opp.refined_rate
     return sorted(opportunities, key=lambda o: o.score(), reverse=True)
 
 
@@ -91,9 +127,14 @@ def _parse(content: str) -> dict:
     return raw if isinstance(raw, dict) else {}
 
 
-def _from_scout(out: ScoutResult, searches: list[str], limit: int) -> AgentRun:
-    ranked = _rank([o.model_dump() for o in out.opportunities])[:limit]
-    return AgentRun(searches=out.searches or searches, ranked=ranked)
+def _from_scout(
+    out: ScoutResult,
+    searches: list[str],
+    limit: int,
+    search_hits: list[dict],
+) -> AgentRun:
+    items = _ground_to_search_hits([o.model_dump() for o in out.opportunities], search_hits)
+    return AgentRun(searches=out.searches or searches, ranked=_rank(items)[:limit])
 
 
 async def _search_run(query: str, limit: int) -> AgentRun:
@@ -107,12 +148,14 @@ async def _sdk_run(query: str, limit: int) -> AgentRun:
 
     engine = Engine()
     searches: list[str] = []
+    search_hits: list[dict] = []
 
     @function_tool
     async def search_web(q: str) -> str:
         """Search the open web for roles, contracts, grants, or equity."""
         searches.append(q)
         hits = await engine.search_web(q)
+        search_hits.extend(hits[:10])
         return json.dumps(hits[:10])
 
     agent = Agent(
@@ -125,10 +168,10 @@ async def _sdk_run(query: str, limit: int) -> AgentRun:
     result = await Runner.run(agent, query, max_turns=8)
     out = result.final_output
     if isinstance(out, ScoutResult):
-        return _from_scout(out, searches, limit)
+        return _from_scout(out, searches, limit, search_hits)
     data = _parse(str(out or ""))
-    ranked = _rank(data.get("opportunities", []))[:limit]
-    return AgentRun(searches=data.get("searches") or searches, ranked=ranked)
+    items = _ground_to_search_hits(data.get("opportunities", []), search_hits)
+    return AgentRun(searches=data.get("searches") or searches, ranked=_rank(items)[:limit])
 
 
 async def agent_run(query: str, limit: int = 20) -> AgentRun:

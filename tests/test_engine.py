@@ -1,12 +1,16 @@
 import asyncio
+import json
+import types
 
 from src.engine import (
     Engine,
     _guess_hours,
     _guess_pay,
     _guess_remote,
+    _heuristic_opportunity,
     _parse_ddg_html,
 )
+from src.models import Opportunity
 
 
 # --- heuristic guessers -------------------------------------------------
@@ -114,3 +118,249 @@ def test_search_all_drops_failed_sources():
 
     # gather(return_exceptions=True) -> exceptions ignored, no crash
     assert asyncio.run(engine._search_all("anything")) == []
+
+
+def _fake_client(content: str, captured: dict | None = None):
+    async def create(**kwargs):
+        if captured is not None:
+            captured.update(kwargs)
+        message = types.SimpleNamespace(content=content)
+        return types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+
+    return types.SimpleNamespace(
+        chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
+    )
+
+
+def _fake_client_raises(exc: Exception):
+    async def create(**kwargs):
+        raise exc
+
+    return types.SimpleNamespace(
+        chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
+    )
+
+
+def test_heuristic_opportunity_requires_url():
+    assert _heuristic_opportunity({"title": "No url", "pay": 100_000}) is None
+
+
+def test_heuristic_opportunity_prefers_raw_then_guesses():
+    raw = {
+        "title": "Staff Engineer",
+        "company": "Acme",
+        "url": "https://example.com/job",
+        "description": "onsite hybrid",
+        "pay": 200_000,
+        "hours": 25,
+        "remote": False,
+        "source": "brave",
+    }
+    opp = _heuristic_opportunity(raw)
+    assert isinstance(opp, Opportunity)
+    assert opp.pay_high == 200_000
+    assert opp.hours_per_week == 25
+    assert opp.remote is False
+    assert opp.efficiency == opp.refined_rate == 160.0
+
+    guessed = _heuristic_opportunity(
+        {
+            "title": "Senior ML Engineer",
+            "url": "https://example.com/senior",
+            "description": "must be onsite",
+            "source": "ddg",
+        }
+    )
+    assert guessed.pay_high == _guess_pay("Senior ML Engineer", "must be onsite") == 180_000
+    assert guessed.hours_per_week is None
+    assert guessed.rate_is_imputed is True
+    assert guessed.refined_rate == 90.0
+    assert guessed.remote is False
+
+
+def test_find_ranks_and_limits_without_llm():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Low",
+                "url": "https://a.example/low",
+                "description": "",
+                "pay": 100_000,
+                "hours": 40,
+                "remote": True,
+            },
+            {
+                "title": "High",
+                "url": "https://a.example/high",
+                "description": "",
+                "pay": 200_000,
+                "hours": 20,
+                "remote": True,
+            },
+            {
+                "title": "Office",
+                "url": "https://a.example/office",
+                "description": "",
+                "pay": 200_000,
+                "hours": 40,
+                "remote": False,
+            },
+            {"title": "dropped — no url", "pay": 999_999, "hours": 1},
+        ]
+
+    engine._search_all = fake_search
+    ranked = asyncio.run(engine.find("ml", limit=2))
+    assert [o.title for o in ranked] == ["High", "Office"]
+    assert ranked[0].score() == 200.0
+    assert ranked[1].score() == 70.0
+
+
+def test_find_llm_grounds_urls_and_drops_hallucinations():
+    engine = Engine()
+    engine.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {
+                        "title": "Cheap LLM",
+                        "company": "CoA",
+                        "url": "https://jobs.example/a",
+                        "pay_high": 100_000,
+                        "hours_per_week": 40,
+                        "remote": True,
+                    },
+                    {
+                        "title": "Lush LLM",
+                        "company": "CoB",
+                        "url": "HTTPS://JOBS.EXAMPLE/B/",
+                        "pay_high": 200_000,
+                        "hours_per_week": 20,
+                        "remote": True,
+                    },
+                    {
+                        "title": "Hallucinated",
+                        "url": "https://evil.example/nope",
+                        "pay_high": 9_999_999,
+                        "hours_per_week": 1,
+                    },
+                ]
+            }
+        )
+    )
+
+    async def fake_search(_query: str):
+        return [
+            {"title": "Raw A", "url": "https://jobs.example/a", "description": "a"},
+            {"title": "Raw B", "url": "https://jobs.example/b", "description": "b"},
+        ]
+
+    engine._search_all = fake_search
+    ranked = asyncio.run(engine.find("contracts", limit=20))
+    assert [o.title for o in ranked] == ["Lush LLM", "Cheap LLM"]
+    assert ranked[0].url == "https://jobs.example/b"
+    assert ranked[0].score() == 200.0
+
+
+def test_extract_batch_prompt_asks_for_opportunities_object():
+    captured: dict = {}
+    engine = Engine()
+    engine.openai = _fake_client('{"opportunities": []}', captured)
+    batch = [{"title": "Senior Engineer", "url": "https://example.com/job", "description": "remote"}]
+    asyncio.run(engine._extract_batch(batch, "ai engineer"))
+    assert captured.get("response_format") == {"type": "json_object"}
+    prompt = captured["messages"][0]["content"]
+    assert "opportunities" in prompt
+    assert "ai engineer" in prompt
+
+
+def test_extract_batch_keeps_raw_then_heuristics_when_llm_pay_hours_missing():
+    engine = Engine()
+    engine.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {"title": "LLM title", "company": "LLM Co", "url": "https://keep-raw.example/a"},
+                    {"title": "Needs guesses", "url": "https://guess.example/b"},
+                ]
+            }
+        )
+    )
+    batch = [
+        {
+            "title": "Raw A",
+            "url": "https://keep-raw.example/a",
+            "description": "",
+            "pay": 160_000,
+            "hours": 20,
+            "remote": True,
+        },
+        {
+            "title": "Junior Developer",
+            "url": "https://guess.example/b",
+            "description": "hybrid office",
+        },
+    ]
+    out = {o.url: o for o in asyncio.run(engine._extract_batch(batch, "q"))}
+    kept = out["https://keep-raw.example/a"]
+    assert kept.title == "LLM title"
+    assert kept.pay_high == 160_000
+    assert kept.hours_per_week == 20
+    assert kept.efficiency == 160.0
+    guessed = out["https://guess.example/b"]
+    assert guessed.pay_high == 90_000
+    assert guessed.hours_per_week is None
+    assert guessed.rate_is_imputed is True
+    assert guessed.remote is False
+
+
+def test_extract_batch_falls_back_on_error_or_ungrounded_llm():
+    boom = Engine()
+    boom.openai = _fake_client_raises(RuntimeError("boom"))
+    batch = [
+        {
+            "title": "Senior ML Engineer",
+            "url": "https://fallback.example/1",
+            "description": "contract",
+        }
+    ]
+    failed = asyncio.run(boom._extract_batch(batch, "q"))
+    assert failed[0].pay_high == 180_000
+    assert failed[0].hours_per_week is None
+    assert failed[0].rate_is_imputed is True
+    assert failed[0].efficiency == failed[0].refined_rate == 90.0
+
+    ghost = Engine()
+    ghost.openai = _fake_client(
+        json.dumps(
+            {
+                "opportunities": [
+                    {
+                        "title": "Hallucinated",
+                        "url": "https://not-in-batch.example/x",
+                        "pay_high": 500_000,
+                        "hours_per_week": 10,
+                    }
+                ]
+            }
+        )
+    )
+    grounded = asyncio.run(
+        ghost._extract_batch(
+            [
+                {
+                    "title": "Staff Engineer",
+                    "url": "https://real.example/job",
+                    "description": "fully remote",
+                    "pay": 180_000,
+                    "hours": 30,
+                }
+            ],
+            "q",
+        )
+    )
+    assert grounded[0].url == "https://real.example/job"
+    assert grounded[0].title == "Staff Engineer"
+    assert grounded[0].pay_high == 180_000

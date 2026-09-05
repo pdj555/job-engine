@@ -1,7 +1,16 @@
 import asyncio
 import types
 
-from src.agent import ScoutHit, ScoutResult, _parse, _rank, agent_run
+from src.agent import (
+    ScoutHit,
+    ScoutResult,
+    _from_scout,
+    _ground_to_search_hits,
+    _http_url,
+    _parse,
+    _rank,
+    agent_run,
+)
 from src.engine import Engine
 from src.models import Opportunity
 
@@ -89,9 +98,66 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
         return types.SimpleNamespace(final_output=out)
 
     monkeypatch.setattr("agents.Runner.run", fake_run)
+    monkeypatch.setattr("src.agent._ground_to_search_hits", lambda items, hits: items)
 
     run = asyncio.run(agent_run("find me work"))
 
     assert run.searches == ["remote ml contract", "ai grants"]
     assert [o.title for o in run.ranked] == ["Lush", "Cheap"]
     assert run.ranked[0].score() == 200.0
+
+
+def test_http_url_requires_scheme_and_host():
+    assert _http_url("https://jobs.example/a") is True
+    assert _http_url("http://jobs.example/a") is True
+    assert _http_url("u1") is False
+    assert _http_url("/relative") is False
+
+
+def test_ground_to_search_hits_drops_hallucinations_and_keeps_raw_url():
+    hits = [
+        {"title": "Raw A", "url": "https://jobs.example/a", "company": "CoA"},
+        {"title": "Raw B", "url": "https://jobs.example/b", "company": "CoB"},
+    ]
+    items = [
+        {"title": "Cheap", "url": "https://jobs.example/a", "pay": 100_000, "hours_per_week": 40},
+        {"title": "Lush", "url": "HTTPS://JOBS.EXAMPLE/B/", "pay": 200_000, "hours_per_week": 20},
+        {"title": "Hallucinated", "url": "https://evil.example/nope", "pay": 9_999_999, "hours_per_week": 1},
+        {"title": "No scheme", "url": "jobs.example/a", "pay": 50_000, "hours_per_week": 10},
+    ]
+    grounded = _ground_to_search_hits(items, hits)
+    assert [g["title"] for g in grounded] == ["Cheap", "Lush"]
+    assert grounded[1]["url"] == "https://jobs.example/b"
+
+
+def test_ground_to_search_hits_empty_hits_drops_all():
+    items = [{"title": "X", "url": "https://jobs.example/a", "pay": 100_000}]
+    assert _ground_to_search_hits(items, []) == []
+
+
+def test_rank_missing_hours_uses_refined_rate():
+    ranked = _rank([{"title": "Thin", "url": "https://jobs.example/a", "pay": 100_000}])
+    assert ranked[0].dollars_per_hour is None
+    assert ranked[0].refined_rate == 50.0
+    assert ranked[0].rate_is_imputed is True
+    assert ranked[0].score() == 50.0
+
+
+def test_from_scout_grounds_against_search_hits():
+    out = ScoutResult(
+        searches=["remote ml"],
+        opportunities=[
+            ScoutHit(title="Cheap", url="https://jobs.example/a", pay=100_000, hours_per_week=40),
+            ScoutHit(title="Fake", url="https://evil.example/x", pay=999_000, hours_per_week=1),
+            ScoutHit(title="Lush", url="HTTPS://JOBS.EXAMPLE/B/", pay=200_000, hours_per_week=20),
+        ],
+    )
+    hits = [
+        {"title": "Raw A", "url": "https://jobs.example/a"},
+        {"title": "Raw B", "url": "https://jobs.example/b"},
+    ]
+    run = _from_scout(out, ["fallback"], 20, hits)
+    assert run.searches == ["remote ml"]
+    assert [o.title for o in run.ranked] == ["Lush", "Cheap"]
+    assert run.ranked[0].url == "https://jobs.example/b"
+    assert all(o.url != "https://evil.example/x" for o in run.ranked)

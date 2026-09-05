@@ -203,25 +203,9 @@ Only return the JSON array, nothing else."""
         if not raw_results:
             return []
 
-        # If we have OpenAI, use it to extract structured data
         if self.openai:
             return await self._extract_with_llm(raw_results, query)
-
-        # Otherwise, create basic opportunities with conservative guesses
-        return [
-            Opportunity(
-                title=r.get("title", "Unknown"),
-                url=r.get("url", ""),
-                description=r.get("description", ""),
-                company=r.get("company"),
-                pay_high=r.get("pay") or _guess_pay(r.get("title", ""), r.get("description", "")),
-                hours_per_week=r.get("hours")
-                or _guess_hours(r.get("title", ""), r.get("description", "")),
-                remote=r.get("remote", _guess_remote(r.get("title", ""), r.get("description", ""))),
-                source=r.get("source", "")
-            )
-            for r in raw_results if r.get("url")
-        ]
+        return [o for r in raw_results if (o := _heuristic_opportunity(r))]
 
     async def _extract_with_llm(
         self,
@@ -260,15 +244,16 @@ Results:
 For each result, extract:
 - title
 - company (if mentioned)
-- url
+- url (must be copied exactly from the result above)
 - pay_low (annual USD estimate, null if unknown)
 - pay_high (annual USD estimate, null if unknown)
 - hours_per_week (estimate, null if unknown)
 - remote (true/false, assume true if not specified)
 
-Return JSON array. Be aggressive estimating pay/hours from context clues.
+Return a JSON object {{"opportunities": [...]}}.
+Be aggressive estimating pay/hours from context clues.
 If it looks like full-time, assume 40hrs. If senior role, estimate $150k+.
-Only return valid JSON array."""
+Only include urls that appear in the results."""
 
         try:
             response = await self.openai.chat.completions.create(
@@ -278,46 +263,19 @@ Only return valid JSON array."""
                 max_tokens=2000,
                 response_format={"type": "json_object"}
             )
-
-            content = response.choices[0].message.content
-
-            # Parse response
-            data = json.loads(content)
-            items = data if isinstance(data, list) else data.get("opportunities", data.get("results", []))
-
+            items = _items_from_llm(response.choices[0].message.content)
+            by_url = {_normalize_url(r["url"]): r for r in batch if r.get("url")}
             opportunities = []
             for item in items:
-                if not item.get("url"):
-                    continue
-
-                opp = Opportunity(
-                    title=item.get("title", "Unknown"),
-                    company=item.get("company"),
-                    url=item.get("url"),
-                    description=item.get("description", ""),
-                    pay_low=item.get("pay_low"),
-                    pay_high=item.get("pay_high"),
-                    hours_per_week=item.get("hours_per_week"),
-                    remote=item.get("remote", True),
-                    source="extracted"
-                )
-                opp.efficiency = opp.dollars_per_hour
-                opportunities.append(opp)
-
-            return opportunities
-
+                raw = by_url.get(_normalize_url(item.get("url") or ""))
+                if raw:
+                    opportunities.append(_merge_extracted(raw, item))
+            if opportunities:
+                return opportunities
         except Exception as e:
             print(f"LLM extraction error: {e}")
-            # Fallback to basic extraction
-            return [
-                Opportunity(
-                    title=r.get("title", "Unknown"),
-                    url=r.get("url", ""),
-                    description=r.get("description", ""),
-                    source=r.get("source", "")
-                )
-                for r in batch if r.get("url")
-            ]
+
+        return [o for r in batch if (o := _heuristic_opportunity(r))]
 
     async def research(self, opportunity: Opportunity) -> str:
         """Deep dive on a specific opportunity."""
@@ -356,6 +314,77 @@ Be direct. No fluff."""
                 return resp.json()["choices"][0]["message"]["content"]
             except Exception as e:
                 return f"Research failed: {e}"
+
+
+def _normalize_url(url: str) -> str:
+    return url.strip().rstrip("/").casefold()
+
+
+def _items_from_llm(content: Optional[str]) -> list:
+    data = json.loads(content or "")
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        items = data.get("opportunities", data.get("results", []))
+        return items if isinstance(items, list) else []
+    return []
+
+
+def _heuristic_opportunity(raw: dict) -> Optional[Opportunity]:
+    url = raw.get("url")
+    if not url:
+        return None
+    title = raw.get("title") or "Unknown"
+    desc = raw.get("description") or ""
+    remote = raw.get("remote")
+    if remote is None:
+        remote = _guess_remote(title, desc)
+    opp = Opportunity(
+        title=title,
+        url=url,
+        description=desc,
+        company=raw.get("company"),
+        pay_high=raw.get("pay") or _guess_pay(title, desc),
+        hours_per_week=raw.get("hours"),
+        remote=remote,
+        source=raw.get("source") or "",
+    )
+    opp.efficiency = opp.refined_rate
+    return opp
+
+
+def _merge_extracted(raw: dict, item: dict) -> Opportunity:
+    title = item.get("title") or raw.get("title") or "Unknown"
+    desc = item.get("description") or raw.get("description") or ""
+    company = item.get("company") if item.get("company") is not None else raw.get("company")
+    pay_high = item.get("pay_high")
+    pay_low = item.get("pay_low")
+    guess_title = raw.get("title") or title
+    guess_desc = raw.get("description") or desc
+    if pay_high is None and pay_low is None:
+        pay_high = raw.get("pay") or _guess_pay(guess_title, guess_desc)
+    hours = item.get("hours_per_week")
+    if hours is None:
+        hours = raw.get("hours")
+    if item.get("remote") is not None:
+        remote = bool(item["remote"])
+    elif "remote" in raw:
+        remote = bool(raw["remote"])
+    else:
+        remote = _guess_remote(title, desc)
+    opp = Opportunity(
+        title=title,
+        company=company,
+        url=raw["url"],
+        description=desc,
+        pay_low=pay_low,
+        pay_high=pay_high,
+        hours_per_week=hours,
+        remote=remote,
+        source=raw.get("source") or "extracted",
+    )
+    opp.efficiency = opp.refined_rate
+    return opp
 
 
 def _parse_ddg_html(html: str) -> list[dict]:
