@@ -2374,6 +2374,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 AD&D offset $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 AD&D recoupment $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 AD&D recovery $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 AD&D insurance recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 AD&D recoupment") == (None, None)
     assert _parse_pay("base $180,000 volunteer grant clawback $15,000") == (
         None,
         180_000,
@@ -7379,6 +7386,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         addmix, "<p>Base $180,000 AD&D insurance $15,000</p>"
     ) is True
     assert addmix.pay_high == 180_000
+    addrec = Opportunity(title="Engineer", url="https://jobs.example/addrec")
+    assert _apply_listing(
+        addrec, "<p>Base $180,000 AD&D recoupment $15,000</p>"
+    ) is True
+    assert addrec.pay_high == 180_000
     refmix = Opportunity(title="Engineer", url="https://jobs.example/refmix")
     assert _apply_listing(
         refmix, "<p>Base $180,000 referral award $15,000</p>"
