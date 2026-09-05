@@ -2049,7 +2049,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Overtime paid at $80/hr") == (None, None)
     assert _parse_pay("$25/hr on-call") == (None, None)
     assert _parse_pay("$5/hr shift differential") == (None, None)
+    assert _parse_pay("$80/hr double time") == (None, None)
+    assert _parse_pay("$80/hr double-time") == (None, None)
+    assert _parse_pay("$80/hr time and a half") == (None, None)
+    assert _parse_pay("$80/hr time-and-a-half") == (None, None)
+    assert _parse_pay("$80/hr time and one half") == (None, None)
+    assert _parse_pay("$80/hr comp time") == (None, None)
+    assert _parse_pay("Double time at $80/hr") == (None, None)
+    assert _parse_pay("Time and a half of $80/hr") == (None, None)
+    assert _parse_pay("comp time $80/hr") == (None, None)
     assert _parse_pay("Salary $180,000. Overtime at $80/hr") == (None, 180_000)
+    assert _parse_pay("Salary $180,000. Double time at $80/hr") == (None, 180_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
 
 
