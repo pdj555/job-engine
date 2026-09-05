@@ -6649,8 +6649,8 @@ _FTE_RE = re.compile(
     re.I,
 )
 _FTE_FRAC_RE = re.compile(
-    r"(?<![\d.])(\d)/(\d)(?:[-\s]time)?\s*fte\b"
-    r"|\bfte\s*[:=\-–—]?\s*(\d)/(\d)(?:[-\s]time)?\b"
+    r"(?<![\d.])(\d{1,2})/(\d{1,2})(?:[-\s]time)?\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(\d{1,2})/(\d{1,2})(?:[-\s]time)?\b"
     r"|(?<![\d.])\b(half)(?:[-\s]time)?\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(half)\b"
     r"|(?<![\d.])\b(three[-\s]quarter)[-\s]time\s*fte\b"
