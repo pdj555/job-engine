@@ -2217,6 +2217,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 403b contribution") == (None, None)
     assert _parse_pay("base $180,000 403b $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 457b $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 SEP IRA in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 SEP IRA") == (None, None)
+    assert _parse_pay("$15,000 SIMPLE IRA") == (None, None)
+    assert _parse_pay("$15,000 Roth IRA") == (None, None)
+    assert _parse_pay("$15,000 Roth 401k") == (None, None)
+    assert _parse_pay("$15,000 Roth 401(k)") == (None, None)
+    assert _parse_pay("$15,000 QACA") == (None, None)
+    assert _parse_pay("$15,000 safe harbor match") == (None, None)
+    assert _parse_pay("SEP IRA $15,000") == (None, None)
+    assert _parse_pay("base $180,000 SEP IRA $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 Roth 401k $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 monthly internet stipend") == (None, None)
     assert _parse_pay("$10,000 cell phone allowance") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 cell phone stipend") == (
@@ -7461,6 +7472,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     b403 = Opportunity(title="Engineer", url="https://jobs.example/403bonly")
     assert _apply_listing(b403, "<p>$15,000 403b. Apply now.</p>") is False
     assert b403.pay_high is None
+    sepira = Opportunity(title="Engineer", url="https://jobs.example/sepironly")
+    assert _apply_listing(sepira, "<p>$15,000 SEP IRA. Apply now.</p>") is False
+    assert sepira.pay_high is None
+    rothira = Opportunity(title="Engineer", url="https://jobs.example/rothiraonly")
+    assert _apply_listing(rothira, "<p>$15,000 Roth IRA. Apply now.</p>") is False
+    assert rothira.pay_high is None
     b457 = Opportunity(title="Engineer", url="https://jobs.example/457bonly")
     assert _apply_listing(b457, "<p>$15,000 457b. Apply now.</p>") is False
     assert b457.pay_high is None
