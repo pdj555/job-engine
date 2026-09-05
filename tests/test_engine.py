@@ -9780,6 +9780,9 @@ def test_apply_listing_stated_hours_beat_part_time_default():
         "Engineer", "work from home. hybrid 3 days in NYC"
     ) is True
     assert _guess_remote(
+        "Engineer", "work from home. hybrid NYC 3 days"
+    ) is True
+    assert _guess_remote(
         "Engineer", "work from home. 3 days office per week"
     ) is True
     assert _guess_remote("Engineer", "in-person interviews 3 days a week") is True
@@ -19361,6 +19364,23 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>After this posting is no longer being accepted, apply elsewhere.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer being evaluated.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer being assessed.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is no longer being evaluated.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting is no longer being evaluated, apply elsewhere.</p>"
         "<p>$180,000</p>"
     ) is False
     assert _html_is_gone(
