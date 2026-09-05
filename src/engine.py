@@ -6463,7 +6463,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _ANY_PERIOD + r")?"
-    r"\s+(?:OTE\b(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])|on[- ]target\s+earnings\b(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])|commission\b|TC\b|total\s+comp(?:ensation)?\b|incentive\s+compensation\b|variable\s+(?:pay|compensation)\b|deferred\s+compensation\b|(?:long|short)[-\s]term\s+incentive\b|(?:target|sales|cash|annual|performance)\s+incentive\b)"
+    r"\s+(?:(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?|incentive\s+compensation|variable\s+(?:pay|compensation)|deferred\s+compensation|(?:long|short)[-\s]term\s+incentive|(?:target|sales|cash|annual|performance)\s+incentive)\b(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,]))"
     r"|"
     r"\b(?:OTE|on[- ]target\s+earnings|commission|TC|total\s+comp(?:ensation)?|incentive\s+compensation|variable\s+(?:pay|compensation)|deferred\s+compensation|(?:long|short)[-\s]term\s+incentive|(?:target|sales|cash|annual|performance)\s+incentive)\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"

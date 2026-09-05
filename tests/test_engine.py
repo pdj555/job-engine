@@ -2203,6 +2203,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$200k TC") == (None, None)
     assert _parse_pay("TC: $200,000") == (None, None)
     assert _parse_pay("Base $180,000. TC $250,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 TC $250,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 total compensation $250,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commission $40,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 variable pay $40,000") == (None, 180_000)
     assert _parse_pay("$10,000 401(k) match") == (None, None)
     assert _parse_pay("$12,000 employer 401k match") == (None, None)
     assert _parse_pay("401(k) match of $10,000") == (None, None)
@@ -6995,6 +6999,9 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     tcmix = Opportunity(title="Engineer", url="https://jobs.example/tcmix")
     assert _apply_listing(tcmix, "<p>Base $180,000. TC $250,000</p>") is True
     assert tcmix.pay_high == 180_000
+    base_tc = Opportunity(title="Engineer", url="https://jobs.example/basetc")
+    assert _apply_listing(base_tc, "<p>Base $180,000 TC $250,000</p>") is True
+    assert base_tc.pay_high == 180_000
     kmatch = Opportunity(title="Engineer", url="https://jobs.example/401k")
     assert _apply_listing(kmatch, "<p>$10,000 401(k) match. Apply now.</p>") is False
     assert kmatch.pay_high is None
