@@ -12400,6 +12400,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must arrive at the off-site") is True
     assert _guess_remote("Engineer", "must arrive at the field of") is True
     assert _guess_remote("Engineer", "work from home. must arrive at the office") is True
+    assert _guess_remote("Engineer", "must land at the office") is False
+    assert _guess_remote("Engineer", "must land onto the office") is False
+    assert _guess_remote("Engineer", "must land at the site") is False
+    assert _guess_remote("Engineer", "must land at interviews") is True
+    assert _guess_remote("Engineer", "must land at Seattle") is True
+    assert _guess_remote("Engineer", "must land in NYC") is True
+    assert _guess_remote("Engineer", "must land at the home office") is True
+    assert _guess_remote("Engineer", "must land at the off-site") is True
+    assert _guess_remote("Engineer", "must land at the field of") is True
+    assert _guess_remote("Engineer", "work from home. must land at the office") is True
     assert _guess_remote("Engineer", "work from home. must drive onto the office") is True
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
@@ -13551,6 +13561,22 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert arrive_interviews.remote is True
     assert arrive_interviews.pay_high == 180_000
+    land_at_office = Opportunity(
+        title="Engineer", url="https://jobs.example/landatoffice"
+    )
+    assert _apply_listing(
+        land_at_office, "<p>must land at the office. Salary $180,000</p>"
+    ) is True
+    assert land_at_office.remote is False
+    assert land_at_office.pay_high == 180_000
+    land_interviews = Opportunity(
+        title="Engineer", url="https://jobs.example/landinterviews"
+    )
+    assert _apply_listing(
+        land_interviews, "<p>must land at interviews. Salary $180,000</p>"
+    ) is True
+    assert land_interviews.remote is True
+    assert land_interviews.pay_high == 180_000
     days_onto_site = Opportunity(title="Engineer", url="https://jobs.example/daysontosite")
     assert _apply_listing(
         days_onto_site, "<p>3 days onto the site. Salary $180,000</p>"
