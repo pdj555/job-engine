@@ -6568,7 +6568,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _ANY_PERIOD + r")?"
-    r"\s+identity\s+theft(?:\s+protection)?\b(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
+    r"\s+identity\s+theft(?:\s+protection)?+\b(?!\s*(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
     r"|"
     r"\bidentity\s+theft(?:\s+protection)?\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
