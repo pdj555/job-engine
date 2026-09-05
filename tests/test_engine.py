@@ -405,7 +405,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("headphones $15,000") == (None, None)
     assert _parse_pay("$15,000 headphones. Salary $180,000") == (None, 180_000)
     assert _parse_pay("headphones $15,000. Salary $180,000") == (None, 180_000)
-    from src.engine import _apply_listing, _listing_plain_text
+    from src.engine import _apply_listing, _listing_plain_text, _visible_text
     smashed = (
         "<title>Engineer</title>"
         "<p>headphones $15,000. Salary $180,000 a year</p>"
@@ -426,6 +426,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _apply_listing(spanned_opp, spanned) is True
     assert spanned_opp.pay_high == 180_000
+    assert _visible_text("$180,000<b>NYC</b>") == "$180,000 NYC"
+    assert _parse_pay(_visible_text("$180,000<b>NYC</b>")) == (None, 180_000)
+    assert _visible_text("$180<b>k</b>") == "$180k"
+    assert _parse_pay(_visible_text("$180<b>k</b>")) == (None, 180_000)
+    nyc_opp = Opportunity(
+        title="Engineer", company="Acme", url="https://example.com/job/nyc"
+    )
+    assert _apply_listing(nyc_opp, "<title>Engineer</title><p>$180,000<b>NYC</b></p>") is True
+    assert nyc_opp.pay_high == 180_000
     assert _parse_pay("$15,000 earbuds") == (None, None)
     assert _parse_pay("earbuds $15,000") == (None, None)
     assert _parse_pay("$15,000 earphones") == (None, None)

@@ -4083,6 +4083,7 @@ _BLOCK_CLOSE_RE = re.compile(
 def _visible_text(html: str) -> str:
     text = _BLOCK_CLOSE_RE.sub(". ", html)
     text = re.sub(r"(?<=[A-Za-z])(?:<[^>]+>)+(?=[A-Za-z])", " ", text)
+    text = re.sub(r"(?<=\d)(?:<[^>]+>)+(?=[A-Za-z]{2,})", " ", text)
     return unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text))).strip()
 
 
