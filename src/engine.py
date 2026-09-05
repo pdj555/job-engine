@@ -6638,6 +6638,16 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _HOUR_TAIL + r")"
+    r"|"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:" + _HOUR_TAIL + r")"
+    r"\s+cost[-\s]of[-\s]living(?:\s+adjustment)?\b"
+    r"|"
+    r"\bcost[-\s]of[-\s]living(?:\s+adjustment)?\s*(?:at|of|:)?\s*"
+    r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
+    r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
+    r"(?:" + _HOUR_TAIL + r")"
     r")"
 )
 _HOURS_RE = re.compile(
