@@ -2142,6 +2142,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$80/hr portal-to-portal") == (None, None)
     assert _parse_pay("portal to portal $80/hr") == (None, None)
     assert _parse_pay("Salary $180,000. Portal to portal at $80/hr") == (None, 180_000)
+    assert _parse_pay("$80/hr wait time") == (None, None)
+    assert _parse_pay("$80/hr waiting time") == (None, None)
+    assert _parse_pay("$80/hr drive time") == (None, None)
+    assert _parse_pay("$80/hr driving time") == (None, None)
+    assert _parse_pay("wait time $80/hr") == (None, None)
+    assert _parse_pay("drive time $80/hr") == (None, None)
+    assert _parse_pay("Salary $180,000. Wait time at $80/hr") == (None, 180_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
 
 
