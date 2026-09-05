@@ -10043,6 +10043,16 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "come to the office") is False
     assert _guess_remote("Engineer", "come to our NYC office") is False
     assert _guess_remote("Engineer", "come into our Seattle office") is False
+    assert _guess_remote("Engineer", "welcome to the office") is True
+    assert _guess_remote("Engineer", "welcome into the office") is True
+    assert _guess_remote("Engineer", "welcome to our NYC office") is True
+    assert _guess_remote("Engineer", "become to the office") is True
+    assert _guess_remote("Engineer", "income to the office") is True
+    assert _guess_remote("Engineer", "network from the office") is True
+    assert _guess_remote("Engineer", "homework from the office") is True
+    assert _guess_remote("Engineer", "framework from the office") is True
+    assert _guess_remote("Engineer", "teamwork from the office") is True
+    assert _guess_remote("Engineer", "work from the office") is False
     assert _guess_remote("Engineer", "come to the office hours on Friday") is True
     assert _guess_remote("Engineer", "work from home. come to the office") is True
     assert _guess_remote("Engineer", "you will be based in our San Francisco office") is False
@@ -10600,6 +10610,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert come.remote is False
     assert come.pay_high == 180_000
     assert come.score() == 0.7 * (180_000 / (40 * 50))
+    welcome_off = Opportunity(title="Engineer", url="https://jobs.example/welcome-off")
+    assert _apply_listing(
+        welcome_off, "<p>Welcome to our NYC office. Salary $180,000</p>"
+    ) is True
+    assert welcome_off.remote is True
+    assert welcome_off.pay_high == 180_000
     ofirst = Opportunity(title="Engineer", url="https://jobs.example/ofirst")
     assert _apply_listing(
         ofirst, "<p>This is an office-first role. Salary $180,000</p>"
