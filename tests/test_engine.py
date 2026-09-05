@@ -2495,6 +2495,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("indemnity insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 indemnity insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 indemnity") == (None, 15_000)
+    assert _parse_pay("$15,000 accident indemnity") == (None, None)
+    assert _parse_pay("$15,000 accident indemnity insurance") == (None, None)
+    assert _parse_pay("accident indemnity of $15,000") == (None, None)
+    assert _parse_pay("$15,000 accident indemnity. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 accident indemnity insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 accident") == (None, 15_000)
     assert _parse_pay("$15,000 auto insurance") == (None, None)
     assert _parse_pay("$15,000 car insurance") == (None, None)
     assert _parse_pay("$15,000 renters insurance") == (None, None)
@@ -8074,6 +8083,16 @@ def test_guess_pay_annualizes_hourly():
         indeminsmix, "<p>$15,000 indemnity insurance. Salary $180,000</p>"
     ) is True
     assert indeminsmix.pay_high == 180_000
+    accindemonly = Opportunity(title="Engineer", url="https://jobs.example/accindemonly")
+    assert _apply_listing(
+        accindemonly, "<p>$15,000 accident indemnity. Apply now.</p>"
+    ) is False
+    assert accindemonly.pay_high is None
+    accindemmix = Opportunity(title="Engineer", url="https://jobs.example/accindemmix")
+    assert _apply_listing(
+        accindemmix, "<p>$15,000 accident indemnity. Salary $180,000</p>"
+    ) is True
+    assert accindemmix.pay_high == 180_000
     autoinsonly = Opportunity(title="Engineer", url="https://jobs.example/autoinsonly")
     assert _apply_listing(
         autoinsonly, "<p>$15,000 auto insurance. Apply now.</p>"
