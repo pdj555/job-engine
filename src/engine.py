@@ -6716,6 +6716,14 @@ _DAILY_HOURS_RE = re.compile(
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+daily\b",
     re.I,
 )
+_DAYS_X_HOURS_RE = re.compile(
+    r"(?i)(?<![\d.])\b(two|three|four|five|[2-5])\s+(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
+    r"(?!\s+(?:a|per|each|every)\s+months?)"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?<![\d.])\b(two|three|four|five|[2-5])\s+days?\s+(?:at|of)\s+(\d{1,2}(?:\.\d+)?)\s+hours?\b"
+    r"(?!\s+(?:a|per|each|every)\s+months?)"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
+)
 _TWICE_WEEKLY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+"
     r"(?:twice|two\s+times|2\s+times|2\s*[x×]|[x×]\s*2)(?:\s+weekly|(?:\s+(?:a|per|each|every|/)\s+|\s*/\s*)weeks?)\b"
@@ -7295,7 +7303,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–10 times a week, or N hours/day, workday, business, scheduled, billable, duty, or service day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–10 times a week, N hours/day × 5, or 2–5 days at N hours."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7381,6 +7389,18 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
             n = int(round(float(raw) * 5))
             if 1 <= n <= 80:
                 return n
+    days_x = _DAYS_X_HOURS_RE.search(blob)
+    if days_x:
+        count, per, count_after, per_after = days_x.groups()
+        raw_count = count or count_after
+        raw_per = per or per_after
+        days = {
+            "two": 2, "three": 3, "four": 4, "five": 5,
+            "2": 2, "3": 3, "4": 4, "5": 5,
+        }[raw_count.lower()]
+        n = int(round(float(raw_per) * days))
+        if 1 <= n <= 80:
+            return n
     return _stated_fte_hours(blob)
 
 
