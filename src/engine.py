@@ -7691,6 +7691,8 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|hybrid\s+in\s+"
     r"(?!(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?|standups?|calls?)\b)"
     r"(?:\S+\s+){0,3}(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\b"
+    r"|(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?(?:\s+(?:a|per)\s+week)?\s+hybrid\s+in\b"
+    r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?|standups?|calls?)\b)"
     r"|(?:(?:this|the|a)\s+)?(?:role|position|job)\s+requires\s+"
     r"(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\s+in\s+"
     r"(?!(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?|standups?)\b)"
