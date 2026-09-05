@@ -6675,6 +6675,8 @@ _FTE_FRAC_RE = re.compile(
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?eleventh)[-\s]time\b"
     r"|(?<![\d.])\b((?:one[-\s])?twelfth)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?twelfth)[-\s]time\b"
+    r"|(?<![\d.])\b((?:one[-\s])?thirteenth)[-\s]time\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?thirteenth)[-\s]time\b"
     r"|(?<![\d.])(?<!three-)(?<!three )\b(quarter)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(?<!three-)(?<!three )(quarter)[-\s]time\b",
     re.I,
@@ -7003,6 +7005,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             eleventh_after,
             twelfth,
             twelfth_after,
+            thirteenth,
+            thirteenth_after,
             quarter,
             quarter_after,
         ) = frac.groups()
@@ -7027,6 +7031,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
         elif eleventh or eleventh_after:
             hours = 4
         elif twelfth or twelfth_after:
+            hours = 3
+        elif thirteenth or thirteenth_after:
             hours = 3
         elif quarter or quarter_after:
             hours = 10
