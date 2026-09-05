@@ -6722,6 +6722,12 @@ _DAYS_X_HOURS_RE = re.compile(
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?<![\d.])\b(two|three|four|five|[2-5])\s+days?\s+(?:at|of)\s+(\d{1,2}(?:\.\d+)?)\s+hours?\b"
     r"(?!\s+(?:a|per|each|every)\s+months?)"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?<![\d.])\b(two|three|four|five|[2-5])\s*[x×]\s*(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
+    r"(?!\s+(?:a|per|each|every)\s+months?)"
+    r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*[x×]\s*(two|three|four|five|[2-5])\s+(?:days?|shifts?)\b"
+    r"(?!\s+(?:a|per|each|every)\s+months?)"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
 )
 _TWICE_WEEKLY_HOURS_RE = re.compile(
@@ -7391,9 +7397,11 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
                 return n
     days_x = _DAYS_X_HOURS_RE.search(blob)
     if days_x:
-        count, per, count_after, per_after = days_x.groups()
-        raw_count = count or count_after
-        raw_per = per or per_after
+        count, per, count_after, per_after, count_x, per_x, per_xh, count_xd = (
+            days_x.groups()
+        )
+        raw_count = count or count_after or count_x or count_xd
+        raw_per = per or per_after or per_x or per_xh
         days = {
             "two": 2, "three": 3, "four": 4, "five": 5,
             "2": 2, "3": 3, "4": 4, "5": 5,
