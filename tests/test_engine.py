@@ -2358,6 +2358,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("$15,000 HSA recoupment") == (None, None)
     assert _parse_pay("base $180,000 pension offset $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pension recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 pension contribution recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 pension recoupment") == (None, None)
     assert _parse_pay("base $180,000 wellness clawback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 tuition offset $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bonus recoupment $15,000") == (None, 180_000)
@@ -7358,6 +7367,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         pension, "<p>Base $180,000 pension contribution $15,000</p>"
     ) is True
     assert pension.pay_high == 180_000
+    penrec = Opportunity(title="Engineer", url="https://jobs.example/penrec")
+    assert _apply_listing(
+        penrec, "<p>Base $180,000 pension recoupment $15,000</p>"
+    ) is True
+    assert penrec.pay_high == 180_000
     loan = Opportunity(title="Engineer", url="https://jobs.example/loanmix")
     assert _apply_listing(
         loan, "<p>Base $180,000 student loan repayment $15,000</p>"
