@@ -10941,6 +10941,22 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must come in to work") is True
     assert _guess_remote("Engineer", "must come in to meetings") is True
     assert _guess_remote("Engineer", "work from home. must come in to the office") is True
+    assert _guess_remote("Engineer", "must come in to HQ") is False
+    assert _guess_remote("Engineer", "must come into HQ") is False
+    assert _guess_remote("Engineer", "must come to HQ") is False
+    assert _guess_remote("Engineer", "must come in to campus") is False
+    assert _guess_remote("Engineer", "must come in to the campus") is False
+    assert _guess_remote("Engineer", "must come in to the hub") is False
+    assert _guess_remote("Engineer", "must come in to headquarters") is False
+    assert _guess_remote("Engineer", "must come in to the lab") is False
+    assert _guess_remote("Engineer", "must come to the hub") is False
+    assert _guess_remote("Engineer", "must come into the hub") is False
+    assert _guess_remote("Engineer", "must come in to the home hub") is True
+    assert _guess_remote("Engineer", "must come in to home HQ") is True
+    assert _guess_remote("Engineer", "must come in to the home office") is True
+    assert _guess_remote("Engineer", "must come in to HQ hours") is True
+    assert _guess_remote("Engineer", "must come in to NYC") is True
+    assert _guess_remote("Engineer", "work from home. must come in to HQ") is True
     assert _guess_remote("Engineer", "come to our NYC office") is False
     assert _guess_remote("Engineer", "come into our Seattle office") is False
     assert _guess_remote("Engineer", "welcome to the office") is True
@@ -11979,6 +11995,24 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert come_in_to.remote is False
     assert come_in_to.pay_high == 180_000
+    come_hq = Opportunity(
+        title="Engineer", url="https://jobs.example/comehq"
+    )
+    assert _apply_listing(
+        come_hq,
+        "<p>Must come in to HQ. Salary $180,000</p>",
+    ) is True
+    assert come_hq.remote is False
+    assert come_hq.pay_high == 180_000
+    come_hub = Opportunity(
+        title="Engineer", url="https://jobs.example/comehub"
+    )
+    assert _apply_listing(
+        come_hub,
+        "<p>Must come in to the hub. Salary $180,000</p>",
+    ) is True
+    assert come_hub.remote is False
+    assert come_hub.pay_high == 180_000
     expected_days = Opportunity(
         title="Engineer", url="https://jobs.example/expecteddays"
     )
