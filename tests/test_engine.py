@@ -2791,6 +2791,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$80/hr") == (None, 160_000)
     assert _parse_pay("$180,000 COLA in NYC") == (None, 180_000)
     assert _parse_pay("COLA $180,000 a year") == (None, 180_000)
+    assert _parse_pay("$15,000 COLA") == (None, None)
+    assert _parse_pay("$15,000 COLA clawback") == (None, None)
+    assert _parse_pay("base $180,000 COLA clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cost of living") == (None, None)
+    assert _parse_pay("base $180,000 cost of living clawback $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$80/hr cost of living") == (None, None)
     assert _parse_pay("$80/hr cost-of-living") == (None, None)
     assert _parse_pay("$80/hr cost-of-living adjustment") == (None, None)
@@ -7525,6 +7533,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         moclaw, "<p>Base $180,000 monthly clawback $15,000</p>"
     ) is True
     assert moclaw.pay_high == 180_000
+    colaclaw = Opportunity(title="Engineer", url="https://jobs.example/colaclaw")
+    assert _apply_listing(
+        colaclaw, "<p>Base $180,000 COLA clawback $15,000</p>"
+    ) is True
+    assert colaclaw.pay_high == 180_000
+    colaonly = Opportunity(title="Engineer", url="https://jobs.example/colaonly")
+    assert _apply_listing(colaonly, "<p>$15,000 COLA. Apply now.</p>") is False
+    assert colaonly.pay_high is None
     clawmix = Opportunity(title="Engineer", url="https://jobs.example/clawmix")
     assert _apply_listing(
         clawmix, "<p>Base $180,000 bonus clawback $15,000</p>"
