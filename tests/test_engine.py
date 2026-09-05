@@ -268,6 +268,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("fare card of $15,000") == (None, None)
     assert _parse_pay("$15,000 Hop Fastpass") == (None, None)
     assert _parse_pay("Hop Fastpass of $15,000") == (None, None)
+    assert _parse_pay("$15,000 gas card") == (None, None)
+    assert _parse_pay("gas card of $15,000") == (None, None)
+    assert _parse_pay("$15,000 fleet card") == (None, None)
+    assert _parse_pay("$15,000 fuel card") == (None, None)
+    assert _parse_pay("$15,000 WEX card") == (None, None)
+    assert _parse_pay("$15,000 Voyager card") == (None, None)
     assert _parse_pay("$180,000 ORCA card in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 ORCA card $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 ORCA card. Salary $180,000") == (None, 180_000)
@@ -275,7 +281,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 EZ-Pass. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 fare card. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Hop Fastpass. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 gas card. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 fleet card. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 fare") == (None, 15_000)
+    assert _parse_pay("$15,000 gas") == (None, 15_000)
+    assert _parse_pay("$15,000 fleet") == (None, 15_000)
+    assert _parse_pay("$15,000 WEX") == (None, 15_000)
     assert _parse_pay("$15,000 Hop") == (None, 15_000)
     assert _parse_pay("$15,000 Fastpass") == (None, 15_000)
     assert _parse_pay("$15,000 ORCA") == (None, 15_000)
@@ -7480,6 +7491,14 @@ def test_guess_pay_annualizes_hourly():
         faremix, "<p>$15,000 fare card. Salary $180,000</p>"
     ) is True
     assert faremix.pay_high == 180_000
+    gascard = Opportunity(title="Engineer", url="https://jobs.example/gascard")
+    assert _apply_listing(gascard, "<p>$15,000 gas card. Apply now.</p>") is False
+    assert gascard.pay_high is None
+    gasmix = Opportunity(title="Engineer", url="https://jobs.example/gasmix")
+    assert _apply_listing(
+        gasmix, "<p>$15,000 gas card. Salary $180,000</p>"
+    ) is True
+    assert gasmix.pay_high == 180_000
     gym_mem = Opportunity(title="Engineer", url="https://jobs.example/gym-mem")
     assert _apply_listing(
         gym_mem, "<p>$10,000 gym membership. Great team.</p>"
