@@ -2009,6 +2009,22 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 DCAP $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 Keogh $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 VEBA. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 COBRA") == (None, None)
+    assert _parse_pay("COBRA $15,000") == (None, None)
+    assert _parse_pay("$180,000 COBRA in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 COBRA $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 COBRA. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 section 125") == (None, None)
+    assert _parse_pay("$15,000 section 125 plan") == (None, None)
+    assert _parse_pay("$15,000 Sec 125") == (None, None)
+    assert _parse_pay("$15,000 Sec. 125") == (None, None)
+    assert _parse_pay("$15,000 IRC 125") == (None, None)
+    assert _parse_pay("section 125 $15,000") == (None, None)
+    assert _parse_pay("section 125 plan of $15,000") == (None, None)
+    assert _parse_pay("$180,000 section 125 in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 section 125 $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 section 125. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 cafeteria") == (None, 15_000)
     assert _parse_pay("OOP $15,000") == (None, None)
     assert _parse_pay("$180,000 OOP in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 HCFSA $15,000") == (None, 180_000)
@@ -7275,6 +7291,12 @@ def test_guess_pay_annualizes_hourly():
     cobra = Opportunity(title="Engineer", url="https://jobs.example/cobra")
     assert _apply_listing(cobra, "<p>$10,000 COBRA subsidy. Great team.</p>") is False
     assert cobra.pay_high is None
+    cobraonly = Opportunity(title="Engineer", url="https://jobs.example/cobraonly")
+    assert _apply_listing(cobraonly, "<p>$15,000 COBRA. Apply now.</p>") is False
+    assert cobraonly.pay_high is None
+    sec125 = Opportunity(title="Engineer", url="https://jobs.example/sec125")
+    assert _apply_listing(sec125, "<p>$15,000 section 125. Apply now.</p>") is False
+    assert sec125.pay_high is None
     lti = Opportunity(title="Engineer", url="https://jobs.example/lti")
     assert _apply_listing(lti, "<p>$10,000 long-term incentive. Apply now.</p>") is False
     assert lti.pay_high is None
