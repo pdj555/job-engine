@@ -2568,6 +2568,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 tornado insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cyclone insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 typhoon insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 hail insurance") == (None, None)
+    assert _parse_pay("$15,000 wildfire insurance") == (None, None)
+    assert _parse_pay("hail insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 hail insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 wildfire insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 commuter insurance") == (None, None)
     assert _parse_pay("$15,000 transit insurance") == (None, None)
     assert _parse_pay("commuter insurance of $15,000") == (None, None)
@@ -2589,6 +2594,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 tornado") == (None, 15_000)
     assert _parse_pay("$15,000 cyclone") == (None, 15_000)
     assert _parse_pay("$15,000 typhoon") == (None, 15_000)
+    assert _parse_pay("$15,000 hail") == (None, 15_000)
+    assert _parse_pay("$15,000 wildfire") == (None, 15_000)
     assert _parse_pay("$15,000 boat") == (None, 15_000)
     assert _parse_pay("$15,000 long-term care") == (None, None)
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
@@ -8199,6 +8206,16 @@ def test_guess_pay_annualizes_hourly():
         cyclinsonly, "<p>$15,000 cyclone insurance. Apply now.</p>"
     ) is False
     assert cyclinsonly.pay_high is None
+    hailinsonly = Opportunity(title="Engineer", url="https://jobs.example/hailinsonly")
+    assert _apply_listing(
+        hailinsonly, "<p>$15,000 hail insurance. Apply now.</p>"
+    ) is False
+    assert hailinsonly.pay_high is None
+    hailinsmix = Opportunity(title="Engineer", url="https://jobs.example/hailinsmix")
+    assert _apply_listing(
+        hailinsmix, "<p>$15,000 hail insurance. Salary $180,000</p>"
+    ) is True
+    assert hailinsmix.pay_high == 180_000
     umbrellainsonly = Opportunity(
         title="Engineer", url="https://jobs.example/umbrellainsonly"
     )
