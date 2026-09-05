@@ -17760,6 +17760,42 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We've dismantled this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has been dismantled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is dismantled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've demolished this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has been demolished.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is demolished.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've dismantled this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this role has been dismantled.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is dismantled with extra headcount.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We smashed our goals.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
