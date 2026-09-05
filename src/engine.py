@@ -7789,7 +7789,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?|standups?|calls?|cloud|home)\b)"
     r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
     r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\b"
-    r"|(?<!not )required\s+to\s+be\s+in\b"
+    r"|(?<!not )(?:required|expected|expect|need(?:s|ed)?)\s+to\s+be\s+in\b"
     r"(?!\s+(?:the\s+)?(?:us|usa|united\s+states|uk|united\s+kingdom|europe|eu|emea|apac|anywhere|worldwide|globally|remote|meetings?|standups?|calls?|cloud|home)\b)"
     r"(?:\s+(?!two\b|three\b|four\b|five\b|\d+\b)\S+){0,4}"
     r"\s+(?:two|three|four|five|\d+(?:\s*[-–]\s*\d+)?)\s+days?\b"

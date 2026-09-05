@@ -9796,6 +9796,21 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be in New York 3 days") is False
     assert _guess_remote("Engineer", "required to be in NYC 3 days a week") is False
     assert _guess_remote("Engineer", "required to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "expected to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "expected to be in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "expect to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "need to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "needs to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "needed to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "you will need to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "you are expected to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "expected to be in the US 3 days") is True
+    assert _guess_remote("Engineer", "expected to be in meetings 3 days") is True
+    assert _guess_remote("Engineer", "expected to be in NYC") is True
+    assert _guess_remote("Engineer", "need to be in NYC") is True
+    assert _guess_remote("Engineer", "not expected to be in NYC 3 days") is True
+    assert _guess_remote("Engineer", "work from home. expected to be in NYC 3 days") is True
+    assert _guess_remote("Engineer", "you will be in NYC 3 days") is True
     assert _guess_remote("Engineer", "this role is in NYC 3 days a week") is False
     assert _guess_remote("Engineer", "this role is in NYC 3 days") is False
     assert _guess_remote("Engineer", "this position is in NYC 3 days") is False
@@ -10296,6 +10311,22 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert must_work_days.remote is False
     assert must_work_days.pay_high == 180_000
+    expected_days = Opportunity(
+        title="Engineer", url="https://jobs.example/expecteddays"
+    )
+    assert _apply_listing(
+        expected_days,
+        "<p>Expected to be in NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert expected_days.remote is False
+    assert expected_days.pay_high == 180_000
+    need_days = Opportunity(title="Engineer", url="https://jobs.example/needdays")
+    assert _apply_listing(
+        need_days,
+        "<p>Need to be in Seattle 3 days. Salary $180,000</p>",
+    ) is True
+    assert need_days.remote is False
+    assert need_days.pay_high == 180_000
     located = Opportunity(title="Engineer", url="https://jobs.example/located")
     assert _apply_listing(
         located, "<p>You must be located in New York. Salary $180,000</p>"
