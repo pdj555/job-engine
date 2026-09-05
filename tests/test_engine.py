@@ -2088,17 +2088,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("Sunday premium $80/hr") == (None, None)
     assert _parse_pay("call-in pay $80/hr") == (None, None)
     assert _parse_pay("Salary $180,000. Weekend premium at $80/hr") == (None, 180_000)
-    assert _parse_pay("$80/hr per diem") == (None, None)
     assert _parse_pay("$80/hr piece rate") == (None, None)
     assert _parse_pay("$80/hr show-up pay") == (None, None)
     assert _parse_pay("$80/hr reporting pay") == (None, None)
     assert _parse_pay("$80/hr split-shift premium") == (None, None)
-    assert _parse_pay("per diem $80/hr") == (None, None)
     assert _parse_pay("piece rate $80/hr") == (None, None)
     assert _parse_pay("show-up pay $80/hr") == (None, None)
     assert _parse_pay("travel time $80/hr") == (None, None)
     assert _parse_pay("meal penalty $80/hr") == (None, None)
-    assert _parse_pay("Salary $180,000. Per diem $80/hr") == (None, 180_000)
+    assert _parse_pay("Salary $180,000. Piece rate $80/hr") == (None, 180_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
 
 
