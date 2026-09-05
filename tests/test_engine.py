@@ -7269,8 +7269,23 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "fortnight: 32 hours") is None
     assert _guess_hours("Engineer", "32 hours for two weeks") is None
     assert _guess_hours("Engineer", "32 hours over two weeks") is None
-    assert _guess_hours("Engineer", "32 hours biweekly") is None
-    assert _guess_hours("Engineer", "32 hours bi-weekly") is None
+    assert _guess_hours("Engineer", "32 hours biweekly") == 16
+    assert _guess_hours("Engineer", "32 hours bi-weekly") == 16
+    assert _guess_hours("Engineer", "32 hours bi weekly") == 16
+    assert _guess_hours("Engineer", "32 hours / biweekly") == 16
+    assert _guess_hours("Engineer", "32 hrs biweekly") == 16
+    assert _guess_hours("Engineer", "32 hours per biweekly") == 16
+    assert _guess_hours("Engineer", "hours biweekly: 32") == 16
+    assert _guess_hours("Engineer", "biweekly: 32 hours") == 16
+    assert _guess_hours("Engineer", "hours: 32 biweekly") == 16
+    assert _guess_hours("Engineer", "32 biweekly hours") == 16
+    assert _guess_hours("Engineer", "32 hours bi-wkly") == 16
+    assert _guess_hours("Engineer", "hours bi weekly: 32") == 16
+    assert _guess_hours("Engineer", "32 hours biweekly meeting") is None
+    assert _guess_hours("Engineer", "32 hours per biweekly meeting") is None
+    assert _guess_hours("Engineer", "40 hours a week. 32 hours biweekly") == 40
+    assert _guess_hours("Engineer", "biweekly hours: 32") == 32
+    assert _guess_hours("Engineer", "bi-weekly: 32 hours") == 32
     assert _guess_hours("Engineer", "32 hours every other week meeting") is None
     assert _guess_hours("Engineer", "32 hours every 2 weeks meeting") is None
     assert _guess_hours("Engineer", "32 hours for 2 weeks") is None
@@ -8617,6 +8632,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert working_fortnight.hours_per_week == 16
     assert working_fortnight.pay_high == 80_000
+    biweekly = Opportunity(title="Engineer", url="https://jobs.example/biweeklyhours")
+    assert _apply_listing(
+        biweekly, "<p>$80/hour. 32 hours biweekly.</p>"
+    ) is True
+    assert biweekly.hours_per_week == 16
+    assert biweekly.pay_high == 64_000
+    bi_weekly = Opportunity(title="Engineer", url="https://jobs.example/bi-weeklyhours")
+    assert _apply_listing(
+        bi_weekly, "<p>$80/hour. 32 hours bi-weekly.</p>"
+    ) is True
+    assert bi_weekly.hours_per_week == 16
+    assert bi_weekly.pay_high == 64_000
     daily = Opportunity(title="Engineer", url="https://jobs.example/dailyhours")
     assert _apply_listing(
         daily, "<p>$80/hour. 8 hours a day.</p>"
