@@ -9459,6 +9459,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must work hybrid in NYC") is False
     assert _guess_remote("Engineer", "must work from home") is True
     assert _guess_remote("Engineer", "in-person 3 days a week") is False
+    assert _guess_remote("Engineer", "in-person 3 days weekly") is False
+    assert _guess_remote("Engineer", "3 days weekly in-person") is False
     assert _guess_remote("Engineer", "in person 3 days a week") is False
     assert _guess_remote("Engineer", "3 days a week in-person") is False
     assert _guess_remote("Engineer", "3 days a week in person") is False
@@ -9524,6 +9526,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "hybrid in Austin two days a week") is False
     assert _guess_remote("Engineer", "Hybrid in New York 3 days per week") is False
     assert _guess_remote("Engineer", "3 days hybrid in NYC") is False
+    assert _guess_remote("Engineer", "3 days weekly hybrid in NYC") is False
+    assert _guess_remote("Engineer", "3 days weekly hybrid") is True
     assert _guess_remote("Engineer", "3 days a week hybrid in NYC") is False
     assert _guess_remote("Engineer", "3 days per week hybrid in NYC") is False
     assert _guess_remote("Engineer", "3 days/week hybrid in NYC") is False
@@ -9562,6 +9566,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "3 days from the office each week") is False
     assert _guess_remote("Engineer", "on campus 3 days a week") is False
     assert _guess_remote("Engineer", "3 days on campus per week") is False
+    assert _guess_remote("Engineer", "3 days on campus weekly") is False
+    assert _guess_remote("Engineer", "3 days on campus/week") is False
     assert _guess_remote("Engineer", "on campus 3 days in NYC") is False
     assert _guess_remote("Engineer", "on-campus 3 days in NYC") is False
     assert _guess_remote("Engineer", "3 days on campus in NYC") is False
