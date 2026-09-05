@@ -6991,6 +6991,26 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours eight times a day") is None
     assert _guess_hours("Engineer", "8 hours eight times") is None
     assert _guess_hours("Engineer", "eight times: 8 hours") is None
+    assert _guess_hours("Engineer", "8 hours nine times a week") == 72
+    assert _guess_hours("Engineer", "8 hours nine times per week") == 72
+    assert _guess_hours("Engineer", "8 hours nine times weekly") == 72
+    assert _guess_hours("Engineer", "8 hours 9 times a week") == 72
+    assert _guess_hours("Engineer", "8 hrs nine times a week") == 72
+    assert _guess_hours("Engineer", "hours nine times a week: 8") == 72
+    assert _guess_hours("Engineer", "nine times a week hours: 8") == 72
+    assert _guess_hours("Engineer", "nine times weekly hours: 8") == 72
+    assert _guess_hours("Engineer", "nine times a week: 8 hours") == 72
+    assert _guess_hours("Engineer", "nine times weekly: 8 hours") == 72
+    assert _guess_hours("Engineer", "hours: 8 nine times a week") == 72
+    assert _guess_hours("Engineer", "hours: 8 nine times weekly") == 72
+    assert _guess_hours("Engineer", "40 hours a week. 8 hours nine times a week") == 40
+    assert _guess_hours("Engineer", "9 hours nine times a week") is None
+    assert _guess_hours("Engineer", "8 hours nine times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours nine times weekly meeting") is None
+    assert _guess_hours("Engineer", "2 hour nine times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours nine times a day") is None
+    assert _guess_hours("Engineer", "8 hours nine times") is None
+    assert _guess_hours("Engineer", "nine times: 8 hours") is None
     assert _guess_hours("Engineer", "this day: 8 hours") is None
     assert _guess_hours("Engineer", "day: 8 hours") is None
     assert _guess_hours("Engineer", "8 hours for the day") is None
@@ -8073,6 +8093,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert eight_weekly.hours_per_week == 64
     assert eight_weekly.pay_high == 320_000
+    nine_week = Opportunity(title="Engineer", url="https://jobs.example/nineweekhours")
+    assert _apply_listing(
+        nine_week, "<p>$80/hour. 8 hours nine times a week.</p>"
+    ) is True
+    assert nine_week.hours_per_week == 72
+    assert nine_week.pay_high == 288_000
+    nine_weekly = Opportunity(title="Engineer", url="https://jobs.example/nineweeklyhours")
+    assert _apply_listing(
+        nine_weekly, "<p>$100/hour. 8 hours 9 times a week.</p>"
+    ) is True
+    assert nine_weekly.hours_per_week == 72
+    assert nine_weekly.pay_high == 360_000
     labeled_working_week = Opportunity(title="Engineer", url="https://jobs.example/lworkingweek")
     assert _apply_listing(
         labeled_working_week, "<p>$80/hour. Hours per working week: 32</p>"
