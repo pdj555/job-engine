@@ -225,6 +225,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("broadband $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 wifi in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 broadband in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 hotspot") == (None, None)
+    assert _parse_pay("hotspot $15,000") == (None, None)
+    assert _parse_pay("$15,000 router") == (None, None)
+    assert _parse_pay("$15,000 modem") == (None, None)
+    assert _parse_pay("router $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 hotspot in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $10,000 gym stipend") == (
         None,
         180_000,
