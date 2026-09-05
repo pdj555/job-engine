@@ -7519,6 +7519,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "16 hours 2x a week") == 32
     assert _guess_hours("Engineer", "16 hours x2 a week") == 32
     assert _guess_hours("Engineer", "16 hrs twice a week") == 32
+    assert _guess_hours("Engineer", "16 h twice a week") == 32
+    assert _guess_hours("Engineer", "16h twice a week") == 32
+    assert _guess_hours("Engineer", "16 h twice weekly") == 32
+    assert _guess_hours("Engineer", "h twice a week: 16") == 32
+    assert _guess_hours("Engineer", "twice a week: 16 h") == 32
     assert _guess_hours("Engineer", "hours twice a week: 16") == 32
     assert _guess_hours("Engineer", "twice a week hours: 16") == 32
     assert _guess_hours("Engineer", "twice weekly hours: 16") == 32
@@ -7540,6 +7545,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "16 hours two times a fortnight") == 16
     assert _guess_hours("Engineer", "16 hours 2 times a fortnight") == 16
     assert _guess_hours("Engineer", "16 hrs twice a fortnight") == 16
+    assert _guess_hours("Engineer", "16 h twice a fortnight") == 16
+    assert _guess_hours("Engineer", "16h twice a fortnight") == 16
+    assert _guess_hours("Engineer", "16 h twice fortnightly") == 16
+    assert _guess_hours("Engineer", "h twice a fortnight: 16") == 16
     assert _guess_hours("Engineer", "hours twice a fortnight: 16") == 16
     assert _guess_hours("Engineer", "twice a fortnight hours: 16") == 16
     assert _guess_hours("Engineer", "twice a fortnight: 16 hours") == 16
@@ -7553,7 +7562,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "16 hours twice a fortnight meeting") is None
     assert _guess_hours("Engineer", "16 hours twice a function") is None
     assert _guess_hours("Engineer", "16 hours twice fn") is None
+    assert _guess_hours("Engineer", "16 h twice fn") is None
+    assert _guess_hours("Engineer", "16 h twice a function") is None
+    assert _guess_hours("Engineer", "16 h twice a week meeting") is None
+    assert _guess_hours("Engineer", "40 hours a week. 16 h twice a week") == 40
     assert _guess_hours("Engineer", "16 hours twice a day") is None
+    assert _guess_hours("Engineer", "16 h twice a month") is None
     assert _guess_hours("Engineer", "16 hours twice") is None
     assert _guess_hours("Engineer", "twice: 16 hours") is None
     assert _guess_hours("Engineer", "8 hours twice a day") is None
@@ -7564,6 +7578,8 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours 3 times a week") == 24
     assert _guess_hours("Engineer", "8 hours 3x a week") == 24
     assert _guess_hours("Engineer", "8 hrs three times a week") == 24
+    assert _guess_hours("Engineer", "8 h thrice a week") == 24
+    assert _guess_hours("Engineer", "8h thrice a week") == 24
     assert _guess_hours("Engineer", "hours three times a week: 10") == 30
     assert _guess_hours("Engineer", "three times a week hours: 10") == 30
     assert _guess_hours("Engineer", "thrice weekly hours: 8") == 24
@@ -7584,6 +7600,8 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours thrice fortnightly") == 12
     assert _guess_hours("Engineer", "10 hours 3 times a fortnight") == 15
     assert _guess_hours("Engineer", "8 hrs three times a fortnight") == 12
+    assert _guess_hours("Engineer", "8 h thrice a fortnight") == 12
+    assert _guess_hours("Engineer", "8h thrice a fortnight") == 12
     assert _guess_hours("Engineer", "hours three times a fortnight: 16") == 24
     assert _guess_hours("Engineer", "three times a fortnight hours: 16") == 24
     assert _guess_hours("Engineer", "thrice a fortnight: 16 hours") == 24
@@ -7605,6 +7623,8 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours 4 times a week") == 32
     assert _guess_hours("Engineer", "8 hours 4x a week") == 32
     assert _guess_hours("Engineer", "8 hrs four times a week") == 32
+    assert _guess_hours("Engineer", "8 h four times a week") == 32
+    assert _guess_hours("Engineer", "8h four times a week") == 32
     assert _guess_hours("Engineer", "hours four times a week: 8") == 32
     assert _guess_hours("Engineer", "four times a week hours: 8") == 32
     assert _guess_hours("Engineer", "four times weekly hours: 8") == 32
@@ -7620,6 +7640,8 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours four times weekly meeting") is None
     assert _guess_hours("Engineer", "2 hour four times a week meeting") is None
     assert _guess_hours("Engineer", "8 hours four times a fortnight") == 16
+    assert _guess_hours("Engineer", "8 h four times a fortnight") == 16
+    assert _guess_hours("Engineer", "8h four times a fortnight") == 16
     assert _guess_hours("Engineer", "8 hours four times per fortnight") == 16
     assert _guess_hours("Engineer", "8 hours four times fortnightly") == 16
     assert _guess_hours("Engineer", "8 hours 4 times a fortnight") == 16
@@ -7632,6 +7654,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "5 hours eight times a fortnight") == 20
     assert _guess_hours("Engineer", "6 hours nine times a fortnight") == 27
     assert _guess_hours("Engineer", "4 hours ten times a fortnight") == 20
+    assert _guess_hours("Engineer", "4 h ten times a fortnight") == 20
     assert _guess_hours("Engineer", "8 hours four times a week") == 32
     assert _guess_hours("Engineer", "16 hours twice a fortnight") == 16
     assert _guess_hours("Engineer", "16 hours thrice a fortnight") == 24
@@ -7643,6 +7666,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours four times") is None
     assert _guess_hours("Engineer", "four times: 8 hours") is None
     assert _guess_hours("Engineer", "8 hours five times a week") == 40
+    assert _guess_hours("Engineer", "8 h five times a week") == 40
     assert _guess_hours("Engineer", "8 hours five times per week") == 40
     assert _guess_hours("Engineer", "8 hours five times weekly") == 40
     assert _guess_hours("Engineer", "8 hours 5 times a week") == 40
@@ -8875,12 +8899,36 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert twice_week.hours_per_week == 32
     assert twice_week.pay_high == 128_000
+    compact_twice_week = Opportunity(
+        title="Engineer", url="https://jobs.example/compacttwiceweekhours"
+    )
+    assert _apply_listing(
+        compact_twice_week, "<p>$80/hour. 16 h twice a week.</p>"
+    ) is True
+    assert compact_twice_week.hours_per_week == 32
+    assert compact_twice_week.pay_high == 128_000
+    glued_twice_week = Opportunity(
+        title="Engineer", url="https://jobs.example/gluedtwiceweekhours"
+    )
+    assert _apply_listing(
+        glued_twice_week, "<p>$80/hour. 16h twice a week.</p>"
+    ) is True
+    assert glued_twice_week.hours_per_week == 32
+    assert glued_twice_week.pay_high == 128_000
     twice_fn = Opportunity(title="Engineer", url="https://jobs.example/twicefn")
     assert _apply_listing(
         twice_fn, "<p>$80/hour. 16 hours twice a fortnight.</p>"
     ) is True
     assert twice_fn.hours_per_week == 16
     assert twice_fn.pay_high == 64_000
+    compact_twice_fn = Opportunity(
+        title="Engineer", url="https://jobs.example/compacttwicefn"
+    )
+    assert _apply_listing(
+        compact_twice_fn, "<p>$80/hour. 16h twice a fortnight.</p>"
+    ) is True
+    assert compact_twice_fn.hours_per_week == 16
+    assert compact_twice_fn.pay_high == 64_000
     twice_weekly = Opportunity(title="Engineer", url="https://jobs.example/twiceweeklyhours")
     assert _apply_listing(
         twice_weekly, "<p>$100/hour. 16 hours twice weekly.</p>"
@@ -8917,6 +8965,14 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert four_fn.hours_per_week == 16
     assert four_fn.pay_high == 64_000
+    compact_four_fn = Opportunity(
+        title="Engineer", url="https://jobs.example/compactfourfn"
+    )
+    assert _apply_listing(
+        compact_four_fn, "<p>$80/hour. 8 h four times a fortnight.</p>"
+    ) is True
+    assert compact_four_fn.hours_per_week == 16
+    assert compact_four_fn.pay_high == 64_000
     four_weekly = Opportunity(title="Engineer", url="https://jobs.example/fourweeklyhours")
     assert _apply_listing(
         four_weekly, "<p>$100/hour. 8 hours 4 times a week.</p>"
