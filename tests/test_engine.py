@@ -2166,6 +2166,21 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert listed_nio is False
     assert nio.pay_high is None
     assert _parse_pay("Experience with NIO 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("80,000 MRO. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 MRO. Account Executive $220,000</p>") is True
+    assert _parse_pay("MRO80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>MRO80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 MRO. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 MRO. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k MRO. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k MRO. Account Executive $220,000</p>") is True
+    mro = Opportunity(title="Engineer", url="https://jobs.example/mro")
+    listed_mro = _apply_listing(
+        mro, "<p>Salary 80,000 MRO. Account Executive $400,000</p>"
+    )
+    assert listed_mro is False
+    assert mro.pay_high is None
+    assert _parse_pay("Experience with MRO 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
