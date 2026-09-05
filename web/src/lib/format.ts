@@ -1,6 +1,7 @@
-export function formatRate(n: number | null): string {
+export function formatRate(n: number | null, imputed = false): string {
   if (n == null) return "—";
-  return `$${Math.round(n)}/hr`;
+  const val = `$${Math.round(n)}/hr`;
+  return imputed ? `~${val}` : val;
 }
 
 export function formatPay(n: number | null): string {

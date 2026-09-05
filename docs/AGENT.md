@@ -7,8 +7,8 @@ hands *finding* to an in-process brain and keeps *ranking* in Python.
 goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportunities}
             search_web tool / open-web engine              │
                                                            ▼
-                                                   _rank → Opportunity.score()
-                                                   deterministic  $ / hr
+                                                   ground URLs → _rank → score()
+                                                   refined $/hr · ~ if hours imputed
 ```
 
 ## Why a client-side tool loop

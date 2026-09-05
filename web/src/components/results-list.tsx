@@ -11,7 +11,7 @@ export function ResultsList({
   results: Opportunity[];
   onAdd: (opp: Opportunity) => void;
 }) {
-  const maxRate = Math.max(...results.map((r) => r.dollars_per_hour ?? 0), 1);
+  const maxRate = Math.max(...results.map((r) => r.refined_rate ?? r.dollars_per_hour ?? 0), 1);
 
   if (results.length === 0) {
     return (
@@ -25,7 +25,7 @@ export function ResultsList({
     <Panel label="Search Results">
       <ul className="result-list">
         {results.map((opp, i) => {
-          const rate = opp.dollars_per_hour ?? 0;
+          const rate = opp.refined_rate ?? opp.dollars_per_hour ?? 0;
           const pct = maxRate > 0 ? (rate / maxRate) * 100 : 0;
 
           return (
@@ -45,11 +45,18 @@ export function ResultsList({
                       </a>
                       <p className="hint mt-1 truncate">
                         {opp.company ?? "—"} · {opp.remote ? "remote" : "onsite"} ·{" "}
-                        {formatPay(opp.pay)}/yr
+                        {formatPay(opp.pay)}/yr ·{" "}
+                        {opp.hours_per_week != null
+                          ? `${opp.hours_per_week}h/wk`
+                          : opp.rate_imputed
+                            ? "~40h/wk"
+                            : "—"}
                       </p>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
-                      <span className="stat-value">{formatRate(opp.dollars_per_hour)}</span>
+                      <span className="stat-value">
+                        {formatRate(opp.refined_rate ?? opp.dollars_per_hour, opp.rate_imputed)}
+                      </span>
                       <button type="button" onClick={() => onAdd(opp)} className="btn">
                         + pipeline
                       </button>

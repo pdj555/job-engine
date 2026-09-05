@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Opportunity } from "@/lib/types";
-import { checkHealth } from "@/lib/api";
+import { checkHealth, type HealthResponse } from "@/lib/api";
 import { useTodos } from "@/lib/use-todos";
 import { AgentTrace } from "./agent-trace";
 import { ArchitectureView } from "./architecture-view";
@@ -21,6 +21,7 @@ export function JobEngineApp() {
   const [results, setResults] = useState<Opportunity[]>([]);
   const [agentTrace, setAgentTrace] = useState<string[]>([]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  const [agentReady, setAgentReady] = useState(false);
   const [searching, setSearching] = useState(false);
   const todos = useTodos();
 
@@ -29,8 +30,9 @@ export function JobEngineApp() {
 
   useEffect(() => {
     const poll = () =>
-      checkHealth().then((health) => {
+      checkHealth().then((health: HealthResponse | null) => {
         setApiOnline(health !== null);
+        setAgentReady(Boolean(health?.agent_ready));
       });
 
     poll();
@@ -77,6 +79,7 @@ export function JobEngineApp() {
               onSearching={setSearching}
               onTrace={setAgentTrace}
               apiOnline={apiOnline}
+              agentReady={agentReady}
             />
 
             <AgentTrace searches={agentTrace} />

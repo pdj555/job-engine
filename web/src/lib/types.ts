@@ -5,6 +5,8 @@ export type Opportunity = {
   pay: number | null;
   hours_per_week: number | null;
   dollars_per_hour: number | null;
+  refined_rate: number | null;
+  rate_imputed: boolean;
   remote: boolean;
   score: number;
 };

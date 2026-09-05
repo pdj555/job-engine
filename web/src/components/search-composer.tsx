@@ -13,11 +13,13 @@ export function SearchComposer({
   onSearching,
   onTrace,
   apiOnline,
+  agentReady,
 }: {
   onResults: (results: Opportunity[]) => void;
   onSearching?: (loading: boolean) => void;
   onTrace?: (searches: string[]) => void;
   apiOnline: boolean | null;
+  agentReady: boolean;
 }) {
   const [mode, setMode] = useState<Mode>("search");
   const [query, setQuery] = useState("");
@@ -82,7 +84,9 @@ export function SearchComposer({
     apiOnline === false
       ? "api offline · run `job-engine serve` on :8000"
       : mode === "agent"
-        ? "autonomous · plans its own searches"
+        ? agentReady
+          ? "autonomous · plans its own searches"
+          : "open-web fallback · no OPENAI_API_KEY"
         : "/ focus · enter to search";
 
   return (

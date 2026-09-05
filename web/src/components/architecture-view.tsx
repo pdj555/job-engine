@@ -3,7 +3,7 @@ import { Panel } from "./panel";
 const STACK: [string, string][] = [
   ["brain", "OpenAI Agents SDK — plans web searches"],
   ["transport", "search_web tool · Engine fallback"],
-  ["ranking", "deterministic · Opportunity.score()"],
+  ["ranking", "deterministic · refined_rate · Opportunity.score()"],
   ["surfaces", "CLI · API · Web"],
 ];
 
@@ -32,7 +32,7 @@ export function ArchitectureView() {
             <span className="flow-title">
               rank · <b>$/hour</b>
             </span>
-            <span className="flow-sub">office −30% · thin listings sink</span>
+            <span className="flow-sub">refined $/hr · office −30% · missing hours → ~40/wk</span>
           </div>
 
           <span className="flow-arrow" aria-hidden>
@@ -42,8 +42,8 @@ export function ArchitectureView() {
         </div>
 
         <p className="about mt-3">
-          The brain decides <em>what</em> to surface. The deterministic core owns{" "}
-          <em>the $/hour</em> — it never invents a number it is graded on.
+          The brain decides <em>what</em> to surface. The core owns{" "}
+          <em>refined $/hour</em> — missing hours impute 40/wk and display as ~.
         </p>
       </Panel>
 

@@ -33,29 +33,28 @@ class Opportunity(BaseModel):
 
     @property
     def dollars_per_hour(self) -> Optional[float]:
-        """The only metric that matters."""
+        """Strict $/hour. None unless both pay and hours are known."""
         if not self.pay or not self.hours_per_week:
             return None
-        annual_hours = self.hours_per_week * 50
-        return self.pay / annual_hours
+        return self.pay / (self.hours_per_week * 50)
+
+    @property
+    def refined_rate(self) -> Optional[float]:
+        """Displayable $/hour. Missing hours impute 40/wk. None if no pay."""
+        if not self.pay:
+            return None
+        hours = self.hours_per_week or 40
+        if hours == 0:
+            return 0.0
+        return self.pay / (hours * 50)
+
+    @property
+    def rate_is_imputed(self) -> bool:
+        return bool(self.pay) and self.hours_per_week is None
 
     def score(self) -> float:
-        """
-        Score = pay / hours. Higher is better.
-        Unknown hours assumed 40 (penalized).
-        Unknown pay assumed $0 (penalized).
-        Non-remote penalized.
-        """
-        pay = self.pay or 0
-        hours = self.hours_per_week or 40  # Assume worst case
-
-        if hours == 0:
-            return 0
-
-        base_score = pay / (hours * 50)  # $/hour
-
-        # Remote bonus
+        """Rank key: refined $/hour, then 30% penalty for office roles."""
+        rate = self.refined_rate or 0.0
         if not self.remote:
-            base_score *= 0.7  # 30% penalty for office
-
-        return base_score
+            rate *= 0.7
+        return rate

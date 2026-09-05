@@ -39,7 +39,10 @@ function MetricCell({
 
 export function MetricsSection({ results }: { results: Opportunity[] }) {
   const idle = results.length === 0;
-  const rates = results.map((r) => r.dollars_per_hour ?? 0).filter((r) => r > 0);
+  const rates = results
+    .map((r) => r.refined_rate ?? r.dollars_per_hour ?? 0)
+    .filter((r) => r > 0);
+  const imputed = results.some((r) => r.rate_imputed);
   const avg = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
   const remotePct = results.length
     ? Math.round((results.filter((r) => r.remote).length / results.length) * 100)
@@ -52,7 +55,7 @@ export function MetricsSection({ results }: { results: Opportunity[] }) {
       <div className="metric-grid">
         <MetricCell
           title="Avg $/hr"
-          value={idle ? "—" : formatRate(avg)}
+          value={idle ? "—" : formatRate(avg, imputed)}
           data={series(rates)}
           active={!idle}
         />
@@ -64,7 +67,7 @@ export function MetricsSection({ results }: { results: Opportunity[] }) {
         />
         <MetricCell
           title="Top $/hr"
-          value={idle ? "—" : formatRate(top)}
+          value={idle ? "—" : formatRate(top, imputed)}
           data={series(idle ? [] : [...rates].sort((a, b) => a - b))}
           active={!idle}
         />

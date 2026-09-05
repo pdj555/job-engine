@@ -39,6 +39,8 @@ def _payload(results: list[Opportunity]) -> dict:
                 "pay": o.pay,
                 "hours_per_week": o.hours_per_week,
                 "dollars_per_hour": o.dollars_per_hour,
+                "refined_rate": o.refined_rate,
+                "rate_imputed": o.rate_is_imputed,
                 "remote": o.remote,
                 "score": o.score(),
             }
@@ -63,6 +65,7 @@ async def health():
             "perplexity": bool(settings.perplexity_api_key),
         },
         "search_ready": True,
+        "agent_ready": bool(settings.openai_api_key),
     }
 
 

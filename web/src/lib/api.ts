@@ -3,6 +3,7 @@ import type { AgentResponse, SearchResponse } from "./types";
 export type HealthResponse = {
   status: string;
   search_ready: boolean;
+  agent_ready: boolean;
   apis: {
     openai: boolean;
     brave: boolean;
