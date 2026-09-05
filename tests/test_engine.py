@@ -2238,7 +2238,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 tuition reimbursement $5,000") == (None, 180_000)
     assert _parse_pay("base $180,000 identity theft $500") == (None, 180_000)
     assert _parse_pay("base $180,000 identity theft protection $500") == (None, 180_000)
+    assert _parse_pay("base $180,000 identity theft clawback $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 identity theft recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 identity theft protection clawback $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$500 identity theft") == (None, None)
+    assert _parse_pay("$15,000 identity theft clawback") == (None, None)
     assert _parse_pay("$500 identity theft protection") == (None, None)
     assert _parse_pay("Salary $180,000 plus $500 identity theft protection") == (
         None,
@@ -7270,6 +7283,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         idtheft, "<p>Base $180,000 identity theft protection $500</p>"
     ) is True
     assert idtheft.pay_high == 180_000
+    idclaw = Opportunity(title="Engineer", url="https://jobs.example/idtheftclaw")
+    assert _apply_listing(
+        idclaw, "<p>Base $180,000 identity theft clawback $15,000</p>"
+    ) is True
+    assert idclaw.pay_high == 180_000
     pension = Opportunity(title="Engineer", url="https://jobs.example/pensionmix")
     assert _apply_listing(
         pension, "<p>Base $180,000 pension contribution $15,000</p>"
