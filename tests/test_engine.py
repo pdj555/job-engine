@@ -9559,6 +9559,11 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "in-person 3 days/week in NYC") is False
     assert _guess_remote("Engineer", "in-person 3 days in NYC") is False
     assert _guess_remote("Engineer", "in person 3 days in NYC") is False
+    assert _guess_remote("Engineer", "in-person NYC 3 days") is False
+    assert _guess_remote("Engineer", "in person NYC 3 days") is False
+    assert _guess_remote("Engineer", "in-person New York 3 days") is False
+    assert _guess_remote("Engineer", "in-person US 3 days") is True
+    assert _guess_remote("Engineer", "in-person interviews 3 days") is True
     assert _guess_remote("Engineer", "in-person two days in Seattle") is False
     assert _guess_remote("Engineer", "in-person 3 days in the US") is True
     assert _guess_remote("Engineer", "in-person 3 days in meetings") is True
@@ -9571,7 +9576,19 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "office 3 days in NYC") is False
     assert _guess_remote("Engineer", "office in NYC 3 days") is False
     assert _guess_remote("Engineer", "office in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "office NYC 3 days") is False
+    assert _guess_remote("Engineer", "office New York 3 days") is False
+    assert _guess_remote("Engineer", "office US 3 days") is True
+    assert _guess_remote("Engineer", "home office NYC 3 days") is True
     assert _guess_remote("Engineer", "lab in NYC 3 days") is False
+    assert _guess_remote("Engineer", "lab NYC 3 days") is False
+    assert _guess_remote("Engineer", "campus NYC 3 days") is False
+    assert _guess_remote("Engineer", "HQ NYC 3 days") is False
+    assert _guess_remote("Engineer", "site NYC 3 days") is False
+    assert _guess_remote("Engineer", "hub NYC 3 days") is False
+    assert _guess_remote("Engineer", "field NYC 3 days") is False
+    assert _guess_remote("Engineer", "lab US 3 days") is True
+    assert _guess_remote("Engineer", "off-site NYC 3 days") is True
     assert _guess_remote("Engineer", "campus in NYC 3 days") is False
     assert _guess_remote("Engineer", "HQ in NYC 3 days") is False
     assert _guess_remote("Engineer", "site in NYC 3 days") is False
@@ -9624,6 +9641,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "hybrid 3 days in meetings") is True
     assert _guess_remote("Engineer", "hybrid in NYC 3 days") is False
     assert _guess_remote("Engineer", "hybrid in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "hybrid NYC 3 days") is False
+    assert _guess_remote("Engineer", "hybrid NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "hybrid New York 3 days") is False
+    assert _guess_remote("Engineer", "3 days hybrid NYC") is False
+    assert _guess_remote("Engineer", "3 days a week hybrid NYC") is False
+    assert _guess_remote("Engineer", "hybrid US 3 days") is True
+    assert _guess_remote("Engineer", "hybrid cloud 3 days") is True
     assert _guess_remote("Engineer", "hybrid in Seattle 2 days") is False
     assert _guess_remote("Engineer", "hybrid in Austin two days a week") is False
     assert _guess_remote("Engineer", "Hybrid in New York 3 days per week") is False
