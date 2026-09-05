@@ -6271,7 +6271,7 @@ _BIWEEK_TAIL = (
     r"\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
     r"(?:every[-\s]+(?:two|2|other)[-\s]+weeks?|fortnights?)\b"
     r"|(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
-    r"(?:bi[-\s]?weekly|fortnightly)\b)"
+    r"(?:bi[-\s]?weekly|bi[-\s]?wkly|fortnightly)\b)"
 )
 _BIWEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6287,7 +6287,7 @@ _SEMIMONTH_TAIL = (
     r"\.?\s*(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
     r"(?:twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
     r"|(?:/\s*|p\s*/\s*|p\s+|(?:per|a)\s*/?\s*)?"
-    r"semi[-\s]?monthly\b)"
+    r"(?:semi[-\s]?monthly|semi[-\s]?mthly|smthly)\b)"
 )
 _SEMIMONTHLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
