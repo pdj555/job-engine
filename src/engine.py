@@ -6622,7 +6622,7 @@ _NON_SALARY_MONEY_RE = re.compile(
 )
 _HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:(?:working|scheduled)[\s-]+)?(?:hours?|hrs?|h)\.?\s*"
-    r"(?:/\s*(?:(?:the|each|every)\s+)?|\s*per[\s./]*(?:(?:the|each|every)\s+)?|\s+(?:a|each|every)\s+|\s+for(?:\s+(?:the|each|every))?\s+|\s+worked(?:\s+(?:per|/|a|each|every))?|\s+working(?:\s+(?:per|/|a|each|every))?|\s+scheduled(?:\s+(?:per|/|a|each|every))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)(?:\s+(?:for(?:\s+(?:the|each|every))?|a|per(?:\s+(?:the|each|every))?|each|every))?\s*|\s+of\s+(?:(?:the|each|every)\s+)?)?\s*"
+    r"(?:/\s*(?:(?:the|each|every)\s+)?|\s*per[\s./]*(?:(?:the|each|every)\s+)?|\s+p\.?\s*/\s*(?:(?:the|each|every)\s+)?|\s+(?:a|each|every)\s+|\s+for(?:\s+(?:the|each|every))?\s+|\s+worked(?:\s+(?:per|/|a|each|every))?|\s+working(?:\s+(?:per|/|a|each|every))?|\s+scheduled(?:\s+(?:per|/|a|each|every))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)(?:\s+(?:for(?:\s+(?:the|each|every))?|a|per(?:\s+(?:the|each|every))?|each|every))?\s*|\s+of\s+(?:(?:the|each|every)\s+)?)?\s*"
     r"(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|work[\s-]*weeks?|workweeks?|week(?:ly)?|wkly|wk)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?|\bh)\s*(?:(?:worked|working|scheduled)\s+)?(?:(?:per(?:\s+(?:the|each|every))|p(?:er[\s.]*)?\.?\s*/?|/\s*(?:(?:the|each|every)\s+)?|\.|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:working[\s-]+(?:weekly|wkly|weeks?|wk)|weekly|wkly|weeks?|wk|w)\.?(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
