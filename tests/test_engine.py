@@ -10427,6 +10427,10 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "underreport to the office") is True
     assert _guess_remote("Engineer", "misreport to the office") is True
     assert _guess_remote("Engineer", "report to the office") is False
+    assert _guess_remote("Engineer", "report at the office") is False
+    assert _guess_remote("Engineer", "must report at the office 3 days") is False
+    assert _guess_remote("Engineer", "have to report at the office 3 days") is False
+    assert _guess_remote("Engineer", "report at home") is True
     assert _guess_remote("Engineer", "telecommute to the office") is True
     assert _guess_remote("Engineer", "telecommute to our NYC office") is True
     assert _guess_remote("Engineer", "you may telecommute to the office") is True
@@ -10886,6 +10890,8 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "report to New York 3 days") is False
     assert _guess_remote("Engineer", "report to Seattle 3 days a week") is False
     assert _guess_remote("Engineer", "must report to NYC 3 days") is False
+    assert _guess_remote("Engineer", "must report at NYC 3 days") is False
+    assert _guess_remote("Engineer", "must report at home 3 days") is True
     assert _guess_remote("Engineer", "report to work 3 days a week") is False
     assert _guess_remote("Engineer", "report to the US 3 days") is True
     assert _guess_remote("Engineer", "report to the US 3 days a week") is True
@@ -11186,6 +11192,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert present_office.remote is False
     assert present_office.pay_high == 180_000
+    report_at = Opportunity(
+        title="Engineer", url="https://jobs.example/reportat"
+    )
+    assert _apply_listing(
+        report_at,
+        "<p>Must report at the office 3 days. Salary $180,000</p>",
+    ) is True
+    assert report_at.remote is False
+    assert report_at.pay_high == 180_000
     expected_days = Opportunity(
         title="Engineer", url="https://jobs.example/expecteddays"
     )
