@@ -2482,6 +2482,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cancer insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cancer benefit") == (None, None)
     assert _parse_pay("$15,000 cancer coverage") == (None, None)
+    assert _parse_pay("$15,000 specified disease insurance") == (None, None)
+    assert _parse_pay("$15,000 sickness insurance") == (None, None)
+    assert _parse_pay("$15,000 illness insurance") == (None, None)
+    assert _parse_pay("$15,000 disease insurance") == (None, None)
     assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hospital insurance") == (None, None)
     assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
@@ -2516,7 +2520,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 long-term care") == (None, None)
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
     assert _parse_pay("$15,000 long-term care. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 sickness insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cancer") == (None, 15_000)
+    assert _parse_pay("$15,000 disease") == (None, 15_000)
     assert _parse_pay("$15,000 hospital") == (None, 15_000)
     assert _parse_pay("$15,000 LTC") == (None, 15_000)
     assert _parse_pay("pet insurance of $10,000") == (None, None)
@@ -7974,6 +7980,16 @@ def test_guess_pay_annualizes_hourly():
         cancerbenonly, "<p>$15,000 cancer benefit. Apply now.</p>"
     ) is False
     assert cancerbenonly.pay_high is None
+    sickinsonly = Opportunity(title="Engineer", url="https://jobs.example/sickinsonly")
+    assert _apply_listing(
+        sickinsonly, "<p>$15,000 sickness insurance. Apply now.</p>"
+    ) is False
+    assert sickinsonly.pay_high is None
+    sickinsmix = Opportunity(title="Engineer", url="https://jobs.example/sickinsmix")
+    assert _apply_listing(
+        sickinsmix, "<p>$15,000 sickness insurance. Salary $180,000</p>"
+    ) is True
+    assert sickinsmix.pay_high == 180_000
     hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
     assert _apply_listing(
         hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
