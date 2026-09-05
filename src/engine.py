@@ -5841,7 +5841,7 @@ _GONE_LISTING_RE = re.compile(
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+search\s+(?:is|has\s+been|was|has)\s+(?:cancelled|canceled|abandoned|called\s+off)\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
-    r"\s+is\s+no\s+longer\s+being\s+(?:recruited|advertised|posted|listed|published|shared|boosted|sponsored|endorsed|circulated|indexed|featured|promoted)\b"
+    r"\s+is\s+no\s+longer\s+being\s+(?:recruited|advertised|posted|listed|published|shared|boosted|sponsored|endorsed|circulated|indexed|featured|promoted|syndicated)\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"\s+is\s+not\s+being\s+(?:recruited|advertised|filled|posted|listed|published|pursued(?!\s+as\b)|considered(?!\s+for\b))\b"
