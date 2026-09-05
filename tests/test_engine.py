@@ -2208,6 +2208,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 commission $40,000") == (None, 180_000)
     assert _parse_pay("base $180,000 variable pay $40,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bonus $20,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 retention bonus $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 retention bonus clawback $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 referral bonus clawback $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 retention bonus clawback") == (None, None)
     assert _parse_pay("base $180,000 annual bonus $20,000") == (None, 180_000)
     assert _parse_pay("salary $180,000 bonus $20,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bonus of $20,000") == (None, 180_000)
@@ -7307,6 +7317,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     base_bonus = Opportunity(title="Engineer", url="https://jobs.example/basebonus")
     assert _apply_listing(base_bonus, "<p>Base $180,000 bonus $20,000</p>") is True
     assert base_bonus.pay_high == 180_000
+    retclaw = Opportunity(title="Engineer", url="https://jobs.example/retclaw")
+    assert _apply_listing(
+        retclaw, "<p>Base $180,000 retention bonus clawback $15,000</p>"
+    ) is True
+    assert retclaw.pay_high == 180_000
     base_equity = Opportunity(title="Engineer", url="https://jobs.example/baseeq")
     assert _apply_listing(base_equity, "<p>Base $180,000 equity $50,000</p>") is True
     assert base_equity.pay_high == 180_000
