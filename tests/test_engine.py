@@ -256,11 +256,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 OMNY card") == (None, None)
     assert _parse_pay("$15,000 CharlieCard") == (None, None)
     assert _parse_pay("$15,000 SmarTrip") == (None, None)
+    assert _parse_pay("$15,000 fare card") == (None, None)
+    assert _parse_pay("fare card of $15,000") == (None, None)
+    assert _parse_pay("$15,000 Hop Fastpass") == (None, None)
+    assert _parse_pay("Hop Fastpass of $15,000") == (None, None)
     assert _parse_pay("$180,000 ORCA card in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 ORCA card $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 ORCA card. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 metrocard. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 EZ-Pass. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 fare card. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 Hop Fastpass. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 fare") == (None, 15_000)
+    assert _parse_pay("$15,000 Hop") == (None, 15_000)
+    assert _parse_pay("$15,000 Fastpass") == (None, 15_000)
     assert _parse_pay("$15,000 ORCA") == (None, 15_000)
     assert _parse_pay("$15,000 Clipper") == (None, 15_000)
     assert _parse_pay("$15,000 metro") == (None, 15_000)
@@ -7424,6 +7433,14 @@ def test_guess_pay_annualizes_hourly():
         orcamix, "<p>$15,000 ORCA card. Salary $180,000</p>"
     ) is True
     assert orcamix.pay_high == 180_000
+    farecard = Opportunity(title="Engineer", url="https://jobs.example/farecard")
+    assert _apply_listing(farecard, "<p>$15,000 fare card. Apply now.</p>") is False
+    assert farecard.pay_high is None
+    faremix = Opportunity(title="Engineer", url="https://jobs.example/faremix")
+    assert _apply_listing(
+        faremix, "<p>$15,000 fare card. Salary $180,000</p>"
+    ) is True
+    assert faremix.pay_high == 180_000
     gym_mem = Opportunity(title="Engineer", url="https://jobs.example/gym-mem")
     assert _apply_listing(
         gym_mem, "<p>$10,000 gym membership. Great team.</p>"
