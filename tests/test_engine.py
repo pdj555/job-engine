@@ -20051,6 +20051,22 @@ def test_html_is_gone_removed_listing_banner():
     ) is True
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>This posting is no longer being ranked.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This listing is no longer being assigned.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer being matched.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is no longer being matched.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>This meeting is no longer being scheduled.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
@@ -20065,6 +20081,33 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Once this posting is no longer being selected, apply elsewhere.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is no longer being ranked.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is no longer being assigned.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is no longer being matched.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting is no longer being ranked, apply elsewhere.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting is no longer being assigned, apply elsewhere.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting is no longer being matched, apply elsewhere.</p>"
         "<p>$180,000</p>"
     ) is False
     assert _html_is_gone(
