@@ -1,0 +1,4 @@
+interface:
+  display_name: "Modern Excellence"
+  short_description: "Build substantial progress from modern capabilities"
+  default_prompt: "Use $modern-excellence to investigate this repo, research relevant modern capabilities, and implement and verify a substantial improvement."
