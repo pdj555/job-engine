@@ -2495,6 +2495,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$180,000") == (None, 180_000)
     assert _parse_pay("$80/hr overtime") == (None, None)
     assert _parse_pay("Overtime paid at $80/hr") == (None, None)
+    assert _parse_pay("base $180,000 overtime $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 overtime clawback $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 overtime recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 overtime clawback") == (None, None)
     assert _parse_pay("$25/hr on-call") == (None, None)
     assert _parse_pay("$80/hr differential") == (None, None)
     assert _parse_pay("differential $80/hr") == (None, None)
@@ -7319,6 +7329,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         otbase, "<p>Salary $180,000. Overtime paid at $80/hr</p>"
     ) is True
     assert otbase.pay_high == 180_000
+    otclaw = Opportunity(title="Engineer", url="https://jobs.example/otclaw")
+    assert _apply_listing(
+        otclaw, "<p>Base $180,000 overtime clawback $15,000</p>"
+    ) is True
+    assert otclaw.pay_high == 180_000
     stip = Opportunity(title="Engineer", url="https://jobs.example/stipmix")
     assert _apply_listing(stip, "<p>Base $180,000 stipend $500</p>") is True
     assert stip.pay_high == 180_000
