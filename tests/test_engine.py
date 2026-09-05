@@ -11725,12 +11725,32 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must be based at HQ") is False
     assert _guess_remote("Engineer", "must be present at the site") is False
     assert _guess_remote("Engineer", "must be located at the field") is False
+    assert _guess_remote("Engineer", "must be at the site") is False
+    assert _guess_remote("Engineer", "must be on the site") is False
+    assert _guess_remote("Engineer", "must be in the site") is False
+    assert _guess_remote("Engineer", "must be at the field") is False
+    assert _guess_remote("Engineer", "must be at our NYC site") is False
+    assert _guess_remote("Engineer", "must be at the office") is False
+    assert _guess_remote("Engineer", "must be at the lab") is False
+    assert _guess_remote("Engineer", "must be at HQ") is False
+    assert _guess_remote("Engineer", "must be at the campus") is False
+    assert _guess_remote("Engineer", "must be at the hub") is False
+    assert _guess_remote("Engineer", "required to be at the site") is False
+    assert _guess_remote("Engineer", "have to be at the site") is False
+    assert _guess_remote("Engineer", "should be at the site") is False
     assert _guess_remote("Engineer", "required to be seated at the office") is False
     assert _guess_remote("Engineer", "must be located at the home office") is True
+    assert _guess_remote("Engineer", "must be at the home office") is True
+    assert _guess_remote("Engineer", "must be at the home site") is True
     assert _guess_remote("Engineer", "must be located at the off-site") is True
+    assert _guess_remote("Engineer", "must be at the off-site") is True
     assert _guess_remote("Engineer", "must be located at the field of") is True
+    assert _guess_remote("Engineer", "must be in the field of") is True
     assert _guess_remote("Engineer", "must be located at NYC") is True
+    assert _guess_remote("Engineer", "must be at NYC") is True
+    assert _guess_remote("Engineer", "must be at home") is True
     assert _guess_remote("Engineer", "work from home. must be located at the office") is True
+    assert _guess_remote("Engineer", "work from home. must be at the site") is True
     assert _guess_remote("Engineer", "have to be seated on campus 3 days") is False
     assert _guess_remote("Engineer", "should be seated on campus 3 days") is False
     assert _guess_remote("Engineer", "required to be seated on campus 3 days") is False
@@ -12308,6 +12328,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert days_at_nyc.remote is False
     assert days_at_nyc.pay_high == 180_000
+    be_at_site = Opportunity(title="Engineer", url="https://jobs.example/beatsite")
+    assert _apply_listing(
+        be_at_site, "<p>must be at the site. Salary $180,000</p>"
+    ) is True
+    assert be_at_site.remote is False
+    assert be_at_site.pay_high == 180_000
     based = Opportunity(title="Engineer", url="https://jobs.example/based")
     assert _apply_listing(
         based, "<p>This role is based in New York. Salary $180,000</p>"
