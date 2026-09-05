@@ -5750,6 +5750,17 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "hours weekly of the work: 32") == 32
     assert _guess_hours("Engineer", "weekly hours work: 32") == 32
     assert _guess_hours("Engineer", "wkly hours work: 32") == 32
+    assert _guess_hours("Engineer", "week hours: 32") == 32
+    assert _guess_hours("Engineer", "wk hours: 32") == 32
+    assert _guess_hours("Engineer", "32 week hours") == 32
+    assert _guess_hours("Engineer", "32 wk hours") == 32
+    assert _guess_hours("Engineer", "week hours of work: 32") == 32
+    assert _guess_hours("Engineer", "wk hours of work: 32") == 32
+    assert _guess_hours("Engineer", "week hours work: 32") == 32
+    assert _guess_hours("Engineer", "wk hours work: 32") == 32
+    assert _guess_hours("Engineer", "a week's hours: 32") is None
+    assert _guess_hours("Engineer", "the week's hours: 32") is None
+    assert _guess_hours("Engineer", "this week's hours: 32") is None
     assert _guess_hours("Engineer", "hours weekly work: 32") == 32
     assert _guess_hours("Engineer", "each week hours work: 32") == 32
     assert _guess_hours("Engineer", "each week hours: 32") == 32
@@ -6147,6 +6158,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert weekly_hours_work.hours_per_week == 2
     assert weekly_hours_work.pay_high == 10_000
+    week_hours = Opportunity(title="Engineer", url="https://jobs.example/week-hours")
+    assert _apply_listing(
+        week_hours, "<p>$100/hour. week hours: 2.</p>"
+    ) is True
+    assert week_hours.hours_per_week == 2
+    assert week_hours.pay_high == 10_000
+    wk_hours = Opportunity(title="Engineer", url="https://jobs.example/wk-hours")
+    assert _apply_listing(
+        wk_hours, "<p>$100/hour. wk hours: 2.</p>"
+    ) is True
+    assert wk_hours.hours_per_week == 2
+    assert wk_hours.pay_high == 10_000
     each_week_hours = Opportunity(title="Engineer", url="https://jobs.example/each-week-hours")
     assert _apply_listing(
         each_week_hours, "<p>$100/hour. each week hours: 2.</p>"
