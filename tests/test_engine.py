@@ -7272,6 +7272,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "32 hrs/fortnight") == 16
     assert _guess_hours("Engineer", "32 hours p/fortnight") == 16
     assert _guess_hours("Engineer", "32 hours fortnightly") == 16
+    assert _guess_hours("Engineer", "32 hours per fortnightly") == 16
+    assert _guess_hours("Engineer", "32 hours / fortnightly") == 16
+    assert _guess_hours("Engineer", "32 hours a fortnightly") == 16
+    assert _guess_hours("Engineer", "hours per fortnightly: 32") == 16
+    assert _guess_hours("Engineer", "hours: 32 per fortnightly") == 16
     assert _guess_hours("Engineer", "32 fortnightly hours") == 16
     assert _guess_hours("Engineer", "hours per fortnight: 32") == 16
     assert _guess_hours("Engineer", "hours a fortnight: 32") == 16
@@ -7307,7 +7312,9 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "16 hours a fortnight") == 8
     assert _guess_hours("Engineer", "32 hours a week") == 32
     assert _guess_hours("Engineer", "32 hours fortnightly meeting") is None
+    assert _guess_hours("Engineer", "32 hours per fortnightly meeting") is None
     assert _guess_hours("Engineer", "32 hours per fortnight meeting") is None
+    assert _guess_hours("Engineer", "40 hours a week. 32 hours per fortnightly") == 40
     assert _guess_hours("Engineer", "this fortnight: 32 hours") is None
     assert _guess_hours("Engineer", "fortnight: 32 hours") is None
     assert _guess_hours("Engineer", "32 hours for two weeks") is None
@@ -8721,6 +8728,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert compact_fn.hours_per_week == 16
     assert compact_fn.pay_high == 64_000
+    per_fortnightly = Opportunity(title="Engineer", url="https://jobs.example/perfortnightly")
+    assert _apply_listing(
+        per_fortnightly, "<p>$80/hour. 32 hours per fortnightly.</p>"
+    ) is True
+    assert per_fortnightly.hours_per_week == 16
+    assert per_fortnightly.pay_high == 64_000
     daily = Opportunity(title="Engineer", url="https://jobs.example/dailyhours")
     assert _apply_listing(
         daily, "<p>$80/hour. 8 hours a day.</p>"
