@@ -1935,6 +1935,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("LTD $15,000") == (None, None)
     assert _parse_pay("base $180,000 LTD $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 LTD clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 GTL in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 life in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 GTL") == (None, None)
+    assert _parse_pay("$15,000 group life") == (None, None)
+    assert _parse_pay("$15,000 group term life") == (None, None)
+    assert _parse_pay("$15,000 supplemental life") == (None, None)
+    assert _parse_pay("$15,000 basic life") == (None, None)
+    assert _parse_pay("$15,000 voluntary life") == (None, None)
+    assert _parse_pay("$15,000 term life") == (None, None)
+    assert _parse_pay("$15,000 GTL clawback") == (None, None)
+    assert _parse_pay("GTL $15,000") == (None, None)
+    assert _parse_pay("group term life $15,000") == (None, None)
+    assert _parse_pay("base $180,000 GTL $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group term life $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 GTL clawback $15,000") == (None, 180_000)
     assert _parse_pay("$180,000 LTI in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 LTI") == (None, None)
     assert _parse_pay("$15,000 STI") == (None, None)
@@ -7609,6 +7624,14 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     ltdonly = Opportunity(title="Engineer", url="https://jobs.example/ltdonly")
     assert _apply_listing(ltdonly, "<p>$15,000 LTD. Apply now.</p>") is False
     assert ltdonly.pay_high is None
+    gtlonly = Opportunity(title="Engineer", url="https://jobs.example/gtlonly")
+    assert _apply_listing(gtlonly, "<p>$15,000 GTL. Apply now.</p>") is False
+    assert gtlonly.pay_high is None
+    grouplife = Opportunity(title="Engineer", url="https://jobs.example/grouplife")
+    assert _apply_listing(
+        grouplife, "<p>$15,000 group term life. Apply now.</p>"
+    ) is False
+    assert grouplife.pay_high is None
     ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
     assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
     assert ltionly.pay_high is None
