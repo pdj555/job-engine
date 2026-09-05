@@ -5671,6 +5671,8 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|we\s+(?:already\s+)?filled\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
+    r"|we(?:'ve|\s+have)?\s+(?:already\s+)?hired\s+(?:(?:someone|a\s+candidate)\s+)?for\s+this\s+"
+    r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"\s+(?:is|has\s+been)\s+(?:closed|expired)"
