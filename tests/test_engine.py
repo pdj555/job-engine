@@ -4611,6 +4611,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "quarter-time FTE") == 10
     assert _guess_hours("Engineer", "quarter time FTE") == 10
     assert _guess_hours("Engineer", "FTE quarter-time") == 10
+    assert _guess_hours("Engineer", "three-quarter time FTE") == 30
+    assert _guess_hours("Engineer", "three-quarter-time FTE") == 30
+    assert _guess_hours("Engineer", "three quarter time FTE") == 30
+    assert _guess_hours("Engineer", "FTE three-quarter-time") == 30
+    assert _guess_hours("Engineer", "three-quarter FTE") is None
     assert _guess_hours("Engineer", "quarter FTE") is None
     assert _guess_hours("Engineer", "first quarter FTE") is None
     assert _guess_hours("Engineer", "half a dozen FTE") is None
@@ -4739,6 +4744,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert quarter_time.hours_per_week == 10
     assert quarter_time.pay_high == 40_000
+    three_quarter = Opportunity(title="Engineer", url="https://jobs.example/three-quarter-fte")
+    assert _apply_listing(
+        three_quarter, "<p>$80/hour. three-quarter-time FTE.</p>"
+    ) is True
+    assert three_quarter.hours_per_week == 30
+    assert three_quarter.pay_high == 120_000
     labeled = Opportunity(title="Engineer", url="https://jobs.example/hpw")
     assert _apply_listing(
         labeled, "<p>$160,000 a year. Hours per week: 32</p>"
