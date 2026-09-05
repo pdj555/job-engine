@@ -2097,6 +2097,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("travel time $80/hr") == (None, None)
     assert _parse_pay("meal penalty $80/hr") == (None, None)
     assert _parse_pay("Salary $180,000. Piece rate $80/hr") == (None, 180_000)
+    assert _parse_pay("$80/hr per diem") == (None, None)
+    assert _parse_pay("$80/hr per-diem") == (None, None)
+    assert _parse_pay("per diem $80/hr") == (None, None)
+    assert _parse_pay("Salary $180,000. Per diem $80/hr") == (None, 180_000)
+    assert _parse_pay("$400 per diem") == (None, 100_000)
+    assert _parse_pay("$100 per diem") == (None, 25_000)
     assert _parse_pay("$80/hr") == (None, 160_000)
 
 
