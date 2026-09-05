@@ -2765,6 +2765,22 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 bicycle") == (None, 15_000)
     assert _parse_pay("$15,000 cycling") == (None, 15_000)
     assert _parse_pay("$15,000 e-bike") == (None, 15_000)
+    assert _parse_pay("$15,000 scooter stipend") == (None, None)
+    assert _parse_pay("$15,000 e-scooter stipend") == (None, None)
+    assert _parse_pay("$15,000 moped stipend") == (None, None)
+    assert _parse_pay("$15,000 motorcycle stipend") == (None, None)
+    assert _parse_pay("$15,000 scooter allowance") == (None, None)
+    assert _parse_pay("$15,000 scooter benefit") == (None, None)
+    assert _parse_pay("$15,000 scooter reimbursement") == (None, None)
+    assert _parse_pay("$15,000 scooter perk") == (None, None)
+    assert _parse_pay("$15,000 scooter stipend. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 scooter benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 scooter perk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 scooter benefit in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 scooter") == (None, 15_000)
+    assert _parse_pay("$15,000 moped") == (None, 15_000)
+    assert _parse_pay("$15,000 motorcycle") == (None, 15_000)
+    assert _parse_pay("$15,000 e-scooter") == (None, 15_000)
     assert _parse_pay("$10,000 caregiver allowance") == (None, None)
     assert _parse_pay("$10,000 pension") == (None, None)
     assert _parse_pay("$3000 weekly pension") == (None, None)
@@ -7712,6 +7728,20 @@ def test_guess_pay_annualizes_hourly():
         bicycleperkmix, "<p>$15,000 bicycle perk. Salary $180,000</p>"
     ) is True
     assert bicycleperkmix.pay_high == 180_000
+    scooterstipendonly = Opportunity(
+        title="Engineer", url="https://jobs.example/scooterstipendonly"
+    )
+    assert _apply_listing(
+        scooterstipendonly, "<p>$15,000 scooter stipend. Apply now.</p>"
+    ) is False
+    assert scooterstipendonly.pay_high is None
+    scooterstipendmix = Opportunity(
+        title="Engineer", url="https://jobs.example/scooterstipendmix"
+    )
+    assert _apply_listing(
+        scooterstipendmix, "<p>$15,000 scooter stipend. Salary $180,000</p>"
+    ) is True
+    assert scooterstipendmix.pay_high == 180_000
     fitness = Opportunity(title="Engineer", url="https://jobs.example/fitness")
     assert _apply_listing(
         fitness, "<p>$10,000 fitness reimbursement. Great team.</p>"
