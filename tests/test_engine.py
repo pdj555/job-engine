@@ -13442,6 +13442,34 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We've decided against filling this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided against this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided against proceeding with this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided against hiring for this position.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided against filling this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've decided against this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We're deciding against filling this role.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We're not going to proceed with this role.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
@@ -14547,6 +14575,18 @@ def test_html_is_gone_removed_listing_banner():
         "<title>Engineer</title>"
         "<p>The job you selected could not be found.</p><p>$180,000</p>"
     ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The job you applied for cannot be found.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The role you requested cannot be found.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>The meeting you selected cannot be found.</p><p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>couldn't find this job description.</p><p>$180,000</p>"
