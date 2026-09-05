@@ -18232,6 +18232,50 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>This posting is unshared.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This job has been unshared.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've unshared this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is deshared.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is de-shared.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is de shared.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've deshared this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is shared.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting has been unshared.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this search has been unshared.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We unshared our blog.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>This posting has been deleted.</p><p>$180,000</p>"
     ) is True
     assert _html_is_gone(
