@@ -1725,6 +1725,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("NiPoGi $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 NiPoGi in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 OneMix") == (None, None)
+    assert _parse_pay("$15,000 One Mix") == (None, None)
+    assert _parse_pay("$15,000 One-Mix") == (None, None)
     assert _parse_pay("OneMix $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 OneMix in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 GPD Pocket") == (None, None)
