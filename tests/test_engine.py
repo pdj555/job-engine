@@ -10578,6 +10578,12 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must work at the office 3 days") is False
     assert _guess_remote("Engineer", "should work at the office 3 days") is False
     assert _guess_remote("Engineer", "have to be at the office 3 days") is False
+    assert _guess_remote("Engineer", "must be present at the office 3 days") is False
+    assert _guess_remote("Engineer", "have to be present at the office 3 days") is False
+    assert _guess_remote("Engineer", "required to be present at the office 3 days") is False
+    assert _guess_remote("Engineer", "must be present in NYC 3 days") is False
+    assert _guess_remote("Engineer", "must be present at home 3 days") is True
+    assert _guess_remote("Engineer", "must be present in meetings 3 days") is True
     assert _guess_remote("Engineer", "required to work at the office 3 days") is False
     assert _guess_remote("Engineer", "told to work at the office 3 days") is False
     assert _guess_remote("Engineer", "have to work at home 3 days") is True
@@ -11158,6 +11164,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert have_at_office.remote is False
     assert have_at_office.pay_high == 180_000
+    present_office = Opportunity(
+        title="Engineer", url="https://jobs.example/presentoffice"
+    )
+    assert _apply_listing(
+        present_office,
+        "<p>Must be present at the office 3 days. Salary $180,000</p>",
+    ) is True
+    assert present_office.remote is False
+    assert present_office.pay_high == 180_000
     expected_days = Opportunity(
         title="Engineer", url="https://jobs.example/expecteddays"
     )
