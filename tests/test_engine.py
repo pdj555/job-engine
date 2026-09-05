@@ -2283,6 +2283,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 legal") == (None, None)
     assert _parse_pay("$15,000 legal") == (None, None)
     assert _parse_pay("$15,000 legal. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 prepaid legal") == (None, None)
+    assert _parse_pay("prepaid legal of $15,000") == (None, None)
+    assert _parse_pay("$15,000 prepaid legal. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 prepaid legal in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 prepaid") == (None, 15_000)
     assert _parse_pay("$180,000 legal in NYC") == (None, 180_000)
     assert _parse_pay("Legal $180,000 a year") == (None, 180_000)
     assert _parse_pay("$10,000 adoption assistance") == (None, None)
@@ -8076,6 +8081,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         legalclaw, "<p>Base $180,000 legal plan clawback $15,000</p>"
     ) is True
     assert legalclaw.pay_high == 180_000
+    prepaid = Opportunity(title="Engineer", url="https://jobs.example/prepaidlegal")
+    assert _apply_listing(
+        prepaid, "<p>$15,000 prepaid legal. Apply now.</p>"
+    ) is False
+    assert prepaid.pay_high is None
+    prepaidmix = Opportunity(title="Engineer", url="https://jobs.example/prepaidmix")
+    assert _apply_listing(
+        prepaidmix, "<p>$15,000 prepaid legal. Salary $180,000</p>"
+    ) is True
+    assert prepaidmix.pay_high == 180_000
     ptomix = Opportunity(title="Engineer", url="https://jobs.example/ptomix")
     assert _apply_listing(ptomix, "<p>Base $180,000 unused PTO $500</p>") is True
     assert ptomix.pay_high == 180_000
