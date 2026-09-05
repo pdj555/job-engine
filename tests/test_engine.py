@@ -2252,6 +2252,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 identity theft forfeiture $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 identity theft penalty $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 identity theft forfeiture") == (None, None)
     assert _parse_pay("base $180,000 identity theft recoupment $15,000") == (
         None,
         180_000,
@@ -7388,6 +7397,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         idclaw, "<p>Base $180,000 identity theft clawback $15,000</p>"
     ) is True
     assert idclaw.pay_high == 180_000
+    idforf = Opportunity(title="Engineer", url="https://jobs.example/idtheftforf")
+    assert _apply_listing(
+        idforf, "<p>Base $180,000 identity theft forfeiture $15,000</p>"
+    ) is True
+    assert idforf.pay_high == 180_000
     pension = Opportunity(title="Engineer", url="https://jobs.example/pensionmix")
     assert _apply_listing(
         pension, "<p>Base $180,000 pension contribution $15,000</p>"
