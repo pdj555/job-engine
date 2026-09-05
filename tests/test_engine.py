@@ -10364,6 +10364,13 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "come in 3 days a week NYC") is False
     assert _guess_remote("Engineer", "come into work NYC 3 days") is False
     assert _guess_remote("Engineer", "come to work NYC 3 days") is False
+    assert _guess_remote("Engineer", "welcome to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "welcome to work in the US 3 days") is True
+    assert _guess_remote("Engineer", "welcome to work in meetings 3 days") is True
+    assert _guess_remote("Engineer", "you are welcome to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "outcome to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "income to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "come to work 3 days a week") is False
     assert _guess_remote("Engineer", "come in the US 3 days") is True
     assert _guess_remote("Engineer", "come in the US 3 days a week") is True
     assert _guess_remote("Engineer", "come in meetings 3 days") is True
@@ -10875,6 +10882,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
         come_to, "<p>Come to work 3 days a week. Salary $180,000</p>"
     ) is True
     assert come_to.remote is False
+    welcome_work = Opportunity(
+        title="Engineer", url="https://jobs.example/welcome-work"
+    )
+    assert _apply_listing(
+        welcome_work,
+        "<p>You are welcome to work in NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert welcome_work.remote is True
+    assert welcome_work.pay_high == 180_000
     at_off = Opportunity(title="Engineer", url="https://jobs.example/at-off")
     assert _apply_listing(
         at_off, "<p>3 days a week at the office. Salary $180,000</p>"
