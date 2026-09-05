@@ -6717,16 +6717,16 @@ _DAILY_HOURS_RE = re.compile(
     re.I,
 )
 _DAYS_X_HOURS_RE = re.compile(
-    r"(?i)(?<![\d.])\b(two|three|four|five|[2-5])\s+(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
+    r"(?i)(?<![\d.])\b(two|three|four|five|six|seven|[2-7])\s+(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
     r"(?!\s+(?:a|per|each|every)\s+months?)"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?<![\d.])\b(two|three|four|five|[2-5])\s+days?\s+(?:at|of)\s+(\d{1,2}(?:\.\d+)?)\s+hours?\b"
+    r"|(?<![\d.])\b(two|three|four|five|six|seven|[2-7])\s+days?\s+(?:at|of)\s+(\d{1,2}(?:\.\d+)?)\s+hours?\b"
     r"(?!\s+(?:a|per|each|every)\s+months?)"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?<![\d.])\b(two|three|four|five|[2-5])\s*[x×]\s*(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
+    r"|(?<![\d.])\b(two|three|four|five|six|seven|[2-7])\s*[x×]\s*(\d{1,2}(?:\.\d+)?)[-\s]hours?\s+(?:days?|shifts?)\b"
     r"(?!\s+(?:a|per|each|every)\s+months?)"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*[x×]\s*(two|three|four|five|[2-5])\s+(?:days?|shifts?)\b"
+    r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*[x×]\s*(two|three|four|five|six|seven|[2-7])\s+(?:days?|shifts?)\b"
     r"(?!\s+(?:a|per|each|every)\s+months?)"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))",
 )
@@ -7309,7 +7309,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–10 times a week, N hours/day × 5, or 2–5 days at N hours."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–10 times a week, N hours/day × 5, or 2–7 days at N hours."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
@@ -7403,8 +7403,8 @@ def _stated_hours(title: str, description: str) -> Optional[int]:
         raw_count = count or count_after or count_x or count_xd
         raw_per = per or per_after or per_x or per_xh
         days = {
-            "two": 2, "three": 3, "four": 4, "five": 5,
-            "2": 2, "3": 3, "4": 4, "5": 5,
+            "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+            "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7,
         }[raw_count.lower()]
         n = int(round(float(raw_per) * days))
         if 1 <= n <= 80:

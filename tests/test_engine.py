@@ -7409,12 +7409,21 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "4 x 8 hour days") == 32
     assert _guess_hours("Engineer", "8 hours x 4 days") == 32
     assert _guess_hours("Engineer", "8 hours x5 a week") == 40
-    assert _guess_hours("Engineer", "six 8-hour days") is None
+    assert _guess_hours("Engineer", "six 8-hour days") == 48
+    assert _guess_hours("Engineer", "6 days at 8 hours") == 48
+    assert _guess_hours("Engineer", "6 x 8 hour days") == 48
+    assert _guess_hours("Engineer", "8 hours x 6 days") == 48
+    assert _guess_hours("Engineer", "seven 8-hour days") == 56
+    assert _guess_hours("Engineer", "7 days at 8 hours") == 56
+    assert _guess_hours("Engineer", "32 hours a week. six 8-hour days") == 32
     assert _guess_hours("Engineer", "five 8-hour days a month") is None
     assert _guess_hours("Engineer", "five 8-hour days meeting") is None
     assert _guess_hours("Engineer", "5 x 8 hour days a month") is None
     assert _guess_hours("Engineer", "5 x 8 hour days meeting") is None
     assert _guess_hours("Engineer", "8 x 5 hour days") is None
+    assert _guess_hours("Engineer", "eight 8-hour days") is None
+    assert _guess_hours("Engineer", "six 8-hour days a month") is None
+    assert _guess_hours("Engineer", "six 8-hour days meeting") is None
     assert _guess_hours("Engineer", "16 hours twice a week") == 32
     assert _guess_hours("Engineer", "16 hours twice per week") == 32
     assert _guess_hours("Engineer", "16 hours twice weekly") == 32
@@ -8626,6 +8635,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert four_x_eight.hours_per_week == 32
     assert four_x_eight.pay_high == 128_000
+    six_eight = Opportunity(title="Engineer", url="https://jobs.example/six-eight-hour-days")
+    assert _apply_listing(
+        six_eight, "<p>$80/hour. six 8-hour days.</p>"
+    ) is True
+    assert six_eight.hours_per_week == 48
+    assert six_eight.pay_high == 192_000
     workday = Opportunity(title="Engineer", url="https://jobs.example/workdayhours")
     assert _apply_listing(
         workday, "<p>$80/hour. 8 hours a workday.</p>"
