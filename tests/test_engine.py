@@ -526,6 +526,15 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert _parse_pay("$80,000 (BSD). Account Executive $220,000") == (None, None)
     assert _parse_pay("Experience with BSD 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("Experience with PHP 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("CHF $80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>CHF $80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("EUR $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("GBP $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("INR $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("$80,000 (CHF). Account Executive $220,000") == (None, None)
+    assert _parse_pay("$80,000 (EUR). Account Executive $220,000") == (None, None)
+    assert _parse_pay("Experience with EUR 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("Experience with GBP 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("CAD80,000. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>CAD80,000. Account Executive $220,000</p>") is True
     assert _parse_pay("NZD90,000. Account Executive $220,000") == (None, None)
