@@ -3264,6 +3264,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("$15,000 AD&D insurance") == (None, None)
+    assert _parse_pay("$15,000 AD and D") == (None, None)
+    assert _parse_pay("$15,000 AD & D") == (None, None)
+    assert _parse_pay("$15,000 AD and D. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 AD & D. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 AD") == (None, 15_000)
     assert _parse_pay("Salary $180,000 plus $15,000 AD&D insurance") == (
         None,
         180_000,
@@ -8620,6 +8625,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         addrec, "<p>Base $180,000 AD&D recoupment $15,000</p>"
     ) is True
     assert addrec.pay_high == 180_000
+    adanddonly = Opportunity(title="Engineer", url="https://jobs.example/adanddonly")
+    assert _apply_listing(
+        adanddonly, "<p>$15,000 AD and D. Apply now.</p>"
+    ) is False
+    assert adanddonly.pay_high is None
+    adanddmix = Opportunity(title="Engineer", url="https://jobs.example/adanddmix")
+    assert _apply_listing(
+        adanddmix, "<p>$15,000 AD and D. Salary $180,000</p>"
+    ) is True
+    assert adanddmix.pay_high == 180_000
     refmix = Opportunity(title="Engineer", url="https://jobs.example/refmix")
     assert _apply_listing(
         refmix, "<p>Base $180,000 referral award $15,000</p>"
