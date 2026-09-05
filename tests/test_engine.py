@@ -1993,6 +1993,22 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("flex spending of $15,000") == (None, None)
     assert _parse_pay("$180,000 flex spending in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 flex spending $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 VEBA") == (None, None)
+    assert _parse_pay("$15,000 DCAP") == (None, None)
+    assert _parse_pay("$15,000 Keogh") == (None, None)
+    assert _parse_pay("$15,000 VEBA contribution") == (None, None)
+    assert _parse_pay("$15,000 DCAP benefit") == (None, None)
+    assert _parse_pay("$15,000 Keogh plan") == (None, None)
+    assert _parse_pay("VEBA $15,000") == (None, None)
+    assert _parse_pay("DCAP $15,000") == (None, None)
+    assert _parse_pay("Keogh of $15,000") == (None, None)
+    assert _parse_pay("$180,000 VEBA in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 DCAP in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 Keogh in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 VEBA $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 DCAP $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 Keogh $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 VEBA. Salary $180,000") == (None, 180_000)
     assert _parse_pay("OOP $15,000") == (None, None)
     assert _parse_pay("$180,000 OOP in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 HCFSA $15,000") == (None, 180_000)
@@ -7771,6 +7787,15 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     flexonly = Opportunity(title="Engineer", url="https://jobs.example/flexonly")
     assert _apply_listing(flexonly, "<p>$15,000 flex spending. Apply now.</p>") is False
     assert flexonly.pay_high is None
+    vebaonly = Opportunity(title="Engineer", url="https://jobs.example/vebaonly")
+    assert _apply_listing(vebaonly, "<p>$15,000 VEBA. Apply now.</p>") is False
+    assert vebaonly.pay_high is None
+    dcaponly = Opportunity(title="Engineer", url="https://jobs.example/dcaponly")
+    assert _apply_listing(dcaponly, "<p>$15,000 DCAP. Apply now.</p>") is False
+    assert dcaponly.pay_high is None
+    keoghonly = Opportunity(title="Engineer", url="https://jobs.example/keoghonly")
+    assert _apply_listing(keoghonly, "<p>$15,000 Keogh. Apply now.</p>") is False
+    assert keoghonly.pay_high is None
     simp401 = Opportunity(title="Engineer", url="https://jobs.example/simp401")
     assert _apply_listing(simp401, "<p>$15,000 SIMPLE 401k. Apply now.</p>") is False
     assert simp401.pay_high is None
