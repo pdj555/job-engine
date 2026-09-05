@@ -2792,6 +2792,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 moped") == (None, 15_000)
     assert _parse_pay("$15,000 motorcycle") == (None, 15_000)
     assert _parse_pay("$15,000 e-scooter") == (None, 15_000)
+    assert _parse_pay("$15,000 skateboard stipend") == (None, None)
+    assert _parse_pay("$15,000 hoverboard stipend") == (None, None)
+    assert _parse_pay("$15,000 skate stipend") == (None, None)
+    assert _parse_pay("$15,000 skateboard allowance") == (None, None)
+    assert _parse_pay("$15,000 skateboard benefit") == (None, None)
+    assert _parse_pay("$15,000 skateboard perk") == (None, None)
+    assert _parse_pay("$15,000 skateboard stipend. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 hoverboard stipend. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 skateboard benefit in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 skateboard") == (None, 15_000)
+    assert _parse_pay("$15,000 hoverboard") == (None, 15_000)
+    assert _parse_pay("$15,000 skate") == (None, 15_000)
     assert _parse_pay("$10,000 caregiver allowance") == (None, None)
     assert _parse_pay("$10,000 pension") == (None, None)
     assert _parse_pay("$3000 weekly pension") == (None, None)
@@ -7753,6 +7765,20 @@ def test_guess_pay_annualizes_hourly():
         scooterstipendmix, "<p>$15,000 scooter stipend. Salary $180,000</p>"
     ) is True
     assert scooterstipendmix.pay_high == 180_000
+    skateboardstipendonly = Opportunity(
+        title="Engineer", url="https://jobs.example/skateboardstipendonly"
+    )
+    assert _apply_listing(
+        skateboardstipendonly, "<p>$15,000 skateboard stipend. Apply now.</p>"
+    ) is False
+    assert skateboardstipendonly.pay_high is None
+    skateboardstipendmix = Opportunity(
+        title="Engineer", url="https://jobs.example/skateboardstipendmix"
+    )
+    assert _apply_listing(
+        skateboardstipendmix, "<p>$15,000 skateboard stipend. Salary $180,000</p>"
+    ) is True
+    assert skateboardstipendmix.pay_high == 180_000
     fitness = Opportunity(title="Engineer", url="https://jobs.example/fitness")
     assert _apply_listing(
         fitness, "<p>$10,000 fitness reimbursement. Great team.</p>"
