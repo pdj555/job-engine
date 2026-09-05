@@ -5815,6 +5815,8 @@ _GONE_LISTING_RE = re.compile(
     r"\s+(?:is\s+(?:paused|complete(?:d)?)|has\s+(?:ended|finished|completed))\b"
     r"|(?:hiring|recruiting)\s+has\s+closed\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
+    r"|(?<!once )(?<!after )(?<!when )(?:hiring|recruiting)\s+for\s+this\s+"
+    r"(?:has\s+(?:closed|ended|finished|completed)|is\s+(?:closed|paused|complete(?:d)?))\b(?!\s+from)"
     r"|(?<!once )(?<!after )(?<!when )(?:hiring|recruiting)\s+(?:is\s+complete(?:d)?|has\s+(?:finished|completed))\s+for\s+this\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|(?<!once )(?<!after )(?<!when )we(?:'ve|\s+have)?\s+(?:completed|finished)\s+(?:our\s+)?(?:hiring|recruiting|search)\s+for\s+this\s+"
