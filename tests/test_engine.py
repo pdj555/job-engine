@@ -2707,8 +2707,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cycling stipend") == (None, None)
     assert _parse_pay("$15,000 e-bike stipend") == (None, None)
     assert _parse_pay("$15,000 bicycle allowance") == (None, None)
+    assert _parse_pay("$15,000 bicycle benefit") == (None, None)
+    assert _parse_pay("$15,000 cycling benefit") == (None, None)
+    assert _parse_pay("$15,000 e-bike benefit") == (None, None)
+    assert _parse_pay("$15,000 bicycle reimbursement") == (None, None)
+    assert _parse_pay("bicycle benefit of $15,000") == (None, None)
     assert _parse_pay("$15,000 bicycle stipend. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cycling stipend. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 bicycle benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 bicycle benefit in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 bicycle") == (None, 15_000)
     assert _parse_pay("$15,000 cycling") == (None, 15_000)
     assert _parse_pay("$15,000 e-bike") == (None, 15_000)
@@ -7631,6 +7638,20 @@ def test_guess_pay_annualizes_hourly():
         bicyclestipendmix, "<p>$15,000 bicycle stipend. Salary $180,000</p>"
     ) is True
     assert bicyclestipendmix.pay_high == 180_000
+    bicyclebenefitonly = Opportunity(
+        title="Engineer", url="https://jobs.example/bicyclebenefitonly"
+    )
+    assert _apply_listing(
+        bicyclebenefitonly, "<p>$15,000 bicycle benefit. Apply now.</p>"
+    ) is False
+    assert bicyclebenefitonly.pay_high is None
+    bicyclebenefitmix = Opportunity(
+        title="Engineer", url="https://jobs.example/bicyclebenefitmix"
+    )
+    assert _apply_listing(
+        bicyclebenefitmix, "<p>$15,000 bicycle benefit. Salary $180,000</p>"
+    ) is True
+    assert bicyclebenefitmix.pay_high == 180_000
     fitness = Opportunity(title="Engineer", url="https://jobs.example/fitness")
     assert _apply_listing(
         fitness, "<p>$10,000 fitness reimbursement. Great team.</p>"
