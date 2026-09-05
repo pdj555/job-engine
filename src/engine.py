@@ -6663,6 +6663,8 @@ _FTE_FRAC_RE = re.compile(
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?eighth)[-\s]time\b"
     r"|(?<![\d.])\b((?:one[-\s])?fifth)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?fifth)[-\s]time\b"
+    r"|(?<![\d.])\b((?:one[-\s])?sixth)[-\s]time\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*((?:one[-\s])?sixth)[-\s]time\b"
     r"|(?<![\d.])(?<!three-)(?<!three )\b(quarter)[-\s]time\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(?<!three-)(?<!three )(quarter)[-\s]time\b",
     re.I,
@@ -6979,6 +6981,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             eighth_after,
             fifth,
             fifth_after,
+            sixth,
+            sixth_after,
             quarter,
             quarter_after,
         ) = frac.groups()
@@ -6992,6 +6996,8 @@ def _stated_fte_hours(text: str) -> Optional[int]:
             hours = 5
         elif fifth or fifth_after:
             hours = 8
+        elif sixth or sixth_after:
+            hours = 7
         elif quarter or quarter_after:
             hours = 10
         elif half or half_after:
