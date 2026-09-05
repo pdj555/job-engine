@@ -1988,6 +1988,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 HCFSA") == (None, None)
     assert _parse_pay("$15,000 OOP") == (None, None)
     assert _parse_pay("$15,000 flexible spending") == (None, None)
+    assert _parse_pay("$15,000 flex spending") == (None, None)
+    assert _parse_pay("flex spending $15,000") == (None, None)
+    assert _parse_pay("flex spending of $15,000") == (None, None)
+    assert _parse_pay("$180,000 flex spending in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 flex spending $15,000") == (None, 180_000)
     assert _parse_pay("OOP $15,000") == (None, None)
     assert _parse_pay("$180,000 OOP in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 HCFSA $15,000") == (None, 180_000)
@@ -2277,6 +2282,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$180,000 SEP IRA in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 SEP IRA") == (None, None)
     assert _parse_pay("$15,000 SIMPLE IRA") == (None, None)
+    assert _parse_pay("$15,000 SIMPLE 401k") == (None, None)
+    assert _parse_pay("$15,000 SIMPLE 401(k)") == (None, None)
+    assert _parse_pay("$15,000 solo 401k") == (None, None)
+    assert _parse_pay("$15,000 solo 401(k)") == (None, None)
+    assert _parse_pay("$180,000 SIMPLE 401k in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 SIMPLE 401k $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 SIMPLE") == (None, 15_000)
+    assert _parse_pay("$15,000 SIMPLE 401k. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Roth IRA") == (None, None)
     assert _parse_pay("$15,000 Roth 401k") == (None, None)
     assert _parse_pay("$15,000 Roth 401(k)") == (None, None)
@@ -7755,6 +7768,15 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     ooponly = Opportunity(title="Engineer", url="https://jobs.example/ooponly")
     assert _apply_listing(ooponly, "<p>$15,000 OOP. Apply now.</p>") is False
     assert ooponly.pay_high is None
+    flexonly = Opportunity(title="Engineer", url="https://jobs.example/flexonly")
+    assert _apply_listing(flexonly, "<p>$15,000 flex spending. Apply now.</p>") is False
+    assert flexonly.pay_high is None
+    simp401 = Opportunity(title="Engineer", url="https://jobs.example/simp401")
+    assert _apply_listing(simp401, "<p>$15,000 SIMPLE 401k. Apply now.</p>") is False
+    assert simp401.pay_high is None
+    solo401 = Opportunity(title="Engineer", url="https://jobs.example/solo401")
+    assert _apply_listing(solo401, "<p>$15,000 solo 401k. Apply now.</p>") is False
+    assert solo401.pay_high is None
     ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
     assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
     assert ltionly.pay_high is None
