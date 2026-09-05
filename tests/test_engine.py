@@ -6759,6 +6759,27 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours four times a day") is None
     assert _guess_hours("Engineer", "8 hours four times") is None
     assert _guess_hours("Engineer", "four times: 8 hours") is None
+    assert _guess_hours("Engineer", "8 hours five times a week") == 40
+    assert _guess_hours("Engineer", "8 hours five times per week") == 40
+    assert _guess_hours("Engineer", "8 hours five times weekly") == 40
+    assert _guess_hours("Engineer", "8 hours 5 times a week") == 40
+    assert _guess_hours("Engineer", "8 hrs five times a week") == 40
+    assert _guess_hours("Engineer", "hours five times a week: 8") == 40
+    assert _guess_hours("Engineer", "five times a week hours: 8") == 40
+    assert _guess_hours("Engineer", "five times weekly hours: 8") == 40
+    assert _guess_hours("Engineer", "five times a week: 8 hours") == 40
+    assert _guess_hours("Engineer", "five times weekly: 8 hours") == 40
+    assert _guess_hours("Engineer", "hours: 8 five times a week") == 40
+    assert _guess_hours("Engineer", "hours: 8 five times weekly") == 40
+    assert _guess_hours("Engineer", "16 hours five times a week") == 80
+    assert _guess_hours("Engineer", "40 hours a week. 8 hours five times a week") == 40
+    assert _guess_hours("Engineer", "17 hours five times a week") is None
+    assert _guess_hours("Engineer", "8 hours five times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours five times weekly meeting") is None
+    assert _guess_hours("Engineer", "2 hour five times a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours five times a day") is None
+    assert _guess_hours("Engineer", "8 hours five times") is None
+    assert _guess_hours("Engineer", "five times: 8 hours") is None
     assert _guess_hours("Engineer", "this day: 8 hours") is None
     assert _guess_hours("Engineer", "day: 8 hours") is None
     assert _guess_hours("Engineer", "8 hours for the day") is None
@@ -7739,6 +7760,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert four_weekly.hours_per_week == 32
     assert four_weekly.pay_high == 160_000
+    five_week = Opportunity(title="Engineer", url="https://jobs.example/fiveweekhours")
+    assert _apply_listing(
+        five_week, "<p>$80/hour. 8 hours five times a week.</p>"
+    ) is True
+    assert five_week.hours_per_week == 40
+    assert five_week.pay_high == 160_000
+    five_weekly = Opportunity(title="Engineer", url="https://jobs.example/fiveweeklyhours")
+    assert _apply_listing(
+        five_weekly, "<p>$100/hour. 8 hours 5 times a week.</p>"
+    ) is True
+    assert five_weekly.hours_per_week == 40
+    assert five_weekly.pay_high == 200_000
     labeled_working_week = Opportunity(title="Engineer", url="https://jobs.example/lworkingweek")
     assert _apply_listing(
         labeled_working_week, "<p>$80/hour. Hours per working week: 32</p>"
@@ -18011,6 +18044,27 @@ def test_html_is_gone_removed_listing_banner():
     assert _html_is_gone(
         "<title>Engineer</title>"
         "<p>Once this posting is no longer valid, apply elsewhere.</p>"
+        "<p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is no longer being staffed.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is no longer being staffed.</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This posting is being staffed.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This meeting is no longer being staffed.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this posting is no longer being staffed, apply elsewhere.</p>"
         "<p>$180,000</p>"
     ) is False
     assert _html_is_gone(
