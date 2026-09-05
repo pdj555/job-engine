@@ -7787,7 +7787,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "eleven hours a week") == 11
     assert _guess_hours("Engineer", "twelve hours weekly") == 12
     assert _guess_hours("Engineer", "thirteen hours a week") == 13
-    assert _guess_hours("Engineer", "thirteen hours a fortnight") is None
+    assert _guess_hours("Engineer", "thirteen hours a fortnight") == 6
+    assert _guess_hours("Engineer", "eight hours a fortnight") == 4
+    assert _guess_hours("Engineer", "ten hours per fortnight") == 5
+    assert _guess_hours("Engineer", "fourteen hours a fortnight") is None
     assert _guess_hours("Engineer", "fourteen hours a week") is None
     assert _guess_hours("Engineer", "32 hours a week. This is a full-time role.") == 32
     assert _guess_hours("Engineer", "32 hours each week") == 32
