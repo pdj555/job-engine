@@ -10145,6 +10145,17 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "required to work in NYC") is True
     assert _guess_remote("Engineer", "not required to work in NYC 3 days") is True
     assert _guess_remote("Engineer", "work from home. required to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "preferred to work in NYC 3 days") is False
+    assert _guess_remote("Engineer", "preferred to work in NYC 3 days a week") is False
+    assert _guess_remote("Engineer", "prefer to work in NYC 3 days") is False
+    assert _guess_remote("Engineer", "preferred to be in NYC 3 days") is False
+    assert _guess_remote("Engineer", "preferred to work from NYC 3 days") is False
+    assert _guess_remote("Engineer", "preferred to work in the US 3 days") is True
+    assert _guess_remote("Engineer", "preferred to work in meetings 3 days") is True
+    assert _guess_remote("Engineer", "preferred to work from home 3 days") is True
+    assert _guess_remote("Engineer", "preferred to work in NYC") is True
+    assert _guess_remote("Engineer", "not preferred to work in NYC 3 days") is True
+    assert _guess_remote("Engineer", "work from home. preferred to work in NYC 3 days") is True
     assert _guess_remote("Engineer", "you will be in Seattle 3 days a week") is True
     assert _guess_remote("Engineer", "this role is in NYC 3 days a week") is False
     assert _guess_remote("Engineer", "this role is in NYC 3 days") is False
@@ -10702,6 +10713,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert req_work_days.remote is False
     assert req_work_days.pay_high == 180_000
+    pref_work_days = Opportunity(
+        title="Engineer", url="https://jobs.example/prefworkdays"
+    )
+    assert _apply_listing(
+        pref_work_days,
+        "<p>Preferred to work in NYC 3 days. Salary $180,000</p>",
+    ) is True
+    assert pref_work_days.remote is False
+    assert pref_work_days.pay_high == 180_000
     located = Opportunity(title="Engineer", url="https://jobs.example/located")
     assert _apply_listing(
         located, "<p>You must be located in New York. Salary $180,000</p>"
