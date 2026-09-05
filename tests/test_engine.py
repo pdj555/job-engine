@@ -5049,6 +5049,10 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "one-twenty-first-time FTE") == 2
     assert _guess_hours("Engineer", "FTE twenty-first-time") == 2
     assert _guess_hours("Engineer", "1/21 FTE") == 2
+    assert _guess_hours("Engineer", "twenty-second-time FTE") == 2
+    assert _guess_hours("Engineer", "twenty-third-time FTE") == 2
+    assert _guess_hours("Engineer", "twenty-fifth-time FTE") == 2
+    assert _guess_hours("Engineer", "1/23 FTE") == 2
     assert _guess_hours("Engineer", "FTE 1/10") == 4
     assert _guess_hours("Engineer", "2/1 FTE") is None
     assert _guess_hours("Engineer", "1/0 FTE") is None
@@ -5064,6 +5068,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "nineteenth FTE") is None
     assert _guess_hours("Engineer", "twentieth FTE") is None
     assert _guess_hours("Engineer", "twenty-first FTE") is None
+    assert _guess_hours("Engineer", "twenty-third FTE") is None
     assert _guess_hours("Engineer", "ninth FTE") is None
     assert _guess_hours("Engineer", "seventh FTE") is None
     assert _guess_hours("Engineer", "sixth FTE") is None
@@ -5338,6 +5343,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert twenty_first_time.hours_per_week == 2
     assert twenty_first_time.pay_high == 10_000
+    twenty_third_time = Opportunity(title="Engineer", url="https://jobs.example/twenty-third-time-fte")
+    assert _apply_listing(
+        twenty_third_time, "<p>$100/hour. twenty-third-time FTE.</p>"
+    ) is True
+    assert twenty_third_time.hours_per_week == 2
+    assert twenty_third_time.pay_high == 10_000
     tenth = Opportunity(title="Engineer", url="https://jobs.example/tenth-fte")
     assert _apply_listing(
         tenth, "<p>$80/hour. 1/10 FTE.</p>"
