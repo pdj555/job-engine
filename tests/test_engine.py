@@ -7346,6 +7346,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "16 hours two times a week") == 32
     assert _guess_hours("Engineer", "16 hours 2 times a week") == 32
     assert _guess_hours("Engineer", "16 hours 2x a week") == 32
+    assert _guess_hours("Engineer", "16 hours x2 a week") == 32
     assert _guess_hours("Engineer", "16 hrs twice a week") == 32
     assert _guess_hours("Engineer", "hours twice a week: 16") == 32
     assert _guess_hours("Engineer", "twice a week hours: 16") == 32
@@ -7420,6 +7421,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours 5x a week") == 40
     assert _guess_hours("Engineer", "8 hours 5× a week") == 40
     assert _guess_hours("Engineer", "8 hours 5 x a week") == 40
+    assert _guess_hours("Engineer", "8 hours x5 a week") == 40
+    assert _guess_hours("Engineer", "8 hours x 5 a week") == 40
+    assert _guess_hours("Engineer", "8 hours ×5 a week") == 40
+    assert _guess_hours("Engineer", "8 hrs x5 weekly") == 40
+    assert _guess_hours("Engineer", "hours x5 a week: 8") == 40
+    assert _guess_hours("Engineer", "hours: 8 x5 a week") == 40
     assert _guess_hours("Engineer", "8 hrs 5x weekly") == 40
     assert _guess_hours("Engineer", "hours 5x a week: 8") == 40
     assert _guess_hours("Engineer", "hours: 8 5x a week") == 40
@@ -7436,9 +7443,12 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "17 hours five times a week") is None
     assert _guess_hours("Engineer", "8 hours five times a week meeting") is None
     assert _guess_hours("Engineer", "8 hours 5x a week meeting") is None
+    assert _guess_hours("Engineer", "8 hours x5 a week meeting") is None
     assert _guess_hours("Engineer", "8 hours five times weekly meeting") is None
     assert _guess_hours("Engineer", "8 hours 5x a day") is None
+    assert _guess_hours("Engineer", "8 hours x5 a day") is None
     assert _guess_hours("Engineer", "8 hours 5x") is None
+    assert _guess_hours("Engineer", "8 hours x5") is None
     assert _guess_hours("Engineer", "2 hour five times a week meeting") is None
     assert _guess_hours("Engineer", "8 hours five times a day") is None
     assert _guess_hours("Engineer", "8 hours five times") is None
@@ -7538,6 +7548,7 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "8 hours 10x a week") == 80
     assert _guess_hours("Engineer", "8 hours 10× a week") == 80
     assert _guess_hours("Engineer", "8 hours 10 x a week") == 80
+    assert _guess_hours("Engineer", "8 hours x10 a week") == 80
     assert _guess_hours("Engineer", "8 hrs 10x weekly") == 80
     assert _guess_hours("Engineer", "hours 10x a week: 8") == 80
     assert _guess_hours("Engineer", "hours: 8 10x a week") == 80
@@ -8614,6 +8625,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert five_x.hours_per_week == 40
     assert five_x.pay_high == 160_000
+    five_x_inv = Opportunity(title="Engineer", url="https://jobs.example/fivexinvhours")
+    assert _apply_listing(
+        five_x_inv, "<p>$80/hour. 8 hours x5 a week.</p>"
+    ) is True
+    assert five_x_inv.hours_per_week == 40
+    assert five_x_inv.pay_high == 160_000
     six_week = Opportunity(title="Engineer", url="https://jobs.example/sixweekhours")
     assert _apply_listing(
         six_week, "<p>$80/hour. 8 hours six times a week.</p>"
