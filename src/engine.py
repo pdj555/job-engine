@@ -5896,7 +5896,7 @@ _GONE_LISTING_RE = re.compile(
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
-    r"\s+is\s+no\s+longer\s+being\s+(?:staffed|filled|funded|sourced|hired|budgeted|resourced|allocated|processed|actioned|reviewed|accepted|evaluated|assessed|screened|interviewed|shortlisted|offered(?!\s+as\b)|pursued(?!\s+as\b)|considered(?!\s+for\b))\b"
+    r"\s+is\s+no\s+longer\s+being\s+(?:staffed|filled|funded|sourced|hired|budgeted|resourced|allocated|processed|actioned|reviewed|accepted|evaluated|assessed|screened|interviewed|shortlisted|scheduled|selected|offered(?!\s+as\b)|pursued(?!\s+as\b)|considered(?!\s+for\b))\b"
     r"|(?<!once )(?<!after )(?<!when )(?:the|this)\s+"
     r"(?:job(?:\s+posting)?|role|position|posting|vacancy|opportunity|requisition|req|listing|opening|search)"
     r"\s+is\s+no\s+longer\s+under\s+(?:review|consideration)\b"
