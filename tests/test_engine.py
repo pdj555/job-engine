@@ -190,9 +190,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 founders bonus") == (None, None)
     assert _parse_pay("$15,000 executive bonus. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 guaranteed bonus. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 longevity bonus") == (None, None)
+    assert _parse_pay("$15,000 milestone bonus") == (None, None)
+    assert _parse_pay("$15,000 productivity bonus") == (None, None)
+    assert _parse_pay("$15,000 longevity bonus. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 milestone bonus. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 executive") == (None, 15_000)
     assert _parse_pay("$15,000 guaranteed") == (None, 15_000)
     assert _parse_pay("$15,000 founding") == (None, 15_000)
+    assert _parse_pay("$15,000 longevity") == (None, 15_000)
+    assert _parse_pay("$15,000 milestone") == (None, 15_000)
+    assert _parse_pay("$15,000 productivity") == (None, 15_000)
     assert _parse_pay("$12,000 wellness stipend") == (None, None)
     assert _parse_pay("$10,000 cell phone stipend") == (None, None)
     assert _parse_pay("$10,000 phone stipend") == (None, None)
@@ -2670,6 +2678,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 stock options $50,000") == (None, 180_000)
     assert _parse_pay("base $180,000 signing bonus $10,000") == (None, 180_000)
     assert _parse_pay("base $180,000 executive bonus $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 longevity bonus $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 sign-on $10,000") == (None, 180_000)
     assert _parse_pay("base $180,000 relocation bonus $10,000") == (None, 180_000)
     assert _parse_pay("$10,000 401(k) match") == (None, None)
@@ -7929,6 +7938,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         execmix, "<p>$15,000 executive bonus. Salary $180,000</p>"
     ) is True
     assert execmix.pay_high == 180_000
+    longbonus = Opportunity(title="Engineer", url="https://jobs.example/longbonus")
+    assert _apply_listing(
+        longbonus, "<p>$15,000 longevity bonus. Apply now.</p>"
+    ) is False
+    assert longbonus.pay_high is None
+    longmix = Opportunity(title="Engineer", url="https://jobs.example/longmix")
+    assert _apply_listing(
+        longmix, "<p>$15,000 longevity bonus. Salary $180,000</p>"
+    ) is True
+    assert longmix.pay_high == 180_000
     base_k = Opportunity(title="Engineer", url="https://jobs.example/base401")
     assert _apply_listing(base_k, "<p>Base $180,000 401(k) match $10,000</p>") is True
     assert base_k.pay_high == 180_000
