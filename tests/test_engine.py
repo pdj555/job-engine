@@ -2168,6 +2168,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 evacuation coverage") == (None, None)
     assert _parse_pay("$15,000 repatriation benefit") == (None, None)
     assert _parse_pay("$15,000 repatriation coverage") == (None, None)
+    assert _parse_pay("$15,000 kidnap benefit") == (None, None)
+    assert _parse_pay("$15,000 kidnap coverage") == (None, None)
+    assert _parse_pay("$15,000 ransom benefit") == (None, None)
+    assert _parse_pay("$15,000 ransom coverage") == (None, None)
     assert _parse_pay("$15,000 medical evacuation") == (None, None)
     assert _parse_pay("$15,000 emergency evacuation") == (None, None)
     assert _parse_pay("$15,000 emergency medical evacuation") == (None, None)
@@ -2194,6 +2198,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("medevac coverage of $15,000") == (None, None)
     assert _parse_pay("evacuation benefit of $15,000") == (None, None)
     assert _parse_pay("repatriation benefit of $15,000") == (None, None)
+    assert _parse_pay("kidnap benefit of $15,000") == (None, None)
+    assert _parse_pay("ransom benefit of $15,000") == (None, None)
     assert _parse_pay("$15,000 term insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 supplemental insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 dependent life. Salary $180,000") == (None, 180_000)
@@ -2214,6 +2220,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 medevac coverage. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 evacuation benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 repatriation benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 kidnap benefit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ransom benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 term insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 supplemental insurance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 dependent life in NYC") == (None, 180_000)
@@ -2228,6 +2236,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$180,000 air ambulance in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 medevac benefit in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 evacuation benefit in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 kidnap benefit in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 term") == (None, 15_000)
     assert _parse_pay("$15,000 group") == (None, 15_000)
     assert _parse_pay("$15,000 insurance") == (None, 15_000)
@@ -2251,6 +2260,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 repatriation") == (None, 15_000)
     assert _parse_pay("$15,000 medevac") == (None, 15_000)
     assert _parse_pay("$15,000 kidnap") == (None, 15_000)
+    assert _parse_pay("$15,000 ransom") == (None, 15_000)
     assert _parse_pay("$15,000 parent") == (None, 15_000)
     assert _parse_pay("$15,000 accidental") == (None, 15_000)
     assert _parse_pay("$15,000 retiree") == (None, 15_000)
@@ -9201,6 +9211,18 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         evacbenmix, "<p>$15,000 evacuation benefit. Salary $180,000</p>"
     ) is True
     assert evacbenmix.pay_high == 180_000
+    kidnapbenonly = Opportunity(
+        title="Engineer", url="https://jobs.example/kidnapbenonly"
+    )
+    assert _apply_listing(
+        kidnapbenonly, "<p>$15,000 kidnap benefit. Apply now.</p>"
+    ) is False
+    assert kidnapbenonly.pay_high is None
+    kidnapbenmix = Opportunity(title="Engineer", url="https://jobs.example/kidnapbenmix")
+    assert _apply_listing(
+        kidnapbenmix, "<p>$15,000 kidnap benefit. Salary $180,000</p>"
+    ) is True
+    assert kidnapbenmix.pay_high == 180_000
     splitdol = Opportunity(title="Engineer", url="https://jobs.example/splitdol")
     assert _apply_listing(
         splitdol, "<p>$15,000 split dollar. Apply now.</p>"
