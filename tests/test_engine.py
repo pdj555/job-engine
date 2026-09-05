@@ -1906,6 +1906,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 employee stock purchase") == (None, None)
     assert _parse_pay("ESPP of $10,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 ESPP") == (None, 180_000)
+    assert _parse_pay("$15,000 ESOP") == (None, None)
+    assert _parse_pay("$15,000 ESOPs") == (None, None)
+    assert _parse_pay("$15,000 ESOP grant") == (None, None)
+    assert _parse_pay("ESOP $15,000") == (None, None)
+    assert _parse_pay("ESOP of $15,000") == (None, None)
+    assert _parse_pay("employee stock ownership plan of $15,000") == (None, None)
+    assert _parse_pay("base $180,000 ESOP $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 ESOP. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 ESOP in NYC") == (None, None)
+    assert _parse_pay("$15,000 phantom equity") == (None, None)
+    assert _parse_pay("$180,000 phantom equity in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 phantom equity $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 annual 401k match") == (None, None)
     assert _parse_pay("$2,000 monthly cell phone") == (None, None)
     assert _parse_pay("$2,000 per month internet") == (None, None)
@@ -2166,6 +2178,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 profit share") == (None, None)
     assert _parse_pay("$10,000 restricted stock") == (None, None)
     assert _parse_pay("$10,000 employee stock") == (None, None)
+    assert _parse_pay("$15,000 ESP") == (None, 15_000)
+    assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("$10,000 pension contribution") == (None, None)
     assert _parse_pay("$80,000 pension") == (None, None)
     assert _parse_pay("pension $80,000") == (None, None)
@@ -7213,6 +7227,17 @@ def test_guess_pay_annualizes_hourly():
     emp_st = Opportunity(title="Engineer", url="https://jobs.example/emp-st")
     assert _apply_listing(emp_st, "<p>$10,000 employee stock. Great team.</p>") is False
     assert emp_st.pay_high is None
+    esoponly = Opportunity(title="Engineer", url="https://jobs.example/esoponly")
+    assert _apply_listing(esoponly, "<p>$15,000 ESOP. Apply now.</p>") is False
+    assert esoponly.pay_high is None
+    ownplan = Opportunity(title="Engineer", url="https://jobs.example/ownplan")
+    assert _apply_listing(
+        ownplan, "<p>employee stock ownership plan of $15,000. Apply now.</p>"
+    ) is False
+    assert ownplan.pay_high is None
+    phanteq = Opportunity(title="Engineer", url="https://jobs.example/phanteq")
+    assert _apply_listing(phanteq, "<p>$15,000 phantom equity. Apply now.</p>") is False
+    assert phanteq.pay_high is None
     inc_comp = Opportunity(title="Engineer", url="https://jobs.example/inc-comp")
     assert _apply_listing(
         inc_comp, "<p>$10,000 incentive compensation. Apply now.</p>"
