@@ -2228,6 +2228,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("profit-sharing of $15,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 401(k) match") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 profit sharing") == (None, 180_000)
+    assert _parse_pay("base $180,000 stipend $500") == (None, 180_000)
+    assert _parse_pay("base $180,000 housing stipend $500") == (None, 180_000)
+    assert _parse_pay("salary $180,000 stipend $1,200") == (None, 180_000)
+    assert _parse_pay("base $180,000 allowance $3,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 housing allowance $3,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 car allowance $6,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tuition $5,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tuition reimbursement $5,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness $1,000") == (None, 180_000)
+    assert _parse_pay("$500 stipend") == (None, None)
+    assert _parse_pay("$3,000 allowance") == (None, None)
+    assert _parse_pay("Salary $180,000 plus $500 stipend") == (None, 180_000)
     assert _parse_pay("$180,000") == (None, 180_000)
     assert _parse_pay("$80/hr overtime") == (None, None)
     assert _parse_pay("Overtime paid at $80/hr") == (None, None)
@@ -7050,6 +7062,15 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         otbase, "<p>Salary $180,000. Overtime paid at $80/hr</p>"
     ) is True
     assert otbase.pay_high == 180_000
+    stip = Opportunity(title="Engineer", url="https://jobs.example/stipmix")
+    assert _apply_listing(stip, "<p>Base $180,000 stipend $500</p>") is True
+    assert stip.pay_high == 180_000
+    allow = Opportunity(title="Engineer", url="https://jobs.example/allowmix")
+    assert _apply_listing(allow, "<p>Base $180,000 allowance $3,000</p>") is True
+    assert allow.pay_high == 180_000
+    tuition = Opportunity(title="Engineer", url="https://jobs.example/tuitionmix")
+    assert _apply_listing(tuition, "<p>Base $180,000 tuition $5,000</p>") is True
+    assert tuition.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
