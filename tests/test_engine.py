@@ -1935,6 +1935,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("LTD $15,000") == (None, None)
     assert _parse_pay("base $180,000 LTD $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 LTD clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 LTI in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 LTI") == (None, None)
+    assert _parse_pay("$15,000 STI") == (None, None)
+    assert _parse_pay("$15,000 PSU") == (None, None)
+    assert _parse_pay("$15,000 LTI clawback") == (None, None)
+    assert _parse_pay("LTI $15,000") == (None, None)
+    assert _parse_pay("STI $15,000") == (None, None)
+    assert _parse_pay("PSU $15,000") == (None, None)
+    assert _parse_pay("base $180,000 LTI $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 STI $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 PSU $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 LTI clawback $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 PTO buyback") == (None, None)
     assert _parse_pay("$10,000 PTO cashout") == (None, None)
     assert _parse_pay("PTO buyback of $10,000") == (None, None)
@@ -7549,6 +7561,15 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     ltdonly = Opportunity(title="Engineer", url="https://jobs.example/ltdonly")
     assert _apply_listing(ltdonly, "<p>$15,000 LTD. Apply now.</p>") is False
     assert ltdonly.pay_high is None
+    ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
+    assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
+    assert ltionly.pay_high is None
+    stionly = Opportunity(title="Engineer", url="https://jobs.example/stionly")
+    assert _apply_listing(stionly, "<p>$15,000 STI. Apply now.</p>") is False
+    assert stionly.pay_high is None
+    psuonly = Opportunity(title="Engineer", url="https://jobs.example/psuonly")
+    assert _apply_listing(psuonly, "<p>$15,000 PSU. Apply now.</p>") is False
+    assert psuonly.pay_high is None
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
