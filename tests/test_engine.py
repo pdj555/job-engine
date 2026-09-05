@@ -2553,6 +2553,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("ATV insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 RV insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ATV insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 camper insurance") == (None, None)
+    assert _parse_pay("$15,000 campervan insurance") == (None, None)
+    assert _parse_pay("$15,000 trailer insurance") == (None, None)
+    assert _parse_pay("$15,000 motorhome insurance") == (None, None)
+    assert _parse_pay("$15,000 UTV insurance") == (None, None)
+    assert _parse_pay("camper insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 camper insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 trailer insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 auto insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 renters insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 umbrella insurance. Salary $180,000") == (None, 180_000)
@@ -2605,6 +2613,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 boat") == (None, 15_000)
     assert _parse_pay("$15,000 RV") == (None, 15_000)
     assert _parse_pay("$15,000 ATV") == (None, 15_000)
+    assert _parse_pay("$15,000 UTV") == (None, 15_000)
+    assert _parse_pay("$15,000 camper") == (None, 15_000)
+    assert _parse_pay("$15,000 trailer") == (None, 15_000)
+    assert _parse_pay("$15,000 motorhome") == (None, 15_000)
     assert _parse_pay("$15,000 long-term care") == (None, None)
     assert _parse_pay("$15,000 long term care insurance") == (None, None)
     assert _parse_pay("$15,000 long-term care. Salary $180,000") == (None, 180_000)
@@ -8174,6 +8186,18 @@ def test_guess_pay_annualizes_hourly():
         atvinsonly, "<p>$15,000 ATV insurance. Apply now.</p>"
     ) is False
     assert atvinsonly.pay_high is None
+    camperinsonly = Opportunity(
+        title="Engineer", url="https://jobs.example/camperinsonly"
+    )
+    assert _apply_listing(
+        camperinsonly, "<p>$15,000 camper insurance. Apply now.</p>"
+    ) is False
+    assert camperinsonly.pay_high is None
+    camperinsmix = Opportunity(title="Engineer", url="https://jobs.example/camperinsmix")
+    assert _apply_listing(
+        camperinsmix, "<p>$15,000 camper insurance. Salary $180,000</p>"
+    ) is True
+    assert camperinsmix.pay_high == 180_000
     comminsonly = Opportunity(title="Engineer", url="https://jobs.example/comminsonly")
     assert _apply_listing(
         comminsonly, "<p>$15,000 commuter insurance. Apply now.</p>"
