@@ -2560,6 +2560,11 @@ def test_foreign_salary_detects_prefixed_dollars_and_rs():
     assert _parse_pay("Rp 80,000,000. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Rp 80,000,000. Account Executive $220,000</p>") is True
     assert _parse_pay("Experience with RM 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("RM $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("Rp $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("Rs $80,000. Account Executive $220,000") == (None, None)
+    assert _parse_pay("$80,000 (RM). Account Executive $220,000") == (None, None)
+    assert _parse_pay("Experience with Rp 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("15 LPA. US equivalent $90,000") == (None, None)
     assert _foreign_salary("<p>15-20 LPA. US equivalent $90,000</p>") is True
     assert _parse_pay("CTC 18 lakhs") == (None, None)
