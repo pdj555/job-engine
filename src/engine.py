@@ -6622,7 +6622,7 @@ _NON_SALARY_MONEY_RE = re.compile(
 )
 _HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:(?:working|scheduled)[\s-]+)?(?:hours?|hrs?|h)\.?\s*"
-    r"(?:/|\s*per[\s./]*|\s+(?:a|each|every)\s+|\s+for(?:\s+(?:the|each|every))?\s+|\s+worked(?:\s+(?:per|/|a|each|every))?|\s+working(?:\s+(?:per|/|a|each|every))?|\s+scheduled(?:\s+(?:per|/|a|each|every))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)(?:\s+(?:a|per|each|every))?\s*|\s+of\s+(?:(?:the|each|every)\s+)?)?\s*"
+    r"(?:/|\s*per[\s./]*|\s+(?:a|each|every)\s+|\s+for(?:\s+(?:the|each|every))?\s+|\s+worked(?:\s+(?:per|/|a|each|every))?|\s+working(?:\s+(?:per|/|a|each|every))?|\s+scheduled(?:\s+(?:per|/|a|each|every))?|\s+work[\s-]*|\s+of\s+(?:the\s+)?(?:work(?:ing)?|scheduled)(?:\s+(?:for(?:\s+(?:the|each|every))?|a|per|each|every))?\s*|\s+of\s+(?:(?:the|each|every)\s+)?)?\s*"
     r"(?:work[\s-]*weeks?|workweeks?|week(?:ly)?|wkly|wk)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?|\bh)\s*(?:(?:worked|working|scheduled)\s+)?(?:(?:p(?:er[\s.]*)?\.?\s*/?|/|\.|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:weekly|wkly|weeks?|wk|w)\.?(?:\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))?\s*(?:scheduled\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
@@ -6635,7 +6635,7 @@ _HOURS_RE = re.compile(
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?:hours?|hrs?)\s*(?:(?:worked|(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled))\s*)?[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:(?:p(?:er[\s.]*)?\.?\s*/?|/|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|of(?:\s+(?:the|each|every))?|each|every)\s*)?(?:weekly|wkly|weeks?|wk|w)\.?\b"
     r"|work[\s-]*weeks?\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)?\b"
-    r"|(?:hours?|hrs?)\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled)\s*(?:(?:p(?:er[\s.]*)?\.?\s*/?|/|an?\.?\s*/?|each|every)\s*)?(?:weekly|wkly|weeks?|wk|w)\.?\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+(?:of\s+(?:the\s+)?)?(?:work(?:ing)?|scheduled)\s*(?:(?:p(?:er[\s.]*)?\.?\s*/?|/|an?\.?\s*/?|for(?:\s+(?:the|each|every))?|each|every)\s*)?(?:weekly|wkly|weeks?|wk|w)\.?\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*hpw\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*h(?:p)?\s*/\s*w\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?|h)\.?\s+(?:p(?:er[\s.]*)?|an?)\.?\s*/?\s*w(?:(?:ee)?ks?)?\b"
