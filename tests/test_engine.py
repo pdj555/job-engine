@@ -11505,10 +11505,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "work from our campus in Boston") is False
     assert _guess_remote("Engineer", "must report to our NYC office") is False
     assert _guess_remote("Engineer", "must commute to San Francisco") is False
+    assert _guess_remote("Engineer", "must commute onto the office") is False
+    assert _guess_remote("Engineer", "must commute onto the site") is False
     assert _guess_remote("Engineer", "must commute to our San Francisco office") is False
     assert _guess_remote("Engineer", "regularly commute to our Detroit office") is False
+    assert _guess_remote("Engineer", "regularly commute onto our Detroit office") is False
     assert _guess_remote("Engineer", "must commute to the US") is True
+    assert _guess_remote("Engineer", "must commute onto the US") is True
     assert _guess_remote("Engineer", "must commute to interviews") is True
+    assert _guess_remote("Engineer", "must commute onto interviews") is True
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
     assert _guess_remote("Engineer", "lab-based role in South San Francisco") is False
@@ -12456,11 +12461,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "this role requires relocation to NYC") is False
     assert _guess_remote("Engineer", "this position requires relocation") is False
     assert _guess_remote("Engineer", "must relocate to Seattle") is False
+    assert _guess_remote("Engineer", "must relocate onto the office") is False
+    assert _guess_remote("Engineer", "must relocate onto the site") is False
     assert _guess_remote("Engineer", "you are required to relocate to Austin") is False
+    assert _guess_remote("Engineer", "you are required to relocate onto the office") is False
     assert _guess_remote("Engineer", "you are not required to relocate to Austin") is True
     assert _guess_remote("Engineer", "relocation is required") is False
     assert _guess_remote("Engineer", "this role requires relocation to the US") is True
     assert _guess_remote("Engineer", "must relocate to the US") is True
+    assert _guess_remote("Engineer", "must relocate onto the US") is True
     assert _guess_remote("Engineer", "no relocation is required") is True
     assert _guess_remote("Engineer", "relocation is not required") is True
     assert _guess_remote("Engineer", "this role requires relocation assistance") is True
@@ -12567,6 +12576,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert days_at_site.remote is False
     assert days_at_site.pay_high == 180_000
+    commute_onto_office = Opportunity(
+        title="Engineer", url="https://jobs.example/commuteontooffice"
+    )
+    assert _apply_listing(
+        commute_onto_office, "<p>must commute onto the office. Salary $180,000</p>"
+    ) is True
+    assert commute_onto_office.remote is False
+    assert commute_onto_office.pay_high == 180_000
     days_onto_site = Opportunity(title="Engineer", url="https://jobs.example/daysontosite")
     assert _apply_listing(
         days_onto_site, "<p>3 days onto the site. Salary $180,000</p>"
