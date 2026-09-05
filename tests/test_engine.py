@@ -12236,6 +12236,26 @@ def test_html_is_gone_removed_listing_banner():
         "<p>$180,000 - $220,000 a year</p>"
     )
     assert _html_is_gone(filled) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has already been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This position has already been filled.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've already filled this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We already filled this search.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've already filled this meeting.</p><p>$180,000</p>"
+    ) is False
     assert (
         _html_is_gone(
             "<title>Engineer</title>"
@@ -12244,6 +12264,11 @@ def test_html_is_gone_removed_listing_banner():
         )
         is False
     )
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this position has already been filled, the team will grow.</p>"
+        "<p>$180,000</p>"
+    ) is False
     assert _html_is_gone(
         "<title>Engineer</title><p>This job posting has expired.</p><p>$180,000</p>"
     ) is True
