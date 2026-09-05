@@ -2317,6 +2317,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 EAP. Salary $180,000") == (None, 180_000)
     assert _parse_pay("EAP $15,000. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 EAP in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 employee assistance") == (None, None)
+    assert _parse_pay("$15,000 employee assistance program") == (None, None)
+    assert _parse_pay("employee assistance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 employee assistance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 employee assistance in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 employee") == (None, 15_000)
+    assert _parse_pay("$15,000 assistance") == (None, 15_000)
     assert _parse_pay("$15,000 sabbatical") == (None, None)
     assert _parse_pay("sabbatical $15,000") == (None, None)
     assert _parse_pay("$15,000 sabbatical. Salary $180,000") == (None, 180_000)
@@ -8091,6 +8098,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         prepaidmix, "<p>$15,000 prepaid legal. Salary $180,000</p>"
     ) is True
     assert prepaidmix.pay_high == 180_000
+    eapspelled = Opportunity(title="Engineer", url="https://jobs.example/eapspelled")
+    assert _apply_listing(
+        eapspelled, "<p>$15,000 employee assistance. Apply now.</p>"
+    ) is False
+    assert eapspelled.pay_high is None
+    eapmix = Opportunity(title="Engineer", url="https://jobs.example/eapmix")
+    assert _apply_listing(
+        eapmix, "<p>$15,000 employee assistance. Salary $180,000</p>"
+    ) is True
+    assert eapmix.pay_high == 180_000
     ptomix = Opportunity(title="Engineer", url="https://jobs.example/ptomix")
     assert _apply_listing(ptomix, "<p>Base $180,000 unused PTO $500</p>") is True
     assert ptomix.pay_high == 180_000
