@@ -218,6 +218,19 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 commuter") == (None, None)
     assert _parse_pay("$15,000 commuter. Salary $180,000") == (None, 180_000)
     assert _parse_pay("commuter $15,000. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pre-tax commuter") == (None, None)
+    assert _parse_pay("$15,000 pretax commuter") == (None, None)
+    assert _parse_pay("$15,000 pre tax commuter") == (None, None)
+    assert _parse_pay("pre-tax commuter $15,000") == (None, None)
+    assert _parse_pay("$15,000 pre-tax parking") == (None, None)
+    assert _parse_pay("$15,000 pre-tax transit") == (None, None)
+    assert _parse_pay("pre-tax transit $15,000") == (None, None)
+    assert _parse_pay("$180,000 pre-tax commuter in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 pre-tax commuter $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pre-tax commuter. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pre-tax parking. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pre-tax transit. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pre-tax") == (None, 15_000)
     assert _parse_pay("$15,000 parking") == (None, None)
     assert _parse_pay("$15,000 parking. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 parking in NYC") == (None, 180_000)
@@ -7322,6 +7335,16 @@ def test_guess_pay_annualizes_hourly():
         commute_ben_sal, "<p>Salary $180,000 plus $10,000 commuter benefit</p>"
     ) is True
     assert commute_ben_sal.pay_high == 180_000
+    pretaxcomm = Opportunity(title="Engineer", url="https://jobs.example/pretaxcomm")
+    assert _apply_listing(
+        pretaxcomm, "<p>$15,000 pre-tax commuter. Apply now.</p>"
+    ) is False
+    assert pretaxcomm.pay_high is None
+    pretaxmix = Opportunity(title="Engineer", url="https://jobs.example/pretaxmix")
+    assert _apply_listing(
+        pretaxmix, "<p>$15,000 pre-tax commuter. Salary $180,000</p>"
+    ) is True
+    assert pretaxmix.pay_high == 180_000
     gym_mem = Opportunity(title="Engineer", url="https://jobs.example/gym-mem")
     assert _apply_listing(
         gym_mem, "<p>$10,000 gym membership. Great team.</p>"
