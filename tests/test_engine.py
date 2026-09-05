@@ -1960,6 +1960,17 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("health insurance $15,000") == (None, None)
     assert _parse_pay("base $180,000 healthcare $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 health insurance $15,000") == (None, 180_000)
+    assert _parse_pay("$180,000 Rx in NYC") == (None, 180_000)
+    assert _parse_pay("$15,000 prescription") == (None, None)
+    assert _parse_pay("$15,000 Rx") == (None, None)
+    assert _parse_pay("$15,000 pharmacy") == (None, None)
+    assert _parse_pay("$15,000 insurance premium") == (None, None)
+    assert _parse_pay("Rx $15,000") == (None, None)
+    assert _parse_pay("base $180,000 Rx $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 DCFSA") == (None, None)
+    assert _parse_pay("DCFSA $15,000") == (None, None)
+    assert _parse_pay("$180,000 DCFSA in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 DCFSA $15,000") == (None, 180_000)
     assert _parse_pay("$180,000 LTI in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 LTI") == (None, None)
     assert _parse_pay("$15,000 STI") == (None, None)
@@ -7685,6 +7696,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         healthins, "<p>$15,000 health insurance. Apply now.</p>"
     ) is False
     assert healthins.pay_high is None
+    rxonly = Opportunity(title="Engineer", url="https://jobs.example/rxonly")
+    assert _apply_listing(rxonly, "<p>$15,000 Rx. Apply now.</p>") is False
+    assert rxonly.pay_high is None
+    dcfsaonly = Opportunity(title="Engineer", url="https://jobs.example/dcfsaonly")
+    assert _apply_listing(dcfsaonly, "<p>$15,000 DCFSA. Apply now.</p>") is False
+    assert dcfsaonly.pay_high is None
     ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
     assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
     assert ltionly.pay_high is None
