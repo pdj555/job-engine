@@ -133,6 +133,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Divvy Bike") == (None, None)
     assert _parse_pay("$15,000 Lime Bike") == (None, None)
     assert _parse_pay("$15,000 Jump Bike") == (None, None)
+    assert _parse_pay("$15,000 Spin Bike") == (None, None)
+    assert _parse_pay("$15,000 Bird Bike") == (None, None)
+    assert _parse_pay("$15,000 Veo Bike") == (None, None)
+    assert _parse_pay("$15,000 Uber Bike") == (None, None)
+    assert _parse_pay("$15,000 Lyft Bike") == (None, None)
     assert _parse_pay("$15,000 Bay Wheels") == (None, None)
     assert _parse_pay("$15,000 Nice Ride") == (None, None)
     assert _parse_pay("$15,000 NiceRide") == (None, None)
@@ -141,6 +146,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Ford GoBike") == (None, None)
     assert _parse_pay("Capital Bikeshare of $15,000") == (None, None)
     assert _parse_pay("Lime Bike of $15,000") == (None, None)
+    assert _parse_pay("Spin Bike of $15,000") == (None, None)
+    assert _parse_pay("Uber Bike of $15,000") == (None, None)
     assert _parse_pay("Bay Wheels of $15,000") == (None, None)
     assert _parse_pay("Nice Ride of $15,000") == (None, None)
     assert _parse_pay("Healthy Ride of $15,000") == (None, None)
@@ -150,6 +157,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Citi Bike. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Capital Bikeshare. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Lime Bike. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 Spin Bike. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 Uber Bike. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Bay Wheels. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Nice Ride. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 Healthy Ride. Salary $180,000") == (None, 180_000)
@@ -159,6 +168,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$180,000 Citi Bike in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Capital Bikeshare in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Lime Bike in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 Spin Bike in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 Uber Bike in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Bay Wheels in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Nice Ride in NYC") == (None, 180_000)
     assert _parse_pay("$180,000 Healthy Ride in NYC") == (None, 180_000)
@@ -171,6 +182,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 Divvy") == (None, 15_000)
     assert _parse_pay("$15,000 Lime") == (None, 15_000)
     assert _parse_pay("$15,000 Jump") == (None, 15_000)
+    assert _parse_pay("$15,000 Spin") == (None, 15_000)
+    assert _parse_pay("$15,000 Bird") == (None, 15_000)
+    assert _parse_pay("$15,000 Veo") == (None, 15_000)
+    assert _parse_pay("$15,000 Uber") == (None, 15_000)
+    assert _parse_pay("$15,000 Lyft") == (None, 15_000)
     assert _parse_pay("$15,000 Bay") == (None, 15_000)
     assert _parse_pay("$15,000 Wheels") == (None, 15_000)
     assert _parse_pay("$15,000 Nice") == (None, 15_000)
@@ -8237,6 +8253,22 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         limebikemix, "<p>$15,000 Lime Bike. Salary $180,000</p>"
     ) is True
     assert limebikemix.pay_high == 180_000
+    spinbikeonly = Opportunity(title="Engineer", url="https://jobs.example/spinbikeonly")
+    assert _apply_listing(spinbikeonly, "<p>$15,000 Spin Bike. Apply now.</p>") is False
+    assert spinbikeonly.pay_high is None
+    spinbikemix = Opportunity(title="Engineer", url="https://jobs.example/spinbikemix")
+    assert _apply_listing(
+        spinbikemix, "<p>$15,000 Spin Bike. Salary $180,000</p>"
+    ) is True
+    assert spinbikemix.pay_high == 180_000
+    uberbikeonly = Opportunity(title="Engineer", url="https://jobs.example/uberbikeonly")
+    assert _apply_listing(uberbikeonly, "<p>$15,000 Uber Bike. Apply now.</p>") is False
+    assert uberbikeonly.pay_high is None
+    uberbikemix = Opportunity(title="Engineer", url="https://jobs.example/uberbikemix")
+    assert _apply_listing(
+        uberbikemix, "<p>$15,000 Uber Bike. Salary $180,000</p>"
+    ) is True
+    assert uberbikemix.pay_high == 180_000
     baywheelsonly = Opportunity(title="Engineer", url="https://jobs.example/baywheelsonly")
     assert _apply_listing(baywheelsonly, "<p>$15,000 Bay Wheels. Apply now.</p>") is False
     assert baywheelsonly.pay_high is None
