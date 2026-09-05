@@ -2350,6 +2350,21 @@ def test_foreign_salary_detects_mxn_cad_and_salario_dollars():
     assert listed_irr is False
     assert irr.pay_high is None
     assert _parse_pay("Experience with IRR 8. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("80,000 SVC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80,000 SVC. Account Executive $220,000</p>") is True
+    assert _parse_pay("SVC80,000. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>SVC80,000. Account Executive $220,000</p>") is True
+    assert _parse_pay("80000 SVC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80000 SVC. Account Executive $220,000</p>") is True
+    assert _parse_pay("80k SVC. Account Executive $220,000") == (None, None)
+    assert _foreign_salary("<p>80k SVC. Account Executive $220,000</p>") is True
+    svc = Opportunity(title="Engineer", url="https://jobs.example/sv")
+    listed_svc = _apply_listing(
+        svc, "<p>Salary 80,000 SVC. Account Executive $400,000</p>"
+    )
+    assert listed_svc is False
+    assert svc.pay_high is None
+    assert _parse_pay("Experience with SVC 8. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$180,000 a year") == (None, 180_000)
     assert _parse_pay("90,000 AUD. Account Executive $220,000") == (None, None)
     assert _foreign_salary("<p>Salary 90,000 AUD. Account Executive $220,000</p>") is True
