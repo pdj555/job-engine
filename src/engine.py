@@ -6313,7 +6313,7 @@ _SEMIMONTHLY_RE = re.compile(
 )
 _DAY_TAIL = (
     r"\s*(?:"
-    r"\.?\s*(?:/\s*(?:d(?:ays?)?|diem)|p\s*/\s*(?:d(?:ays?)?|diem)|(?:p|per|an|a)\.\s*(?:days?|diem)|p\s+(?:days?|diem)|(?:per|a)\s*/?\s*(?:d(?:ays?)?|diem)|an\s*/\s*(?:d(?:ays?)?|diem)|days?(?!\s+(?:one|of|in)\b))\b"
+    r"\.?\s*(?:/\s*(?:d(?:ays?)?|diem)|p\s*/\s*(?:d(?:ays?)?|diem)|(?:p|per|an|a)\.\s*(?:days?|diem)|p\s+(?:days?|diem)|(?:per|a)\s*/?\s*(?:d(?:ays?)?|diem)|an\s*/\s*(?:d(?:ays?)?|diem)|an\s+diem|days?(?!\s+(?:one|of|in)\b))\b"
     r"|\.?\s*(?:p\s+|p\.|/\s*|(?:per|an|a)\s*[/.]?\s*)?(?:daily|dly)\b"
     + _NOT_PERIOD_CONTEXT
     + r")"
