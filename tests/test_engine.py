@@ -3575,6 +3575,11 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$80 hr") == (None, 160_000)
     assert _parse_pay("$80hr") == (None, 160_000)
     assert _parse_pay("$80 hrs") == (None, 160_000)
+    assert _parse_pay("$80/h") == (None, 160_000)
+    assert _parse_pay("$800/d") == (None, 200_000)
+    assert _parse_pay("$80/h overtime") == (None, None)
+    assert _parse_pay("$800/d travel") == (None, None)
+    assert _parse_pay("$180,000/developer") == (None, 180_000)
     from src.engine import _visible_text
     assert _parse_pay(_visible_text("$80<b>hr</b>")) == (None, 160_000)
     assert _parse_pay("$80/hr overtime") == (None, None)
