@@ -2276,7 +2276,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 rabbi trust $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 409A $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 rabbi trust. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 grantor trust") == (None, None)
+    assert _parse_pay("$15,000 grantor-trust") == (None, None)
+    assert _parse_pay("grantor trust $15,000") == (None, None)
+    assert _parse_pay("grantor trust of $15,000") == (None, None)
+    assert _parse_pay("$15,000 secular trust") == (None, None)
+    assert _parse_pay("$15,000 secular-trust") == (None, None)
+    assert _parse_pay("secular trust $15,000") == (None, None)
+    assert _parse_pay("$180,000 grantor trust in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 secular trust in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 grantor trust $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 grantor trust. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 secular trust. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 trust") == (None, 15_000)
+    assert _parse_pay("$15,000 grantor") == (None, 15_000)
+    assert _parse_pay("$15,000 secular") == (None, 15_000)
     assert _parse_pay("$10,000 QSEHRA contribution") == (None, None)
     assert _parse_pay("$10,000 ICHRA contribution") == (None, None)
     assert _parse_pay("$10,000 COBRA subsidy") == (None, None)
@@ -7923,6 +7937,17 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     tophat = Opportunity(title="Engineer", url="https://jobs.example/tophat")
     assert _apply_listing(tophat, "<p>$15,000 top-hat plan. Apply now.</p>") is False
     assert tophat.pay_high is None
+    grantor = Opportunity(title="Engineer", url="https://jobs.example/grantor")
+    assert _apply_listing(grantor, "<p>$15,000 grantor trust. Apply now.</p>") is False
+    assert grantor.pay_high is None
+    secular = Opportunity(title="Engineer", url="https://jobs.example/secular")
+    assert _apply_listing(secular, "<p>$15,000 secular trust. Apply now.</p>") is False
+    assert secular.pay_high is None
+    grantormix = Opportunity(title="Engineer", url="https://jobs.example/grantormix")
+    assert _apply_listing(
+        grantormix, "<p>$15,000 grantor trust. Salary $180,000</p>"
+    ) is True
+    assert grantormix.pay_high == 180_000
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
