@@ -4344,6 +4344,9 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20hrs pw") == 20
     assert _guess_hours("Engineer", "20 hours p/w") == 20
     assert _guess_hours("Engineer", "20 hrs. pw") == 20
+    assert _guess_hours("Engineer", "20 hrs/w") == 20
+    assert _guess_hours("Engineer", "20hrs/w") == 20
+    assert _guess_hours("Engineer", "20 hours/w") == 20
     assert _guess_hours("Engineer", "20 hrs password") is None
     assert _guess_hours("Engineer", "0.5 FTE") == 20
     assert _guess_hours("Engineer", "FTE 0.5") == 20
