@@ -6672,17 +6672,17 @@ _FORTNIGHT_HOURS_RE = re.compile(
 _DAILY_HOURS_RE = re.compile(
     r"(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s*"
     r"(?:/\s*|\s*per[\s./]*|\s+p\.?\s*/\s*|\s+(?:a|each|every)\s+)\s*"
-    r"(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
+    r"(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|duty\s+days?|service\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*(?:hours?|hrs?)\.?\s+daily\b"
     r"(?!\s+(?:meeting|standup|stand-up|sync|call|all-?hands))"
-    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|work\s+days?|workdays?|weekdays?|days?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
+    r"|(?:hours?|hrs?)\s+(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|duty\s+days?|service\s+days?|work\s+days?|workdays?|weekdays?|days?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|(?:hours?|hrs?)\s+daily\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|daily\s+(?:hours?|hrs?)\s*[:=\-–—]?\s*(\d{1,2}(?:\.\d+)?)\+?"
     r"|daily\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*(?:hours?|hrs?)\b"
     r"|(?<![\d.])(\d{1,2}(?:\.\d+)?)\+?[\s-]*daily\s+(?:hours?|hrs?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s*"
-    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
+    r"(?:(?:per|a|each|every|/)\s+)(?:working\s+days?|business\s+days?|scheduled\s+days?|billable\s+days?|duty\s+days?|service\s+days?|work\s+days?|workdays?|weekdays?|days?)\b"
     r"|(?:hours?|hrs?)\s*[:=\-–—]\s*(\d{1,2}(?:\.\d+)?)\+?\s+daily\b",
     re.I,
 )
@@ -7237,7 +7237,7 @@ def _stated_fte_hours(text: str) -> Optional[int]:
 
 
 def _stated_hours(title: str, description: str) -> Optional[int]:
-    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–8 times a week, or N hours/day, workday, business, scheduled, or billable day × 5."""
+    """Hours explicitly written as N hours/week, N hours/fortnight halved, N hours 2–8 times a week, or N hours/day, workday, business, scheduled, billable, duty, or service day × 5."""
     blob = f"{title} {description}"
     match = _HOURS_RE.search(blob)
     if match:
