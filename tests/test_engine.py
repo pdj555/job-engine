@@ -2416,6 +2416,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 dental premium $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commuter pre-tax $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 monthly premium $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 monthly clawback $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 weekly clawback $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 per diem clawback $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 monthly clawback") == (None, None)
+    assert _parse_pay("$15,000 weekly clawback") == (None, None)
+    assert _parse_pay("$15,000 per diem clawback") == (None, None)
     assert _parse_pay("base $180,000 transit perk $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 commuter benefits $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 stock grant $15,000") == (None, 180_000)
@@ -7514,6 +7520,11 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         moprem, "<p>Base $180,000 monthly premium $15,000</p>"
     ) is True
     assert moprem.pay_high == 180_000
+    moclaw = Opportunity(title="Engineer", url="https://jobs.example/moclaw")
+    assert _apply_listing(
+        moclaw, "<p>Base $180,000 monthly clawback $15,000</p>"
+    ) is True
+    assert moclaw.pay_high == 180_000
     clawmix = Opportunity(title="Engineer", url="https://jobs.example/clawmix")
     assert _apply_listing(
         clawmix, "<p>Base $180,000 bonus clawback $15,000</p>"
