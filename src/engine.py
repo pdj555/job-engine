@@ -6255,10 +6255,10 @@ _WEEKLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _WEEK_TAIL
 )
 _BIWEEK_TAIL = (
-    r"\s*\.?\s*(?:bi[-\s]?weekly|"
+    r"\s*\.?\s*(?:/\s*|p\s*/\s*|(?:per|a)\s+)?"
+    r"(?:bi[-\s]?weekly|"
     r"every[-\s]+(?:two|2|other)[-\s]+weeks?|"
-    r"(?:per|a)\s+fortnight|"
-    r"fortnightly)\b"
+    r"fortnightly|fortnights?)\b"
 )
 _BIWEEKLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
@@ -6269,7 +6269,10 @@ _BIWEEKLY_RANGE_RE = re.compile(
 _BIWEEKLY_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?" + _BIWEEK_TAIL
 )
-_SEMIMONTH_TAIL = r"\s*\.?\s*(?:semi[-\s]?monthly|twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
+_SEMIMONTH_TAIL = (
+    r"\s*\.?\s*(?:/\s*|p\s*/\s*|(?:per|a)\s+)?"
+    r"(?:semi[-\s]?monthly|twice\s+(?:a|per)\s+month|twice\s+monthly)\b"
+)
 _SEMIMONTHLY_RANGE_RE = re.compile(
     r"(?i)(?:USD|US\$|\$)\s*(\d{1,3}(?:[, ]?\d{3})*(?:\.\d+)?)\s*(k\b)?"
     r"\s*(?:[-–—]|to)\s*"
@@ -6518,13 +6521,13 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
-    r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r")"
+    r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r"|" + _BIWEEK_TAIL + r"|" + _SEMIMONTH_TAIL + r")"
     r"\s+(?:for\s+)?(?:housing|travel|meals?|food|living|phone|cell|internet|parking|gym|commuter|wellness|fitness)\b"
     r"|"
     r"\b(?:housing|travel|meals?|food|living|phone|cell|internet|parking|gym|commuter|wellness|fitness)\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
-    r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r")?"
+    r"(?:" + _HOUR_TAIL + r"|" + _DAY_TAIL + r"|" + _WEEK_TAIL + r"|" + _MONTH_TAIL + r"|" + _BIWEEK_TAIL + r"|" + _SEMIMONTH_TAIL + r")?"
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
