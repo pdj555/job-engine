@@ -2303,6 +2303,16 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 parking permit $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 volunteer days $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bonus card $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter credit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 wellness credit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA credit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tuition credit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter subsidy $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 transit perk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 commuter benefits $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 stock grant $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 ESPP match $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 legal retainer $15,000") == (None, 180_000)
     assert _parse_pay("$15,000 wellness program") == (None, None)
     assert _parse_pay("$15,000 wellness account") == (None, None)
     assert _parse_pay("$15,000 HSA account") == (None, None)
@@ -2316,6 +2326,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 wellness fund") == (None, None)
     assert _parse_pay("$15,000 transit voucher") == (None, None)
     assert _parse_pay("$15,000 bonus card") == (None, None)
+    assert _parse_pay("$15,000 commuter credit") == (None, None)
+    assert _parse_pay("$15,000 wellness credit") == (None, None)
+    assert _parse_pay("$15,000 commuter subsidy") == (None, None)
+    assert _parse_pay("$15,000 stock grant") == (None, None)
     assert _parse_pay("$180,000 wellness in NYC") == (None, 180_000)
     assert _parse_pay("Salary $180,000 plus $15,000 wellness benefit") == (
         None,
@@ -2334,6 +2348,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("Salary $180,000 plus $15,000 vision coverage") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("Salary $180,000 plus $15,000 commuter credit") == (
         None,
         180_000,
     )
@@ -7278,6 +7296,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         vouch, "<p>Base $180,000 transit voucher $15,000</p>"
     ) is True
     assert vouch.pay_high == 180_000
+    credmix = Opportunity(title="Engineer", url="https://jobs.example/credmix")
+    assert _apply_listing(
+        credmix, "<p>Base $180,000 commuter credit $15,000</p>"
+    ) is True
+    assert credmix.pay_high == 180_000
+    submix = Opportunity(title="Engineer", url="https://jobs.example/submix")
+    assert _apply_listing(
+        submix, "<p>Base $180,000 commuter subsidy $15,000</p>"
+    ) is True
+    assert submix.pay_high == 180_000
 
 
 def test_guess_hours_from_text_not_job_type():
