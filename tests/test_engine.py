@@ -11771,6 +11771,20 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must head onto the office") is False
     assert _guess_remote("Engineer", "must head to the office") is False
     assert _guess_remote("Engineer", "must head onto the home office") is True
+    assert _guess_remote("Engineer", "must fly onto the office") is False
+    assert _guess_remote("Engineer", "must fly onto the site") is False
+    assert _guess_remote("Engineer", "must fly to the office") is False
+    assert _guess_remote("Engineer", "must fly to interviews") is True
+    assert _guess_remote("Engineer", "must fly to NYC") is True
+    assert _guess_remote("Engineer", "must fly onto the home office") is True
+    assert _guess_remote("Engineer", "must walk onto the office") is False
+    assert _guess_remote("Engineer", "must walk to the office") is False
+    assert _guess_remote("Engineer", "must walk to interviews") is True
+    assert _guess_remote("Engineer", "must walk onto the home office") is True
+    assert _guess_remote("Engineer", "must ride onto the office") is False
+    assert _guess_remote("Engineer", "must ride to the office") is False
+    assert _guess_remote("Engineer", "must ride to NYC") is True
+    assert _guess_remote("Engineer", "must ride onto the home office") is True
     assert _guess_remote("Engineer", "work from home. must drive onto the office") is True
     assert _guess_remote("Engineer", "on-campus interviews in NYC") is True
     assert _guess_remote("Engineer", "This is a laboratory-based role") is False
@@ -12866,6 +12880,14 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert go_onto_office.remote is False
     assert go_onto_office.pay_high == 180_000
+    fly_onto_office = Opportunity(
+        title="Engineer", url="https://jobs.example/flyontooffice"
+    )
+    assert _apply_listing(
+        fly_onto_office, "<p>must fly onto the office. Salary $180,000</p>"
+    ) is True
+    assert fly_onto_office.remote is False
+    assert fly_onto_office.pay_high == 180_000
     days_onto_site = Opportunity(title="Engineer", url="https://jobs.example/daysontosite")
     assert _apply_listing(
         days_onto_site, "<p>3 days onto the site. Salary $180,000</p>"
