@@ -3725,6 +3725,22 @@ def test_guess_pay_annualizes_hourly():
     assert _parse_pay("$800 p/d") == (None, 200_000)
     assert _parse_pay("$3000 p/w") == (None, 150_000)
     assert _parse_pay("$15000 p/m") == (None, 180_000)
+    assert _parse_pay("$80 p/hr") == (None, 160_000)
+    assert _parse_pay("$80 p hr") == (None, 160_000)
+    assert _parse_pay("$80 p hourly") == (None, 160_000)
+    assert _parse_pay("$15000 p/mo") == (None, 180_000)
+    assert _parse_pay("$15000 p month") == (None, 180_000)
+    assert _parse_pay("$15000 p monthly") == (None, 180_000)
+    assert _parse_pay("$3000 p/wk") == (None, 150_000)
+    assert _parse_pay("$3000 p week") == (None, 150_000)
+    assert _parse_pay("$3000 p weekly") == (None, 150_000)
+    assert _parse_pay("$1500 p/day") == (None, 375_000)
+    assert _parse_pay("$1500 p day") == (None, 375_000)
+    assert _parse_pay("$3000 p biweekly") == (None, 75_000)
+    assert _parse_pay("$15000 p semi-monthly") == (None, 360_000)
+    assert _parse_pay("$80 ph") == (None, None)
+    assert _parse_pay("$80 p.h.") == (None, None)
+    assert _parse_pay("$180,000 p m") == (None, 180_000)
     assert _parse_pay("$80 per h") == (None, 160_000)
     assert _parse_pay("$800 per d") == (None, 200_000)
     assert _parse_pay("$3000 per w") == (None, 150_000)
@@ -4324,6 +4340,11 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "20 h/w") == 20
     assert _guess_hours("Engineer", "20hp/w") == 20
     assert _guess_hours("Engineer", "20h/with") is None
+    assert _guess_hours("Engineer", "20 hrs pw") == 20
+    assert _guess_hours("Engineer", "20hrs pw") == 20
+    assert _guess_hours("Engineer", "20 hours p/w") == 20
+    assert _guess_hours("Engineer", "20 hrs. pw") == 20
+    assert _guess_hours("Engineer", "20 hrs password") is None
     assert _guess_hours("Engineer", "0.5 FTE") == 20
     assert _guess_hours("Engineer", "FTE 0.5") == 20
     assert _guess_hours("Engineer", "50% FTE") == 20
