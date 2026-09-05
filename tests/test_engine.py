@@ -2188,6 +2188,20 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$10,000 variable pay") == (None, None)
     assert _parse_pay("$10,000 variable compensation") == (None, None)
     assert _parse_pay("$10,000 deferred compensation") == (None, None)
+    assert _parse_pay("$15,000 deferred comp") == (None, None)
+    assert _parse_pay("$15,000 deferred-comp") == (None, None)
+    assert _parse_pay("deferred comp $15,000") == (None, None)
+    assert _parse_pay("base $180,000 deferred comp $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 NQDC") == (None, None)
+    assert _parse_pay("$15,000 SERP") == (None, None)
+    assert _parse_pay("$15,000 NQDC plan") == (None, None)
+    assert _parse_pay("$15,000 SERP benefit") == (None, None)
+    assert _parse_pay("NQDC $15,000") == (None, None)
+    assert _parse_pay("SERP $15,000") == (None, None)
+    assert _parse_pay("$180,000 NQDC in NYC") == (None, 180_000)
+    assert _parse_pay("$180,000 SERP in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 NQDC $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 SERP $15,000") == (None, 180_000)
     assert _parse_pay("$10,000 QSEHRA contribution") == (None, None)
     assert _parse_pay("$10,000 ICHRA contribution") == (None, None)
     assert _parse_pay("$10,000 COBRA subsidy") == (None, None)
@@ -7751,6 +7765,15 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     aiponly = Opportunity(title="Engineer", url="https://jobs.example/aiponly")
     assert _apply_listing(aiponly, "<p>$15,000 AIP. Apply now.</p>") is False
     assert aiponly.pay_high is None
+    defcomp = Opportunity(title="Engineer", url="https://jobs.example/defcomp")
+    assert _apply_listing(defcomp, "<p>$15,000 deferred comp. Apply now.</p>") is False
+    assert defcomp.pay_high is None
+    nqdconly = Opportunity(title="Engineer", url="https://jobs.example/nqdconly")
+    assert _apply_listing(nqdconly, "<p>$15,000 NQDC. Apply now.</p>") is False
+    assert nqdconly.pay_high is None
+    serponly = Opportunity(title="Engineer", url="https://jobs.example/serponly")
+    assert _apply_listing(serponly, "<p>$15,000 SERP. Apply now.</p>") is False
+    assert serponly.pay_high is None
     ltdclaw = Opportunity(title="Engineer", url="https://jobs.example/ltdclaw")
     assert _apply_listing(
         ltdclaw, "<p>Base $180,000 LTD clawback $15,000</p>"
