@@ -4645,13 +4645,23 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "Hours: 20+ p.wk") == 20
     assert _guess_hours("Engineer", "Hours: 20 an.wk") == 20
     assert _guess_hours("Engineer", "Hours: 20 a.wk") == 20
+    assert _guess_hours("Engineer", "Hours: 20 an/wk") == 20
+    assert _guess_hours("Engineer", "Hours: 20 a/wk") == 20
+    assert _guess_hours("Engineer", "Hours: 20 per/wk") == 20
+    assert _guess_hours("Engineer", "Hours: 20 p/wk") == 20
     assert _guess_hours("Engineer", "Hours an.wk: 20") == 20
     assert _guess_hours("Engineer", "Hours a.wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours an/wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours a/wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours per/wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of the work p.wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of work p.wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of the scheduled p.wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of the work an.wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of the work a.wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of the work an/wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of the work a/wk: 20") == 20
+    assert _guess_hours("Engineer", "Hours of the work per/wk: 20") == 20
     assert _guess_hours("Engineer", "Hours of the work p.m.: 20") is None
     assert _guess_hours("Engineer", "Hours: 20 p.m.") is None
     assert _guess_hours("Engineer", "Hours: 20 a.m.") is None
@@ -4852,6 +4862,12 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert a_dot.hours_per_week == 20
     assert a_dot.pay_high == 80_000
+    an_slash = Opportunity(title="Engineer", url="https://jobs.example/an-slash-wk")
+    assert _apply_listing(
+        an_slash, "<p>$80/hour. Hours: 20 an/wk.</p>"
+    ) is True
+    assert an_slash.hours_per_week == 20
+    assert an_slash.pay_high == 80_000
     fte = Opportunity(title="Engineer", url="https://jobs.example/half-fte")
     assert _apply_listing(
         fte, "<p>$80/hour. 0.5 FTE.</p>"
