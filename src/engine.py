@@ -6652,7 +6652,9 @@ _FTE_FRAC_RE = re.compile(
     r"(?<![\d.])(\d)/(\d)(?:[-\s]time)?\s*fte\b"
     r"|\bfte\s*[:=\-–—]?\s*(\d)/(\d)(?:[-\s]time)?\b"
     r"|(?<![\d.])\b(half)(?:[-\s]time)?\s*fte\b"
-    r"|\bfte\s*[:=\-–—]?\s*(half)\b",
+    r"|\bfte\s*[:=\-–—]?\s*(half)\b"
+    r"|(?<![\d.])\b(quarter)[-\s]time\s*fte\b"
+    r"|\bfte\s*[:=\-–—]?\s*(quarter)[-\s]time\b",
     re.I,
 )
 _DUAL_TIME_RE = re.compile(
@@ -6950,8 +6952,12 @@ def _stated_fte_hours(text: str) -> Optional[int]:
     """Hours from an FTE fraction or percent. None if the listing does not say."""
     frac = _FTE_FRAC_RE.search(text)
     if frac:
-        num, den, num_after, den_after, half, half_after = frac.groups()
-        if half or half_after:
+        num, den, num_after, den_after, half, half_after, quarter, quarter_after = (
+            frac.groups()
+        )
+        if quarter or quarter_after:
+            hours = 10
+        elif half or half_after:
             hours = 20
         else:
             n = int(num or num_after)
