@@ -18464,6 +18464,38 @@ def test_html_is_gone_removed_listing_banner():
     ) is False
     assert _html_is_gone(
         "<title>Engineer</title>"
+        "<p>We've unresourced this role.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has been unresourced.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has been un-resourced.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role has been de-resourced.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is unresourced.</p><p>$180,000</p>"
+    ) is True
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>We've unresourced this meeting.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>Once this role has been unresourced.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
+        "<p>This role is unresourced with extra headcount.</p><p>$180,000</p>"
+    ) is False
+    assert _html_is_gone(
+        "<title>Engineer</title>"
         "<p>We smashed our goals.</p><p>$180,000</p>"
     ) is False
     assert _html_is_gone(
