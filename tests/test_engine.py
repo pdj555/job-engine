@@ -2021,6 +2021,21 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 basic life") == (None, None)
     assert _parse_pay("$15,000 voluntary life") == (None, None)
     assert _parse_pay("$15,000 term life") == (None, None)
+    assert _parse_pay("$15,000 whole life") == (None, None)
+    assert _parse_pay("$15,000 universal life") == (None, None)
+    assert _parse_pay("$15,000 variable life") == (None, None)
+    assert _parse_pay("$15,000 variable universal life") == (None, None)
+    assert _parse_pay("$15,000 indexed universal life") == (None, None)
+    assert _parse_pay("$15,000 buy-sell life") == (None, None)
+    assert _parse_pay("whole life $15,000") == (None, None)
+    assert _parse_pay("universal life of $15,000") == (None, None)
+    assert _parse_pay("$180,000 whole life in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 whole life $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 whole life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 variable life. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 whole") == (None, 15_000)
+    assert _parse_pay("$15,000 universal") == (None, 15_000)
+    assert _parse_pay("$15,000 variable") == (None, 15_000)
     assert _parse_pay("$15,000 GTL clawback") == (None, None)
     assert _parse_pay("GTL $15,000") == (None, None)
     assert _parse_pay("group term life $15,000") == (None, None)
@@ -8155,6 +8170,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         grouplife, "<p>$15,000 group term life. Apply now.</p>"
     ) is False
     assert grouplife.pay_high is None
+    wholelife = Opportunity(title="Engineer", url="https://jobs.example/wholelife")
+    assert _apply_listing(
+        wholelife, "<p>$15,000 whole life. Apply now.</p>"
+    ) is False
+    assert wholelife.pay_high is None
+    wholemix = Opportunity(title="Engineer", url="https://jobs.example/wholemix")
+    assert _apply_listing(
+        wholemix, "<p>$15,000 whole life. Salary $180,000</p>"
+    ) is True
+    assert wholemix.pay_high == 180_000
     splitdol = Opportunity(title="Engineer", url="https://jobs.example/splitdol")
     assert _apply_listing(
         splitdol, "<p>$15,000 split dollar. Apply now.</p>"
