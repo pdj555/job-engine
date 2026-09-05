@@ -237,6 +237,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("annual wellness of $10,000") == (None, None)
     assert _parse_pay("$10,000 mental health benefit") == (None, None)
     assert _parse_pay("mental health benefit of $10,000") == (None, None)
+    assert _parse_pay("$15,000 mental health") == (None, None)
+    assert _parse_pay("$15,000 mental health. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$180,000 mental health in NYC") == (None, 180_000)
+    assert _parse_pay("Mental health $180,000 a year") == (None, 180_000)
     assert _parse_pay("$10,000 transit benefit") == (None, None)
     assert _parse_pay("transit benefit of $10,000") == (None, None)
     assert _parse_pay("Salary $180,000 plus $10,000 transit benefit") == (

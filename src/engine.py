@@ -6410,7 +6410,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"|"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\.\d+)?(?:\s*k)?)?"
-    r"\s+(?:phone|cell|internet|gym|fitness|housing|travel|meals?|food|living|parking|commuter|transit|mileage|clothing|equipment|laptop|moving|child(?:[-\s])?care|caregiver|uniform|volunteer|bike|coworking|adoption|fertility|parental|WFH|tools|home\s+office|remote\s+work|work\s+from\s+home|dependent\s+care|EAP|sabbatical|PTO|bereavement|options|disability|dental|vision)\b(?!\s+in)"
+    r"\s+(?:phone|cell|internet|gym|fitness|housing|travel|meals?|food|living|parking|commuter|transit|mileage|clothing|equipment|laptop|moving|child(?:[-\s])?care|caregiver|uniform|volunteer|bike|coworking|adoption|fertility|parental|WFH|tools|home\s+office|remote\s+work|work\s+from\s+home|dependent\s+care|EAP|sabbatical|PTO|bereavement|options|disability|dental|vision|mental\s+health)\b(?!\s+in)"
     r"|"
     r"\b(?:mileage|clothing|equipment|laptop|moving|uniform|bike|coworking|adoption|fertility|parental|WFH|tools|EAP|sabbatical|PTO|bereavement|options)\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\.\d+)?(?:\s*k)?"
