@@ -6197,6 +6197,19 @@ def test_guess_hours_from_text_not_job_type():
     assert _guess_hours("Engineer", "32 hours per the week meeting") is None
     assert _guess_hours("Engineer", "hours per this week: 32") is None
     assert _guess_hours("Engineer", "32 hours per this week") is None
+    assert _guess_hours("Engineer", "32 hours / each week") == 32
+    assert _guess_hours("Engineer", "32 hours/each week") == 32
+    assert _guess_hours("Engineer", "32 hours / every week") == 32
+    assert _guess_hours("Engineer", "32 hours / the week") == 32
+    assert _guess_hours("Engineer", "hours / each week: 32") == 32
+    assert _guess_hours("Engineer", "hours/each week: 32") == 32
+    assert _guess_hours("Engineer", "hours / the week: 32") == 32
+    assert _guess_hours("Engineer", "hours: 32 / each week") == 32
+    assert _guess_hours("Engineer", "hours: 32/each week") == 32
+    assert _guess_hours("Engineer", "32 hours / each week meeting") is None
+    assert _guess_hours("Engineer", "hours / this week: 32") is None
+    assert _guess_hours("Engineer", "32 hours / this week") is None
+    assert _guess_hours("Engineer", "hours/with: 32") is None
     assert _guess_hours("Engineer", "32 hours for the week meeting") is None
     assert _guess_hours("Engineer", "per wk: 32 hours") == 32
     assert _guess_hours("Engineer", "every week: 32 hours") == 32
@@ -6760,6 +6773,18 @@ def test_apply_listing_reads_hours_a_week_for_rate():
     ) is True
     assert hours_per_each_week.hours_per_week == 2
     assert hours_per_each_week.pay_high == 10_000
+    hours_slash_each = Opportunity(title="Engineer", url="https://jobs.example/hours-slash-each-week")
+    assert _apply_listing(
+        hours_slash_each, "<p>$100/hour. 2 hours / each week.</p>"
+    ) is True
+    assert hours_slash_each.hours_per_week == 2
+    assert hours_slash_each.pay_high == 10_000
+    hours_slash_each_label = Opportunity(title="Engineer", url="https://jobs.example/hours-slash-each-week-label")
+    assert _apply_listing(
+        hours_slash_each_label, "<p>$100/hour. hours/each week: 2.</p>"
+    ) is True
+    assert hours_slash_each_label.hours_per_week == 2
+    assert hours_slash_each_label.pay_high == 10_000
     pw_colon_hours = Opportunity(title="Engineer", url="https://jobs.example/pw-colon-hours")
     assert _apply_listing(
         pw_colon_hours, "<p>$100/hour. p/w: 2 hours.</p>"
