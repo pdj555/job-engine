@@ -7935,6 +7935,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|\bwork\s+on[-\s]campus\b"
     r"|\bwork\s+from\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|field(?!\s+of\b))\b"
     r"|\bwork\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq|field(?!\s+of\b))\b"
+    r"|\bwork\s+(?:at|on)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b"
     r"|based\s+out\s+of\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?:office|campus|lab(?:oratory)?|headquarters|hq)\b"
     r"|\b(?:lab(?:oratory)?|field|headquarters|hq|office)\s+(?:role|position|job)\b"
     r"|\breport\s+(?:in\s+)?(?:to|at)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b"
