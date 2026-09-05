@@ -2337,6 +2337,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 HSA max $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 HSA offset $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 HSA catch-up $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA recoupment $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA recovery $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 HSA contribution recoupment $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 HSA recoupment") == (None, None)
     assert _parse_pay("base $180,000 pension offset $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 wellness clawback $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 tuition offset $15,000") == (None, 180_000)
@@ -6904,6 +6911,11 @@ def test_guess_pay_annualizes_hourly():
         hsa_sal, "<p>Salary $180,000 plus $10,000 HSA contribution</p>"
     ) is True
     assert hsa_sal.pay_high == 180_000
+    hsa_rec = Opportunity(title="Engineer", url="https://jobs.example/hsa-rec")
+    assert _apply_listing(
+        hsa_rec, "<p>Base $180,000 HSA recoupment $15,000</p>"
+    ) is True
+    assert hsa_rec.pay_high == 180_000
     health_stip = Opportunity(title="Engineer", url="https://jobs.example/health-stip")
     assert _apply_listing(
         health_stip, "<p>$10,000 healthcare stipend. Great team.</p>"

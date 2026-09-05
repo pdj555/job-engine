@@ -6503,7 +6503,7 @@ _NON_SALARY_MONEY_RE = re.compile(
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
     r"(?:\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?)?"
     r"(?:" + _ANY_PERIOD + r")?"
-    r"\s+(?:HSA|FSA|HRA|QSEHRA|ICHRA|pension|529|401(?:k|\(k\))|health\s+savings\s+account|health\s+reimbursement\s+arrangement)(?:\s+(?:contribution|benefit|account|fund|credit|rebate|max|cap|offset|clawback|pre[- ]?tax|catch[- ]?up|carry[- ]?over|roll[- ]?over|true[- ]?up|makeup))?+\b(?!\s+in)(?!\s*(?:(?:match|matching|contribution|benefits?|account|fund|credit|rebate|max|cap|offset|clawback|pre[- ]?tax|catch[- ]?up|carry[- ]?over|roll[- ]?over|true[- ]?up|makeup)\s+)?(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
+    r"\s+(?:HSA|FSA|HRA|QSEHRA|ICHRA|pension|529|401(?:k|\(k\))|health\s+savings\s+account|health\s+reimbursement\s+arrangement)(?:\s+(?:contribution|benefit|account|fund|credit|rebate|max|cap|offset|clawback|pre[- ]?tax|catch[- ]?up|carry[- ]?over|roll[- ]?over|true[- ]?up|makeup))?+(?:\s+(?:recoupment|recovery|repayment|holdback))?+\b(?!\s+in)(?!\s*(?:(?:match|matching|contribution|benefits?|account|fund|credit|rebate|max|cap|offset|clawback|pre[- ]?tax|catch[- ]?up|carry[- ]?over|roll[- ]?over|true[- ]?up|makeup)\s+)?(?:of|:)?\s*(?:USD|US\$|\$)\s*[\d,])"
     r"|"
     r"\b(?:HSA|FSA|HRA|QSEHRA|ICHRA|pension|529|401(?:k|\(k\))|health\s+savings\s+account|health\s+reimbursement\s+arrangement)(?:\s+(?:contribution|benefit|account|fund|credit|rebate|max|cap|offset|clawback|pre[- ]?tax|catch[- ]?up|carry[- ]?over|roll[- ]?over|true[- ]?up|makeup))?\s*(?:of|:)?\s*"
     r"(?:USD|US\$|\$)\s*[\d,]+(?:\s+\d{3})*(?:\.\d+)?(?:\s*k)?"
