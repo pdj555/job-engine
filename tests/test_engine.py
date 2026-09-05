@@ -1971,6 +1971,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("DCFSA $15,000") == (None, None)
     assert _parse_pay("$180,000 DCFSA in NYC") == (None, 180_000)
     assert _parse_pay("base $180,000 DCFSA $15,000") == (None, 180_000)
+    assert _parse_pay("$15,000 LFSA") == (None, None)
+    assert _parse_pay("$15,000 LPFSA") == (None, None)
+    assert _parse_pay("$15,000 HCFSA") == (None, None)
+    assert _parse_pay("$15,000 OOP") == (None, None)
+    assert _parse_pay("$15,000 flexible spending") == (None, None)
+    assert _parse_pay("OOP $15,000") == (None, None)
+    assert _parse_pay("$180,000 OOP in NYC") == (None, 180_000)
+    assert _parse_pay("base $180,000 HCFSA $15,000") == (None, 180_000)
     assert _parse_pay("$180,000 LTI in NYC") == (None, 180_000)
     assert _parse_pay("$15,000 LTI") == (None, None)
     assert _parse_pay("$15,000 STI") == (None, None)
@@ -7702,6 +7710,12 @@ def test_apply_listing_does_not_rank_equity_as_salary():
     dcfsaonly = Opportunity(title="Engineer", url="https://jobs.example/dcfsaonly")
     assert _apply_listing(dcfsaonly, "<p>$15,000 DCFSA. Apply now.</p>") is False
     assert dcfsaonly.pay_high is None
+    hcfsanly = Opportunity(title="Engineer", url="https://jobs.example/hcfsaonly")
+    assert _apply_listing(hcfsanly, "<p>$15,000 HCFSA. Apply now.</p>") is False
+    assert hcfsanly.pay_high is None
+    ooponly = Opportunity(title="Engineer", url="https://jobs.example/ooponly")
+    assert _apply_listing(ooponly, "<p>$15,000 OOP. Apply now.</p>") is False
+    assert ooponly.pay_high is None
     ltionly = Opportunity(title="Engineer", url="https://jobs.example/ltionly")
     assert _apply_listing(ltionly, "<p>$15,000 LTI. Apply now.</p>") is False
     assert ltionly.pay_high is None
