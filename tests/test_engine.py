@@ -5178,6 +5178,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 zeilstaversejol insurance") == (None, None)
     assert _parse_pay("zeilstaversejol of $15,000") == (None, None)
     assert _parse_pay("$15,000 zeilstaversejol. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 zeilbunschuit") == (None, None)
+    assert _parse_pay("$15,000 zeil-bunschuit") == (None, None)
+    assert _parse_pay("$15,000 zeil bunschuit") == (None, None)
+    assert _parse_pay("$15,000 zeilbunschuiten") == (None, None)
+    assert _parse_pay("$15,000 zeilbunschuit insurance") == (None, None)
+    assert _parse_pay("zeilbunschuit of $15,000") == (None, None)
+    assert _parse_pay("$15,000 zeilbunschuit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5898,6 +5905,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 zeilsteilsteve") == (None, 15_000)
     assert _parse_pay("$15,000 zeilbomschui") == (None, 15_000)
     assert _parse_pay("$15,000 zeilstaversejo") == (None, 15_000)
+    assert _parse_pay("$15,000 zeilbunschui") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -9669,6 +9677,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 zeilstaversejol $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 zeilstaversejol insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 zeilbunschuit $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 zeilbunschuit insurance $15,000") == (
         None,
         180_000,
     )
@@ -20769,6 +20782,20 @@ def test_guess_pay_annualizes_hourly():
         zeilstaversejolmix, "<p>$15,000 zeilstaversejol. Salary $180,000</p>"
     ) is True
     assert zeilstaversejolmix.pay_high == 180_000
+    zeilbunschuitonly = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilbunschuitonly"
+    )
+    assert _apply_listing(
+        zeilbunschuitonly, "<p>$15,000 zeilbunschuit. Apply now.</p>"
+    ) is False
+    assert zeilbunschuitonly.pay_high is None
+    zeilbunschuitmix = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilbunschuitmix"
+    )
+    assert _apply_listing(
+        zeilbunschuitmix, "<p>$15,000 zeilbunschuit. Salary $180,000</p>"
+    ) is True
+    assert zeilbunschuitmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
