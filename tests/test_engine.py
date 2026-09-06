@@ -2699,6 +2699,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group motorhome") == (None, None)
     assert _parse_pay("group camper of $15,000") == (None, None)
     assert _parse_pay("$15,000 group camper. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group commuter") == (None, None)
+    assert _parse_pay("$15,000 group commuter insurance") == (None, None)
+    assert _parse_pay("$15,000 group parking") == (None, None)
+    assert _parse_pay("$15,000 group transit") == (None, None)
+    assert _parse_pay("group commuter of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group commuter. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2875,6 +2881,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group AT") == (None, 15_000)
     assert _parse_pay("$15,000 group RVer") == (None, 15_000)
     assert _parse_pay("$15,000 group camping") == (None, 15_000)
+    assert _parse_pay("$15,000 group commute") == (None, 15_000)
+    assert _parse_pay("$15,000 group transition") == (None, 15_000)
     assert _parse_pay("$15,000 flood") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
     assert _parse_pay("$15,000 tenants") == (None, 15_000)
@@ -3932,6 +3940,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 group trailer park $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuter $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group commuter insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group parking lot $15,000") == (
         None,
         180_000,
     )
@@ -9196,6 +9213,20 @@ def test_guess_pay_annualizes_hourly():
         groupcampermix, "<p>$15,000 group camper. Salary $180,000</p>"
     ) is True
     assert groupcampermix.pay_high == 180_000
+    groupcommonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcommonly"
+    )
+    assert _apply_listing(
+        groupcommonly, "<p>$15,000 group commuter. Apply now.</p>"
+    ) is False
+    assert groupcommonly.pay_high is None
+    groupcommmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcommmix"
+    )
+    assert _apply_listing(
+        groupcommmix, "<p>$15,000 group commuter. Salary $180,000</p>"
+    ) is True
+    assert groupcommmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
