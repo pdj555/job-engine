@@ -3233,6 +3233,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group merchantman insurance") == (None, None)
     assert _parse_pay("group merchantman of $15,000") == (None, None)
     assert _parse_pay("$15,000 group merchantman. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group bilander") == (None, None)
+    assert _parse_pay("$15,000 group bilanders") == (None, None)
+    assert _parse_pay("$15,000 group bilander insurance") == (None, None)
+    assert _parse_pay("group bilander of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group bilander. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ketch") == (None, None)
     assert _parse_pay("$15,000 group ketches") == (None, None)
     assert _parse_pay("$15,000 group ketch insurance") == (None, None)
@@ -4924,6 +4929,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group cobbler") == (None, 15_000)
     assert _parse_pay("$15,000 group merchantma") == (None, 15_000)
     assert _parse_pay("$15,000 group merchant") == (None, 15_000)
+    assert _parse_pay("$15,000 group biland") == (None, 15_000)
+    assert _parse_pay("$15,000 group bilan") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboa") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboating") == (None, 15_000)
     assert _parse_pay("$15,000 group wake") == (None, 15_000)
@@ -6566,6 +6573,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group merchantman $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group merchantman insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group bilander $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group bilander insurance $15,000") == (
         None,
         180_000,
     )
@@ -14003,6 +14015,20 @@ def test_guess_pay_annualizes_hourly():
         groupmerchantmanmix, "<p>$15,000 group merchantman. Salary $180,000</p>"
     ) is True
     assert groupmerchantmanmix.pay_high == 180_000
+    groupbilanderonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupbilanderonly"
+    )
+    assert _apply_listing(
+        groupbilanderonly, "<p>$15,000 group bilander. Apply now.</p>"
+    ) is False
+    assert groupbilanderonly.pay_high is None
+    groupbilandermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupbilandermix"
+    )
+    assert _apply_listing(
+        groupbilandermix, "<p>$15,000 group bilander. Salary $180,000</p>"
+    ) is True
+    assert groupbilandermix.pay_high == 180_000
     groupketchonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupketchonly"
     )
