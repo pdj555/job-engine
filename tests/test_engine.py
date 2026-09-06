@@ -2530,6 +2530,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("group car of $15,000") == (None, None)
     assert _parse_pay("$15,000 group car. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group vehicle. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group legal") == (None, None)
+    assert _parse_pay("$15,000 group legal insurance") == (None, None)
+    assert _parse_pay("$15,000 group legal plan") == (None, None)
+    assert _parse_pay("group legal of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group legal. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group legal insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3499,6 +3508,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 group vehicle insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group legal $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group legal insurance $15,000") == (
         None,
         180_000,
     )
@@ -8285,6 +8299,20 @@ def test_guess_pay_annualizes_hourly():
         groupcarmix, "<p>$15,000 group car. Salary $180,000</p>"
     ) is True
     assert groupcarmix.pay_high == 180_000
+    grouplegalonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouplegalonly"
+    )
+    assert _apply_listing(
+        grouplegalonly, "<p>$15,000 group legal. Apply now.</p>"
+    ) is False
+    assert grouplegalonly.pay_high is None
+    grouplegalmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouplegalmix"
+    )
+    assert _apply_listing(
+        grouplegalmix, "<p>$15,000 group legal. Salary $180,000</p>"
+    ) is True
+    assert grouplegalmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
