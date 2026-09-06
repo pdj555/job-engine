@@ -3357,6 +3357,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 hydroplane insurance") == (None, None)
     assert _parse_pay("hydroplane of $15,000") == (None, None)
     assert _parse_pay("$15,000 hydroplane. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 hydrofoil") == (None, None)
+    assert _parse_pay("$15,000 hydrofoils") == (None, None)
+    assert _parse_pay("$15,000 hydrofoil insurance") == (None, None)
+    assert _parse_pay("hydrofoil of $15,000") == (None, None)
+    assert _parse_pay("$15,000 hydrofoil. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3613,6 +3618,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 daysailing") == (None, 15_000)
     assert _parse_pay("$15,000 hydroplan") == (None, 15_000)
     assert _parse_pay("$15,000 hydroplaning") == (None, 15_000)
+    assert _parse_pay("$15,000 hydrofoi") == (None, 15_000)
+    assert _parse_pay("$15,000 hydrofoiling") == (None, 15_000)
     assert _parse_pay("$15,000 group schoone") == (None, 15_000)
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
@@ -5309,6 +5316,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 hydroplane $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 hydroplane insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 hydrofoil $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 hydrofoil insurance $15,000") == (
         None,
         180_000,
     )
@@ -12085,6 +12097,20 @@ def test_guess_pay_annualizes_hourly():
         hydroplanemix, "<p>$15,000 hydroplane. Salary $180,000</p>"
     ) is True
     assert hydroplanemix.pay_high == 180_000
+    hydrofoilonly = Opportunity(
+        title="Engineer", url="https://jobs.example/hydrofoilonly"
+    )
+    assert _apply_listing(
+        hydrofoilonly, "<p>$15,000 hydrofoil. Apply now.</p>"
+    ) is False
+    assert hydrofoilonly.pay_high is None
+    hydrofoilmix = Opportunity(
+        title="Engineer", url="https://jobs.example/hydrofoilmix"
+    )
+    assert _apply_listing(
+        hydrofoilmix, "<p>$15,000 hydrofoil. Salary $180,000</p>"
+    ) is True
+    assert hydrofoilmix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
