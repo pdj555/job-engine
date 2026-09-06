@@ -5020,6 +5020,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group howker insurance") == (None, None)
     assert _parse_pay("group howker of $15,000") == (None, None)
     assert _parse_pay("$15,000 group howker. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group howkerjacht") == (None, None)
+    assert _parse_pay("$15,000 group howker-jacht") == (None, None)
+    assert _parse_pay("$15,000 group howker jacht") == (None, None)
+    assert _parse_pay("$15,000 group howkerjachten") == (None, None)
+    assert _parse_pay("$15,000 group howkerjacht insurance") == (None, None)
+    assert _parse_pay("group howkerjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group howkerjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group howkerschip") == (None, None)
+    assert _parse_pay("$15,000 group howker-schip") == (None, None)
+    assert _parse_pay("$15,000 group howker schip") == (None, None)
+    assert _parse_pay("$15,000 group howkerschepen") == (None, None)
+    assert _parse_pay("$15,000 group howkerschip insurance") == (None, None)
+    assert _parse_pay("group howkerschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group howkerschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group howkertjalk") == (None, None)
+    assert _parse_pay("$15,000 group howker-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group howker tjalk") == (None, None)
+    assert _parse_pay("$15,000 group howkertjalken") == (None, None)
+    assert _parse_pay("$15,000 group howkertjalk insurance") == (None, None)
+    assert _parse_pay("group howkertjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group howkertjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group howkerboeier") == (None, None)
+    assert _parse_pay("$15,000 group howker-boeier") == (None, None)
+    assert _parse_pay("$15,000 group howker boeier") == (None, None)
+    assert _parse_pay("$15,000 group howkerboeiers") == (None, None)
+    assert _parse_pay("$15,000 group howkerboeier insurance") == (None, None)
+    assert _parse_pay("group howkerboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group howkerboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group flyboat") == (None, None)
     assert _parse_pay("$15,000 group fly-boat") == (None, None)
     assert _parse_pay("$15,000 group fly boat") == (None, None)
@@ -9915,6 +9943,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 howker insurance") == (None, None)
     assert _parse_pay("howker of $15,000") == (None, None)
     assert _parse_pay("$15,000 howker. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 howkerjacht") == (None, None)
+    assert _parse_pay("$15,000 howker-jacht") == (None, None)
+    assert _parse_pay("$15,000 howker jacht") == (None, None)
+    assert _parse_pay("$15,000 howkerjachten") == (None, None)
+    assert _parse_pay("$15,000 howkerjacht insurance") == (None, None)
+    assert _parse_pay("howkerjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 howkerjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 howkerschip") == (None, None)
+    assert _parse_pay("$15,000 howker-schip") == (None, None)
+    assert _parse_pay("$15,000 howker schip") == (None, None)
+    assert _parse_pay("$15,000 howkerschepen") == (None, None)
+    assert _parse_pay("$15,000 howkerschip insurance") == (None, None)
+    assert _parse_pay("howkerschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 howkerschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 howkertjalk") == (None, None)
+    assert _parse_pay("$15,000 howker-tjalk") == (None, None)
+    assert _parse_pay("$15,000 howker tjalk") == (None, None)
+    assert _parse_pay("$15,000 howkertjalken") == (None, None)
+    assert _parse_pay("$15,000 howkertjalk insurance") == (None, None)
+    assert _parse_pay("howkertjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 howkertjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 howkerboeier") == (None, None)
+    assert _parse_pay("$15,000 howker-boeier") == (None, None)
+    assert _parse_pay("$15,000 howker boeier") == (None, None)
+    assert _parse_pay("$15,000 howkerboeiers") == (None, None)
+    assert _parse_pay("$15,000 howkerboeier insurance") == (None, None)
+    assert _parse_pay("howkerboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 howkerboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 flyboat") == (None, None)
     assert _parse_pay("$15,000 fly-boat") == (None, None)
     assert _parse_pay("$15,000 fly boat") == (None, None)
@@ -13058,6 +13114,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 howke") == (None, 15_000)
     assert _parse_pay("$15,000 howk") == (None, 15_000)
     assert _parse_pay("$15,000 hooker") == (None, 15_000)
+    assert _parse_pay("$15,000 howkerjac") == (None, 15_000)
+    assert _parse_pay("$15,000 howkerschi") == (None, 15_000)
+    assert _parse_pay("$15,000 howkertjal") == (None, 15_000)
+    assert _parse_pay("$15,000 howkerboei") == (None, 15_000)
     assert _parse_pay("$15,000 fly") == (None, 15_000)
     assert _parse_pay("$15,000 fly boa") == (None, 15_000)
     assert _parse_pay("$15,000 flyboatjac") == (None, 15_000)
@@ -18256,6 +18316,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group howker $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group howker insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howkerjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howker jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howkerschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howker schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howkertjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howker tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howkerboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group howker boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -23944,6 +24036,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 howker $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 howker insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howkerjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howker jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howkerschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howker schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howkertjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howker tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howkerboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 howker boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -36994,6 +37118,62 @@ def test_guess_pay_annualizes_hourly():
         grouphowkermix, "<p>$15,000 group howker. Salary $180,000</p>"
     ) is True
     assert grouphowkermix.pay_high == 180_000
+    grouphowkerjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerjachtonly"
+    )
+    assert _apply_listing(
+        grouphowkerjachtonly, "<p>$15,000 group howkerjacht. Apply now.</p>"
+    ) is False
+    assert grouphowkerjachtonly.pay_high is None
+    grouphowkerjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerjachtmix"
+    )
+    assert _apply_listing(
+        grouphowkerjachtmix, "<p>$15,000 group howkerjacht. Salary $180,000</p>"
+    ) is True
+    assert grouphowkerjachtmix.pay_high == 180_000
+    grouphowkerschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerschiponly"
+    )
+    assert _apply_listing(
+        grouphowkerschiponly, "<p>$15,000 group howkerschip. Apply now.</p>"
+    ) is False
+    assert grouphowkerschiponly.pay_high is None
+    grouphowkerschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerschipmix"
+    )
+    assert _apply_listing(
+        grouphowkerschipmix, "<p>$15,000 group howkerschip. Salary $180,000</p>"
+    ) is True
+    assert grouphowkerschipmix.pay_high == 180_000
+    grouphowkertjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkertjalkonly"
+    )
+    assert _apply_listing(
+        grouphowkertjalkonly, "<p>$15,000 group howkertjalk. Apply now.</p>"
+    ) is False
+    assert grouphowkertjalkonly.pay_high is None
+    grouphowkertjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkertjalkmix"
+    )
+    assert _apply_listing(
+        grouphowkertjalkmix, "<p>$15,000 group howkertjalk. Salary $180,000</p>"
+    ) is True
+    assert grouphowkertjalkmix.pay_high == 180_000
+    grouphowkerboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerboeieronly"
+    )
+    assert _apply_listing(
+        grouphowkerboeieronly, "<p>$15,000 group howkerboeier. Apply now.</p>"
+    ) is False
+    assert grouphowkerboeieronly.pay_high is None
+    grouphowkerboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphowkerboeiermix"
+    )
+    assert _apply_listing(
+        grouphowkerboeiermix, "<p>$15,000 group howkerboeier. Salary $180,000</p>"
+    ) is True
+    assert grouphowkerboeiermix.pay_high == 180_000
     groupflyboatonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupflyboatonly"
     )
@@ -47163,6 +47343,62 @@ def test_guess_pay_annualizes_hourly():
         howkermix, "<p>$15,000 howker. Salary $180,000</p>"
     ) is True
     assert howkermix.pay_high == 180_000
+    howkerjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerjachtonly"
+    )
+    assert _apply_listing(
+        howkerjachtonly, "<p>$15,000 howkerjacht. Apply now.</p>"
+    ) is False
+    assert howkerjachtonly.pay_high is None
+    howkerjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerjachtmix"
+    )
+    assert _apply_listing(
+        howkerjachtmix, "<p>$15,000 howkerjacht. Salary $180,000</p>"
+    ) is True
+    assert howkerjachtmix.pay_high == 180_000
+    howkerschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerschiponly"
+    )
+    assert _apply_listing(
+        howkerschiponly, "<p>$15,000 howkerschip. Apply now.</p>"
+    ) is False
+    assert howkerschiponly.pay_high is None
+    howkerschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerschipmix"
+    )
+    assert _apply_listing(
+        howkerschipmix, "<p>$15,000 howkerschip. Salary $180,000</p>"
+    ) is True
+    assert howkerschipmix.pay_high == 180_000
+    howkertjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/howkertjalkonly"
+    )
+    assert _apply_listing(
+        howkertjalkonly, "<p>$15,000 howkertjalk. Apply now.</p>"
+    ) is False
+    assert howkertjalkonly.pay_high is None
+    howkertjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/howkertjalkmix"
+    )
+    assert _apply_listing(
+        howkertjalkmix, "<p>$15,000 howkertjalk. Salary $180,000</p>"
+    ) is True
+    assert howkertjalkmix.pay_high == 180_000
+    howkerboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerboeieronly"
+    )
+    assert _apply_listing(
+        howkerboeieronly, "<p>$15,000 howkerboeier. Apply now.</p>"
+    ) is False
+    assert howkerboeieronly.pay_high is None
+    howkerboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/howkerboeiermix"
+    )
+    assert _apply_listing(
+        howkerboeiermix, "<p>$15,000 howkerboeier. Salary $180,000</p>"
+    ) is True
+    assert howkerboeiermix.pay_high == 180_000
     flyboatonly = Opportunity(
         title="Engineer", url="https://jobs.example/flyboatonly"
     )
