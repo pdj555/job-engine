@@ -2879,6 +2879,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group center console insurance") == (None, None)
     assert _parse_pay("group center console of $15,000") == (None, None)
     assert _parse_pay("$15,000 group center console. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group cuddy") == (None, None)
+    assert _parse_pay("$15,000 group cuddy cabin") == (None, None)
+    assert _parse_pay("$15,000 group cuddy-cabin") == (None, None)
+    assert _parse_pay("$15,000 group cuddy cabin insurance") == (None, None)
+    assert _parse_pay("group cuddy cabin of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group cuddy cabin. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ATV") == (None, None)
     assert _parse_pay("$15,000 group ATV insurance") == (None, None)
     assert _parse_pay("$15,000 group UTV") == (None, None)
@@ -3449,6 +3455,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group center") == (None, 15_000)
     assert _parse_pay("$15,000 group center conso") == (None, 15_000)
     assert _parse_pay("$15,000 group center consoling") == (None, 15_000)
+    assert _parse_pay("$15,000 group cudd") == (None, 15_000)
+    assert _parse_pay("$15,000 group cuddying") == (None, 15_000)
     assert _parse_pay("$15,000 group sloo") == (None, 15_000)
     assert _parse_pay("$15,000 group slooping") == (None, 15_000)
     assert _parse_pay("$15,000 group ketc") == (None, 15_000)
@@ -4691,6 +4699,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group center console $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group center console insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group cuddy $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group cuddy cabin $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group cuddy cabin insurance $15,000") == (
         None,
         180_000,
     )
@@ -10663,6 +10677,20 @@ def test_guess_pay_annualizes_hourly():
         groupcentermix, "<p>$15,000 group center console. Salary $180,000</p>"
     ) is True
     assert groupcentermix.pay_high == 180_000
+    groupcuddyonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcuddyonly"
+    )
+    assert _apply_listing(
+        groupcuddyonly, "<p>$15,000 group cuddy cabin. Apply now.</p>"
+    ) is False
+    assert groupcuddyonly.pay_high is None
+    groupcuddymix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcuddymix"
+    )
+    assert _apply_listing(
+        groupcuddymix, "<p>$15,000 group cuddy cabin. Salary $180,000</p>"
+    ) is True
+    assert groupcuddymix.pay_high == 180_000
     assert _apply_listing(
         groupsnowonly, "<p>$15,000 group snowmobile. Apply now.</p>"
     ) is False
