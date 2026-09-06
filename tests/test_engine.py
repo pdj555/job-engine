@@ -8793,6 +8793,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group center console insurance") == (None, None)
     assert _parse_pay("group center console of $15,000") == (None, None)
     assert _parse_pay("$15,000 group center console. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group center consolejacht") == (None, None)
+    assert _parse_pay("$15,000 group center console-jacht") == (None, None)
+    assert _parse_pay("$15,000 group center console jacht") == (None, None)
+    assert _parse_pay("$15,000 group center consolejachten") == (None, None)
+    assert _parse_pay("$15,000 group center consolejacht insurance") == (None, None)
+    assert _parse_pay("group center consolejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group center consolejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group center consoleschip") == (None, None)
+    assert _parse_pay("$15,000 group center console-schip") == (None, None)
+    assert _parse_pay("$15,000 group center console schip") == (None, None)
+    assert _parse_pay("$15,000 group center consoleschepen") == (None, None)
+    assert _parse_pay("$15,000 group center consoleschip insurance") == (None, None)
+    assert _parse_pay("group center consoleschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group center consoleschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group center consoletjalk") == (None, None)
+    assert _parse_pay("$15,000 group center console-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group center console tjalk") == (None, None)
+    assert _parse_pay("$15,000 group center consoletjalken") == (None, None)
+    assert _parse_pay("$15,000 group center consoletjalk insurance") == (None, None)
+    assert _parse_pay("group center consoletjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group center consoletjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group center consoleboeier") == (None, None)
+    assert _parse_pay("$15,000 group center console-boeier") == (None, None)
+    assert _parse_pay("$15,000 group center console boeier") == (None, None)
+    assert _parse_pay("$15,000 group center consoleboeiers") == (None, None)
+    assert _parse_pay("$15,000 group center consoleboeier insurance") == (None, None)
+    assert _parse_pay("group center consoleboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group center consoleboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group cuddy") == (None, None)
     assert _parse_pay("$15,000 group cuddy cabin") == (None, None)
     assert _parse_pay("$15,000 group cuddy-cabin") == (None, None)
@@ -15522,6 +15550,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 center console insurance") == (None, None)
     assert _parse_pay("center console of $15,000") == (None, None)
     assert _parse_pay("$15,000 center console. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 center consolejacht") == (None, None)
+    assert _parse_pay("$15,000 center console-jacht") == (None, None)
+    assert _parse_pay("$15,000 center console jacht") == (None, None)
+    assert _parse_pay("$15,000 center consolejachten") == (None, None)
+    assert _parse_pay("$15,000 center consolejacht insurance") == (None, None)
+    assert _parse_pay("center consolejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 center consolejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 center consoleschip") == (None, None)
+    assert _parse_pay("$15,000 center console-schip") == (None, None)
+    assert _parse_pay("$15,000 center console schip") == (None, None)
+    assert _parse_pay("$15,000 center consoleschepen") == (None, None)
+    assert _parse_pay("$15,000 center consoleschip insurance") == (None, None)
+    assert _parse_pay("center consoleschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 center consoleschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 center consoletjalk") == (None, None)
+    assert _parse_pay("$15,000 center console-tjalk") == (None, None)
+    assert _parse_pay("$15,000 center console tjalk") == (None, None)
+    assert _parse_pay("$15,000 center consoletjalken") == (None, None)
+    assert _parse_pay("$15,000 center consoletjalk insurance") == (None, None)
+    assert _parse_pay("center consoletjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 center consoletjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 center consoleboeier") == (None, None)
+    assert _parse_pay("$15,000 center console-boeier") == (None, None)
+    assert _parse_pay("$15,000 center console boeier") == (None, None)
+    assert _parse_pay("$15,000 center consoleboeiers") == (None, None)
+    assert _parse_pay("$15,000 center consoleboeier insurance") == (None, None)
+    assert _parse_pay("center consoleboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 center consoleboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 cuddy") == (None, None)
     assert _parse_pay("$15,000 cuddy cabin") == (None, None)
     assert _parse_pay("$15,000 cuddy-cabin") == (None, None)
@@ -17352,6 +17408,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 center") == (None, 15_000)
     assert _parse_pay("$15,000 center conso") == (None, 15_000)
     assert _parse_pay("$15,000 center consoling") == (None, 15_000)
+    assert _parse_pay("$15,000 center consolejac") == (None, 15_000)
+    assert _parse_pay("$15,000 center consoleschi") == (None, 15_000)
+    assert _parse_pay("$15,000 center consoletjal") == (None, 15_000)
+    assert _parse_pay("$15,000 center consoleboei") == (None, 15_000)
     assert _parse_pay("$15,000 cudd") == (None, 15_000)
     assert _parse_pay("$15,000 cuddying") == (None, 15_000)
     assert _parse_pay("$15,000 dual") == (None, 15_000)
@@ -17491,6 +17551,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group center") == (None, 15_000)
     assert _parse_pay("$15,000 group center conso") == (None, 15_000)
     assert _parse_pay("$15,000 group center consoling") == (None, 15_000)
+    assert _parse_pay("$15,000 group center consolejac") == (None, 15_000)
+    assert _parse_pay("$15,000 group center consoleschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group center consoletjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group center consoleboei") == (None, 15_000)
     assert _parse_pay("$15,000 group cudd") == (None, 15_000)
     assert _parse_pay("$15,000 group cuddying") == (None, 15_000)
     assert _parse_pay("$15,000 group dual") == (None, 15_000)
@@ -26659,6 +26723,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group center consolejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center console jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center consoleschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center console schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center consoletjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center console tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center consoleboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group center console boeier insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group cuddy $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group cuddy cabin $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group cuddy cabin insurance $15,000") == (
@@ -34425,6 +34521,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 center console $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 center console insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center consolejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center console jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center consoleschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center console schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center consoletjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center console tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center consoleboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center console boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -52798,6 +52926,62 @@ def test_guess_pay_annualizes_hourly():
         groupcentermix, "<p>$15,000 group center console. Salary $180,000</p>"
     ) is True
     assert groupcentermix.pay_high == 180_000
+    groupcenterconsolejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsolejachtonly"
+    )
+    assert _apply_listing(
+        groupcenterconsolejachtonly, "<p>$15,000 group center consolejacht. Apply now.</p>"
+    ) is False
+    assert groupcenterconsolejachtonly.pay_high is None
+    groupcenterconsolejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsolejachtmix"
+    )
+    assert _apply_listing(
+        groupcenterconsolejachtmix, "<p>$15,000 group center consolejacht. Salary $180,000</p>"
+    ) is True
+    assert groupcenterconsolejachtmix.pay_high == 180_000
+    groupcenterconsoleschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoleschiponly"
+    )
+    assert _apply_listing(
+        groupcenterconsoleschiponly, "<p>$15,000 group center consoleschip. Apply now.</p>"
+    ) is False
+    assert groupcenterconsoleschiponly.pay_high is None
+    groupcenterconsoleschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoleschipmix"
+    )
+    assert _apply_listing(
+        groupcenterconsoleschipmix, "<p>$15,000 group center consoleschip. Salary $180,000</p>"
+    ) is True
+    assert groupcenterconsoleschipmix.pay_high == 180_000
+    groupcenterconsoletjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoletjalkonly"
+    )
+    assert _apply_listing(
+        groupcenterconsoletjalkonly, "<p>$15,000 group center consoletjalk. Apply now.</p>"
+    ) is False
+    assert groupcenterconsoletjalkonly.pay_high is None
+    groupcenterconsoletjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoletjalkmix"
+    )
+    assert _apply_listing(
+        groupcenterconsoletjalkmix, "<p>$15,000 group center consoletjalk. Salary $180,000</p>"
+    ) is True
+    assert groupcenterconsoletjalkmix.pay_high == 180_000
+    groupcenterconsoleboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoleboeieronly"
+    )
+    assert _apply_listing(
+        groupcenterconsoleboeieronly, "<p>$15,000 group center consoleboeier. Apply now.</p>"
+    ) is False
+    assert groupcenterconsoleboeieronly.pay_high is None
+    groupcenterconsoleboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcenterconsoleboeiermix"
+    )
+    assert _apply_listing(
+        groupcenterconsoleboeiermix, "<p>$15,000 group center consoleboeier. Salary $180,000</p>"
+    ) is True
+    assert groupcenterconsoleboeiermix.pay_high == 180_000
     groupcuddyonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupcuddyonly"
     )
@@ -66511,6 +66695,62 @@ def test_guess_pay_annualizes_hourly():
         centermix, "<p>$15,000 center console. Salary $180,000</p>"
     ) is True
     assert centermix.pay_high == 180_000
+    centerconsolejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsolejachtonly"
+    )
+    assert _apply_listing(
+        centerconsolejachtonly, "<p>$15,000 center consolejacht. Apply now.</p>"
+    ) is False
+    assert centerconsolejachtonly.pay_high is None
+    centerconsolejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsolejachtmix"
+    )
+    assert _apply_listing(
+        centerconsolejachtmix, "<p>$15,000 center consolejacht. Salary $180,000</p>"
+    ) is True
+    assert centerconsolejachtmix.pay_high == 180_000
+    centerconsoleschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoleschiponly"
+    )
+    assert _apply_listing(
+        centerconsoleschiponly, "<p>$15,000 center consoleschip. Apply now.</p>"
+    ) is False
+    assert centerconsoleschiponly.pay_high is None
+    centerconsoleschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoleschipmix"
+    )
+    assert _apply_listing(
+        centerconsoleschipmix, "<p>$15,000 center consoleschip. Salary $180,000</p>"
+    ) is True
+    assert centerconsoleschipmix.pay_high == 180_000
+    centerconsoletjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoletjalkonly"
+    )
+    assert _apply_listing(
+        centerconsoletjalkonly, "<p>$15,000 center consoletjalk. Apply now.</p>"
+    ) is False
+    assert centerconsoletjalkonly.pay_high is None
+    centerconsoletjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoletjalkmix"
+    )
+    assert _apply_listing(
+        centerconsoletjalkmix, "<p>$15,000 center consoletjalk. Salary $180,000</p>"
+    ) is True
+    assert centerconsoletjalkmix.pay_high == 180_000
+    centerconsoleboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoleboeieronly"
+    )
+    assert _apply_listing(
+        centerconsoleboeieronly, "<p>$15,000 center consoleboeier. Apply now.</p>"
+    ) is False
+    assert centerconsoleboeieronly.pay_high is None
+    centerconsoleboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/centerconsoleboeiermix"
+    )
+    assert _apply_listing(
+        centerconsoleboeiermix, "<p>$15,000 center consoleboeier. Salary $180,000</p>"
+    ) is True
+    assert centerconsoleboeiermix.pay_high == 180_000
     cuddyonly = Opportunity(title="Engineer", url="https://jobs.example/cuddyonly")
     assert _apply_listing(
         cuddyonly, "<p>$15,000 cuddy cabin. Apply now.</p>"
