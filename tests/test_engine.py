@@ -2985,6 +2985,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group wingfoil insurance") == (None, None)
     assert _parse_pay("group wingfoil of $15,000") == (None, None)
     assert _parse_pay("$15,000 group wingfoil. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group kitefoil") == (None, None)
+    assert _parse_pay("$15,000 group kitefoils") == (None, None)
+    assert _parse_pay("$15,000 group kitefoiler") == (None, None)
+    assert _parse_pay("$15,000 group kite-foil") == (None, None)
+    assert _parse_pay("$15,000 group kite foil") == (None, None)
+    assert _parse_pay("$15,000 group kitefoil insurance") == (None, None)
+    assert _parse_pay("group kitefoil of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group kitefoil. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ketch") == (None, None)
     assert _parse_pay("$15,000 group ketches") == (None, None)
     assert _parse_pay("$15,000 group ketch insurance") == (None, None)
@@ -4232,6 +4240,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group wingfoi") == (None, 15_000)
     assert _parse_pay("$15,000 group wingfoiling") == (None, 15_000)
     assert _parse_pay("$15,000 group wing foiling") == (None, 15_000)
+    assert _parse_pay("$15,000 group kitefoi") == (None, 15_000)
+    assert _parse_pay("$15,000 group kitefoiling") == (None, 15_000)
+    assert _parse_pay("$15,000 group kite foiling") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboa") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboating") == (None, 15_000)
     assert _parse_pay("$15,000 group wake") == (None, 15_000)
@@ -5616,6 +5627,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 group wing foil $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group kitefoil $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group kitefoil insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group kite foil $15,000") == (
         None,
         180_000,
     )
@@ -12173,6 +12193,20 @@ def test_guess_pay_annualizes_hourly():
         groupwingfoilmix, "<p>$15,000 group wingfoil. Salary $180,000</p>"
     ) is True
     assert groupwingfoilmix.pay_high == 180_000
+    groupkitefoilonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupkitefoilonly"
+    )
+    assert _apply_listing(
+        groupkitefoilonly, "<p>$15,000 group kitefoil. Apply now.</p>"
+    ) is False
+    assert groupkitefoilonly.pay_high is None
+    groupkitefoilmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupkitefoilmix"
+    )
+    assert _apply_listing(
+        groupkitefoilmix, "<p>$15,000 group kitefoil. Salary $180,000</p>"
+    ) is True
+    assert groupkitefoilmix.pay_high == 180_000
     groupketchonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupketchonly"
     )
