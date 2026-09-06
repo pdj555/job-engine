@@ -9774,6 +9774,46 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 critical disease") == (None, None)
     assert _parse_pay("critical disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 critical disease. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 critical diseasejacht") == (None, None)
+    assert _parse_pay("$15,000 critical disease-jacht") == (None, None)
+    assert _parse_pay("$15,000 critical disease jacht") == (None, None)
+    assert _parse_pay("$15,000 critical diseasejachten") == (None, None)
+    assert _parse_pay("$15,000 critical diseasejacht insurance") == (None, None)
+    assert _parse_pay("critical diseasejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 critical diseasejacht. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 critical diseaseschip") == (None, None)
+    assert _parse_pay("$15,000 critical disease-schip") == (None, None)
+    assert _parse_pay("$15,000 critical disease schip") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseschepen") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseschip insurance") == (None, None)
+    assert _parse_pay("critical diseaseschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseschip. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 critical diseasetjalk") == (None, None)
+    assert _parse_pay("$15,000 critical disease-tjalk") == (None, None)
+    assert _parse_pay("$15,000 critical disease tjalk") == (None, None)
+    assert _parse_pay("$15,000 critical diseasetjalken") == (None, None)
+    assert _parse_pay("$15,000 critical diseasetjalk insurance") == (None, None)
+    assert _parse_pay("critical diseasetjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 critical diseasetjalk. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 critical diseaseboeier") == (None, None)
+    assert _parse_pay("$15,000 critical disease-boeier") == (None, None)
+    assert _parse_pay("$15,000 critical disease boeier") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseboeiers") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseboeier insurance") == (None, None)
+    assert _parse_pay("critical diseaseboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 critical diseaseboeier. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 critical sickness") == (None, None)
     assert _parse_pay("$15,000 critical sickness insurance") == (None, None)
     assert _parse_pay("critical sickness of $15,000") == (None, None)
@@ -16726,6 +16766,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 specified diseaseschi") == (None, 15_000)
     assert _parse_pay("$15,000 specified diseasetjal") == (None, 15_000)
     assert _parse_pay("$15,000 specified diseaseboei") == (None, 15_000)
+    assert _parse_pay("$15,000 critical diseasejac") == (None, 15_000)
+    assert _parse_pay("$15,000 critical diseaseschi") == (None, 15_000)
+    assert _parse_pay("$15,000 critical diseasetjal") == (None, 15_000)
+    assert _parse_pay("$15,000 critical diseaseboei") == (None, 15_000)
     assert _parse_pay("$15,000 flood") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
     assert _parse_pay("$15,000 tenants") == (None, 15_000)
@@ -19924,6 +19968,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 critical disease insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical diseasejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical disease jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical diseaseschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical disease schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical diseasetjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical disease tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical diseaseboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical disease boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -56071,6 +56147,62 @@ def test_guess_pay_annualizes_hourly():
         critdismix, "<p>$15,000 critical disease. Salary $180,000</p>"
     ) is True
     assert critdismix.pay_high == 180_000
+    critdisjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisjachtonly"
+    )
+    assert _apply_listing(
+        critdisjachtonly, "<p>$15,000 critical diseasejacht. Apply now.</p>"
+    ) is False
+    assert critdisjachtonly.pay_high is None
+    critdisjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisjachtmix"
+    )
+    assert _apply_listing(
+        critdisjachtmix, "<p>$15,000 critical diseasejacht. Salary $180,000</p>"
+    ) is True
+    assert critdisjachtmix.pay_high == 180_000
+    critdisschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisschiponly"
+    )
+    assert _apply_listing(
+        critdisschiponly, "<p>$15,000 critical diseaseschip. Apply now.</p>"
+    ) is False
+    assert critdisschiponly.pay_high is None
+    critdisschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisschipmix"
+    )
+    assert _apply_listing(
+        critdisschipmix, "<p>$15,000 critical diseaseschip. Salary $180,000</p>"
+    ) is True
+    assert critdisschipmix.pay_high == 180_000
+    critdistjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/critdistjalkonly"
+    )
+    assert _apply_listing(
+        critdistjalkonly, "<p>$15,000 critical diseasetjalk. Apply now.</p>"
+    ) is False
+    assert critdistjalkonly.pay_high is None
+    critdistjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/critdistjalkmix"
+    )
+    assert _apply_listing(
+        critdistjalkmix, "<p>$15,000 critical diseasetjalk. Salary $180,000</p>"
+    ) is True
+    assert critdistjalkmix.pay_high == 180_000
+    critdisboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisboeieronly"
+    )
+    assert _apply_listing(
+        critdisboeieronly, "<p>$15,000 critical diseaseboeier. Apply now.</p>"
+    ) is False
+    assert critdisboeieronly.pay_high is None
+    critdisboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisboeiermix"
+    )
+    assert _apply_listing(
+        critdisboeiermix, "<p>$15,000 critical diseaseboeier. Salary $180,000</p>"
+    ) is True
+    assert critdisboeiermix.pay_high == 180_000
     critsickonly = Opportunity(
         title="Engineer", url="https://jobs.example/critsickonly"
     )
