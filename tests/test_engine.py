@@ -2789,6 +2789,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group cabin cruiser insurance") == (None, None)
     assert _parse_pay("group cabin cruiser of $15,000") == (None, None)
     assert _parse_pay("$15,000 group cabin cruiser. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group runabout") == (None, None)
+    assert _parse_pay("$15,000 group runabouts") == (None, None)
+    assert _parse_pay("$15,000 group runabout insurance") == (None, None)
+    assert _parse_pay("group runabout of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group runabout. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ATV") == (None, None)
     assert _parse_pay("$15,000 group ATV insurance") == (None, None)
     assert _parse_pay("$15,000 group UTV") == (None, None)
@@ -3194,6 +3199,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cabin cruising") == (None, 15_000)
     assert _parse_pay("$15,000 runabou") == (None, 15_000)
     assert _parse_pay("$15,000 runabouting") == (None, 15_000)
+    assert _parse_pay("$15,000 group runabou") == (None, 15_000)
+    assert _parse_pay("$15,000 group runabouting") == (None, 15_000)
     assert _parse_pay("$15,000 cabin") == (None, 15_000)
     assert _parse_pay("$15,000 cruiser") == (None, 15_000)
     assert _parse_pay("$15,000 group cabin cruis") == (None, 15_000)
@@ -4336,6 +4343,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group cabin cruiser $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group cabin cruiser insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runabout $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group runabout insurance $15,000") == (
         None,
         180_000,
     )
@@ -10003,6 +10015,20 @@ def test_guess_pay_annualizes_hourly():
         groupcabincruisermix, "<p>$15,000 group cabin cruiser. Salary $180,000</p>"
     ) is True
     assert groupcabincruisermix.pay_high == 180_000
+    grouprunaboutonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouprunaboutonly"
+    )
+    assert _apply_listing(
+        grouprunaboutonly, "<p>$15,000 group runabout. Apply now.</p>"
+    ) is False
+    assert grouprunaboutonly.pay_high is None
+    grouprunaboutmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouprunaboutmix"
+    )
+    assert _apply_listing(
+        grouprunaboutmix, "<p>$15,000 group runabout. Salary $180,000</p>"
+    ) is True
+    assert grouprunaboutmix.pay_high == 180_000
     assert _apply_listing(
         groupsnowonly, "<p>$15,000 group snowmobile. Apply now.</p>"
     ) is False
