@@ -2515,6 +2515,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 disease insurance") == (None, None)
     assert _parse_pay("$15,000 group cancer") == (None, None)
     assert _parse_pay("$15,000 voluntary cancer") == (None, None)
+    assert _parse_pay("$15,000 specified disease") == (None, None)
+    assert _parse_pay("specified disease of $15,000") == (None, None)
+    assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 specified") == (None, 15_000)
     assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hospital insurance") == (None, None)
     assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
@@ -8137,6 +8141,16 @@ def test_guess_pay_annualizes_hourly():
         groupcancermix, "<p>$15,000 group cancer. Salary $180,000</p>"
     ) is True
     assert groupcancermix.pay_high == 180_000
+    specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
+    assert _apply_listing(
+        specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
+    ) is False
+    assert specdisonly.pay_high is None
+    specdismix = Opportunity(title="Engineer", url="https://jobs.example/specdismix")
+    assert _apply_listing(
+        specdismix, "<p>$15,000 specified disease. Salary $180,000</p>"
+    ) is True
+    assert specdismix.pay_high == 180_000
     hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
     assert _apply_listing(
         hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
