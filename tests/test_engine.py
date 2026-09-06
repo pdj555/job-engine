@@ -3620,6 +3620,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group coracle insurance") == (None, None)
     assert _parse_pay("group coracle of $15,000") == (None, None)
     assert _parse_pay("$15,000 group coracle. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group coraclejacht") == (None, None)
+    assert _parse_pay("$15,000 group coracle-jacht") == (None, None)
+    assert _parse_pay("$15,000 group coracle jacht") == (None, None)
+    assert _parse_pay("$15,000 group coraclejachten") == (None, None)
+    assert _parse_pay("$15,000 group coraclejacht insurance") == (None, None)
+    assert _parse_pay("group coraclejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group coraclejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group coracleschip") == (None, None)
+    assert _parse_pay("$15,000 group coracle-schip") == (None, None)
+    assert _parse_pay("$15,000 group coracle schip") == (None, None)
+    assert _parse_pay("$15,000 group coracleschepen") == (None, None)
+    assert _parse_pay("$15,000 group coracleschip insurance") == (None, None)
+    assert _parse_pay("group coracleschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group coracleschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group coracletjalk") == (None, None)
+    assert _parse_pay("$15,000 group coracle-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group coracle tjalk") == (None, None)
+    assert _parse_pay("$15,000 group coracletjalken") == (None, None)
+    assert _parse_pay("$15,000 group coracletjalk insurance") == (None, None)
+    assert _parse_pay("group coracletjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group coracletjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group coracleboeier") == (None, None)
+    assert _parse_pay("$15,000 group coracle-boeier") == (None, None)
+    assert _parse_pay("$15,000 group coracle boeier") == (None, None)
+    assert _parse_pay("$15,000 group coracleboeiers") == (None, None)
+    assert _parse_pay("$15,000 group coracleboeier insurance") == (None, None)
+    assert _parse_pay("group coracleboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group coracleboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group xebec") == (None, None)
     assert _parse_pay("$15,000 group xebecs") == (None, None)
     assert _parse_pay("$15,000 group xebec insurance") == (None, None)
@@ -7339,6 +7367,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 coracle insurance") == (None, None)
     assert _parse_pay("coracle of $15,000") == (None, None)
     assert _parse_pay("$15,000 coracle. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 coraclejacht") == (None, None)
+    assert _parse_pay("$15,000 coracle-jacht") == (None, None)
+    assert _parse_pay("$15,000 coracle jacht") == (None, None)
+    assert _parse_pay("$15,000 coraclejachten") == (None, None)
+    assert _parse_pay("$15,000 coraclejacht insurance") == (None, None)
+    assert _parse_pay("coraclejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 coraclejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 coracleschip") == (None, None)
+    assert _parse_pay("$15,000 coracle-schip") == (None, None)
+    assert _parse_pay("$15,000 coracle schip") == (None, None)
+    assert _parse_pay("$15,000 coracleschepen") == (None, None)
+    assert _parse_pay("$15,000 coracleschip insurance") == (None, None)
+    assert _parse_pay("coracleschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 coracleschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 coracletjalk") == (None, None)
+    assert _parse_pay("$15,000 coracle-tjalk") == (None, None)
+    assert _parse_pay("$15,000 coracle tjalk") == (None, None)
+    assert _parse_pay("$15,000 coracletjalken") == (None, None)
+    assert _parse_pay("$15,000 coracletjalk insurance") == (None, None)
+    assert _parse_pay("coracletjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 coracletjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 coracleboeier") == (None, None)
+    assert _parse_pay("$15,000 coracle-boeier") == (None, None)
+    assert _parse_pay("$15,000 coracle boeier") == (None, None)
+    assert _parse_pay("$15,000 coracleboeiers") == (None, None)
+    assert _parse_pay("$15,000 coracleboeier insurance") == (None, None)
+    assert _parse_pay("coracleboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 coracleboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 xebec") == (None, None)
     assert _parse_pay("$15,000 xebecs") == (None, None)
     assert _parse_pay("$15,000 xebec insurance") == (None, None)
@@ -10453,6 +10509,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 pirogueboei") == (None, 15_000)
     assert _parse_pay("$15,000 corac") == (None, 15_000)
     assert _parse_pay("$15,000 coral") == (None, 15_000)
+    assert _parse_pay("$15,000 coraclejac") == (None, 15_000)
+    assert _parse_pay("$15,000 coracleschi") == (None, 15_000)
+    assert _parse_pay("$15,000 coracletjal") == (None, 15_000)
+    assert _parse_pay("$15,000 coracleboei") == (None, 15_000)
     assert _parse_pay("$15,000 xebe") == (None, 15_000)
     assert _parse_pay("$15,000 xeb") == (None, 15_000)
     assert _parse_pay("$15,000 carav") == (None, 15_000)
@@ -11284,6 +11344,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group pirogueboei") == (None, 15_000)
     assert _parse_pay("$15,000 group corac") == (None, 15_000)
     assert _parse_pay("$15,000 group coral") == (None, 15_000)
+    assert _parse_pay("$15,000 group coraclejac") == (None, 15_000)
+    assert _parse_pay("$15,000 group coracleschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group coracletjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group coracleboei") == (None, 15_000)
     assert _parse_pay("$15,000 group xebe") == (None, 15_000)
     assert _parse_pay("$15,000 group xeb") == (None, 15_000)
     assert _parse_pay("$15,000 group carav") == (None, 15_000)
@@ -13920,6 +13984,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group coracle $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group coracle insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coraclejacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group coraclejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracle jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracleschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group coracleschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracle schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracletjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group coracletjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracle tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracleboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group coracleboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group coracle boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -18140,6 +18240,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 coracle $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 coracle insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coraclejacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 coraclejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracle jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracleschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 coracleschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracle schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracletjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 coracletjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracle tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracleboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 coracleboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 coracle boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -28442,6 +28578,62 @@ def test_guess_pay_annualizes_hourly():
         groupcoraclemix, "<p>$15,000 group coracle. Salary $180,000</p>"
     ) is True
     assert groupcoraclemix.pay_high == 180_000
+    groupcoraclejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoraclejachtonly"
+    )
+    assert _apply_listing(
+        groupcoraclejachtonly, "<p>$15,000 group coraclejacht. Apply now.</p>"
+    ) is False
+    assert groupcoraclejachtonly.pay_high is None
+    groupcoraclejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoraclejachtmix"
+    )
+    assert _apply_listing(
+        groupcoraclejachtmix, "<p>$15,000 group coraclejacht. Salary $180,000</p>"
+    ) is True
+    assert groupcoraclejachtmix.pay_high == 180_000
+    groupcoracleschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracleschiponly"
+    )
+    assert _apply_listing(
+        groupcoracleschiponly, "<p>$15,000 group coracleschip. Apply now.</p>"
+    ) is False
+    assert groupcoracleschiponly.pay_high is None
+    groupcoracleschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracleschipmix"
+    )
+    assert _apply_listing(
+        groupcoracleschipmix, "<p>$15,000 group coracleschip. Salary $180,000</p>"
+    ) is True
+    assert groupcoracleschipmix.pay_high == 180_000
+    groupcoracletjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracletjalkonly"
+    )
+    assert _apply_listing(
+        groupcoracletjalkonly, "<p>$15,000 group coracletjalk. Apply now.</p>"
+    ) is False
+    assert groupcoracletjalkonly.pay_high is None
+    groupcoracletjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracletjalkmix"
+    )
+    assert _apply_listing(
+        groupcoracletjalkmix, "<p>$15,000 group coracletjalk. Salary $180,000</p>"
+    ) is True
+    assert groupcoracletjalkmix.pay_high == 180_000
+    groupcoracleboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracleboeieronly"
+    )
+    assert _apply_listing(
+        groupcoracleboeieronly, "<p>$15,000 group coracleboeier. Apply now.</p>"
+    ) is False
+    assert groupcoracleboeieronly.pay_high is None
+    groupcoracleboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcoracleboeiermix"
+    )
+    assert _apply_listing(
+        groupcoracleboeiermix, "<p>$15,000 group coracleboeier. Salary $180,000</p>"
+    ) is True
+    assert groupcoracleboeiermix.pay_high == 180_000
     groupxebeconly = Opportunity(
         title="Engineer", url="https://jobs.example/groupxebeconly"
     )
@@ -36299,6 +36491,62 @@ def test_guess_pay_annualizes_hourly():
         coraclemix, "<p>$15,000 coracle. Salary $180,000</p>"
     ) is True
     assert coraclemix.pay_high == 180_000
+    coraclejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/coraclejachtonly"
+    )
+    assert _apply_listing(
+        coraclejachtonly, "<p>$15,000 coraclejacht. Apply now.</p>"
+    ) is False
+    assert coraclejachtonly.pay_high is None
+    coraclejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/coraclejachtmix"
+    )
+    assert _apply_listing(
+        coraclejachtmix, "<p>$15,000 coraclejacht. Salary $180,000</p>"
+    ) is True
+    assert coraclejachtmix.pay_high == 180_000
+    coracleschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/coracleschiponly"
+    )
+    assert _apply_listing(
+        coracleschiponly, "<p>$15,000 coracleschip. Apply now.</p>"
+    ) is False
+    assert coracleschiponly.pay_high is None
+    coracleschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/coracleschipmix"
+    )
+    assert _apply_listing(
+        coracleschipmix, "<p>$15,000 coracleschip. Salary $180,000</p>"
+    ) is True
+    assert coracleschipmix.pay_high == 180_000
+    coracletjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/coracletjalkonly"
+    )
+    assert _apply_listing(
+        coracletjalkonly, "<p>$15,000 coracletjalk. Apply now.</p>"
+    ) is False
+    assert coracletjalkonly.pay_high is None
+    coracletjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/coracletjalkmix"
+    )
+    assert _apply_listing(
+        coracletjalkmix, "<p>$15,000 coracletjalk. Salary $180,000</p>"
+    ) is True
+    assert coracletjalkmix.pay_high == 180_000
+    coracleboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/coracleboeieronly"
+    )
+    assert _apply_listing(
+        coracleboeieronly, "<p>$15,000 coracleboeier. Apply now.</p>"
+    ) is False
+    assert coracleboeieronly.pay_high is None
+    coracleboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/coracleboeiermix"
+    )
+    assert _apply_listing(
+        coracleboeiermix, "<p>$15,000 coracleboeier. Salary $180,000</p>"
+    ) is True
+    assert coracleboeiermix.pay_high == 180_000
     xebeconly = Opportunity(
         title="Engineer", url="https://jobs.example/xebeconly"
     )
