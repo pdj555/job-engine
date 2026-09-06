@@ -3464,6 +3464,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 foilboard insurance") == (None, None)
     assert _parse_pay("foilboard of $15,000") == (None, None)
     assert _parse_pay("$15,000 foilboard. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 jetboard") == (None, None)
+    assert _parse_pay("$15,000 jetboards") == (None, None)
+    assert _parse_pay("$15,000 jet-board") == (None, None)
+    assert _parse_pay("$15,000 jet board") == (None, None)
+    assert _parse_pay("$15,000 jetboard insurance") == (None, None)
+    assert _parse_pay("jetboard of $15,000") == (None, None)
+    assert _parse_pay("$15,000 jetboard. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -3894,6 +3901,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 foiling") == (None, 15_000)
     assert _parse_pay("$15,000 foilboar") == (None, 15_000)
     assert _parse_pay("$15,000 foilboarding") == (None, 15_000)
+    assert _parse_pay("$15,000 jetboar") == (None, 15_000)
+    assert _parse_pay("$15,000 jetboarding") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -5886,6 +5895,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 foil board $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 jetboard $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 jetboard insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 jet board $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch insurance $15,000") == (
         None,
@@ -13087,6 +13102,20 @@ def test_guess_pay_annualizes_hourly():
         foilboardmix, "<p>$15,000 foilboard. Salary $180,000</p>"
     ) is True
     assert foilboardmix.pay_high == 180_000
+    jetboardonly = Opportunity(
+        title="Engineer", url="https://jobs.example/jetboardonly"
+    )
+    assert _apply_listing(
+        jetboardonly, "<p>$15,000 jetboard. Apply now.</p>"
+    ) is False
+    assert jetboardonly.pay_high is None
+    jetboardmix = Opportunity(
+        title="Engineer", url="https://jobs.example/jetboardmix"
+    )
+    assert _apply_listing(
+        jetboardmix, "<p>$15,000 jetboard. Salary $180,000</p>"
+    ) is True
+    assert jetboardmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
