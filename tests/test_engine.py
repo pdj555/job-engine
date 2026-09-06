@@ -3366,6 +3366,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 longboard insurance") == (None, None)
     assert _parse_pay("longboard of $15,000") == (None, None)
     assert _parse_pay("$15,000 longboard. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 shortboard") == (None, None)
+    assert _parse_pay("$15,000 shortboards") == (None, None)
+    assert _parse_pay("$15,000 short-board") == (None, None)
+    assert _parse_pay("$15,000 short board") == (None, None)
+    assert _parse_pay("$15,000 shortboard insurance") == (None, None)
+    assert _parse_pay("shortboard of $15,000") == (None, None)
+    assert _parse_pay("$15,000 shortboard. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -3772,6 +3779,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 long") == (None, 15_000)
     assert _parse_pay("$15,000 longboar") == (None, 15_000)
     assert _parse_pay("$15,000 longboarding") == (None, 15_000)
+    assert _parse_pay("$15,000 short") == (None, 15_000)
+    assert _parse_pay("$15,000 shortage") == (None, 15_000)
+    assert _parse_pay("$15,000 shortboar") == (None, 15_000)
+    assert _parse_pay("$15,000 shortboarding") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -5635,6 +5646,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 long board $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 shortboard $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 shortboard insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 short board $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch insurance $15,000") == (
         None,
@@ -12640,6 +12657,20 @@ def test_guess_pay_annualizes_hourly():
         longboardmix, "<p>$15,000 longboard. Salary $180,000</p>"
     ) is True
     assert longboardmix.pay_high == 180_000
+    shortboardonly = Opportunity(
+        title="Engineer", url="https://jobs.example/shortboardonly"
+    )
+    assert _apply_listing(
+        shortboardonly, "<p>$15,000 shortboard. Apply now.</p>"
+    ) is False
+    assert shortboardonly.pay_high is None
+    shortboardmix = Opportunity(
+        title="Engineer", url="https://jobs.example/shortboardmix"
+    )
+    assert _apply_listing(
+        shortboardmix, "<p>$15,000 shortboard. Salary $180,000</p>"
+    ) is True
+    assert shortboardmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
