@@ -2762,6 +2762,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group houseboat insurance") == (None, None)
     assert _parse_pay("group houseboat of $15,000") == (None, None)
     assert _parse_pay("$15,000 group houseboat. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group speedboat") == (None, None)
+    assert _parse_pay("$15,000 group speedboats") == (None, None)
+    assert _parse_pay("$15,000 group speedboat insurance") == (None, None)
+    assert _parse_pay("group speedboat of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group speedboat. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ATV") == (None, None)
     assert _parse_pay("$15,000 group ATV insurance") == (None, None)
     assert _parse_pay("$15,000 group UTV") == (None, None)
@@ -3127,6 +3132,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 houseboating") == (None, 15_000)
     assert _parse_pay("$15,000 speedboa") == (None, 15_000)
     assert _parse_pay("$15,000 speedboating") == (None, 15_000)
+    assert _parse_pay("$15,000 group speedboa") == (None, 15_000)
+    assert _parse_pay("$15,000 group speedboating") == (None, 15_000)
     assert _parse_pay("$15,000 group houseboa") == (None, 15_000)
     assert _parse_pay("$15,000 group houseboating") == (None, 15_000)
     assert _parse_pay("$15,000 group trimara") == (None, 15_000)
@@ -4231,6 +4238,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group houseboat $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group houseboat insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group speedboat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group speedboat insurance $15,000") == (
         None,
         180_000,
     )
@@ -9803,6 +9815,20 @@ def test_guess_pay_annualizes_hourly():
         grouphouseboatmix, "<p>$15,000 group houseboat. Salary $180,000</p>"
     ) is True
     assert grouphouseboatmix.pay_high == 180_000
+    groupspeedboatonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupspeedboatonly"
+    )
+    assert _apply_listing(
+        groupspeedboatonly, "<p>$15,000 group speedboat. Apply now.</p>"
+    ) is False
+    assert groupspeedboatonly.pay_high is None
+    groupspeedboatmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupspeedboatmix"
+    )
+    assert _apply_listing(
+        groupspeedboatmix, "<p>$15,000 group speedboat. Salary $180,000</p>"
+    ) is True
+    assert groupspeedboatmix.pay_high == 180_000
     assert _apply_listing(
         groupsnowonly, "<p>$15,000 group snowmobile. Apply now.</p>"
     ) is False
