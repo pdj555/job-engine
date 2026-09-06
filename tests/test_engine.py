@@ -3327,6 +3327,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 brigantine insurance") == (None, None)
     assert _parse_pay("brigantine of $15,000") == (None, None)
     assert _parse_pay("$15,000 brigantine. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 barque") == (None, None)
+    assert _parse_pay("$15,000 barques") == (None, None)
+    assert _parse_pay("$15,000 barque insurance") == (None, None)
+    assert _parse_pay("barque of $15,000") == (None, None)
+    assert _parse_pay("$15,000 barque. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3577,6 +3582,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 brigging") == (None, 15_000)
     assert _parse_pay("$15,000 brigantin") == (None, 15_000)
     assert _parse_pay("$15,000 brigantining") == (None, 15_000)
+    assert _parse_pay("$15,000 barqu") == (None, 15_000)
+    assert _parse_pay("$15,000 barquing") == (None, 15_000)
     assert _parse_pay("$15,000 group schoone") == (None, 15_000)
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
@@ -5237,6 +5244,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 brigantine $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 brigantine insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 barque $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 barque insurance $15,000") == (
         None,
         180_000,
     )
@@ -11929,6 +11941,20 @@ def test_guess_pay_annualizes_hourly():
         brigantinemix, "<p>$15,000 brigantine. Salary $180,000</p>"
     ) is True
     assert brigantinemix.pay_high == 180_000
+    barqueonly = Opportunity(
+        title="Engineer", url="https://jobs.example/barqueonly"
+    )
+    assert _apply_listing(
+        barqueonly, "<p>$15,000 barque. Apply now.</p>"
+    ) is False
+    assert barqueonly.pay_high is None
+    barquemix = Opportunity(
+        title="Engineer", url="https://jobs.example/barquemix"
+    )
+    assert _apply_listing(
+        barquemix, "<p>$15,000 barque. Salary $180,000</p>"
+    ) is True
+    assert barquemix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
