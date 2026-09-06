@@ -4105,6 +4105,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 polacca insurance") == (None, None)
     assert _parse_pay("polacca of $15,000") == (None, None)
     assert _parse_pay("$15,000 polacca. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 tartane") == (None, None)
+    assert _parse_pay("$15,000 tartanes") == (None, None)
+    assert _parse_pay("$15,000 tartane insurance") == (None, None)
+    assert _parse_pay("tartane of $15,000") == (None, None)
+    assert _parse_pay("$15,000 tartane. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -4664,6 +4669,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 polacr") == (None, 15_000)
     assert _parse_pay("$15,000 polac") == (None, 15_000)
     assert _parse_pay("$15,000 polacc") == (None, 15_000)
+    assert _parse_pay("$15,000 tartan") == (None, 15_000)
+    assert _parse_pay("$15,000 tart") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -7416,6 +7423,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 polacca $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 polacca insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 tartane $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tartane insurance $15,000") == (
         None,
         180_000,
     )
@@ -16192,6 +16204,16 @@ def test_guess_pay_annualizes_hourly():
         polaccamix, "<p>$15,000 polacca. Salary $180,000</p>"
     ) is True
     assert polaccamix.pay_high == 180_000
+    tartaneonly = Opportunity(title="Engineer", url="https://jobs.example/tartaneonly")
+    assert _apply_listing(
+        tartaneonly, "<p>$15,000 tartane. Apply now.</p>"
+    ) is False
+    assert tartaneonly.pay_high is None
+    tartanemix = Opportunity(title="Engineer", url="https://jobs.example/tartanemix")
+    assert _apply_listing(
+        tartanemix, "<p>$15,000 tartane. Salary $180,000</p>"
+    ) is True
+    assert tartanemix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
