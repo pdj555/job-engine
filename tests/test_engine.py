@@ -4787,6 +4787,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group chebec insurance") == (None, None)
     assert _parse_pay("group chebec of $15,000") == (None, None)
     assert _parse_pay("$15,000 group chebec. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group chebecjacht") == (None, None)
+    assert _parse_pay("$15,000 group chebec-jacht") == (None, None)
+    assert _parse_pay("$15,000 group chebec jacht") == (None, None)
+    assert _parse_pay("$15,000 group chebecjachten") == (None, None)
+    assert _parse_pay("$15,000 group chebecjacht insurance") == (None, None)
+    assert _parse_pay("group chebecjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group chebecjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group chebecschip") == (None, None)
+    assert _parse_pay("$15,000 group chebec-schip") == (None, None)
+    assert _parse_pay("$15,000 group chebec schip") == (None, None)
+    assert _parse_pay("$15,000 group chebecschepen") == (None, None)
+    assert _parse_pay("$15,000 group chebecschip insurance") == (None, None)
+    assert _parse_pay("group chebecschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group chebecschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group chebectjalk") == (None, None)
+    assert _parse_pay("$15,000 group chebec-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group chebec tjalk") == (None, None)
+    assert _parse_pay("$15,000 group chebectjalken") == (None, None)
+    assert _parse_pay("$15,000 group chebectjalk insurance") == (None, None)
+    assert _parse_pay("group chebectjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group chebectjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group chebecboeier") == (None, None)
+    assert _parse_pay("$15,000 group chebec-boeier") == (None, None)
+    assert _parse_pay("$15,000 group chebec boeier") == (None, None)
+    assert _parse_pay("$15,000 group chebecboeiers") == (None, None)
+    assert _parse_pay("$15,000 group chebecboeier insurance") == (None, None)
+    assert _parse_pay("group chebecboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group chebecboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group chebeck") == (None, None)
     assert _parse_pay("$15,000 group chebecks") == (None, None)
     assert _parse_pay("$15,000 group chebeck insurance") == (None, None)
@@ -9486,6 +9514,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 chebec insurance") == (None, None)
     assert _parse_pay("chebec of $15,000") == (None, None)
     assert _parse_pay("$15,000 chebec. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 chebecjacht") == (None, None)
+    assert _parse_pay("$15,000 chebec-jacht") == (None, None)
+    assert _parse_pay("$15,000 chebec jacht") == (None, None)
+    assert _parse_pay("$15,000 chebecjachten") == (None, None)
+    assert _parse_pay("$15,000 chebecjacht insurance") == (None, None)
+    assert _parse_pay("chebecjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 chebecjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 chebecschip") == (None, None)
+    assert _parse_pay("$15,000 chebec-schip") == (None, None)
+    assert _parse_pay("$15,000 chebec schip") == (None, None)
+    assert _parse_pay("$15,000 chebecschepen") == (None, None)
+    assert _parse_pay("$15,000 chebecschip insurance") == (None, None)
+    assert _parse_pay("chebecschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 chebecschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 chebectjalk") == (None, None)
+    assert _parse_pay("$15,000 chebec-tjalk") == (None, None)
+    assert _parse_pay("$15,000 chebec tjalk") == (None, None)
+    assert _parse_pay("$15,000 chebectjalken") == (None, None)
+    assert _parse_pay("$15,000 chebectjalk insurance") == (None, None)
+    assert _parse_pay("chebectjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 chebectjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 chebecboeier") == (None, None)
+    assert _parse_pay("$15,000 chebec-boeier") == (None, None)
+    assert _parse_pay("$15,000 chebec boeier") == (None, None)
+    assert _parse_pay("$15,000 chebecboeiers") == (None, None)
+    assert _parse_pay("$15,000 chebecboeier insurance") == (None, None)
+    assert _parse_pay("chebecboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 chebecboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 chebeck") == (None, None)
     assert _parse_pay("$15,000 chebecks") == (None, None)
     assert _parse_pay("$15,000 chebeck insurance") == (None, None)
@@ -12620,6 +12676,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 tartanaboei") == (None, 15_000)
     assert _parse_pay("$15,000 chebe") == (None, 15_000)
     assert _parse_pay("$15,000 cheb") == (None, 15_000)
+    assert _parse_pay("$15,000 chebecjac") == (None, 15_000)
+    assert _parse_pay("$15,000 chebecschi") == (None, 15_000)
+    assert _parse_pay("$15,000 chebectjal") == (None, 15_000)
+    assert _parse_pay("$15,000 chebecboei") == (None, 15_000)
     assert _parse_pay("$15,000 chebecke") == (None, 15_000)
     assert _parse_pay("$15,000 chebecking") == (None, 15_000)
     assert _parse_pay("$15,000 saiqu") == (None, 15_000)
@@ -17577,6 +17637,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group chebec $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group chebec insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebecjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebec jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebecschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebec schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebectjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebec tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebecboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group chebec boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -23041,6 +23133,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 chebec $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 chebec insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebecjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebec jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebecschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebec schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebectjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebec tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebecboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 chebec boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -35636,6 +35760,62 @@ def test_guess_pay_annualizes_hourly():
         groupchebecmix, "<p>$15,000 group chebec. Salary $180,000</p>"
     ) is True
     assert groupchebecmix.pay_high == 180_000
+    groupchebecjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecjachtonly"
+    )
+    assert _apply_listing(
+        groupchebecjachtonly, "<p>$15,000 group chebecjacht. Apply now.</p>"
+    ) is False
+    assert groupchebecjachtonly.pay_high is None
+    groupchebecjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecjachtmix"
+    )
+    assert _apply_listing(
+        groupchebecjachtmix, "<p>$15,000 group chebecjacht. Salary $180,000</p>"
+    ) is True
+    assert groupchebecjachtmix.pay_high == 180_000
+    groupchebecschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecschiponly"
+    )
+    assert _apply_listing(
+        groupchebecschiponly, "<p>$15,000 group chebecschip. Apply now.</p>"
+    ) is False
+    assert groupchebecschiponly.pay_high is None
+    groupchebecschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecschipmix"
+    )
+    assert _apply_listing(
+        groupchebecschipmix, "<p>$15,000 group chebecschip. Salary $180,000</p>"
+    ) is True
+    assert groupchebecschipmix.pay_high == 180_000
+    groupchebectjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebectjalkonly"
+    )
+    assert _apply_listing(
+        groupchebectjalkonly, "<p>$15,000 group chebectjalk. Apply now.</p>"
+    ) is False
+    assert groupchebectjalkonly.pay_high is None
+    groupchebectjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebectjalkmix"
+    )
+    assert _apply_listing(
+        groupchebectjalkmix, "<p>$15,000 group chebectjalk. Salary $180,000</p>"
+    ) is True
+    assert groupchebectjalkmix.pay_high == 180_000
+    groupchebecboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecboeieronly"
+    )
+    assert _apply_listing(
+        groupchebecboeieronly, "<p>$15,000 group chebecboeier. Apply now.</p>"
+    ) is False
+    assert groupchebecboeieronly.pay_high is None
+    groupchebecboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupchebecboeiermix"
+    )
+    assert _apply_listing(
+        groupchebecboeiermix, "<p>$15,000 group chebecboeier. Salary $180,000</p>"
+    ) is True
+    assert groupchebecboeiermix.pay_high == 180_000
     groupchebeckonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupchebeckonly"
     )
@@ -45417,6 +45597,62 @@ def test_guess_pay_annualizes_hourly():
         chebecmix, "<p>$15,000 chebec. Salary $180,000</p>"
     ) is True
     assert chebecmix.pay_high == 180_000
+    chebecjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecjachtonly"
+    )
+    assert _apply_listing(
+        chebecjachtonly, "<p>$15,000 chebecjacht. Apply now.</p>"
+    ) is False
+    assert chebecjachtonly.pay_high is None
+    chebecjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecjachtmix"
+    )
+    assert _apply_listing(
+        chebecjachtmix, "<p>$15,000 chebecjacht. Salary $180,000</p>"
+    ) is True
+    assert chebecjachtmix.pay_high == 180_000
+    chebecschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecschiponly"
+    )
+    assert _apply_listing(
+        chebecschiponly, "<p>$15,000 chebecschip. Apply now.</p>"
+    ) is False
+    assert chebecschiponly.pay_high is None
+    chebecschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecschipmix"
+    )
+    assert _apply_listing(
+        chebecschipmix, "<p>$15,000 chebecschip. Salary $180,000</p>"
+    ) is True
+    assert chebecschipmix.pay_high == 180_000
+    chebectjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/chebectjalkonly"
+    )
+    assert _apply_listing(
+        chebectjalkonly, "<p>$15,000 chebectjalk. Apply now.</p>"
+    ) is False
+    assert chebectjalkonly.pay_high is None
+    chebectjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/chebectjalkmix"
+    )
+    assert _apply_listing(
+        chebectjalkmix, "<p>$15,000 chebectjalk. Salary $180,000</p>"
+    ) is True
+    assert chebectjalkmix.pay_high == 180_000
+    chebecboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecboeieronly"
+    )
+    assert _apply_listing(
+        chebecboeieronly, "<p>$15,000 chebecboeier. Apply now.</p>"
+    ) is False
+    assert chebecboeieronly.pay_high is None
+    chebecboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/chebecboeiermix"
+    )
+    assert _apply_listing(
+        chebecboeiermix, "<p>$15,000 chebecboeier. Salary $180,000</p>"
+    ) is True
+    assert chebecboeiermix.pay_high == 180_000
     chebeckonly = Opportunity(
         title="Engineer", url="https://jobs.example/chebeckonly"
     )
