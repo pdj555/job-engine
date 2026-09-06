@@ -2589,6 +2589,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 group hurricane") == (None, None)
+    assert _parse_pay("$15,000 group hurricane insurance") == (None, None)
+    assert _parse_pay("group hurricane of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group hurricane. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3646,6 +3650,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group earthquake $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group earthquake insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricane $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group hurricane insurance $15,000") == (
         None,
         180_000,
     )
@@ -8586,6 +8595,20 @@ def test_guess_pay_annualizes_hourly():
         groupearthquakemix, "<p>$15,000 group earthquake. Salary $180,000</p>"
     ) is True
     assert groupearthquakemix.pay_high == 180_000
+    grouphurricaneonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricaneonly"
+    )
+    assert _apply_listing(
+        grouphurricaneonly, "<p>$15,000 group hurricane. Apply now.</p>"
+    ) is False
+    assert grouphurricaneonly.pay_high is None
+    grouphurricanemix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricanemix"
+    )
+    assert _apply_listing(
+        grouphurricanemix, "<p>$15,000 group hurricane. Salary $180,000</p>"
+    ) is True
+    assert grouphurricanemix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
