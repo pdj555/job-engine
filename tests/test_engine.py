@@ -2515,6 +2515,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 disease insurance") == (None, None)
     assert _parse_pay("$15,000 group cancer") == (None, None)
     assert _parse_pay("$15,000 voluntary cancer") == (None, None)
+    assert _parse_pay("$15,000 group auto") == (None, None)
+    assert _parse_pay("$15,000 group auto insurance") == (None, None)
+    assert _parse_pay("group auto of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group auto. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group auto insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3439,6 +3447,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 critical disease insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group auto $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group auto insurance $15,000") == (
         None,
         180_000,
     )
@@ -8187,6 +8200,28 @@ def test_guess_pay_annualizes_hourly():
         groupcancermix, "<p>$15,000 group cancer. Salary $180,000</p>"
     ) is True
     assert groupcancermix.pay_high == 180_000
+    groupautoonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupautoonly"
+    )
+    assert _apply_listing(
+        groupautoonly, "<p>$15,000 group auto. Apply now.</p>"
+    ) is False
+    assert groupautoonly.pay_high is None
+    groupautomix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupautomix"
+    )
+    assert _apply_listing(
+        groupautomix, "<p>$15,000 group auto. Salary $180,000</p>"
+    ) is True
+    assert groupautomix.pay_high == 180_000
+    groupautoinsbase = Opportunity(
+        title="Engineer", url="https://jobs.example/groupautoinsbase"
+    )
+    assert _apply_listing(
+        groupautoinsbase,
+        "<p>base $180,000 group auto insurance $15,000</p>",
+    ) is True
+    assert groupautoinsbase.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
