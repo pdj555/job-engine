@@ -2793,6 +2793,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group canoe insurance") == (None, None)
     assert _parse_pay("group canoe of $15,000") == (None, None)
     assert _parse_pay("$15,000 group canoe. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group canoejacht") == (None, None)
+    assert _parse_pay("$15,000 group canoe-jacht") == (None, None)
+    assert _parse_pay("$15,000 group canoe jacht") == (None, None)
+    assert _parse_pay("$15,000 group canoejachten") == (None, None)
+    assert _parse_pay("$15,000 group canoejacht insurance") == (None, None)
+    assert _parse_pay("group canoejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group canoejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group canoeschip") == (None, None)
+    assert _parse_pay("$15,000 group canoe-schip") == (None, None)
+    assert _parse_pay("$15,000 group canoe schip") == (None, None)
+    assert _parse_pay("$15,000 group canoeschepen") == (None, None)
+    assert _parse_pay("$15,000 group canoeschip insurance") == (None, None)
+    assert _parse_pay("group canoeschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group canoeschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group canoetjalk") == (None, None)
+    assert _parse_pay("$15,000 group canoe-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group canoe tjalk") == (None, None)
+    assert _parse_pay("$15,000 group canoetjalken") == (None, None)
+    assert _parse_pay("$15,000 group canoetjalk insurance") == (None, None)
+    assert _parse_pay("group canoetjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group canoetjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group canoeboeier") == (None, None)
+    assert _parse_pay("$15,000 group canoe-boeier") == (None, None)
+    assert _parse_pay("$15,000 group canoe boeier") == (None, None)
+    assert _parse_pay("$15,000 group canoeboeiers") == (None, None)
+    assert _parse_pay("$15,000 group canoeboeier insurance") == (None, None)
+    assert _parse_pay("group canoeboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group canoeboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group paddle") == (None, None)
     assert _parse_pay("$15,000 group paddles") == (None, None)
     assert _parse_pay("$15,000 group paddle insurance") == (None, None)
@@ -5719,6 +5747,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 canoe insurance") == (None, None)
     assert _parse_pay("canoe of $15,000") == (None, None)
     assert _parse_pay("$15,000 canoe. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 canoejacht") == (None, None)
+    assert _parse_pay("$15,000 canoe-jacht") == (None, None)
+    assert _parse_pay("$15,000 canoe jacht") == (None, None)
+    assert _parse_pay("$15,000 canoejachten") == (None, None)
+    assert _parse_pay("$15,000 canoejacht insurance") == (None, None)
+    assert _parse_pay("canoejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 canoejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 canoeschip") == (None, None)
+    assert _parse_pay("$15,000 canoe-schip") == (None, None)
+    assert _parse_pay("$15,000 canoe schip") == (None, None)
+    assert _parse_pay("$15,000 canoeschepen") == (None, None)
+    assert _parse_pay("$15,000 canoeschip insurance") == (None, None)
+    assert _parse_pay("canoeschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 canoeschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 canoetjalk") == (None, None)
+    assert _parse_pay("$15,000 canoe-tjalk") == (None, None)
+    assert _parse_pay("$15,000 canoe tjalk") == (None, None)
+    assert _parse_pay("$15,000 canoetjalken") == (None, None)
+    assert _parse_pay("$15,000 canoetjalk insurance") == (None, None)
+    assert _parse_pay("canoetjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 canoetjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 canoeboeier") == (None, None)
+    assert _parse_pay("$15,000 canoe-boeier") == (None, None)
+    assert _parse_pay("$15,000 canoe boeier") == (None, None)
+    assert _parse_pay("$15,000 canoeboeiers") == (None, None)
+    assert _parse_pay("$15,000 canoeboeier insurance") == (None, None)
+    assert _parse_pay("canoeboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 canoeboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 paddle") == (None, None)
     assert _parse_pay("$15,000 paddles") == (None, None)
     assert _parse_pay("$15,000 paddle insurance") == (None, None)
@@ -8640,7 +8696,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group kayakboei") == (None, 15_000)
     assert _parse_pay("$15,000 cano") == (None, 15_000)
     assert _parse_pay("$15,000 canoeing") == (None, 15_000)
+    assert _parse_pay("$15,000 canoejac") == (None, 15_000)
+    assert _parse_pay("$15,000 canoeschi") == (None, 15_000)
+    assert _parse_pay("$15,000 canoetjal") == (None, 15_000)
+    assert _parse_pay("$15,000 canoeboei") == (None, 15_000)
     assert _parse_pay("$15,000 group cano") == (None, 15_000)
+    assert _parse_pay("$15,000 group canoejac") == (None, 15_000)
+    assert _parse_pay("$15,000 group canoeschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group canoetjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group canoeboei") == (None, 15_000)
     assert _parse_pay("$15,000 group paddl") == (None, 15_000)
     assert _parse_pay("$15,000 group paddling") == (None, 15_000)
     assert _parse_pay("$15,000 group paddleboar") == (None, 15_000)
@@ -11124,6 +11188,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group canoe $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group canoe insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoejacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group canoejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoe jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoeschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group canoeschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoe schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoetjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group canoetjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoe tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoeboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group canoeboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group canoe boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -14410,6 +14510,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 canoe $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 canoe insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoejacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 canoejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoe jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoeschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 canoeschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoe schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoetjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 canoetjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoe tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoeboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 canoeboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoe boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -22884,6 +23020,62 @@ def test_guess_pay_annualizes_hourly():
         groupcanoemix, "<p>$15,000 group canoe. Salary $180,000</p>"
     ) is True
     assert groupcanoemix.pay_high == 180_000
+    groupcanoejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoejachtonly"
+    )
+    assert _apply_listing(
+        groupcanoejachtonly, "<p>$15,000 group canoejacht. Apply now.</p>"
+    ) is False
+    assert groupcanoejachtonly.pay_high is None
+    groupcanoejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoejachtmix"
+    )
+    assert _apply_listing(
+        groupcanoejachtmix, "<p>$15,000 group canoejacht. Salary $180,000</p>"
+    ) is True
+    assert groupcanoejachtmix.pay_high == 180_000
+    groupcanoeschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoeschiponly"
+    )
+    assert _apply_listing(
+        groupcanoeschiponly, "<p>$15,000 group canoeschip. Apply now.</p>"
+    ) is False
+    assert groupcanoeschiponly.pay_high is None
+    groupcanoeschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoeschipmix"
+    )
+    assert _apply_listing(
+        groupcanoeschipmix, "<p>$15,000 group canoeschip. Salary $180,000</p>"
+    ) is True
+    assert groupcanoeschipmix.pay_high == 180_000
+    groupcanoetjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoetjalkonly"
+    )
+    assert _apply_listing(
+        groupcanoetjalkonly, "<p>$15,000 group canoetjalk. Apply now.</p>"
+    ) is False
+    assert groupcanoetjalkonly.pay_high is None
+    groupcanoetjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoetjalkmix"
+    )
+    assert _apply_listing(
+        groupcanoetjalkmix, "<p>$15,000 group canoetjalk. Salary $180,000</p>"
+    ) is True
+    assert groupcanoetjalkmix.pay_high == 180_000
+    groupcanoeboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoeboeieronly"
+    )
+    assert _apply_listing(
+        groupcanoeboeieronly, "<p>$15,000 group canoeboeier. Apply now.</p>"
+    ) is False
+    assert groupcanoeboeieronly.pay_high is None
+    groupcanoeboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcanoeboeiermix"
+    )
+    assert _apply_listing(
+        groupcanoeboeiermix, "<p>$15,000 group canoeboeier. Salary $180,000</p>"
+    ) is True
+    assert groupcanoeboeiermix.pay_high == 180_000
     grouppaddleonly = Opportunity(
         title="Engineer", url="https://jobs.example/grouppaddleonly"
     )
@@ -29181,6 +29373,62 @@ def test_guess_pay_annualizes_hourly():
         canoemix, "<p>$15,000 canoe. Salary $180,000</p>"
     ) is True
     assert canoemix.pay_high == 180_000
+    canoejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/canoejachtonly"
+    )
+    assert _apply_listing(
+        canoejachtonly, "<p>$15,000 canoejacht. Apply now.</p>"
+    ) is False
+    assert canoejachtonly.pay_high is None
+    canoejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/canoejachtmix"
+    )
+    assert _apply_listing(
+        canoejachtmix, "<p>$15,000 canoejacht. Salary $180,000</p>"
+    ) is True
+    assert canoejachtmix.pay_high == 180_000
+    canoeschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/canoeschiponly"
+    )
+    assert _apply_listing(
+        canoeschiponly, "<p>$15,000 canoeschip. Apply now.</p>"
+    ) is False
+    assert canoeschiponly.pay_high is None
+    canoeschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/canoeschipmix"
+    )
+    assert _apply_listing(
+        canoeschipmix, "<p>$15,000 canoeschip. Salary $180,000</p>"
+    ) is True
+    assert canoeschipmix.pay_high == 180_000
+    canoetjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/canoetjalkonly"
+    )
+    assert _apply_listing(
+        canoetjalkonly, "<p>$15,000 canoetjalk. Apply now.</p>"
+    ) is False
+    assert canoetjalkonly.pay_high is None
+    canoetjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/canoetjalkmix"
+    )
+    assert _apply_listing(
+        canoetjalkmix, "<p>$15,000 canoetjalk. Salary $180,000</p>"
+    ) is True
+    assert canoetjalkmix.pay_high == 180_000
+    canoeboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/canoeboeieronly"
+    )
+    assert _apply_listing(
+        canoeboeieronly, "<p>$15,000 canoeboeier. Apply now.</p>"
+    ) is False
+    assert canoeboeieronly.pay_high is None
+    canoeboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/canoeboeiermix"
+    )
+    assert _apply_listing(
+        canoeboeiermix, "<p>$15,000 canoeboeier. Salary $180,000</p>"
+    ) is True
+    assert canoeboeiermix.pay_high == 180_000
     paddleonly = Opportunity(title="Engineer", url="https://jobs.example/paddleonly")
     assert _apply_listing(
         paddleonly, "<p>$15,000 paddle. Apply now.</p>"
