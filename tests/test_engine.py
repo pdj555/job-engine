@@ -2539,6 +2539,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 group motorcycle") == (None, None)
+    assert _parse_pay("$15,000 group motorcycle insurance") == (None, None)
+    assert _parse_pay("group motorcycle of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group motorcycle. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3527,6 +3534,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group legal $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group legal insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group motorcycle $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group motorcycle insurance $15,000") == (
         None,
         180_000,
     )
@@ -8335,6 +8347,20 @@ def test_guess_pay_annualizes_hourly():
         grouplegalmix, "<p>$15,000 group legal. Salary $180,000</p>"
     ) is True
     assert grouplegalmix.pay_high == 180_000
+    groupmotoonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupmotoonly"
+    )
+    assert _apply_listing(
+        groupmotoonly, "<p>$15,000 group motorcycle. Apply now.</p>"
+    ) is False
+    assert groupmotoonly.pay_high is None
+    groupmotomix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupmotomix"
+    )
+    assert _apply_listing(
+        groupmotomix, "<p>$15,000 group motorcycle. Salary $180,000</p>"
+    ) is True
+    assert groupmotomix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
