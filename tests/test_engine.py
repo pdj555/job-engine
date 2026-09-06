@@ -4528,6 +4528,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 sleepvlet insurance") == (None, None)
     assert _parse_pay("sleepvlet of $15,000") == (None, None)
     assert _parse_pay("$15,000 sleepvlet. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 haringboot") == (None, None)
+    assert _parse_pay("$15,000 haring-boot") == (None, None)
+    assert _parse_pay("$15,000 haring boot") == (None, None)
+    assert _parse_pay("$15,000 haringboten") == (None, None)
+    assert _parse_pay("$15,000 haringboot insurance") == (None, None)
+    assert _parse_pay("haringboot of $15,000") == (None, None)
+    assert _parse_pay("$15,000 haringboot. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5187,6 +5194,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 flute") == (None, 15_000)
     assert _parse_pay("$15,000 sleep") == (None, 15_000)
     assert _parse_pay("$15,000 vlet") == (None, 15_000)
+    assert _parse_pay("$15,000 haringboo") == (None, 15_000)
+    assert _parse_pay("$15,000 boot") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -8427,6 +8436,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 sleepvlet $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 sleepvlet insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 haringboot $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 haringboot insurance $15,000") == (
         None,
         180_000,
     )
@@ -18215,6 +18229,20 @@ def test_guess_pay_annualizes_hourly():
         sleepvletmix, "<p>$15,000 sleepvlet. Salary $180,000</p>"
     ) is True
     assert sleepvletmix.pay_high == 180_000
+    haringbootonly = Opportunity(
+        title="Engineer", url="https://jobs.example/haringbootonly"
+    )
+    assert _apply_listing(
+        haringbootonly, "<p>$15,000 haringboot. Apply now.</p>"
+    ) is False
+    assert haringbootonly.pay_high is None
+    haringbootmix = Opportunity(
+        title="Engineer", url="https://jobs.example/haringbootmix"
+    )
+    assert _apply_listing(
+        haringbootmix, "<p>$15,000 haringboot. Salary $180,000</p>"
+    ) is True
+    assert haringbootmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
