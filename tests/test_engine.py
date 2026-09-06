@@ -3933,6 +3933,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group zeilsteven insurance") == (None, None)
     assert _parse_pay("group zeilsteven of $15,000") == (None, None)
     assert _parse_pay("$15,000 group zeilsteven. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group zeilstevenjacht") == (None, None)
+    assert _parse_pay("$15,000 group zeilsteven-jacht") == (None, None)
+    assert _parse_pay("$15,000 group zeilsteven jacht") == (None, None)
+    assert _parse_pay("$15,000 group zeilstevenjachten") == (None, None)
+    assert _parse_pay("$15,000 group zeilstevenjacht insurance") == (None, None)
+    assert _parse_pay("group zeilstevenjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group zeilstevenjacht. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group grundeljacht") == (None, None)
     assert _parse_pay("$15,000 group grundel-jacht") == (None, None)
     assert _parse_pay("$15,000 group grundel jacht") == (None, None)
@@ -5552,6 +5559,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 zeilsteven insurance") == (None, None)
     assert _parse_pay("zeilsteven of $15,000") == (None, None)
     assert _parse_pay("$15,000 zeilsteven. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 zeilstevenjacht") == (None, None)
+    assert _parse_pay("$15,000 zeilsteven-jacht") == (None, None)
+    assert _parse_pay("$15,000 zeilsteven jacht") == (None, None)
+    assert _parse_pay("$15,000 zeilstevenjachten") == (None, None)
+    assert _parse_pay("$15,000 zeilstevenjacht insurance") == (None, None)
+    assert _parse_pay("zeilstevenjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 zeilstevenjacht. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 grundeljacht") == (None, None)
     assert _parse_pay("$15,000 grundel-jacht") == (None, None)
     assert _parse_pay("$15,000 grundel jacht") == (None, None)
@@ -6387,6 +6401,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 boeierschi") == (None, 15_000)
     assert _parse_pay("$15,000 kotterschi") == (None, 15_000)
     assert _parse_pay("$15,000 zeilsteve") == (None, 15_000)
+    assert _parse_pay("$15,000 zeilstevenjac") == (None, 15_000)
     assert _parse_pay("$15,000 grundeljac") == (None, 15_000)
     assert _parse_pay("$15,000 pluutjac") == (None, 15_000)
     assert _parse_pay("$15,000 westlanderjac") == (None, 15_000)
@@ -6904,6 +6919,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group boeierschi") == (None, 15_000)
     assert _parse_pay("$15,000 group kotterschi") == (None, 15_000)
     assert _parse_pay("$15,000 group zeilsteve") == (None, 15_000)
+    assert _parse_pay("$15,000 group zeilstevenjac") == (None, 15_000)
     assert _parse_pay("$15,000 group grundeljac") == (None, 15_000)
     assert _parse_pay("$15,000 group pluutjac") == (None, 15_000)
     assert _parse_pay("$15,000 group westlanderjac") == (None, 15_000)
@@ -9161,6 +9177,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group zeilstevenjacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group zeilstevenjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group zeilsteven jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group tjalk jacht insurance $15,000") == (
         None,
         180_000,
@@ -10637,6 +10662,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 zeil steven insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 zeilstevenjacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 zeilstevenjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 zeilsteven jacht insurance $15,000") == (
         None,
         180_000,
     )
@@ -19034,6 +19068,20 @@ def test_guess_pay_annualizes_hourly():
         groupzeilstevenmix, "<p>$15,000 group zeilsteven. Salary $180,000</p>"
     ) is True
     assert groupzeilstevenmix.pay_high == 180_000
+    groupzeilstevenjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupzeilstevenjachtonly"
+    )
+    assert _apply_listing(
+        groupzeilstevenjachtonly, "<p>$15,000 group zeilstevenjacht. Apply now.</p>"
+    ) is False
+    assert groupzeilstevenjachtonly.pay_high is None
+    groupzeilstevenjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupzeilstevenjachtmix"
+    )
+    assert _apply_listing(
+        groupzeilstevenjachtmix, "<p>$15,000 group zeilstevenjacht. Salary $180,000</p>"
+    ) is True
+    assert groupzeilstevenjachtmix.pay_high == 180_000
     groupgrundeljachtonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupgrundeljachtonly"
     )
@@ -22625,6 +22673,20 @@ def test_guess_pay_annualizes_hourly():
         zeilstevenmix, "<p>$15,000 zeilsteven. Salary $180,000</p>"
     ) is True
     assert zeilstevenmix.pay_high == 180_000
+    zeilstevenjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilstevenjachtonly"
+    )
+    assert _apply_listing(
+        zeilstevenjachtonly, "<p>$15,000 zeilstevenjacht. Apply now.</p>"
+    ) is False
+    assert zeilstevenjachtonly.pay_high is None
+    zeilstevenjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilstevenjachtmix"
+    )
+    assert _apply_listing(
+        zeilstevenjachtmix, "<p>$15,000 zeilstevenjacht. Salary $180,000</p>"
+    ) is True
+    assert zeilstevenjachtmix.pay_high == 180_000
     grundeljachtonly = Opportunity(
         title="Engineer", url="https://jobs.example/grundeljachtonly"
     )
