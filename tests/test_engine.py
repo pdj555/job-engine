@@ -2635,6 +2635,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group long-term disability") == (None, None)
     assert _parse_pay("group disability of $15,000") == (None, None)
     assert _parse_pay("$15,000 group disability. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group LTD") == (None, None)
+    assert _parse_pay("$15,000 group LTD insurance") == (None, None)
+    assert _parse_pay("group LTD of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group LTD. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3760,6 +3764,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 group short-term disability insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group LTD $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group LTD insurance $15,000") == (
         None,
         180_000,
     )
@@ -8840,6 +8849,20 @@ def test_guess_pay_annualizes_hourly():
         groupdismix, "<p>$15,000 group disability. Salary $180,000</p>"
     ) is True
     assert groupdismix.pay_high == 180_000
+    groupltdonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupltdonly"
+    )
+    assert _apply_listing(
+        groupltdonly, "<p>$15,000 group LTD. Apply now.</p>"
+    ) is False
+    assert groupltdonly.pay_high is None
+    groupltdmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupltdmix"
+    )
+    assert _apply_listing(
+        groupltdmix, "<p>$15,000 group LTD. Salary $180,000</p>"
+    ) is True
+    assert groupltdmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
