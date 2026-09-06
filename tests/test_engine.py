@@ -2607,6 +2607,18 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 personal watercraft insurance") == (None, None)
+    assert _parse_pay("$15,000 jet ski insurance") == (None, None)
+    assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
+    assert _parse_pay("jet ski insurance of $15,000") == (None, None)
+    assert _parse_pay("$15,000 jet ski insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 personal watercraft insurance. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 RV insurance") == (None, None)
     assert _parse_pay("$15,000 ATV insurance") == (None, None)
     assert _parse_pay("RV insurance of $15,000") == (None, None)
@@ -2673,6 +2685,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 wildfire") == (None, 15_000)
     assert _parse_pay("$15,000 boat") == (None, 15_000)
     assert _parse_pay("$15,000 watercraft") == (None, 15_000)
+    assert _parse_pay("$15,000 jet ski") == (None, 15_000)
+    assert _parse_pay("$15,000 personal watercraft") == (None, 15_000)
     assert _parse_pay("$15,000 RV") == (None, 15_000)
     assert _parse_pay("$15,000 ATV") == (None, 15_000)
     assert _parse_pay("$15,000 UTV") == (None, 15_000)
@@ -3517,6 +3531,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 watercraft insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 jet ski insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 personal watercraft insurance $15,000") == (
         None,
         180_000,
     )
@@ -8457,6 +8479,16 @@ def test_guess_pay_annualizes_hourly():
         watercraftmix, "<p>$15,000 watercraft insurance. Salary $180,000</p>"
     ) is True
     assert watercraftmix.pay_high == 180_000
+    jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
+    assert _apply_listing(
+        jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
+    ) is False
+    assert jetskionly.pay_high is None
+    jetskimix = Opportunity(title="Engineer", url="https://jobs.example/jetskimix")
+    assert _apply_listing(
+        jetskimix, "<p>$15,000 jet ski insurance. Salary $180,000</p>"
+    ) is True
+    assert jetskimix.pay_high == 180_000
     atvinsonly = Opportunity(title="Engineer", url="https://jobs.example/atvinsonly")
     assert _apply_listing(
         atvinsonly, "<p>$15,000 ATV insurance. Apply now.</p>"
