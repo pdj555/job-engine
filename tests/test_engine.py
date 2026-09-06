@@ -2888,6 +2888,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 kayak insurance") == (None, None)
     assert _parse_pay("kayak of $15,000") == (None, None)
     assert _parse_pay("$15,000 kayak. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 canoe") == (None, None)
+    assert _parse_pay("$15,000 canoes") == (None, None)
+    assert _parse_pay("$15,000 canoe insurance") == (None, None)
+    assert _parse_pay("canoe of $15,000") == (None, None)
+    assert _parse_pay("$15,000 canoe. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3046,6 +3051,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 kay") == (None, 15_000)
     assert _parse_pay("$15,000 kayaking") == (None, 15_000)
     assert _parse_pay("$15,000 group kay") == (None, 15_000)
+    assert _parse_pay("$15,000 cano") == (None, 15_000)
+    assert _parse_pay("$15,000 canoeing") == (None, 15_000)
     assert _parse_pay("$15,000 snowmobile") == (None, 15_000)
     assert _parse_pay("$15,000 snowmachine") == (None, 15_000)
     assert _parse_pay("$15,000 RV") == (None, 15_000)
@@ -4233,6 +4240,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 kayak $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 kayak insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 canoe $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 canoe insurance $15,000") == (
         None,
         180_000,
     )
@@ -9929,6 +9941,16 @@ def test_guess_pay_annualizes_hourly():
         kayakmix, "<p>$15,000 kayak. Salary $180,000</p>"
     ) is True
     assert kayakmix.pay_high == 180_000
+    canoeonly = Opportunity(title="Engineer", url="https://jobs.example/canoeonly")
+    assert _apply_listing(
+        canoeonly, "<p>$15,000 canoe. Apply now.</p>"
+    ) is False
+    assert canoeonly.pay_high is None
+    canoemix = Opportunity(title="Engineer", url="https://jobs.example/canoemix")
+    assert _apply_listing(
+        canoemix, "<p>$15,000 canoe. Salary $180,000</p>"
+    ) is True
+    assert canoemix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
