@@ -2644,6 +2644,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group AD and D") == (None, None)
     assert _parse_pay("group AD&D of $15,000") == (None, None)
     assert _parse_pay("$15,000 group AD&D. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group burial") == (None, None)
+    assert _parse_pay("$15,000 group burial insurance") == (None, None)
+    assert _parse_pay("$15,000 group funeral") == (None, None)
+    assert _parse_pay("$15,000 group funeral insurance") == (None, None)
+    assert _parse_pay("$15,000 group final expense") == (None, None)
+    assert _parse_pay("group burial of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group burial. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2805,6 +2812,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group accidental") == (None, 15_000)
     assert _parse_pay("$15,000 group disabled") == (None, 15_000)
     assert _parse_pay("$15,000 group STD") == (None, 15_000)
+    assert _parse_pay("$15,000 burial") == (None, 15_000)
+    assert _parse_pay("$15,000 funeral") == (None, 15_000)
+    assert _parse_pay("$15,000 final expense") == (None, 15_000)
     assert _parse_pay("$15,000 flood") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
     assert _parse_pay("$15,000 tenants") == (None, 15_000)
@@ -3779,6 +3789,19 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group AD&D $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group AD&D insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group burial $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group burial insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group burial plot $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group funeral insurance $15,000") == (
         None,
         180_000,
     )
@@ -8889,6 +8912,20 @@ def test_guess_pay_annualizes_hourly():
         groupaddmix, "<p>$15,000 group AD&D. Salary $180,000</p>"
     ) is True
     assert groupaddmix.pay_high == 180_000
+    groupburialonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupburialonly"
+    )
+    assert _apply_listing(
+        groupburialonly, "<p>$15,000 group burial. Apply now.</p>"
+    ) is False
+    assert groupburialonly.pay_high is None
+    groupburialmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupburialmix"
+    )
+    assert _apply_listing(
+        groupburialmix, "<p>$15,000 group burial. Salary $180,000</p>"
+    ) is True
+    assert groupburialmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
