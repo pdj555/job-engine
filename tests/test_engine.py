@@ -3851,6 +3851,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group umiak insurance") == (None, None)
     assert _parse_pay("group umiak of $15,000") == (None, None)
     assert _parse_pay("$15,000 group umiak. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group umiakjacht") == (None, None)
+    assert _parse_pay("$15,000 group umiak-jacht") == (None, None)
+    assert _parse_pay("$15,000 group umiak jacht") == (None, None)
+    assert _parse_pay("$15,000 group umiakjachten") == (None, None)
+    assert _parse_pay("$15,000 group umiakjacht insurance") == (None, None)
+    assert _parse_pay("group umiakjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group umiakjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group umiakschip") == (None, None)
+    assert _parse_pay("$15,000 group umiak-schip") == (None, None)
+    assert _parse_pay("$15,000 group umiak schip") == (None, None)
+    assert _parse_pay("$15,000 group umiakschepen") == (None, None)
+    assert _parse_pay("$15,000 group umiakschip insurance") == (None, None)
+    assert _parse_pay("group umiakschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group umiakschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group umiaktjalk") == (None, None)
+    assert _parse_pay("$15,000 group umiak-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group umiak tjalk") == (None, None)
+    assert _parse_pay("$15,000 group umiaktjalken") == (None, None)
+    assert _parse_pay("$15,000 group umiaktjalk insurance") == (None, None)
+    assert _parse_pay("group umiaktjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group umiaktjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group umiakboeier") == (None, None)
+    assert _parse_pay("$15,000 group umiak-boeier") == (None, None)
+    assert _parse_pay("$15,000 group umiak boeier") == (None, None)
+    assert _parse_pay("$15,000 group umiakboeiers") == (None, None)
+    assert _parse_pay("$15,000 group umiakboeier insurance") == (None, None)
+    assert _parse_pay("group umiakboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group umiakboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group baidarka") == (None, None)
     assert _parse_pay("$15,000 group baidarkas") == (None, None)
     assert _parse_pay("$15,000 group baidarka insurance") == (None, None)
@@ -7766,6 +7794,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 umiak insurance") == (None, None)
     assert _parse_pay("umiak of $15,000") == (None, None)
     assert _parse_pay("$15,000 umiak. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 umiakjacht") == (None, None)
+    assert _parse_pay("$15,000 umiak-jacht") == (None, None)
+    assert _parse_pay("$15,000 umiak jacht") == (None, None)
+    assert _parse_pay("$15,000 umiakjachten") == (None, None)
+    assert _parse_pay("$15,000 umiakjacht insurance") == (None, None)
+    assert _parse_pay("umiakjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 umiakjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 umiakschip") == (None, None)
+    assert _parse_pay("$15,000 umiak-schip") == (None, None)
+    assert _parse_pay("$15,000 umiak schip") == (None, None)
+    assert _parse_pay("$15,000 umiakschepen") == (None, None)
+    assert _parse_pay("$15,000 umiakschip insurance") == (None, None)
+    assert _parse_pay("umiakschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 umiakschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 umiaktjalk") == (None, None)
+    assert _parse_pay("$15,000 umiak-tjalk") == (None, None)
+    assert _parse_pay("$15,000 umiak tjalk") == (None, None)
+    assert _parse_pay("$15,000 umiaktjalken") == (None, None)
+    assert _parse_pay("$15,000 umiaktjalk insurance") == (None, None)
+    assert _parse_pay("umiaktjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 umiaktjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 umiakboeier") == (None, None)
+    assert _parse_pay("$15,000 umiak-boeier") == (None, None)
+    assert _parse_pay("$15,000 umiak boeier") == (None, None)
+    assert _parse_pay("$15,000 umiakboeiers") == (None, None)
+    assert _parse_pay("$15,000 umiakboeier insurance") == (None, None)
+    assert _parse_pay("umiakboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 umiakboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 baidarka") == (None, None)
     assert _parse_pay("$15,000 baidarkas") == (None, None)
     assert _parse_pay("$15,000 baidarka insurance") == (None, None)
@@ -10887,6 +10943,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 wherryboei") == (None, 15_000)
     assert _parse_pay("$15,000 umi") == (None, 15_000)
     assert _parse_pay("$15,000 umia") == (None, 15_000)
+    assert _parse_pay("$15,000 umiakjac") == (None, 15_000)
+    assert _parse_pay("$15,000 umiakschi") == (None, 15_000)
+    assert _parse_pay("$15,000 umiaktjal") == (None, 15_000)
+    assert _parse_pay("$15,000 umiakboei") == (None, 15_000)
     assert _parse_pay("$15,000 baidar") == (None, 15_000)
     assert _parse_pay("$15,000 baidark") == (None, 15_000)
     assert _parse_pay("$15,000 cai") == (None, 15_000)
@@ -11746,6 +11806,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group wherryboei") == (None, 15_000)
     assert _parse_pay("$15,000 group umi") == (None, 15_000)
     assert _parse_pay("$15,000 group umia") == (None, 15_000)
+    assert _parse_pay("$15,000 group umiakjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group umiakschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group umiaktjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group umiakboei") == (None, 15_000)
     assert _parse_pay("$15,000 group baidar") == (None, 15_000)
     assert _parse_pay("$15,000 group baidark") == (None, 15_000)
     assert _parse_pay("$15,000 group cai") == (None, 15_000)
@@ -14655,6 +14719,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group umiak $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group umiak insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiakjacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group umiakjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiak jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiakschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group umiakschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiak schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiaktjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group umiaktjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiak tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiakboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group umiakboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group umiak boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -19127,6 +19227,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 umiak $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 umiak insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiakjacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 umiakjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiak jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiakschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 umiakschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiak schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiaktjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 umiaktjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiak tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiakboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 umiakboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 umiak boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -29884,6 +30020,62 @@ def test_guess_pay_annualizes_hourly():
         groupumiakmix, "<p>$15,000 group umiak. Salary $180,000</p>"
     ) is True
     assert groupumiakmix.pay_high == 180_000
+    groupumiakjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakjachtonly"
+    )
+    assert _apply_listing(
+        groupumiakjachtonly, "<p>$15,000 group umiakjacht. Apply now.</p>"
+    ) is False
+    assert groupumiakjachtonly.pay_high is None
+    groupumiakjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakjachtmix"
+    )
+    assert _apply_listing(
+        groupumiakjachtmix, "<p>$15,000 group umiakjacht. Salary $180,000</p>"
+    ) is True
+    assert groupumiakjachtmix.pay_high == 180_000
+    groupumiakschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakschiponly"
+    )
+    assert _apply_listing(
+        groupumiakschiponly, "<p>$15,000 group umiakschip. Apply now.</p>"
+    ) is False
+    assert groupumiakschiponly.pay_high is None
+    groupumiakschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakschipmix"
+    )
+    assert _apply_listing(
+        groupumiakschipmix, "<p>$15,000 group umiakschip. Salary $180,000</p>"
+    ) is True
+    assert groupumiakschipmix.pay_high == 180_000
+    groupumiaktjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiaktjalkonly"
+    )
+    assert _apply_listing(
+        groupumiaktjalkonly, "<p>$15,000 group umiaktjalk. Apply now.</p>"
+    ) is False
+    assert groupumiaktjalkonly.pay_high is None
+    groupumiaktjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiaktjalkmix"
+    )
+    assert _apply_listing(
+        groupumiaktjalkmix, "<p>$15,000 group umiaktjalk. Salary $180,000</p>"
+    ) is True
+    assert groupumiaktjalkmix.pay_high == 180_000
+    groupumiakboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakboeieronly"
+    )
+    assert _apply_listing(
+        groupumiakboeieronly, "<p>$15,000 group umiakboeier. Apply now.</p>"
+    ) is False
+    assert groupumiakboeieronly.pay_high is None
+    groupumiakboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupumiakboeiermix"
+    )
+    assert _apply_listing(
+        groupumiakboeiermix, "<p>$15,000 group umiakboeier. Salary $180,000</p>"
+    ) is True
+    assert groupumiakboeiermix.pay_high == 180_000
     groupbaidarkaonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupbaidarkaonly"
     )
@@ -38133,6 +38325,62 @@ def test_guess_pay_annualizes_hourly():
         umiakmix, "<p>$15,000 umiak. Salary $180,000</p>"
     ) is True
     assert umiakmix.pay_high == 180_000
+    umiakjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakjachtonly"
+    )
+    assert _apply_listing(
+        umiakjachtonly, "<p>$15,000 umiakjacht. Apply now.</p>"
+    ) is False
+    assert umiakjachtonly.pay_high is None
+    umiakjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakjachtmix"
+    )
+    assert _apply_listing(
+        umiakjachtmix, "<p>$15,000 umiakjacht. Salary $180,000</p>"
+    ) is True
+    assert umiakjachtmix.pay_high == 180_000
+    umiakschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakschiponly"
+    )
+    assert _apply_listing(
+        umiakschiponly, "<p>$15,000 umiakschip. Apply now.</p>"
+    ) is False
+    assert umiakschiponly.pay_high is None
+    umiakschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakschipmix"
+    )
+    assert _apply_listing(
+        umiakschipmix, "<p>$15,000 umiakschip. Salary $180,000</p>"
+    ) is True
+    assert umiakschipmix.pay_high == 180_000
+    umiaktjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/umiaktjalkonly"
+    )
+    assert _apply_listing(
+        umiaktjalkonly, "<p>$15,000 umiaktjalk. Apply now.</p>"
+    ) is False
+    assert umiaktjalkonly.pay_high is None
+    umiaktjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/umiaktjalkmix"
+    )
+    assert _apply_listing(
+        umiaktjalkmix, "<p>$15,000 umiaktjalk. Salary $180,000</p>"
+    ) is True
+    assert umiaktjalkmix.pay_high == 180_000
+    umiakboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakboeieronly"
+    )
+    assert _apply_listing(
+        umiakboeieronly, "<p>$15,000 umiakboeier. Apply now.</p>"
+    ) is False
+    assert umiakboeieronly.pay_high is None
+    umiakboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/umiakboeiermix"
+    )
+    assert _apply_listing(
+        umiakboeiermix, "<p>$15,000 umiakboeier. Salary $180,000</p>"
+    ) is True
+    assert umiakboeiermix.pay_high == 180_000
     baidarkaonly = Opportunity(
         title="Engineer", url="https://jobs.example/baidarkaonly"
     )
