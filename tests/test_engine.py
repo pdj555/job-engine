@@ -8745,6 +8745,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group botter jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group skutsjejacht $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group skutsjejacht insurance $15,000") == (
         None,
@@ -10005,6 +10009,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 botterjacht $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 botterjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 botter jacht insurance $15,000") == (
         None,
         180_000,
     )
