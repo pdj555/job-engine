@@ -2550,6 +2550,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group renters insurance") == (None, None)
     assert _parse_pay("group renters of $15,000") == (None, None)
     assert _parse_pay("$15,000 group renters. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group tenants") == (None, None)
+    assert _parse_pay("$15,000 group tenants insurance") == (None, None)
+    assert _parse_pay("group tenants of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group tenants. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2699,6 +2703,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 renters") == (None, 15_000)
     assert _parse_pay("$15,000 umbrella") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
+    assert _parse_pay("$15,000 tenants") == (None, 15_000)
     assert _parse_pay("$15,000 earthquake") == (None, 15_000)
     assert _parse_pay("$15,000 quake") == (None, 15_000)
     assert _parse_pay("$15,000 windstorm") == (None, 15_000)
@@ -3564,6 +3569,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group renters $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group renters insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group tenants $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group tenants insurance $15,000") == (
         None,
         180_000,
     )
@@ -8408,6 +8418,20 @@ def test_guess_pay_annualizes_hourly():
         grouprentersmix, "<p>$15,000 group renters. Salary $180,000</p>"
     ) is True
     assert grouprentersmix.pay_high == 180_000
+    grouptenantsonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptenantsonly"
+    )
+    assert _apply_listing(
+        grouptenantsonly, "<p>$15,000 group tenants. Apply now.</p>"
+    ) is False
+    assert grouptenantsonly.pay_high is None
+    grouptenantsmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptenantsmix"
+    )
+    assert _apply_listing(
+        grouptenantsmix, "<p>$15,000 group tenants. Salary $180,000</p>"
+    ) is True
+    assert grouptenantsmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
