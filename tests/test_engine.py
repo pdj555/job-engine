@@ -2844,6 +2844,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group skiff insurance") == (None, None)
     assert _parse_pay("group skiff of $15,000") == (None, None)
     assert _parse_pay("$15,000 group skiff. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group jon boat") == (None, None)
+    assert _parse_pay("$15,000 group jon-boat") == (None, None)
+    assert _parse_pay("$15,000 group jonboat") == (None, None)
+    assert _parse_pay("$15,000 group jon boat insurance") == (None, None)
+    assert _parse_pay("group jon boat of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group jon boat. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ATV") == (None, None)
     assert _parse_pay("$15,000 group ATV insurance") == (None, None)
     assert _parse_pay("$15,000 group UTV") == (None, None)
@@ -3340,6 +3346,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
     assert _parse_pay("$15,000 group skiffing") == (None, 15_000)
+    assert _parse_pay("$15,000 group jon") == (None, 15_000)
+    assert _parse_pay("$15,000 group jon boa") == (None, 15_000)
+    assert _parse_pay("$15,000 group jon boating") == (None, 15_000)
     assert _parse_pay("$15,000 group sloo") == (None, 15_000)
     assert _parse_pay("$15,000 group slooping") == (None, 15_000)
     assert _parse_pay("$15,000 group ketc") == (None, 15_000)
@@ -4552,6 +4561,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group skiff $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group skiff insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jon boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group jon boat insurance $15,000") == (
         None,
         180_000,
     )
@@ -10409,6 +10423,20 @@ def test_guess_pay_annualizes_hourly():
         groupskiffmix, "<p>$15,000 group skiff. Salary $180,000</p>"
     ) is True
     assert groupskiffmix.pay_high == 180_000
+    groupjononly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupjononly"
+    )
+    assert _apply_listing(
+        groupjononly, "<p>$15,000 group jon boat. Apply now.</p>"
+    ) is False
+    assert groupjononly.pay_high is None
+    groupjonmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupjonmix"
+    )
+    assert _apply_listing(
+        groupjonmix, "<p>$15,000 group jon boat. Salary $180,000</p>"
+    ) is True
+    assert groupjonmix.pay_high == 180_000
     assert _apply_listing(
         groupsnowonly, "<p>$15,000 group snowmobile. Apply now.</p>"
     ) is False
