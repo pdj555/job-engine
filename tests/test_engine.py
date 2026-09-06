@@ -4115,6 +4115,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 tartane insurance") == (None, None)
     assert _parse_pay("tartane of $15,000") == (None, None)
     assert _parse_pay("$15,000 tartane. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 tartana") == (None, None)
+    assert _parse_pay("$15,000 tartanas") == (None, None)
+    assert _parse_pay("$15,000 tartana insurance") == (None, None)
+    assert _parse_pay("tartana of $15,000") == (None, None)
+    assert _parse_pay("$15,000 tartana. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -7440,6 +7445,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 tartane $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 tartane insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 tartana $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 tartana insurance $15,000") == (
         None,
         180_000,
     )
@@ -16240,6 +16250,16 @@ def test_guess_pay_annualizes_hourly():
         tartanemix, "<p>$15,000 tartane. Salary $180,000</p>"
     ) is True
     assert tartanemix.pay_high == 180_000
+    tartanaonly = Opportunity(title="Engineer", url="https://jobs.example/tartanaonly")
+    assert _apply_listing(
+        tartanaonly, "<p>$15,000 tartana. Apply now.</p>"
+    ) is False
+    assert tartanaonly.pay_high is None
+    tartanamix = Opportunity(title="Engineer", url="https://jobs.example/tartanamix")
+    assert _apply_listing(
+        tartanamix, "<p>$15,000 tartana. Salary $180,000</p>"
+    ) is True
+    assert tartanamix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
