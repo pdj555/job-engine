@@ -3265,6 +3265,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group tartane insurance") == (None, None)
     assert _parse_pay("group tartane of $15,000") == (None, None)
     assert _parse_pay("$15,000 group tartane. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group tartana") == (None, None)
+    assert _parse_pay("$15,000 group tartanas") == (None, None)
+    assert _parse_pay("$15,000 group tartana insurance") == (None, None)
+    assert _parse_pay("group tartana of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group tartana. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ketch") == (None, None)
     assert _parse_pay("$15,000 group ketches") == (None, None)
     assert _parse_pay("$15,000 group ketch insurance") == (None, None)
@@ -6680,6 +6685,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group tartane $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group tartane insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group tartana $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group tartana insurance $15,000") == (
         None,
         180_000,
     )
@@ -14231,6 +14241,20 @@ def test_guess_pay_annualizes_hourly():
         grouptartanemix, "<p>$15,000 group tartane. Salary $180,000</p>"
     ) is True
     assert grouptartanemix.pay_high == 180_000
+    grouptartanaonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptartanaonly"
+    )
+    assert _apply_listing(
+        grouptartanaonly, "<p>$15,000 group tartana. Apply now.</p>"
+    ) is False
+    assert grouptartanaonly.pay_high is None
+    grouptartanamix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouptartanamix"
+    )
+    assert _apply_listing(
+        grouptartanamix, "<p>$15,000 group tartana. Salary $180,000</p>"
+    ) is True
+    assert grouptartanamix.pay_high == 180_000
     groupketchonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupketchonly"
     )
