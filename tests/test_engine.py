@@ -2593,6 +2593,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group hurricane insurance") == (None, None)
     assert _parse_pay("group hurricane of $15,000") == (None, None)
     assert _parse_pay("$15,000 group hurricane. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group windstorm") == (None, None)
+    assert _parse_pay("$15,000 group tornado") == (None, None)
+    assert _parse_pay("$15,000 group cyclone") == (None, None)
+    assert _parse_pay("$15,000 group typhoon") == (None, None)
+    assert _parse_pay("$15,000 group windstorm insurance") == (None, None)
+    assert _parse_pay("group windstorm of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group windstorm. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3655,6 +3662,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group hurricane $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group hurricane insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group windstorm $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group windstorm insurance $15,000") == (
         None,
         180_000,
     )
@@ -8609,6 +8621,20 @@ def test_guess_pay_annualizes_hourly():
         grouphurricanemix, "<p>$15,000 group hurricane. Salary $180,000</p>"
     ) is True
     assert grouphurricanemix.pay_high == 180_000
+    groupwindstormonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwindstormonly"
+    )
+    assert _apply_listing(
+        groupwindstormonly, "<p>$15,000 group windstorm. Apply now.</p>"
+    ) is False
+    assert groupwindstormonly.pay_high is None
+    groupwindstormmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwindstormmix"
+    )
+    assert _apply_listing(
+        groupwindstormmix, "<p>$15,000 group windstorm. Salary $180,000</p>"
+    ) is True
+    assert groupwindstormmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
