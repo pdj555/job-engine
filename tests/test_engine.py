@@ -4444,6 +4444,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 square-rigger insurance") == (None, None)
     assert _parse_pay("square-rigger of $15,000") == (None, None)
     assert _parse_pay("$15,000 square-rigger. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 peter boat") == (None, None)
+    assert _parse_pay("$15,000 peter-boat") == (None, None)
+    assert _parse_pay("$15,000 peterboat") == (None, None)
+    assert _parse_pay("$15,000 peter boats") == (None, None)
+    assert _parse_pay("$15,000 peter boat insurance") == (None, None)
+    assert _parse_pay("peter boat of $15,000") == (None, None)
+    assert _parse_pay("$15,000 peter boat. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5086,6 +5093,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 square rigg") == (None, 15_000)
     assert _parse_pay("$15,000 square") == (None, 15_000)
     assert _parse_pay("$15,000 rigger") == (None, 15_000)
+    assert _parse_pay("$15,000 peter") == (None, 15_000)
+    assert _parse_pay("$15,000 peter bo") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -8241,6 +8250,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 square-rigger $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 square-rigger insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 peter boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 peter boat insurance $15,000") == (
         None,
         180_000,
     )
@@ -17845,6 +17859,20 @@ def test_guess_pay_annualizes_hourly():
         squareriggermix, "<p>$15,000 square-rigger. Salary $180,000</p>"
     ) is True
     assert squareriggermix.pay_high == 180_000
+    peterboatonly = Opportunity(
+        title="Engineer", url="https://jobs.example/peterboatonly"
+    )
+    assert _apply_listing(
+        peterboatonly, "<p>$15,000 peter boat. Apply now.</p>"
+    ) is False
+    assert peterboatonly.pay_high is None
+    peterboatmix = Opportunity(
+        title="Engineer", url="https://jobs.example/peterboatmix"
+    )
+    assert _apply_listing(
+        peterboatmix, "<p>$15,000 peter boat. Salary $180,000</p>"
+    ) is True
+    assert peterboatmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
