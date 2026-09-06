@@ -4431,6 +4431,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 scaffie insurance") == (None, None)
     assert _parse_pay("scaffie of $15,000") == (None, None)
     assert _parse_pay("$15,000 scaffie. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 square-rigger") == (None, None)
+    assert _parse_pay("$15,000 square rigger") == (None, None)
+    assert _parse_pay("$15,000 squarerigger") == (None, None)
+    assert _parse_pay("$15,000 square-riggers") == (None, None)
+    assert _parse_pay("$15,000 square-rigger insurance") == (None, None)
+    assert _parse_pay("square-rigger of $15,000") == (None, None)
+    assert _parse_pay("$15,000 square-rigger. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5069,6 +5076,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 scaff") == (None, 15_000)
     assert _parse_pay("$15,000 scaffold") == (None, 15_000)
     assert _parse_pay("$15,000 scaffolding") == (None, 15_000)
+    assert _parse_pay("$15,000 square-rig") == (None, 15_000)
+    assert _parse_pay("$15,000 square rigg") == (None, 15_000)
+    assert _parse_pay("$15,000 square") == (None, 15_000)
+    assert _parse_pay("$15,000 rigger") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -8210,6 +8221,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 scaffie $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 scaffie insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 square-rigger $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 square-rigger insurance $15,000") == (
         None,
         180_000,
     )
@@ -17786,6 +17802,20 @@ def test_guess_pay_annualizes_hourly():
         scaffiemix, "<p>$15,000 scaffie. Salary $180,000</p>"
     ) is True
     assert scaffiemix.pay_high == 180_000
+    squareriggeronly = Opportunity(
+        title="Engineer", url="https://jobs.example/squareriggeronly"
+    )
+    assert _apply_listing(
+        squareriggeronly, "<p>$15,000 square-rigger. Apply now.</p>"
+    ) is False
+    assert squareriggeronly.pay_high is None
+    squareriggermix = Opportunity(
+        title="Engineer", url="https://jobs.example/squareriggermix"
+    )
+    assert _apply_listing(
+        squareriggermix, "<p>$15,000 square-rigger. Salary $180,000</p>"
+    ) is True
+    assert squareriggermix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
