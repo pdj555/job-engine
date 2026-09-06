@@ -2581,6 +2581,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group umbrella insurance") == (None, None)
     assert _parse_pay("group umbrella of $15,000") == (None, None)
     assert _parse_pay("$15,000 group umbrella. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group earthquake") == (None, None)
+    assert _parse_pay("$15,000 group quake") == (None, None)
+    assert _parse_pay("$15,000 group earthquake insurance") == (None, None)
+    assert _parse_pay("group earthquake of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group earthquake. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3633,6 +3641,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group umbrella $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group umbrella insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group earthquake $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group earthquake insurance $15,000") == (
         None,
         180_000,
     )
@@ -8559,6 +8572,20 @@ def test_guess_pay_annualizes_hourly():
         groupumbrellamix, "<p>$15,000 group umbrella. Salary $180,000</p>"
     ) is True
     assert groupumbrellamix.pay_high == 180_000
+    groupearthquakeonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupearthquakeonly"
+    )
+    assert _apply_listing(
+        groupearthquakeonly, "<p>$15,000 group earthquake. Apply now.</p>"
+    ) is False
+    assert groupearthquakeonly.pay_high is None
+    groupearthquakemix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupearthquakemix"
+    )
+    assert _apply_listing(
+        groupearthquakemix, "<p>$15,000 group earthquake. Salary $180,000</p>"
+    ) is True
+    assert groupearthquakemix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
