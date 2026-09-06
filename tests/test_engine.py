@@ -2531,11 +2531,19 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 specified illness insurance") == (None, None)
     assert _parse_pay("specified illness of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified illness. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 specified sickness") == (None, None)
+    assert _parse_pay("$15,000 specified sickness insurance") == (None, None)
+    assert _parse_pay("specified sickness of $15,000") == (None, None)
+    assert _parse_pay("$15,000 specified sickness. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 illness") == (None, 15_000)
+    assert _parse_pay("$15,000 sickness") == (None, 15_000)
     assert _parse_pay("$15,000 dread disease") == (None, None)
     assert _parse_pay("$15,000 dread illness") == (None, None)
+    assert _parse_pay("$15,000 dread sickness") == (None, None)
+    assert _parse_pay("$15,000 dread sickness insurance") == (None, None)
     assert _parse_pay("dread disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 dread disease. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 dread sickness. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 dread") == (None, 15_000)
     assert _parse_pay("$15,000 critical disease") == (None, None)
     assert _parse_pay("critical disease of $15,000") == (None, None)
@@ -3443,6 +3451,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 dread illness insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 specified sickness insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 dread sickness insurance $15,000") == (
         None,
         180_000,
     )
@@ -8242,6 +8258,18 @@ def test_guess_pay_annualizes_hourly():
         specillmix, "<p>$15,000 specified illness. Salary $180,000</p>"
     ) is True
     assert specillmix.pay_high == 180_000
+    specsickonly = Opportunity(
+        title="Engineer", url="https://jobs.example/specsickonly"
+    )
+    assert _apply_listing(
+        specsickonly, "<p>$15,000 specified sickness. Apply now.</p>"
+    ) is False
+    assert specsickonly.pay_high is None
+    specsickmix = Opportunity(title="Engineer", url="https://jobs.example/specsickmix")
+    assert _apply_listing(
+        specsickmix, "<p>$15,000 specified sickness. Salary $180,000</p>"
+    ) is True
+    assert specsickmix.pay_high == 180_000
     dreaddisonly = Opportunity(title="Engineer", url="https://jobs.example/dreaddisonly")
     assert _apply_listing(
         dreaddisonly, "<p>$15,000 dread disease. Apply now.</p>"
