@@ -2515,6 +2515,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 disease insurance") == (None, None)
     assert _parse_pay("$15,000 group cancer") == (None, None)
     assert _parse_pay("$15,000 voluntary cancer") == (None, None)
+    assert _parse_pay("$15,000 group cancer insurance") == (None, None)
+    assert _parse_pay("$15,000 voluntary cancer insurance") == (None, None)
     assert _parse_pay("$15,000 group auto") == (None, None)
     assert _parse_pay("$15,000 group auto insurance") == (None, None)
     assert _parse_pay("group auto of $15,000") == (None, None)
@@ -3699,6 +3701,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group medical $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group medical insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group cancer insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 voluntary cancer insurance $15,000") == (
         None,
         180_000,
     )
@@ -8467,6 +8477,14 @@ def test_guess_pay_annualizes_hourly():
         groupcancermix, "<p>$15,000 group cancer. Salary $180,000</p>"
     ) is True
     assert groupcancermix.pay_high == 180_000
+    groupcancerins = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcancerins"
+    )
+    assert _apply_listing(
+        groupcancerins,
+        "<p>base $180,000 group cancer insurance $15,000</p>",
+    ) is True
+    assert groupcancerins.pay_high == 180_000
     groupautoonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupautoonly"
     )
