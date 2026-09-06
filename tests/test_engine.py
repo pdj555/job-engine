@@ -3521,6 +3521,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group felucca insurance") == (None, None)
     assert _parse_pay("group felucca of $15,000") == (None, None)
     assert _parse_pay("$15,000 group felucca. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group feluccajacht") == (None, None)
+    assert _parse_pay("$15,000 group felucca-jacht") == (None, None)
+    assert _parse_pay("$15,000 group felucca jacht") == (None, None)
+    assert _parse_pay("$15,000 group feluccajachten") == (None, None)
+    assert _parse_pay("$15,000 group feluccajacht insurance") == (None, None)
+    assert _parse_pay("group feluccajacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group feluccajacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group feluccaschip") == (None, None)
+    assert _parse_pay("$15,000 group felucca-schip") == (None, None)
+    assert _parse_pay("$15,000 group felucca schip") == (None, None)
+    assert _parse_pay("$15,000 group feluccaschepen") == (None, None)
+    assert _parse_pay("$15,000 group feluccaschip insurance") == (None, None)
+    assert _parse_pay("group feluccaschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group feluccaschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group feluccatjalk") == (None, None)
+    assert _parse_pay("$15,000 group felucca-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group felucca tjalk") == (None, None)
+    assert _parse_pay("$15,000 group feluccatjalken") == (None, None)
+    assert _parse_pay("$15,000 group feluccatjalk insurance") == (None, None)
+    assert _parse_pay("group feluccatjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group feluccatjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group feluccaboeier") == (None, None)
+    assert _parse_pay("$15,000 group felucca-boeier") == (None, None)
+    assert _parse_pay("$15,000 group felucca boeier") == (None, None)
+    assert _parse_pay("$15,000 group feluccaboeiers") == (None, None)
+    assert _parse_pay("$15,000 group feluccaboeier insurance") == (None, None)
+    assert _parse_pay("group feluccaboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group feluccaboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group sampan") == (None, None)
     assert _parse_pay("$15,000 group sampans") == (None, None)
     assert _parse_pay("$15,000 group sampan insurance") == (None, None)
@@ -7156,6 +7184,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 felucca insurance") == (None, None)
     assert _parse_pay("felucca of $15,000") == (None, None)
     assert _parse_pay("$15,000 felucca. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 feluccajacht") == (None, None)
+    assert _parse_pay("$15,000 felucca-jacht") == (None, None)
+    assert _parse_pay("$15,000 felucca jacht") == (None, None)
+    assert _parse_pay("$15,000 feluccajachten") == (None, None)
+    assert _parse_pay("$15,000 feluccajacht insurance") == (None, None)
+    assert _parse_pay("feluccajacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 feluccajacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 feluccaschip") == (None, None)
+    assert _parse_pay("$15,000 felucca-schip") == (None, None)
+    assert _parse_pay("$15,000 felucca schip") == (None, None)
+    assert _parse_pay("$15,000 feluccaschepen") == (None, None)
+    assert _parse_pay("$15,000 feluccaschip insurance") == (None, None)
+    assert _parse_pay("feluccaschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 feluccaschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 feluccatjalk") == (None, None)
+    assert _parse_pay("$15,000 felucca-tjalk") == (None, None)
+    assert _parse_pay("$15,000 felucca tjalk") == (None, None)
+    assert _parse_pay("$15,000 feluccatjalken") == (None, None)
+    assert _parse_pay("$15,000 feluccatjalk insurance") == (None, None)
+    assert _parse_pay("feluccatjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 feluccatjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 feluccaboeier") == (None, None)
+    assert _parse_pay("$15,000 felucca-boeier") == (None, None)
+    assert _parse_pay("$15,000 felucca boeier") == (None, None)
+    assert _parse_pay("$15,000 feluccaboeiers") == (None, None)
+    assert _parse_pay("$15,000 feluccaboeier insurance") == (None, None)
+    assert _parse_pay("feluccaboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 feluccaboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 sampan") == (None, None)
     assert _parse_pay("$15,000 sampans") == (None, None)
     assert _parse_pay("$15,000 sampan insurance") == (None, None)
@@ -10267,6 +10323,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 dhowboei") == (None, 15_000)
     assert _parse_pay("$15,000 felucc") == (None, 15_000)
     assert _parse_pay("$15,000 feluccan") == (None, 15_000)
+    assert _parse_pay("$15,000 feluccajac") == (None, 15_000)
+    assert _parse_pay("$15,000 feluccaschi") == (None, 15_000)
+    assert _parse_pay("$15,000 feluccatjal") == (None, 15_000)
+    assert _parse_pay("$15,000 feluccaboei") == (None, 15_000)
     assert _parse_pay("$15,000 samp") == (None, 15_000)
     assert _parse_pay("$15,000 sample") == (None, 15_000)
     assert _parse_pay("$15,000 piro") == (None, 15_000)
@@ -11086,6 +11146,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group dhowboei") == (None, 15_000)
     assert _parse_pay("$15,000 group felucc") == (None, 15_000)
     assert _parse_pay("$15,000 group feluccan") == (None, 15_000)
+    assert _parse_pay("$15,000 group feluccajac") == (None, 15_000)
+    assert _parse_pay("$15,000 group feluccaschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group feluccatjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group feluccaboei") == (None, 15_000)
     assert _parse_pay("$15,000 group samp") == (None, 15_000)
     assert _parse_pay("$15,000 group sample") == (None, 15_000)
     assert _parse_pay("$15,000 group piro") == (None, 15_000)
@@ -13605,6 +13669,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group felucca $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group felucca insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group feluccajacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group feluccajacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group felucca jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group feluccaschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group feluccaschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group felucca schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group feluccatjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group feluccatjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group felucca tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group feluccaboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group feluccaboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group felucca boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -17717,6 +17817,42 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 felucca $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 felucca insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 feluccajacht $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 feluccajacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 felucca jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 feluccaschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 feluccaschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 felucca schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 feluccatjalk $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 feluccatjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 felucca tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 feluccaboeier $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 feluccaboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 felucca boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -27824,6 +27960,62 @@ def test_guess_pay_annualizes_hourly():
         groupfeluccamix, "<p>$15,000 group felucca. Salary $180,000</p>"
     ) is True
     assert groupfeluccamix.pay_high == 180_000
+    groupfeluccajachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccajachtonly"
+    )
+    assert _apply_listing(
+        groupfeluccajachtonly, "<p>$15,000 group feluccajacht. Apply now.</p>"
+    ) is False
+    assert groupfeluccajachtonly.pay_high is None
+    groupfeluccajachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccajachtmix"
+    )
+    assert _apply_listing(
+        groupfeluccajachtmix, "<p>$15,000 group feluccajacht. Salary $180,000</p>"
+    ) is True
+    assert groupfeluccajachtmix.pay_high == 180_000
+    groupfeluccaschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccaschiponly"
+    )
+    assert _apply_listing(
+        groupfeluccaschiponly, "<p>$15,000 group feluccaschip. Apply now.</p>"
+    ) is False
+    assert groupfeluccaschiponly.pay_high is None
+    groupfeluccaschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccaschipmix"
+    )
+    assert _apply_listing(
+        groupfeluccaschipmix, "<p>$15,000 group feluccaschip. Salary $180,000</p>"
+    ) is True
+    assert groupfeluccaschipmix.pay_high == 180_000
+    groupfeluccatjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccatjalkonly"
+    )
+    assert _apply_listing(
+        groupfeluccatjalkonly, "<p>$15,000 group feluccatjalk. Apply now.</p>"
+    ) is False
+    assert groupfeluccatjalkonly.pay_high is None
+    groupfeluccatjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccatjalkmix"
+    )
+    assert _apply_listing(
+        groupfeluccatjalkmix, "<p>$15,000 group feluccatjalk. Salary $180,000</p>"
+    ) is True
+    assert groupfeluccatjalkmix.pay_high == 180_000
+    groupfeluccaboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccaboeieronly"
+    )
+    assert _apply_listing(
+        groupfeluccaboeieronly, "<p>$15,000 group feluccaboeier. Apply now.</p>"
+    ) is False
+    assert groupfeluccaboeieronly.pay_high is None
+    groupfeluccaboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupfeluccaboeiermix"
+    )
+    assert _apply_listing(
+        groupfeluccaboeiermix, "<p>$15,000 group feluccaboeier. Salary $180,000</p>"
+    ) is True
+    assert groupfeluccaboeiermix.pay_high == 180_000
     groupsampanonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupsampanonly"
     )
@@ -35513,6 +35705,62 @@ def test_guess_pay_annualizes_hourly():
         feluccamix, "<p>$15,000 felucca. Salary $180,000</p>"
     ) is True
     assert feluccamix.pay_high == 180_000
+    feluccajachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccajachtonly"
+    )
+    assert _apply_listing(
+        feluccajachtonly, "<p>$15,000 feluccajacht. Apply now.</p>"
+    ) is False
+    assert feluccajachtonly.pay_high is None
+    feluccajachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccajachtmix"
+    )
+    assert _apply_listing(
+        feluccajachtmix, "<p>$15,000 feluccajacht. Salary $180,000</p>"
+    ) is True
+    assert feluccajachtmix.pay_high == 180_000
+    feluccaschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccaschiponly"
+    )
+    assert _apply_listing(
+        feluccaschiponly, "<p>$15,000 feluccaschip. Apply now.</p>"
+    ) is False
+    assert feluccaschiponly.pay_high is None
+    feluccaschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccaschipmix"
+    )
+    assert _apply_listing(
+        feluccaschipmix, "<p>$15,000 feluccaschip. Salary $180,000</p>"
+    ) is True
+    assert feluccaschipmix.pay_high == 180_000
+    feluccatjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccatjalkonly"
+    )
+    assert _apply_listing(
+        feluccatjalkonly, "<p>$15,000 feluccatjalk. Apply now.</p>"
+    ) is False
+    assert feluccatjalkonly.pay_high is None
+    feluccatjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccatjalkmix"
+    )
+    assert _apply_listing(
+        feluccatjalkmix, "<p>$15,000 feluccatjalk. Salary $180,000</p>"
+    ) is True
+    assert feluccatjalkmix.pay_high == 180_000
+    feluccaboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccaboeieronly"
+    )
+    assert _apply_listing(
+        feluccaboeieronly, "<p>$15,000 feluccaboeier. Apply now.</p>"
+    ) is False
+    assert feluccaboeieronly.pay_high is None
+    feluccaboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/feluccaboeiermix"
+    )
+    assert _apply_listing(
+        feluccaboeiermix, "<p>$15,000 feluccaboeier. Salary $180,000</p>"
+    ) is True
+    assert feluccaboeiermix.pay_high == 180_000
     sampanonly = Opportunity(
         title="Engineer", url="https://jobs.example/sampanonly"
     )
