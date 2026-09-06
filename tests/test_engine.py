@@ -2523,6 +2523,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("$15,000 group car") == (None, None)
+    assert _parse_pay("$15,000 group vehicle") == (None, None)
+    assert _parse_pay("$15,000 group car insurance") == (None, None)
+    assert _parse_pay("$15,000 group vehicle insurance") == (None, None)
+    assert _parse_pay("group car of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group car. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group vehicle. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2642,6 +2649,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 parking insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 auto") == (None, 15_000)
     assert _parse_pay("$15,000 car") == (None, 15_000)
+    assert _parse_pay("$15,000 vehicle") == (None, 15_000)
     assert _parse_pay("$15,000 home") == (None, 15_000)
     assert _parse_pay("$15,000 umbrella") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
@@ -3483,6 +3491,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group auto $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group auto insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group car insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group vehicle insurance $15,000") == (
         None,
         180_000,
     )
@@ -8257,6 +8273,18 @@ def test_guess_pay_annualizes_hourly():
         "<p>base $180,000 group auto insurance $15,000</p>",
     ) is True
     assert groupautoinsbase.pay_high == 180_000
+    groupcaronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcaronly"
+    )
+    assert _apply_listing(
+        groupcaronly, "<p>$15,000 group car. Apply now.</p>"
+    ) is False
+    assert groupcaronly.pay_high is None
+    groupcarmix = Opportunity(title="Engineer", url="https://jobs.example/groupcarmix")
+    assert _apply_listing(
+        groupcarmix, "<p>$15,000 group car. Salary $180,000</p>"
+    ) is True
+    assert groupcarmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
