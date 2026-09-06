@@ -3296,6 +3296,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 skimboard insurance") == (None, None)
     assert _parse_pay("skimboard of $15,000") == (None, None)
     assert _parse_pay("$15,000 skimboard. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 bodyboard") == (None, None)
+    assert _parse_pay("$15,000 bodyboards") == (None, None)
+    assert _parse_pay("$15,000 body-board") == (None, None)
+    assert _parse_pay("$15,000 body board") == (None, None)
+    assert _parse_pay("$15,000 bodyboard insurance") == (None, None)
+    assert _parse_pay("bodyboard of $15,000") == (None, None)
+    assert _parse_pay("$15,000 bodyboard. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -3686,6 +3693,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 skimp") == (None, 15_000)
     assert _parse_pay("$15,000 skimboar") == (None, 15_000)
     assert _parse_pay("$15,000 skimboarding") == (None, 15_000)
+    assert _parse_pay("$15,000 body") == (None, 15_000)
+    assert _parse_pay("$15,000 bodyboar") == (None, 15_000)
+    assert _parse_pay("$15,000 bodyboarding") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -5460,6 +5470,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 skim board $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 skimboard boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bodyboard $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 bodyboard insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 body board $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch insurance $15,000") == (
         None,
@@ -12325,6 +12341,20 @@ def test_guess_pay_annualizes_hourly():
         skimboardmix, "<p>$15,000 skimboard. Salary $180,000</p>"
     ) is True
     assert skimboardmix.pay_high == 180_000
+    bodyboardonly = Opportunity(
+        title="Engineer", url="https://jobs.example/bodyboardonly"
+    )
+    assert _apply_listing(
+        bodyboardonly, "<p>$15,000 bodyboard. Apply now.</p>"
+    ) is False
+    assert bodyboardonly.pay_high is None
+    bodyboardmix = Opportunity(
+        title="Engineer", url="https://jobs.example/bodyboardmix"
+    )
+    assert _apply_listing(
+        bodyboardmix, "<p>$15,000 bodyboard. Salary $180,000</p>"
+    ) is True
+    assert bodyboardmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
