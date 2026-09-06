@@ -3439,6 +3439,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("theft insurance of $15,000") == (None, None)
     assert _parse_pay("$15,000 identity insurance. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 theft insurance. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 identity protection") == (None, None)
+    assert _parse_pay("$15,000 theft protection") == (None, None)
+    assert _parse_pay("identity protection of $15,000") == (None, None)
+    assert _parse_pay("$15,000 identity protection. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 protection") == (None, 15_000)
     assert _parse_pay("$15,000 AD&D insurance") == (None, None)
     assert _parse_pay("$15,000 AD and D") == (None, None)
     assert _parse_pay("$15,000 AD & D") == (None, None)
@@ -8861,6 +8866,16 @@ def test_apply_listing_does_not_rank_equity_as_salary():
         theftinsonly, "<p>$15,000 theft insurance. Apply now.</p>"
     ) is False
     assert theftinsonly.pay_high is None
+    idprotonly = Opportunity(title="Engineer", url="https://jobs.example/idprotonly")
+    assert _apply_listing(
+        idprotonly, "<p>$15,000 identity protection. Apply now.</p>"
+    ) is False
+    assert idprotonly.pay_high is None
+    idprotmix = Opportunity(title="Engineer", url="https://jobs.example/idprotmix")
+    assert _apply_listing(
+        idprotmix, "<p>$15,000 identity protection. Salary $180,000</p>"
+    ) is True
+    assert idprotmix.pay_high == 180_000
     idbare = Opportunity(title="Engineer", url="https://jobs.example/idbare")
     assert _apply_listing(idbare, "<p>$15,000 ID. Apply now.</p>") is True
     assert idbare.pay_high == 15_000
