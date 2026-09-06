@@ -3182,6 +3182,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 deck boat insurance") == (None, None)
     assert _parse_pay("deck boat of $15,000") == (None, None)
     assert _parse_pay("$15,000 deck boat. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 center console") == (None, None)
+    assert _parse_pay("$15,000 center-console") == (None, None)
+    assert _parse_pay("$15,000 centerconsole") == (None, None)
+    assert _parse_pay("$15,000 centre console") == (None, None)
+    assert _parse_pay("$15,000 center consoles") == (None, None)
+    assert _parse_pay("$15,000 center console insurance") == (None, None)
+    assert _parse_pay("center console of $15,000") == (None, None)
+    assert _parse_pay("$15,000 center console. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3402,6 +3410,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 deck") == (None, 15_000)
     assert _parse_pay("$15,000 deck boa") == (None, 15_000)
     assert _parse_pay("$15,000 deck boating") == (None, 15_000)
+    assert _parse_pay("$15,000 center") == (None, 15_000)
+    assert _parse_pay("$15,000 center conso") == (None, 15_000)
+    assert _parse_pay("$15,000 center consoling") == (None, 15_000)
     assert _parse_pay("$15,000 group schoone") == (None, 15_000)
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
@@ -4909,6 +4920,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 deck boat $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 deck boat insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 center console $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 center console insurance $15,000") == (
         None,
         180_000,
     )
@@ -11297,6 +11313,20 @@ def test_guess_pay_annualizes_hourly():
         deckmix, "<p>$15,000 deck boat. Salary $180,000</p>"
     ) is True
     assert deckmix.pay_high == 180_000
+    centeronly = Opportunity(
+        title="Engineer", url="https://jobs.example/centeronly"
+    )
+    assert _apply_listing(
+        centeronly, "<p>$15,000 center console. Apply now.</p>"
+    ) is False
+    assert centeronly.pay_high is None
+    centermix = Opportunity(
+        title="Engineer", url="https://jobs.example/centermix"
+    )
+    assert _apply_listing(
+        centermix, "<p>$15,000 center console. Salary $180,000</p>"
+    ) is True
+    assert centermix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
