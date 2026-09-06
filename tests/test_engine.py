@@ -2554,6 +2554,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group tenants insurance") == (None, None)
     assert _parse_pay("group tenants of $15,000") == (None, None)
     assert _parse_pay("$15,000 group tenants. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group pet") == (None, None)
+    assert _parse_pay("$15,000 group pet insurance") == (None, None)
+    assert _parse_pay("$15,000 group pet benefit") == (None, None)
+    assert _parse_pay("group pet of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group pet. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3574,6 +3579,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group tenants $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group tenants insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pet $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group pet insurance $15,000") == (
         None,
         180_000,
     )
@@ -8432,6 +8442,18 @@ def test_guess_pay_annualizes_hourly():
         grouptenantsmix, "<p>$15,000 group tenants. Salary $180,000</p>"
     ) is True
     assert grouptenantsmix.pay_high == 180_000
+    grouppetonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouppetonly"
+    )
+    assert _apply_listing(
+        grouppetonly, "<p>$15,000 group pet. Apply now.</p>"
+    ) is False
+    assert grouppetonly.pay_high is None
+    grouppetmix = Opportunity(title="Engineer", url="https://jobs.example/grouppetmix")
+    assert _apply_listing(
+        grouppetmix, "<p>$15,000 group pet. Salary $180,000</p>"
+    ) is True
+    assert grouppetmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
