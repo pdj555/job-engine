@@ -3146,6 +3146,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 row boat insurance") == (None, None)
     assert _parse_pay("row boat of $15,000") == (None, None)
     assert _parse_pay("$15,000 row boat. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 dory") == (None, None)
+    assert _parse_pay("$15,000 dories") == (None, None)
+    assert _parse_pay("$15,000 dory insurance") == (None, None)
+    assert _parse_pay("dory of $15,000") == (None, None)
+    assert _parse_pay("$15,000 dory. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3358,6 +3363,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 row") == (None, 15_000)
     assert _parse_pay("$15,000 row boa") == (None, 15_000)
     assert _parse_pay("$15,000 row boating") == (None, 15_000)
+    assert _parse_pay("$15,000 dor") == (None, 15_000)
+    assert _parse_pay("$15,000 dorying") == (None, 15_000)
     assert _parse_pay("$15,000 group schoone") == (None, 15_000)
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
@@ -4827,6 +4834,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 row boat $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 row boat insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 dory $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 dory insurance $15,000") == (
         None,
         180_000,
     )
@@ -11139,6 +11151,16 @@ def test_guess_pay_annualizes_hourly():
         rowmix, "<p>$15,000 row boat. Salary $180,000</p>"
     ) is True
     assert rowmix.pay_high == 180_000
+    doryonly = Opportunity(title="Engineer", url="https://jobs.example/doryonly")
+    assert _apply_listing(
+        doryonly, "<p>$15,000 dory. Apply now.</p>"
+    ) is False
+    assert doryonly.pay_high is None
+    dorymix = Opportunity(title="Engineer", url="https://jobs.example/dorymix")
+    assert _apply_listing(
+        dorymix, "<p>$15,000 dory. Salary $180,000</p>"
+    ) is True
+    assert dorymix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
