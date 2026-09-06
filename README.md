@@ -33,7 +33,7 @@ One number orders every result:
 $/hour  =  annual pay ÷ (hours per week × 50)
 ```
 
-Office roles take a 30% penalty. Missing pay or hours are imputed conservatively, so thin listings sink to the bottom.
+Office roles take a 30% penalty. Pay is taken from the listing text only — seniority never invents a number. Missing hours assume 40/wk for rank; unknown pay scores 0, so thin listings sink.
 
 ## Autonomous agent
 

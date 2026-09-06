@@ -25,6 +25,8 @@ class Opportunity(BaseModel):
     # Metadata
     source: str = ""
     posted: Optional[datetime] = None
+    pay_source: Optional[str] = None
+    hours_source: Optional[str] = None
 
     @property
     def pay(self) -> Optional[int]:

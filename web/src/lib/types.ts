@@ -7,6 +7,8 @@ export type Opportunity = {
   dollars_per_hour: number | null;
   remote: boolean;
   score: number;
+  pay_source: "posted" | null;
+  hours_source: "posted" | null;
 };
 
 export type SearchResponse = {

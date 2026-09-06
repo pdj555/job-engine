@@ -12,15 +12,15 @@ from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 
 from config.settings import settings
-from src.engine import Engine
+from src.engine import Engine, opportunity_from_raw
 from src.models import Opportunity
 
 INSTRUCTIONS = """You are an opportunity scout. Use search_web to research the
 open web across remote roles, contracts/freelance, grants, and cofounder/equity.
 Then return searches you actually ran plus opportunities you found.
 
-pay = annual USD (null if unknown). hours_per_week = number (null if unknown).
-Only include http(s) listing URLs, never search-result homepages."""
+Copy title, url, company, remote, and any stated pay/hours into description.
+Do not invent pay or hours. Only include http(s) listing URLs."""
 
 
 @dataclass
@@ -35,8 +35,7 @@ class ScoutHit(BaseModel):
     title: str = "Unknown"
     url: str
     company: str | None = None
-    pay: int | None = None
-    hours_per_week: int | None = None
+    description: str | None = None
     remote: bool = True
 
 
@@ -56,19 +55,20 @@ def _angles(query: str) -> list[str]:
 
 def _rank(items: list[dict]) -> list[Opportunity]:
     """Build Opportunity models and order by $/hour (highest first). Deterministic."""
-    opportunities = [
-        Opportunity(
-            title=o.get("title", "Unknown"),
-            url=o["url"],
-            company=o.get("company"),
-            pay_high=o.get("pay"),
-            hours_per_week=o.get("hours_per_week"),
-            remote=o.get("remote", True),
-            source="agent",
+    opportunities = []
+    for o in items:
+        parsed = opportunity_from_raw(
+            {
+                "title": o.get("title") or "Unknown",
+                "url": o.get("url") or "",
+                "company": o.get("company"),
+                "description": o.get("description") or "",
+                "remote": o.get("remote", True),
+                "source": "agent",
+            }
         )
-        for o in items
-        if o.get("url")
-    ]
+        if parsed:
+            opportunities.append(parsed)
     return sorted(opportunities, key=lambda o: o.score(), reverse=True)
 
 

@@ -41,6 +41,8 @@ def _payload(results: list[Opportunity]) -> dict:
                 "dollars_per_hour": o.dollars_per_hour,
                 "remote": o.remote,
                 "score": o.score(),
+                "pay_source": o.pay_source,
+                "hours_source": o.hours_source,
             }
             for o in results
         ],

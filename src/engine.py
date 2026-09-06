@@ -9,6 +9,7 @@ from typing import Optional
 import httpx
 from openai import AsyncOpenAI
 
+from src.compensation import canonicalize_url, parse_compensation
 from src.models import Opportunity
 from config.settings import settings
 
@@ -67,14 +68,13 @@ class Engine:
             if isinstance(r, list):
                 all_results.extend(r)
 
-        # Dedupe by URL
         seen = set()
         unique = []
         for r in all_results:
-            url = r.get("url", "")
+            url = canonicalize_url(r.get("url", ""))
             if url and url not in seen:
                 seen.add(url)
-                unique.append(r)
+                unique.append({**r, "url": url})
 
         return unique
 
@@ -144,8 +144,6 @@ Return as JSON array with objects containing:
 - company (if known)
 - url
 - description
-- estimated_pay (annual USD, just a number)
-- estimated_hours_per_week (just a number)
 - remote (boolean)
 
 Only return the JSON array, nothing else."""
@@ -180,8 +178,6 @@ Only return the JSON array, nothing else."""
                                 "title": r.get("title", ""),
                                 "url": r.get("url", ""),
                                 "description": r.get("description", ""),
-                                "pay": r.get("estimated_pay"),
-                                "hours": r.get("estimated_hours_per_week"),
                                 "remote": r.get("remote", True),
                                 "source": "perplexity"
                             }
@@ -203,25 +199,9 @@ Only return the JSON array, nothing else."""
         if not raw_results:
             return []
 
-        # If we have OpenAI, use it to extract structured data
         if self.openai:
             return await self._extract_with_llm(raw_results, query)
-
-        # Otherwise, create basic opportunities with conservative guesses
-        return [
-            Opportunity(
-                title=r.get("title", "Unknown"),
-                url=r.get("url", ""),
-                description=r.get("description", ""),
-                company=r.get("company"),
-                pay_high=r.get("pay") or _guess_pay(r.get("title", ""), r.get("description", "")),
-                hours_per_week=r.get("hours")
-                or _guess_hours(r.get("title", ""), r.get("description", "")),
-                remote=r.get("remote", _guess_remote(r.get("title", ""), r.get("description", ""))),
-                source=r.get("source", "")
-            )
-            for r in raw_results if r.get("url")
-        ]
+        return [o for r in raw_results if (o := opportunity_from_raw(r))]
 
     async def _extract_with_llm(
         self,
@@ -261,13 +241,9 @@ For each result, extract:
 - title
 - company (if mentioned)
 - url
-- pay_low (annual USD estimate, null if unknown)
-- pay_high (annual USD estimate, null if unknown)
-- hours_per_week (estimate, null if unknown)
 - remote (true/false, assume true if not specified)
 
-Return JSON array. Be aggressive estimating pay/hours from context clues.
-If it looks like full-time, assume 40hrs. If senior role, estimate $150k+.
+Return JSON array. Do not invent compensation.
 Only return valid JSON array."""
 
         try:
@@ -285,39 +261,27 @@ Only return valid JSON array."""
             data = json.loads(content)
             items = data if isinstance(data, list) else data.get("opportunities", data.get("results", []))
 
+            by_url = {canonicalize_url(r["url"]): r for r in batch if r.get("url")}
             opportunities = []
             for item in items:
-                if not item.get("url"):
+                raw = by_url.get(canonicalize_url(item.get("url") or ""))
+                if not raw:
                     continue
-
-                opp = Opportunity(
-                    title=item.get("title", "Unknown"),
-                    company=item.get("company"),
-                    url=item.get("url"),
-                    description=item.get("description", ""),
-                    pay_low=item.get("pay_low"),
-                    pay_high=item.get("pay_high"),
-                    hours_per_week=item.get("hours_per_week"),
-                    remote=item.get("remote", True),
-                    source="extracted"
-                )
-                opp.efficiency = opp.dollars_per_hour
-                opportunities.append(opp)
-
+                parsed = opportunity_from_raw({**raw, "source": "extracted"})
+                if not parsed:
+                    continue
+                if item.get("title"):
+                    parsed.title = item["title"]
+                if item.get("company"):
+                    parsed.company = item["company"]
+                if item.get("remote") is not None:
+                    parsed.remote = bool(item["remote"])
+                opportunities.append(parsed)
             return opportunities
 
         except Exception as e:
             print(f"LLM extraction error: {e}")
-            # Fallback to basic extraction
-            return [
-                Opportunity(
-                    title=r.get("title", "Unknown"),
-                    url=r.get("url", ""),
-                    description=r.get("description", ""),
-                    source=r.get("source", "")
-                )
-                for r in batch if r.get("url")
-            ]
+            return [o for r in batch if (o := opportunity_from_raw(r))]
 
     async def research(self, opportunity: Opportunity) -> str:
         """Deep dive on a specific opportunity."""
@@ -396,22 +360,32 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
-def _guess_pay(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("senior", "staff", "principal", "lead")):
-        return 180_000
-    if any(w in text for w in ("junior", "entry", "intern")):
-        return 90_000
-    if any(w in text for w in ("contract", "freelance", "consultant")):
-        return 130_000
-    return 120_000
-
-
-def _guess_hours(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("contract", "freelance", "part-time", "part time")):
-        return 30
-    return 40
+def opportunity_from_raw(raw: dict) -> Opportunity | None:
+    """Build an opportunity from a search hit. Pay/hours only if the text states them."""
+    url = canonicalize_url(raw.get("url", ""))
+    if not url:
+        return None
+    title = raw.get("title") or "Unknown"
+    description = raw.get("description") or ""
+    parsed = parse_compensation(f"{title} {description}")
+    remote = raw.get("remote")
+    if remote is None:
+        remote = _guess_remote(title, description)
+    opp = Opportunity(
+        title=title,
+        url=url,
+        description=description,
+        company=raw.get("company"),
+        pay_low=parsed.pay_low,
+        pay_high=parsed.pay_high,
+        hours_per_week=parsed.hours,
+        remote=bool(remote),
+        source=raw.get("source") or "",
+        pay_source="posted" if parsed.posted else None,
+        hours_source="posted" if parsed.hours else None,
+    )
+    opp.efficiency = opp.dollars_per_hour
+    return opp
 
 
 def _guess_remote(title: str, description: str) -> bool:

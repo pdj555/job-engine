@@ -11,24 +11,54 @@ from src.models import Opportunity
 
 def test_rank_orders_by_dollars_per_hour():
     items = [
-        {"title": "Low", "url": "u1", "pay": 100_000, "hours_per_week": 40},   # $50/hr
-        {"title": "High", "url": "u2", "pay": 200_000, "hours_per_week": 20},  # $200/hr
+        {"title": "Low $100k 40 hours/week", "url": "u1"},
+        {"title": "High $200k 20 hours/week", "url": "u2"},
     ]
-    assert [o.title for o in _rank(items)] == ["High", "Low"]
+    assert [o.title for o in _rank(items)] == ["High $200k 20 hours/week", "Low $100k 40 hours/week"]
 
 
 def test_rank_skips_items_without_url():
     assert _rank([{"title": "no url", "pay": 100_000, "hours_per_week": 10}]) == []
 
 
+def test_rank_ignores_invented_pay_fields():
+    ranked = _rank(
+        [
+            {"title": "Stated $200k", "url": "https://jobs.lever.co/acme/abc/apply"},
+            {
+                "title": "Silent",
+                "url": "u2",
+                "pay": 100_000,
+                "hours_per_week": 40,
+                "description": "no numbers here",
+            },
+        ]
+    )
+    assert ranked[0].url == "https://jobs.lever.co/acme/abc"
+    assert ranked[0].pay_source == "posted"
+    assert ranked[1].pay is None
+    assert ranked[1].pay_source is None
+    assert ranked[1].score() == 0
+
+
+def test_rank_reads_pay_from_description():
+    ranked = _rank(
+        [{"title": "Engineer", "url": "u", "description": "$180k · 40 hours/week"}]
+    )
+    assert ranked[0].pay == 180_000
+    assert ranked[0].hours_per_week == 40
+    assert ranked[0].pay_source == "posted"
+
+
 def test_rank_builds_opportunity_models_with_fields():
     ranked = _rank(
-        [{"title": "X", "url": "u", "company": "Acme", "pay": 120_000,
-          "hours_per_week": 30, "remote": False}]
+        [{"title": "X $120k 30 hours/week", "url": "u", "company": "Acme", "remote": False}]
     )
     assert isinstance(ranked[0], Opportunity)
     assert ranked[0].company == "Acme"
     assert ranked[0].remote is False
+    assert ranked[0].pay == 120_000
+    assert ranked[0].hours_per_week == 30
 
 
 # --- parsing model replies -----------------------------------------------
@@ -80,8 +110,8 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
     out = ScoutResult(
         searches=["remote ml contract", "ai grants"],
         opportunities=[
-            ScoutHit(title="Cheap", url="u1", pay=100_000, hours_per_week=40),
-            ScoutHit(title="Lush", url="u2", pay=200_000, hours_per_week=20),
+            ScoutHit(title="Cheap $100k 40 hours/week", url="u1"),
+            ScoutHit(title="Lush $200k 20 hours/week", url="u2"),
         ],
     )
 
@@ -93,5 +123,8 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
     run = asyncio.run(agent_run("find me work"))
 
     assert run.searches == ["remote ml contract", "ai grants"]
-    assert [o.title for o in run.ranked] == ["Lush", "Cheap"]
+    assert [o.title for o in run.ranked] == [
+        "Lush $200k 20 hours/week",
+        "Cheap $100k 40 hours/week",
+    ]
     assert run.ranked[0].score() == 200.0
