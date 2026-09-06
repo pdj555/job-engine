@@ -3761,6 +3761,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 coracle insurance") == (None, None)
     assert _parse_pay("coracle of $15,000") == (None, None)
     assert _parse_pay("$15,000 coracle. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 xebec") == (None, None)
+    assert _parse_pay("$15,000 xebecs") == (None, None)
+    assert _parse_pay("$15,000 xebec insurance") == (None, None)
+    assert _parse_pay("xebec of $15,000") == (None, None)
+    assert _parse_pay("$15,000 xebec. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -4257,6 +4262,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 pirouette") == (None, 15_000)
     assert _parse_pay("$15,000 corac") == (None, 15_000)
     assert _parse_pay("$15,000 coral") == (None, 15_000)
+    assert _parse_pay("$15,000 xebe") == (None, 15_000)
+    assert _parse_pay("$15,000 xeb") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -6606,6 +6613,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 coracle $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 coracle insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 xebec $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 xebec insurance $15,000") == (
         None,
         180_000,
     )
@@ -14454,6 +14466,20 @@ def test_guess_pay_annualizes_hourly():
         coraclemix, "<p>$15,000 coracle. Salary $180,000</p>"
     ) is True
     assert coraclemix.pay_high == 180_000
+    xebeconly = Opportunity(
+        title="Engineer", url="https://jobs.example/xebeconly"
+    )
+    assert _apply_listing(
+        xebeconly, "<p>$15,000 xebec. Apply now.</p>"
+    ) is False
+    assert xebeconly.pay_high is None
+    xebecmix = Opportunity(
+        title="Engineer", url="https://jobs.example/xebecmix"
+    )
+    assert _apply_listing(
+        xebecmix, "<p>$15,000 xebec. Salary $180,000</p>"
+    ) is True
+    assert xebecmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
