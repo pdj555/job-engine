@@ -3490,6 +3490,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group westlander insurance") == (None, None)
     assert _parse_pay("group westlander of $15,000") == (None, None)
     assert _parse_pay("$15,000 group westlander. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group platbodem") == (None, None)
+    assert _parse_pay("$15,000 group platbodems") == (None, None)
+    assert _parse_pay("$15,000 group platbodemen") == (None, None)
+    assert _parse_pay("$15,000 group platbodem insurance") == (None, None)
+    assert _parse_pay("group platbodem of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group platbodem. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ketch") == (None, None)
     assert _parse_pay("$15,000 group ketches") == (None, None)
     assert _parse_pay("$15,000 group ketch insurance") == (None, None)
@@ -5679,6 +5685,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group bun") == (None, 15_000)
     assert _parse_pay("$15,000 group westland") == (None, 15_000)
     assert _parse_pay("$15,000 group west") == (None, 15_000)
+    assert _parse_pay("$15,000 group platbod") == (None, 15_000)
+    assert _parse_pay("$15,000 group bodem") == (None, 15_000)
+    assert _parse_pay("$15,000 group plat") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboa") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboating") == (None, 15_000)
     assert _parse_pay("$15,000 group wake") == (None, 15_000)
@@ -7561,6 +7570,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group westlander $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group westlander insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group platbodem $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group platbodem insurance $15,000") == (
         None,
         180_000,
     )
@@ -15910,6 +15924,20 @@ def test_guess_pay_annualizes_hourly():
         groupwestlandermix, "<p>$15,000 group westlander. Salary $180,000</p>"
     ) is True
     assert groupwestlandermix.pay_high == 180_000
+    groupplatbodemonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupplatbodemonly"
+    )
+    assert _apply_listing(
+        groupplatbodemonly, "<p>$15,000 group platbodem. Apply now.</p>"
+    ) is False
+    assert groupplatbodemonly.pay_high is None
+    groupplatbodemmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupplatbodemmix"
+    )
+    assert _apply_listing(
+        groupplatbodemmix, "<p>$15,000 group platbodem. Salary $180,000</p>"
+    ) is True
+    assert groupplatbodemmix.pay_high == 180_000
     groupketchonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupketchonly"
     )
