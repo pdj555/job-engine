@@ -8895,6 +8895,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group walkaround insurance") == (None, None)
     assert _parse_pay("group walkaround of $15,000") == (None, None)
     assert _parse_pay("$15,000 group walkaround. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group walkaroundjacht") == (None, None)
+    assert _parse_pay("$15,000 group walkaround-jacht") == (None, None)
+    assert _parse_pay("$15,000 group walkaround jacht") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundjachten") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundjacht insurance") == (None, None)
+    assert _parse_pay("group walkaroundjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group walkaroundschip") == (None, None)
+    assert _parse_pay("$15,000 group walkaround-schip") == (None, None)
+    assert _parse_pay("$15,000 group walkaround schip") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundschepen") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundschip insurance") == (None, None)
+    assert _parse_pay("group walkaroundschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group walkaroundtjalk") == (None, None)
+    assert _parse_pay("$15,000 group walkaround-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group walkaround tjalk") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundtjalken") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundtjalk insurance") == (None, None)
+    assert _parse_pay("group walkaroundtjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundtjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group walkaroundboeier") == (None, None)
+    assert _parse_pay("$15,000 group walkaround-boeier") == (None, None)
+    assert _parse_pay("$15,000 group walkaround boeier") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundboeiers") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundboeier insurance") == (None, None)
+    assert _parse_pay("group walkaroundboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group walkaroundboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group bay boat") == (None, None)
     assert _parse_pay("$15,000 group bay-boat") == (None, None)
     assert _parse_pay("$15,000 group bayboat") == (None, None)
@@ -15711,6 +15739,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 walkaround insurance") == (None, None)
     assert _parse_pay("walkaround of $15,000") == (None, None)
     assert _parse_pay("$15,000 walkaround. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 walkaroundjacht") == (None, None)
+    assert _parse_pay("$15,000 walkaround-jacht") == (None, None)
+    assert _parse_pay("$15,000 walkaround jacht") == (None, None)
+    assert _parse_pay("$15,000 walkaroundjachten") == (None, None)
+    assert _parse_pay("$15,000 walkaroundjacht insurance") == (None, None)
+    assert _parse_pay("walkaroundjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 walkaroundjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 walkaroundschip") == (None, None)
+    assert _parse_pay("$15,000 walkaround-schip") == (None, None)
+    assert _parse_pay("$15,000 walkaround schip") == (None, None)
+    assert _parse_pay("$15,000 walkaroundschepen") == (None, None)
+    assert _parse_pay("$15,000 walkaroundschip insurance") == (None, None)
+    assert _parse_pay("walkaroundschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 walkaroundschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 walkaroundtjalk") == (None, None)
+    assert _parse_pay("$15,000 walkaround-tjalk") == (None, None)
+    assert _parse_pay("$15,000 walkaround tjalk") == (None, None)
+    assert _parse_pay("$15,000 walkaroundtjalken") == (None, None)
+    assert _parse_pay("$15,000 walkaroundtjalk insurance") == (None, None)
+    assert _parse_pay("walkaroundtjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 walkaroundtjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 walkaroundboeier") == (None, None)
+    assert _parse_pay("$15,000 walkaround-boeier") == (None, None)
+    assert _parse_pay("$15,000 walkaround boeier") == (None, None)
+    assert _parse_pay("$15,000 walkaroundboeiers") == (None, None)
+    assert _parse_pay("$15,000 walkaroundboeier insurance") == (None, None)
+    assert _parse_pay("walkaroundboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 walkaroundboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 bay boat") == (None, None)
     assert _parse_pay("$15,000 bay-boat") == (None, None)
     assert _parse_pay("$15,000 bayboat") == (None, None)
@@ -17540,6 +17596,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 walk") == (None, 15_000)
     assert _parse_pay("$15,000 walkaroun") == (None, 15_000)
     assert _parse_pay("$15,000 walkarounding") == (None, 15_000)
+    assert _parse_pay("$15,000 walkaroundjac") == (None, 15_000)
+    assert _parse_pay("$15,000 walkaroundschi") == (None, 15_000)
+    assert _parse_pay("$15,000 walkaroundtjal") == (None, 15_000)
+    assert _parse_pay("$15,000 walkaroundboei") == (None, 15_000)
     assert _parse_pay("$15,000 bay") == (None, 15_000)
     assert _parse_pay("$15,000 bay boa") == (None, 15_000)
     assert _parse_pay("$15,000 bay boating") == (None, 15_000)
@@ -17691,6 +17751,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group walk") == (None, 15_000)
     assert _parse_pay("$15,000 group walkaroun") == (None, 15_000)
     assert _parse_pay("$15,000 group walkarounding") == (None, 15_000)
+    assert _parse_pay("$15,000 group walkaroundjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group walkaroundschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group walkaroundtjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group walkaroundboei") == (None, 15_000)
     assert _parse_pay("$15,000 group bay") == (None, 15_000)
     assert _parse_pay("$15,000 group bay boa") == (None, 15_000)
     assert _parse_pay("$15,000 group bay boating") == (None, 15_000)
@@ -26963,6 +27027,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group walkaroundjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaround jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaroundschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaround schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaroundtjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaround tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaroundboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group walkaround boeier insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group bay boat $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group bay boat insurance $15,000") == (
         None,
@@ -34825,6 +34921,38 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 walkaround $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 walkaround insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaroundjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaround jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaroundschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaround schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaroundtjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaround tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaroundboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 walkaround boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -53392,6 +53520,62 @@ def test_guess_pay_annualizes_hourly():
         groupwalkaroundmix, "<p>$15,000 group walkaround. Salary $180,000</p>"
     ) is True
     assert groupwalkaroundmix.pay_high == 180_000
+    groupwalkaroundjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundjachtonly"
+    )
+    assert _apply_listing(
+        groupwalkaroundjachtonly, "<p>$15,000 group walkaroundjacht. Apply now.</p>"
+    ) is False
+    assert groupwalkaroundjachtonly.pay_high is None
+    groupwalkaroundjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundjachtmix"
+    )
+    assert _apply_listing(
+        groupwalkaroundjachtmix, "<p>$15,000 group walkaroundjacht. Salary $180,000</p>"
+    ) is True
+    assert groupwalkaroundjachtmix.pay_high == 180_000
+    groupwalkaroundschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundschiponly"
+    )
+    assert _apply_listing(
+        groupwalkaroundschiponly, "<p>$15,000 group walkaroundschip. Apply now.</p>"
+    ) is False
+    assert groupwalkaroundschiponly.pay_high is None
+    groupwalkaroundschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundschipmix"
+    )
+    assert _apply_listing(
+        groupwalkaroundschipmix, "<p>$15,000 group walkaroundschip. Salary $180,000</p>"
+    ) is True
+    assert groupwalkaroundschipmix.pay_high == 180_000
+    groupwalkaroundtjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundtjalkonly"
+    )
+    assert _apply_listing(
+        groupwalkaroundtjalkonly, "<p>$15,000 group walkaroundtjalk. Apply now.</p>"
+    ) is False
+    assert groupwalkaroundtjalkonly.pay_high is None
+    groupwalkaroundtjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundtjalkmix"
+    )
+    assert _apply_listing(
+        groupwalkaroundtjalkmix, "<p>$15,000 group walkaroundtjalk. Salary $180,000</p>"
+    ) is True
+    assert groupwalkaroundtjalkmix.pay_high == 180_000
+    groupwalkaroundboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundboeieronly"
+    )
+    assert _apply_listing(
+        groupwalkaroundboeieronly, "<p>$15,000 group walkaroundboeier. Apply now.</p>"
+    ) is False
+    assert groupwalkaroundboeieronly.pay_high is None
+    groupwalkaroundboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupwalkaroundboeiermix"
+    )
+    assert _apply_listing(
+        groupwalkaroundboeiermix, "<p>$15,000 group walkaroundboeier. Salary $180,000</p>"
+    ) is True
+    assert groupwalkaroundboeiermix.pay_high == 180_000
     groupbayonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupbayonly"
     )
@@ -67265,6 +67449,62 @@ def test_guess_pay_annualizes_hourly():
         walkaroundmix, "<p>$15,000 walkaround. Salary $180,000</p>"
     ) is True
     assert walkaroundmix.pay_high == 180_000
+    walkaroundjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundjachtonly"
+    )
+    assert _apply_listing(
+        walkaroundjachtonly, "<p>$15,000 walkaroundjacht. Apply now.</p>"
+    ) is False
+    assert walkaroundjachtonly.pay_high is None
+    walkaroundjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundjachtmix"
+    )
+    assert _apply_listing(
+        walkaroundjachtmix, "<p>$15,000 walkaroundjacht. Salary $180,000</p>"
+    ) is True
+    assert walkaroundjachtmix.pay_high == 180_000
+    walkaroundschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundschiponly"
+    )
+    assert _apply_listing(
+        walkaroundschiponly, "<p>$15,000 walkaroundschip. Apply now.</p>"
+    ) is False
+    assert walkaroundschiponly.pay_high is None
+    walkaroundschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundschipmix"
+    )
+    assert _apply_listing(
+        walkaroundschipmix, "<p>$15,000 walkaroundschip. Salary $180,000</p>"
+    ) is True
+    assert walkaroundschipmix.pay_high == 180_000
+    walkaroundtjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundtjalkonly"
+    )
+    assert _apply_listing(
+        walkaroundtjalkonly, "<p>$15,000 walkaroundtjalk. Apply now.</p>"
+    ) is False
+    assert walkaroundtjalkonly.pay_high is None
+    walkaroundtjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundtjalkmix"
+    )
+    assert _apply_listing(
+        walkaroundtjalkmix, "<p>$15,000 walkaroundtjalk. Salary $180,000</p>"
+    ) is True
+    assert walkaroundtjalkmix.pay_high == 180_000
+    walkaroundboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundboeieronly"
+    )
+    assert _apply_listing(
+        walkaroundboeieronly, "<p>$15,000 walkaroundboeier. Apply now.</p>"
+    ) is False
+    assert walkaroundboeieronly.pay_high is None
+    walkaroundboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/walkaroundboeiermix"
+    )
+    assert _apply_listing(
+        walkaroundboeiermix, "<p>$15,000 walkaroundboeier. Salary $180,000</p>"
+    ) is True
+    assert walkaroundboeiermix.pay_high == 180_000
     bayonly = Opportunity(title="Engineer", url="https://jobs.example/bayonly")
     assert _apply_listing(
         bayonly, "<p>$15,000 bay boat. Apply now.</p>"
