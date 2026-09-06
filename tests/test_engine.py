@@ -3148,6 +3148,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group umiaq insurance") == (None, None)
     assert _parse_pay("group umiaq of $15,000") == (None, None)
     assert _parse_pay("$15,000 group umiaq. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group knarr") == (None, None)
+    assert _parse_pay("$15,000 group knarrs") == (None, None)
+    assert _parse_pay("$15,000 group knarr insurance") == (None, None)
+    assert _parse_pay("group knarr of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group knarr. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ketch") == (None, None)
     assert _parse_pay("$15,000 group ketches") == (None, None)
     assert _parse_pay("$15,000 group ketch insurance") == (None, None)
@@ -4690,6 +4695,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group bidark") == (None, 15_000)
     assert _parse_pay("$15,000 group qaja") == (None, 15_000)
     assert _parse_pay("$15,000 group qaj") == (None, 15_000)
+    assert _parse_pay("$15,000 group knar") == (None, 15_000)
+    assert _parse_pay("$15,000 group knarrish") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboa") == (None, 15_000)
     assert _parse_pay("$15,000 group wakeboating") == (None, 15_000)
     assert _parse_pay("$15,000 group wake") == (None, 15_000)
@@ -6247,6 +6254,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group umiaq $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group umiaq insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group knarr $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group knarr insurance $15,000") == (
         None,
         180_000,
     )
@@ -13361,6 +13373,20 @@ def test_guess_pay_annualizes_hourly():
         groupumiaqmix, "<p>$15,000 group umiaq. Salary $180,000</p>"
     ) is True
     assert groupumiaqmix.pay_high == 180_000
+    groupknarronly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupknarronly"
+    )
+    assert _apply_listing(
+        groupknarronly, "<p>$15,000 group knarr. Apply now.</p>"
+    ) is False
+    assert groupknarronly.pay_high is None
+    groupknarrmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupknarrmix"
+    )
+    assert _apply_listing(
+        groupknarrmix, "<p>$15,000 group knarr. Salary $180,000</p>"
+    ) is True
+    assert groupknarrmix.pay_high == 180_000
     groupketchonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupketchonly"
     )
