@@ -2847,6 +2847,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 hovercraft insurance") == (None, None)
     assert _parse_pay("hovercraft of $15,000") == (None, None)
     assert _parse_pay("$15,000 hovercraft. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pontoon") == (None, None)
+    assert _parse_pay("$15,000 pontoon boat") == (None, None)
+    assert _parse_pay("$15,000 pontoon insurance") == (None, None)
+    assert _parse_pay("pontoon of $15,000") == (None, None)
+    assert _parse_pay("$15,000 pontoon. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -2995,6 +3000,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 hover") == (None, 15_000)
     assert _parse_pay("$15,000 hovercrafting") == (None, 15_000)
     assert _parse_pay("$15,000 group hover") == (None, 15_000)
+    assert _parse_pay("$15,000 pont") == (None, 15_000)
+    assert _parse_pay("$15,000 pontooning") == (None, 15_000)
     assert _parse_pay("$15,000 snowmobile") == (None, 15_000)
     assert _parse_pay("$15,000 snowmachine") == (None, 15_000)
     assert _parse_pay("$15,000 RV") == (None, 15_000)
@@ -4140,6 +4147,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 hovercraft $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 hovercraft insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 pontoon $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pontoon boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pontoon insurance $15,000") == (
         None,
         180_000,
     )
@@ -9740,6 +9753,16 @@ def test_guess_pay_annualizes_hourly():
         hovercraftmix, "<p>$15,000 hovercraft. Salary $180,000</p>"
     ) is True
     assert hovercraftmix.pay_high == 180_000
+    pontoononly = Opportunity(title="Engineer", url="https://jobs.example/pontoononly")
+    assert _apply_listing(
+        pontoononly, "<p>$15,000 pontoon. Apply now.</p>"
+    ) is False
+    assert pontoononly.pay_high is None
+    pontoonmix = Opportunity(title="Engineer", url="https://jobs.example/pontoonmix")
+    assert _apply_listing(
+        pontoonmix, "<p>$15,000 pontoon. Salary $180,000</p>"
+    ) is True
+    assert pontoonmix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
