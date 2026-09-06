@@ -3657,6 +3657,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 catboat insurance") == (None, None)
     assert _parse_pay("catboat of $15,000") == (None, None)
     assert _parse_pay("$15,000 catboat. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 outrigger") == (None, None)
+    assert _parse_pay("$15,000 outriggers") == (None, None)
+    assert _parse_pay("$15,000 outrigger insurance") == (None, None)
+    assert _parse_pay("outrigger of $15,000") == (None, None)
+    assert _parse_pay("$15,000 outrigger. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -4131,6 +4136,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 cat boating") == (None, 15_000)
     assert _parse_pay("$15,000 catalog") == (None, 15_000)
     assert _parse_pay("$15,000 category") == (None, 15_000)
+    assert _parse_pay("$15,000 outrig") == (None, 15_000)
+    assert _parse_pay("$15,000 outrigging") == (None, 15_000)
+    assert _parse_pay("$15,000 outright") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -6361,6 +6369,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 cat boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 outrigger $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 outrigger insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 ketch $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch insurance $15,000") == (
         None,
@@ -13926,6 +13939,20 @@ def test_guess_pay_annualizes_hourly():
         catboatmix, "<p>$15,000 catboat. Salary $180,000</p>"
     ) is True
     assert catboatmix.pay_high == 180_000
+    outriggeronly = Opportunity(
+        title="Engineer", url="https://jobs.example/outriggeronly"
+    )
+    assert _apply_listing(
+        outriggeronly, "<p>$15,000 outrigger. Apply now.</p>"
+    ) is False
+    assert outriggeronly.pay_high is None
+    outriggermix = Opportunity(
+        title="Engineer", url="https://jobs.example/outriggermix"
+    )
+    assert _apply_listing(
+        outriggermix, "<p>$15,000 outrigger. Salary $180,000</p>"
+    ) is True
+    assert outriggermix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
