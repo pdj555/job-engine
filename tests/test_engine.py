@@ -3169,6 +3169,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 bowrider insurance") == (None, None)
     assert _parse_pay("bowrider of $15,000") == (None, None)
     assert _parse_pay("$15,000 bowrider. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 deck boat") == (None, None)
+    assert _parse_pay("$15,000 deck-boat") == (None, None)
+    assert _parse_pay("$15,000 deckboat") == (None, None)
+    assert _parse_pay("$15,000 deck boats") == (None, None)
+    assert _parse_pay("$15,000 deck boat insurance") == (None, None)
+    assert _parse_pay("deck boat of $15,000") == (None, None)
+    assert _parse_pay("$15,000 deck boat. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 jet ski insurance") == (None, None)
     assert _parse_pay("$15,000 jet-ski insurance") == (None, None)
     assert _parse_pay("jet ski insurance of $15,000") == (None, None)
@@ -3386,6 +3393,9 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 bow") == (None, 15_000)
     assert _parse_pay("$15,000 bowrid") == (None, 15_000)
     assert _parse_pay("$15,000 bowriding") == (None, 15_000)
+    assert _parse_pay("$15,000 deck") == (None, 15_000)
+    assert _parse_pay("$15,000 deck boa") == (None, 15_000)
+    assert _parse_pay("$15,000 deck boating") == (None, 15_000)
     assert _parse_pay("$15,000 group schoone") == (None, 15_000)
     assert _parse_pay("$15,000 group schoonering") == (None, 15_000)
     assert _parse_pay("$15,000 group skif") == (None, 15_000)
@@ -4880,6 +4890,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 bowrider $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 bowrider insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 deck boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 deck boat insurance $15,000") == (
         None,
         180_000,
     )
@@ -11244,6 +11259,16 @@ def test_guess_pay_annualizes_hourly():
         bowridermix, "<p>$15,000 bowrider. Salary $180,000</p>"
     ) is True
     assert bowridermix.pay_high == 180_000
+    deckonly = Opportunity(title="Engineer", url="https://jobs.example/deckonly")
+    assert _apply_listing(
+        deckonly, "<p>$15,000 deck boat. Apply now.</p>"
+    ) is False
+    assert deckonly.pay_high is None
+    deckmix = Opportunity(title="Engineer", url="https://jobs.example/deckmix")
+    assert _apply_listing(
+        deckmix, "<p>$15,000 deck boat. Salary $180,000</p>"
+    ) is True
+    assert deckmix.pay_high == 180_000
     jetskionly = Opportunity(title="Engineer", url="https://jobs.example/jetskionly")
     assert _apply_listing(
         jetskionly, "<p>$15,000 jet ski insurance. Apply now.</p>"
