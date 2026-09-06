@@ -3667,6 +3667,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 outrigger insurance") == (None, None)
     assert _parse_pay("outrigger of $15,000") == (None, None)
     assert _parse_pay("$15,000 outrigger. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 proa") == (None, None)
+    assert _parse_pay("$15,000 proas") == (None, None)
+    assert _parse_pay("$15,000 proa insurance") == (None, None)
+    assert _parse_pay("proa of $15,000") == (None, None)
+    assert _parse_pay("$15,000 proa. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -4144,6 +4149,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 outrig") == (None, 15_000)
     assert _parse_pay("$15,000 outrigging") == (None, 15_000)
     assert _parse_pay("$15,000 outright") == (None, 15_000)
+    assert _parse_pay("$15,000 pro") == (None, 15_000)
+    assert _parse_pay("$15,000 probe") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -6384,6 +6391,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("base $180,000 cat boat $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 outrigger $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 outrigger insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 proa $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 proa insurance $15,000") == (
         None,
         180_000,
     )
@@ -13980,6 +13992,20 @@ def test_guess_pay_annualizes_hourly():
         outriggermix, "<p>$15,000 outrigger. Salary $180,000</p>"
     ) is True
     assert outriggermix.pay_high == 180_000
+    proaonly = Opportunity(
+        title="Engineer", url="https://jobs.example/proaonly"
+    )
+    assert _apply_listing(
+        proaonly, "<p>$15,000 proa. Apply now.</p>"
+    ) is False
+    assert proaonly.pay_high is None
+    proamix = Opportunity(
+        title="Engineer", url="https://jobs.example/proamix"
+    )
+    assert _apply_listing(
+        proamix, "<p>$15,000 proa. Salary $180,000</p>"
+    ) is True
+    assert proamix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
