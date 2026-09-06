@@ -2794,6 +2794,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group runabout insurance") == (None, None)
     assert _parse_pay("group runabout of $15,000") == (None, None)
     assert _parse_pay("$15,000 group runabout. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group ski boat") == (None, None)
+    assert _parse_pay("$15,000 group ski-boat") == (None, None)
+    assert _parse_pay("$15,000 group skiboat") == (None, None)
+    assert _parse_pay("$15,000 group ski boat insurance") == (None, None)
+    assert _parse_pay("group ski boat of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group ski boat. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ATV") == (None, None)
     assert _parse_pay("$15,000 group ATV insurance") == (None, None)
     assert _parse_pay("$15,000 group UTV") == (None, None)
@@ -3208,6 +3214,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 runabouting") == (None, 15_000)
     assert _parse_pay("$15,000 ski boa") == (None, 15_000)
     assert _parse_pay("$15,000 ski boating") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boa") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boating") == (None, 15_000)
     assert _parse_pay("$15,000 group runabou") == (None, 15_000)
     assert _parse_pay("$15,000 group runabouting") == (None, 15_000)
     assert _parse_pay("$15,000 cabin") == (None, 15_000)
@@ -4357,6 +4365,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group runabout $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group runabout insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boat $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group ski boat insurance $15,000") == (
         None,
         180_000,
     )
@@ -10043,6 +10056,20 @@ def test_guess_pay_annualizes_hourly():
         grouprunaboutmix, "<p>$15,000 group runabout. Salary $180,000</p>"
     ) is True
     assert grouprunaboutmix.pay_high == 180_000
+    groupskiboatonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupskiboatonly"
+    )
+    assert _apply_listing(
+        groupskiboatonly, "<p>$15,000 group ski boat. Apply now.</p>"
+    ) is False
+    assert groupskiboatonly.pay_high is None
+    groupskiboatmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupskiboatmix"
+    )
+    assert _apply_listing(
+        groupskiboatmix, "<p>$15,000 group ski boat. Salary $180,000</p>"
+    ) is True
+    assert groupskiboatmix.pay_high == 180_000
     assert _apply_listing(
         groupsnowonly, "<p>$15,000 group snowmobile. Apply now.</p>"
     ) is False
