@@ -3613,6 +3613,14 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 snowkite insurance") == (None, None)
     assert _parse_pay("snowkite of $15,000") == (None, None)
     assert _parse_pay("$15,000 snowkite. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 pumpfoil") == (None, None)
+    assert _parse_pay("$15,000 pumpfoils") == (None, None)
+    assert _parse_pay("$15,000 pumpfoiler") == (None, None)
+    assert _parse_pay("$15,000 pump-foil") == (None, None)
+    assert _parse_pay("$15,000 pump foil") == (None, None)
+    assert _parse_pay("$15,000 pumpfoil insurance") == (None, None)
+    assert _parse_pay("pumpfoil of $15,000") == (None, None)
+    assert _parse_pay("$15,000 pumpfoil. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -4075,6 +4083,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 snowkit") == (None, 15_000)
     assert _parse_pay("$15,000 snowkiting") == (None, 15_000)
     assert _parse_pay("$15,000 snow kiting") == (None, 15_000)
+    assert _parse_pay("$15,000 pumpfoi") == (None, 15_000)
+    assert _parse_pay("$15,000 pumpfoiling") == (None, 15_000)
+    assert _parse_pay("$15,000 pump foiling") == (None, 15_000)
+    assert _parse_pay("$15,000 pumpkin") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -6248,6 +6260,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 snow kite $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pumpfoil $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 pumpfoil insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 pump foil $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 ketch insurance $15,000") == (
         None,
@@ -13729,6 +13747,20 @@ def test_guess_pay_annualizes_hourly():
         snowkitemix, "<p>$15,000 snowkite. Salary $180,000</p>"
     ) is True
     assert snowkitemix.pay_high == 180_000
+    pumpfoilonly = Opportunity(
+        title="Engineer", url="https://jobs.example/pumpfoilonly"
+    )
+    assert _apply_listing(
+        pumpfoilonly, "<p>$15,000 pumpfoil. Apply now.</p>"
+    ) is False
+    assert pumpfoilonly.pay_high is None
+    pumpfoilmix = Opportunity(
+        title="Engineer", url="https://jobs.example/pumpfoilmix"
+    )
+    assert _apply_listing(
+        pumpfoilmix, "<p>$15,000 pumpfoil. Salary $180,000</p>"
+    ) is True
+    assert pumpfoilmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
