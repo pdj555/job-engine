@@ -16563,6 +16563,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     assert _guess_remote("Engineer", "must boat onto the off-site") is True
     assert _guess_remote("Engineer", "must boat onto the field of") is True
     assert _guess_remote("Engineer", "work from home. must boat onto the office") is True
+    assert _guess_remote("Engineer", "must ferry onto the office") is False
+    assert _guess_remote("Engineer", "must ferry to the office") is False
+    assert _guess_remote("Engineer", "must ferry onto the site") is False
+    assert _guess_remote("Engineer", "must ferry to interviews") is True
+    assert _guess_remote("Engineer", "must ferry to Seattle") is True
+    assert _guess_remote("Engineer", "must ferry onto the home office") is True
+    assert _guess_remote("Engineer", "must ferry onto the off-site") is True
+    assert _guess_remote("Engineer", "must ferry onto the field of") is True
+    assert _guess_remote("Engineer", "work from home. must ferry onto the office") is True
     assert _guess_remote("Engineer", "must skate onto the office") is False
     assert _guess_remote("Engineer", "must skateboard onto the office") is False
     assert _guess_remote("Engineer", "must skate to interviews") is True
@@ -17763,6 +17772,15 @@ def test_apply_listing_stated_hours_beat_part_time_default():
     ) is True
     assert boat_onto_office.remote is False
     assert boat_onto_office.pay_high == 180_000
+    ferry_onto_office = Opportunity(
+        title="Engineer", url="https://jobs.example/ferryontooffice"
+    )
+    assert _apply_listing(
+        ferry_onto_office,
+        "<p>must ferry onto the office. Salary $180,000</p>",
+    ) is True
+    assert ferry_onto_office.remote is False
+    assert ferry_onto_office.pay_high == 180_000
     park_at_office = Opportunity(
         title="Engineer", url="https://jobs.example/parkatoffice"
     )
