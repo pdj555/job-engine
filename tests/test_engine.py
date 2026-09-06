@@ -3422,6 +3422,26 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 specified disease insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 specified illness insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 dread disease insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 dread illness insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 critical disease insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 hospital indemnity insurance $15,000") == (
         None,
         180_000,
@@ -8207,6 +8227,22 @@ def test_guess_pay_annualizes_hourly():
         critdismix, "<p>$15,000 critical disease. Salary $180,000</p>"
     ) is True
     assert critdismix.pay_high == 180_000
+    specdisinsbase = Opportunity(
+        title="Engineer", url="https://jobs.example/specdisinsbase"
+    )
+    assert _apply_listing(
+        specdisinsbase,
+        "<p>base $180,000 specified disease insurance $15,000</p>",
+    ) is True
+    assert specdisinsbase.pay_high == 180_000
+    critdisinsbase = Opportunity(
+        title="Engineer", url="https://jobs.example/critdisinsbase"
+    )
+    assert _apply_listing(
+        critdisinsbase,
+        "<p>base $180,000 critical disease insurance $15,000</p>",
+    ) is True
+    assert critdisinsbase.pay_high == 180_000
     hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
     assert _apply_listing(
         hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
