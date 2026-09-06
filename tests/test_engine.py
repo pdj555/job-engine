@@ -2524,6 +2524,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("specified illness of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified illness. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 illness") == (None, 15_000)
+    assert _parse_pay("$15,000 dread disease") == (None, None)
+    assert _parse_pay("$15,000 dread illness") == (None, None)
+    assert _parse_pay("dread disease of $15,000") == (None, None)
+    assert _parse_pay("$15,000 dread disease. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 dread") == (None, 15_000)
     assert _parse_pay("$15,000 cancer benefit. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 hospital insurance") == (None, None)
     assert _parse_pay("$15,000 hospital insurance. Salary $180,000") == (None, 180_000)
@@ -8178,6 +8183,16 @@ def test_guess_pay_annualizes_hourly():
         specillmix, "<p>$15,000 specified illness. Salary $180,000</p>"
     ) is True
     assert specillmix.pay_high == 180_000
+    dreaddisonly = Opportunity(title="Engineer", url="https://jobs.example/dreaddisonly")
+    assert _apply_listing(
+        dreaddisonly, "<p>$15,000 dread disease. Apply now.</p>"
+    ) is False
+    assert dreaddisonly.pay_high is None
+    dreaddismix = Opportunity(title="Engineer", url="https://jobs.example/dreaddismix")
+    assert _apply_listing(
+        dreaddismix, "<p>$15,000 dread disease. Salary $180,000</p>"
+    ) is True
+    assert dreaddismix.pay_high == 180_000
     hospinsonly = Opportunity(title="Engineer", url="https://jobs.example/hospinsonly")
     assert _apply_listing(
         hospinsonly, "<p>$15,000 hospital insurance. Apply now.</p>"
