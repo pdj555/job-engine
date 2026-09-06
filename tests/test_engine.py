@@ -2615,6 +2615,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group medical insurance") == (None, None)
     assert _parse_pay("group medical of $15,000") == (None, None)
     assert _parse_pay("$15,000 group medical. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group health") == (None, None)
+    assert _parse_pay("$15,000 group health insurance") == (None, None)
+    assert _parse_pay("group health of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group health. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2769,6 +2773,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group cybersecurity") == (None, 15_000)
     assert _parse_pay("$15,000 group medicaid") == (None, 15_000)
     assert _parse_pay("$15,000 group medicare") == (None, 15_000)
+    assert _parse_pay("$15,000 health") == (None, 15_000)
+    assert _parse_pay("$15,000 group healthcare") == (None, 15_000)
     assert _parse_pay("$15,000 flood") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
     assert _parse_pay("$15,000 tenants") == (None, 15_000)
@@ -3701,6 +3707,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group medical $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group medical insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group health $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group health insurance $15,000") == (
         None,
         180_000,
     )
@@ -8725,6 +8736,20 @@ def test_guess_pay_annualizes_hourly():
         groupmedmix, "<p>$15,000 group medical. Salary $180,000</p>"
     ) is True
     assert groupmedmix.pay_high == 180_000
+    grouphealthonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphealthonly"
+    )
+    assert _apply_listing(
+        grouphealthonly, "<p>$15,000 group health. Apply now.</p>"
+    ) is False
+    assert grouphealthonly.pay_high is None
+    grouphealthmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphealthmix"
+    )
+    assert _apply_listing(
+        grouphealthmix, "<p>$15,000 group health. Salary $180,000</p>"
+    ) is True
+    assert grouphealthmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
