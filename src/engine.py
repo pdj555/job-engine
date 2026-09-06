@@ -7970,7 +7970,7 @@ _ONSITE_WORKPLACE_RE = re.compile(
     r"|\barrive\s+(?:at|onto|on|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
     r"|\bland\s+(?:at|onto|on|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
     r"|\bcommute\s+(?:onto|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}offices?\b"
-    r"|\b(?:travel|drive|go|head|fly|walk|ride|return|bike|cycle|scooter|motorcycle|motorbike|moped|boat|ferry|kayak|canoe|paddle|row|sail|skateboard|skate)\s+(?:onto|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
+    r"|\b(?:travel|drive|go|head|fly|walk|ride|return|bike|cycle|scooter|motorcycle|motorbike|moped|boat|ferry|kayak|canoe|paddle|row|sail|yacht|skateboard|skate)\s+(?:onto|to)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
     r"|(?<!welcome )in(?:to)?\s+the\s+offices?\b"
     r"|(?<!welcome )\bin\s+our\s+(?:\S+\s+){0,4}offices?\b"
     r"|\bcome\s+(?:in(?:to|\s+to)|to|onto|on)\s+(?:the\s+|our\s+|an\s+)?(?:\S+\s+){0,4}(?<!home )(?<!home-)(?:offices?|campus|lab(?:oratory)?|headquarters|hq|hub|(?<!off-)(?<!off )site|field(?!\s+of\b))\b(?!\s+hours)"
