@@ -2629,6 +2629,12 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group accident indemnity") == (None, None)
     assert _parse_pay("group accident of $15,000") == (None, None)
     assert _parse_pay("$15,000 group accident. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group disability") == (None, None)
+    assert _parse_pay("$15,000 group disability insurance") == (None, None)
+    assert _parse_pay("$15,000 group short-term disability") == (None, None)
+    assert _parse_pay("$15,000 group long-term disability") == (None, None)
+    assert _parse_pay("group disability of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group disability. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -2788,6 +2794,8 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group hospitality") == (None, 15_000)
     assert _parse_pay("$15,000 group hospitalization") == (None, 15_000)
     assert _parse_pay("$15,000 group accidental") == (None, 15_000)
+    assert _parse_pay("$15,000 group disabled") == (None, 15_000)
+    assert _parse_pay("$15,000 group STD") == (None, 15_000)
     assert _parse_pay("$15,000 flood") == (None, 15_000)
     assert _parse_pay("$15,000 tenant") == (None, 15_000)
     assert _parse_pay("$15,000 tenants") == (None, 15_000)
@@ -3743,6 +3751,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         180_000,
     )
     assert _parse_pay("base $180,000 group accident indemnity $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group disability $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group disability insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group short-term disability insurance $15,000") == (
         None,
         180_000,
     )
@@ -8809,6 +8826,20 @@ def test_guess_pay_annualizes_hourly():
         groupaccmix, "<p>$15,000 group accident. Salary $180,000</p>"
     ) is True
     assert groupaccmix.pay_high == 180_000
+    groupdisonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupdisonly"
+    )
+    assert _apply_listing(
+        groupdisonly, "<p>$15,000 group disability. Apply now.</p>"
+    ) is False
+    assert groupdisonly.pay_high is None
+    groupdismix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupdismix"
+    )
+    assert _apply_listing(
+        groupdismix, "<p>$15,000 group disability. Salary $180,000</p>"
+    ) is True
+    assert groupdismix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
