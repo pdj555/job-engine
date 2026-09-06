@@ -2559,6 +2559,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group pet benefit") == (None, None)
     assert _parse_pay("group pet of $15,000") == (None, None)
     assert _parse_pay("$15,000 group pet. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group vision") == (None, None)
+    assert _parse_pay("$15,000 group dental") == (None, None)
+    assert _parse_pay("$15,000 group vision insurance") == (None, None)
+    assert _parse_pay("$15,000 group dental insurance") == (None, None)
+    assert _parse_pay("group vision of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group vision. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group dental. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 specified disease") == (None, None)
     assert _parse_pay("specified disease of $15,000") == (None, None)
     assert _parse_pay("$15,000 specified disease. Salary $180,000") == (None, 180_000)
@@ -3584,6 +3591,15 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group pet $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group pet insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group vision $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 group vision insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group dental insurance $15,000") == (
         None,
         180_000,
     )
@@ -8454,6 +8470,20 @@ def test_guess_pay_annualizes_hourly():
         grouppetmix, "<p>$15,000 group pet. Salary $180,000</p>"
     ) is True
     assert grouppetmix.pay_high == 180_000
+    groupvisiononly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupvisiononly"
+    )
+    assert _apply_listing(
+        groupvisiononly, "<p>$15,000 group vision. Apply now.</p>"
+    ) is False
+    assert groupvisiononly.pay_high is None
+    groupvisionmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupvisionmix"
+    )
+    assert _apply_listing(
+        groupvisionmix, "<p>$15,000 group vision. Salary $180,000</p>"
+    ) is True
+    assert groupvisionmix.pay_high == 180_000
     specdisonly = Opportunity(title="Engineer", url="https://jobs.example/specdisonly")
     assert _apply_listing(
         specdisonly, "<p>$15,000 specified disease. Apply now.</p>"
