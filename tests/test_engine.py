@@ -5050,6 +5050,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 klipperschip insurance") == (None, None)
     assert _parse_pay("klipperschip of $15,000") == (None, None)
     assert _parse_pay("$15,000 klipperschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 zeilschokkerschip") == (None, None)
+    assert _parse_pay("$15,000 zeil-schokkerschip") == (None, None)
+    assert _parse_pay("$15,000 zeil schokkerschip") == (None, None)
+    assert _parse_pay("$15,000 zeilschokkerschepen") == (None, None)
+    assert _parse_pay("$15,000 zeilschokkerschip insurance") == (None, None)
+    assert _parse_pay("zeilschokkerschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 zeilschokkerschip. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5761,6 +5768,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 schokkersch") == (None, 15_000)
     assert _parse_pay("$15,000 hoogaarssch") == (None, 15_000)
     assert _parse_pay("$15,000 klippersch") == (None, 15_000)
+    assert _parse_pay("$15,000 zeilschokkersch") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -9433,6 +9441,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 klipperschip $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 klipperschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 zeilschokkerschip $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 zeilschokkerschip insurance $15,000") == (
         None,
         180_000,
     )
@@ -20281,6 +20294,20 @@ def test_guess_pay_annualizes_hourly():
         klipperschipmix, "<p>$15,000 klipperschip. Salary $180,000</p>"
     ) is True
     assert klipperschipmix.pay_high == 180_000
+    zeilschokkerschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilschokkerschiponly"
+    )
+    assert _apply_listing(
+        zeilschokkerschiponly, "<p>$15,000 zeilschokkerschip. Apply now.</p>"
+    ) is False
+    assert zeilschokkerschiponly.pay_high is None
+    zeilschokkerschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilschokkerschipmix"
+    )
+    assert _apply_listing(
+        zeilschokkerschipmix, "<p>$15,000 zeilschokkerschip. Salary $180,000</p>"
+    ) is True
+    assert zeilschokkerschipmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
