@@ -4948,6 +4948,13 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 hoogaarsjacht insurance") == (None, None)
     assert _parse_pay("hoogaarsjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 hoogaarsjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 zeilhoogaars") == (None, None)
+    assert _parse_pay("$15,000 zeil-hoogaars") == (None, None)
+    assert _parse_pay("$15,000 zeil hoogaars") == (None, None)
+    assert _parse_pay("$15,000 zeilhoogaarzen") == (None, None)
+    assert _parse_pay("$15,000 zeilhoogaars insurance") == (None, None)
+    assert _parse_pay("zeilhoogaars of $15,000") == (None, None)
+    assert _parse_pay("$15,000 zeilhoogaars. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 ketch") == (None, None)
     assert _parse_pay("$15,000 ketches") == (None, None)
     assert _parse_pay("$15,000 ketch insurance") == (None, None)
@@ -5652,6 +5659,7 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 klipperjac") == (None, 15_000)
     assert _parse_pay("$15,000 schokkerjac") == (None, 15_000)
     assert _parse_pay("$15,000 hoogaarsjac") == (None, 15_000)
+    assert _parse_pay("$15,000 zeilhoogaa") == (None, 15_000)
     assert _parse_pay("$15,000 ketc") == (None, 15_000)
     assert _parse_pay("$15,000 ketching") == (None, 15_000)
     assert _parse_pay("$15,000 sloo") == (None, 15_000)
@@ -9247,6 +9255,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 hoogaarsjacht $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 hoogaarsjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 zeilhoogaars $15,000") == (None, 180_000)
+    assert _parse_pay("base $180,000 zeilhoogaars insurance $15,000") == (
         None,
         180_000,
     )
@@ -19899,6 +19912,20 @@ def test_guess_pay_annualizes_hourly():
         hoogaarsjachtmix, "<p>$15,000 hoogaarsjacht. Salary $180,000</p>"
     ) is True
     assert hoogaarsjachtmix.pay_high == 180_000
+    zeilhoogaarsonly = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilhoogaarsonly"
+    )
+    assert _apply_listing(
+        zeilhoogaarsonly, "<p>$15,000 zeilhoogaars. Apply now.</p>"
+    ) is False
+    assert zeilhoogaarsonly.pay_high is None
+    zeilhoogaarsmix = Opportunity(
+        title="Engineer", url="https://jobs.example/zeilhoogaarsmix"
+    )
+    assert _apply_listing(
+        zeilhoogaarsmix, "<p>$15,000 zeilhoogaars. Salary $180,000</p>"
+    ) is True
+    assert zeilhoogaarsmix.pay_high == 180_000
     ketchonly = Opportunity(title="Engineer", url="https://jobs.example/ketchonly")
     assert _apply_listing(
         ketchonly, "<p>$15,000 ketch. Apply now.</p>"
