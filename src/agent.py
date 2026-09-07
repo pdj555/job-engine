@@ -88,7 +88,7 @@ def _ground_to_search_hits(items: list[dict], search_hits: list[dict]) -> list[d
     return grounded
 
 
-def _rank(items: list[dict]) -> list[Opportunity]:
+def _rank(items: list[dict], *, from_search: bool = True) -> list[Opportunity]:
     """Build Opportunity models and order by $/hour (highest first). Deterministic."""
     opportunities = []
     for o in items:
@@ -100,7 +100,8 @@ def _rank(items: list[dict]) -> list[Opportunity]:
                 "description": o.get("description") or "",
                 "remote": o.get("remote", True),
                 "source": o.get("source") or "agent",
-            }
+            },
+            listing_text=None if from_search else "",
         )
         if parsed:
             opportunities.append(parsed)
@@ -135,7 +136,10 @@ def _from_scout(
     items = [o.model_dump() for o in out.opportunities]
     if search_hits:
         items = _ground_to_search_hits(items, search_hits)
-    return AgentRun(searches=out.searches or searches, ranked=_rank(items)[:limit])
+        ranked = _rank(items, from_search=True)
+    else:
+        ranked = _rank(items, from_search=False)
+    return AgentRun(searches=out.searches or searches, ranked=ranked[:limit])
 
 
 async def _search_run(query: str, limit: int) -> AgentRun:
@@ -175,7 +179,10 @@ async def _sdk_run(query: str, limit: int) -> AgentRun:
         items = data.get("opportunities", [])
         if search_hits:
             items = _ground_to_search_hits(items, search_hits)
-        run = AgentRun(searches=data.get("searches") or searches, ranked=_rank(items)[:limit])
+            ranked = _rank(items, from_search=True)
+        else:
+            ranked = _rank(items, from_search=False)
+        run = AgentRun(searches=data.get("searches") or searches, ranked=ranked[:limit])
     await engine.enrich(run.ranked)
     run.ranked = sorted(run.ranked, key=lambda o: o.score(), reverse=True)[:limit]
     return run

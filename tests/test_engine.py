@@ -37,6 +37,21 @@ def test_extract_parses_posted_pay_and_hours():
     assert opp.refined_rate == 90.0
 
 
+def test_extract_ignores_perplexity_prose_pay():
+    opp = opportunity_from_raw(
+        {
+            "title": "Staff Engineer $180k",
+            "url": "https://example.com/j",
+            "description": "pays $200k · 40 hours/week",
+            "source": "perplexity",
+        }
+    )
+    assert opp is not None
+    assert opp.pay is None
+    assert opp.hours_per_week is None
+    assert opp.pay_source is None
+
+
 def test_extract_ignores_search_provider_estimated_pay():
     opp = opportunity_from_raw(
         {

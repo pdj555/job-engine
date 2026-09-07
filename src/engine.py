@@ -191,10 +191,9 @@ Return as JSON array with objects containing:
 - title
 - company (if known)
 - url
-- description (copy any stated pay or hours verbatim)
 - remote (boolean)
 
-Only return the JSON array, nothing else. Do not invent compensation numbers."""
+Only return the JSON array, nothing else. Do not invent compensation or copy pay into titles."""
 
         async with httpx.AsyncClient() as client:
             try:
@@ -223,7 +222,7 @@ Only return the JSON array, nothing else. Do not invent compensation numbers."""
                             {
                                 "title": r.get("title", ""),
                                 "url": r.get("url", ""),
-                                "description": r.get("description", ""),
+                                "description": "",
                                 "remote": r.get("remote", True),
                                 "source": "perplexity"
                             }
@@ -404,14 +403,18 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
-def opportunity_from_raw(raw: dict) -> Opportunity | None:
+def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportunity | None:
     """Build an opportunity from a search hit. Pay/hours only if the text states them."""
     url = canonicalize_url(raw.get("url", ""))
     if not url:
         return None
     title = raw.get("title") or "Unknown"
     description = raw.get("description") or ""
-    parsed = parse_compensation(f"{title} {description}")
+    source = raw.get("source") or ""
+    if listing_text is None and source == "perplexity":
+        listing_text = ""
+    blob = f"{title} {description}" if listing_text is None else listing_text
+    parsed = parse_compensation(blob)
     remote = raw.get("remote")
     if remote is None:
         remote = _guess_remote(title, description)
@@ -424,7 +427,7 @@ def opportunity_from_raw(raw: dict) -> Opportunity | None:
         pay_high=parsed.pay_high,
         hours_per_week=parsed.hours,
         remote=bool(remote),
-        source=raw.get("source") or "",
+        source=source,
         pay_source="posted" if parsed.posted else None,
         hours_source="posted" if parsed.hours else None,
     )

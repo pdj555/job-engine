@@ -132,8 +132,8 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
     run = asyncio.run(agent_run("find me work"))
 
     assert run.searches == ["remote ml contract", "ai grants"]
-    assert [o.title for o in run.ranked] == [
+    assert {o.title for o in run.ranked} == {
         "Lush $200k 20 hours/week",
         "Cheap $100k 40 hours/week",
-    ]
-    assert run.ranked[0].score() == 200.0
+    }
+    assert all(o.pay is None and o.pay_source is None and o.score() == 0 for o in run.ranked)
