@@ -5275,6 +5275,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group runaboutjacht insurance") == (None, None)
     assert _parse_pay("group runaboutjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group runaboutjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group runaboutjachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtjacht insurance") == (None, None)
+    assert _parse_pay("group runaboutjachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group runaboutjachtschip") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht schip") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtschip insurance") == (None, None)
+    assert _parse_pay("group runaboutjachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group runaboutjachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachttjalk insurance") == (None, None)
+    assert _parse_pay("group runaboutjachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group runaboutjachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtboeier insurance") == (None, None)
+    assert _parse_pay("group runaboutjachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group runaboutjachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group runaboutschip") == (None, None)
     assert _parse_pay("$15,000 group runabout-schip") == (None, None)
     assert _parse_pay("$15,000 group runabout schip") == (None, None)
@@ -29250,6 +29278,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group ski boating") == (None, 15_000)
     assert _parse_pay("$15,000 group runabou") == (None, 15_000)
     assert _parse_pay("$15,000 group runabouting") == (None, 15_000)
+    assert _parse_pay("$15,000 group runaboutjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group runaboutjachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group runaboutjachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group runaboutjachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group runaboutjachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 cabin") == (None, 15_000)
     assert _parse_pay("$15,000 cruiser") == (None, 15_000)
     assert _parse_pay("$15,000 group cabin cruis") == (None, 15_000)
@@ -33671,11 +33704,47 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group runabout insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group runaboutjacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group runabout jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group runaboutjacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -66878,6 +66947,20 @@ def test_guess_pay_annualizes_hourly():
         grouprunaboutjachtmix, "<p>$15,000 group runaboutjacht. Salary $180,000</p>"
     ) is True
     assert grouprunaboutjachtmix.pay_high == 180_000
+    grouprunaboutjachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouprunaboutjachtjachtonly"
+    )
+    assert _apply_listing(
+        grouprunaboutjachtjachtonly, "<p>$15,000 group runaboutjachtjacht. Apply now.</p>"
+    ) is False
+    assert grouprunaboutjachtjachtonly.pay_high is None
+    grouprunaboutjachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouprunaboutjachtjachtmix"
+    )
+    assert _apply_listing(
+        grouprunaboutjachtjachtmix, "<p>$15,000 group runaboutjachtjacht. Salary $180,000</p>"
+    ) is True
+    assert grouprunaboutjachtjachtmix.pay_high == 180_000
     grouprunaboutschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/grouprunaboutschiponly"
     )
