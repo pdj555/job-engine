@@ -1,6 +1,7 @@
 import asyncio
 import types
 
+from src.compensation import Compensation
 from src.engine import (
     Engine,
     _guess_remote,
@@ -78,6 +79,19 @@ def test_extract_canonicalizes_ats_url():
     )
     assert opp is not None
     assert opp.url == "https://job-boards.greenhouse.io/Acme/jobs/12345"
+
+
+def test_extract_drops_indeed_search_pages():
+    assert (
+        opportunity_from_raw(
+            {
+                "title": "Python $180k Jobs",
+                "url": "https://www.indeed.com/q-python-$180k-jobs.html",
+                "description": "$180k",
+            }
+        )
+        is None
+    )
 
 
 def test_guess_remote_penalizes_onsite_signals():
@@ -216,6 +230,7 @@ def test_enrich_does_not_override_posted_snippet_pay():
         raise AssertionError("should not fetch when pay is already posted")
 
     engine._fetch_listing = boom
+    engine._fetch_ats = boom
     opp = Opportunity(
         title="Eng",
         url="https://example.com/j",
@@ -227,6 +242,27 @@ def test_enrich_does_not_override_posted_snippet_pay():
     asyncio.run(engine.enrich([opp]))
     assert opp.pay_source == "posted"
     assert opp.pay == 90_000
+
+
+def test_enrich_prefers_ats_json_over_html_schema():
+    engine = Engine()
+
+    async def fake_ats(url, client=None):
+        return Compensation(pay_low=150_000, pay_high=180_000, remote=True, title="Staff")
+
+    async def boom(url, client=None):
+        raise AssertionError("HTML fetch should not run when ATS pay exists")
+
+    engine._fetch_ats = fake_ats
+    engine._fetch_listing = boom
+    opp = Opportunity(
+        title="Engineer",
+        url="https://job-boards.greenhouse.io/acme/jobs/1",
+    )
+    asyncio.run(engine.enrich([opp]))
+    assert opp.pay == 180_000
+    assert opp.pay_source == "ats"
+    assert opp.remote is True
 
 
 def test_extract_batch_drops_ungrounded_urls():

@@ -11,5 +11,5 @@ export function formatPay(n: number | null): string {
 }
 
 export function isListed(source: string | null | undefined): boolean {
-  return source === "posted" || source === "schema";
+  return source === "posted" || source === "schema" || source === "ats";
 }

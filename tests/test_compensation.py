@@ -1,4 +1,11 @@
-from src.compensation import canonicalize_url, parse_compensation, parse_job_posting
+from src.compensation import (
+    ats_json_url,
+    canonicalize_url,
+    is_search_serp,
+    parse_ats_json,
+    parse_compensation,
+    parse_job_posting,
+)
 
 
 def test_parse_annual_range_and_single():
@@ -168,3 +175,92 @@ def test_parse_job_posting_rejects_foreign_and_estimated():
 def test_parse_job_posting_empty_html():
     assert parse_job_posting("").pay_high is None
     assert parse_job_posting("<html></html>").posted is False
+
+
+def test_ats_json_url_maps_greenhouse_lever_ashby():
+    assert ats_json_url(
+        "https://job-boards.greenhouse.io/acme/jobs/12345"
+    ) == "https://boards-api.greenhouse.io/v1/boards/acme/jobs/12345?pay_transparency=true"
+    assert ats_json_url(
+        "https://jobs.lever.co/acme/681fbc53-1e34-4a46-8677-3a78118674eb"
+    ) == "https://api.lever.co/v0/postings/acme/681fbc53-1e34-4a46-8677-3a78118674eb?mode=json"
+    assert ats_json_url(
+        "https://jobs.ashbyhq.com/luminary/84c74ea8-20b1-4e0d-9aa5-731da2cb1bf3"
+    ) == "https://api.ashbyhq.com/posting-api/job-board/luminary?includeCompensation=true"
+    assert ats_json_url("https://example.com/jobs/1") is None
+
+
+def test_parse_greenhouse_pay_transparency_cents():
+    parsed = parse_ats_json(
+        "https://job-boards.greenhouse.io/acme/jobs/1",
+        {
+            "title": "Staff Engineer",
+            "pay_input_ranges": [
+                {"min_cents": 15_000_000, "max_cents": 18_000_000, "currency_type": "USD"}
+            ],
+            "offices": [{"name": "Remote"}],
+        },
+    )
+    assert (parsed.pay_low, parsed.pay_high) == (150_000, 180_000)
+    assert parsed.remote is True
+    assert parsed.title == "Staff Engineer"
+
+
+def test_parse_lever_salary_range_and_ashby_salary_component():
+    lever = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {
+            "text": "Engineer",
+            "workplaceType": "remote",
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "per-year-salary",
+                "min": 140000,
+                "max": 170000,
+            },
+        },
+    )
+    assert (lever.pay_low, lever.pay_high) == (140_000, 170_000)
+    assert lever.remote is True
+
+    ashby = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "title": "Applied AI",
+                    "isRemote": True,
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 170000,
+                                "maxValue": 225000,
+                                "currencyCode": "USD",
+                                "interval": "1 YEAR",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (ashby.pay_low, ashby.pay_high) == (170_000, 225_000)
+    assert ashby.remote is True
+
+
+def test_parse_ats_rejects_foreign_and_missing():
+    cad = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {"salaryRange": {"currency": "CAD", "interval": "per-year-salary", "min": 180000, "max": 180000}},
+    )
+    assert cad.pay_high is None
+    assert parse_ats_json("https://example.com/x", {"pay_input_ranges": []}).posted is False
+
+
+def test_is_search_serp_drops_indeed_query_pages_not_viewjob():
+    assert is_search_serp("https://www.indeed.com/q-python-engineer-jobs.html")
+    assert is_search_serp("https://www.linkedin.com/jobs/search/?keywords=python")
+    assert not is_search_serp("https://www.indeed.com/viewjob?jk=abc")
+    assert not is_search_serp("https://job-boards.greenhouse.io/acme/jobs/1")

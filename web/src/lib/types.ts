@@ -1,4 +1,4 @@
-export type PaySource = "posted" | "schema" | null;
+export type PaySource = "posted" | "schema" | "ats" | null;
 
 export type Opportunity = {
   title: string;
@@ -12,7 +12,7 @@ export type Opportunity = {
   remote: boolean;
   score: number;
   pay_source: PaySource;
-  hours_source: "posted" | "schema" | null;
+  hours_source: "posted" | "schema" | "ats" | null;
 };
 
 export type SearchResponse = {

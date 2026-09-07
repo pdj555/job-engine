@@ -53,7 +53,13 @@ export function ResultsList({
                 ? "~40h/wk"
                 : "hours ?";
             const origin =
-              opp.pay_source === "schema" ? " schema" : opp.pay_source === "posted" ? " listed" : "";
+              opp.pay_source === "ats"
+                ? " ats"
+                : opp.pay_source === "schema"
+                  ? " schema"
+                  : opp.pay_source === "posted"
+                    ? " listed"
+                    : "";
             const pay = `${formatPay(opp.pay)}/yr${origin}`;
 
             return (

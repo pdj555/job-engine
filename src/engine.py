@@ -11,7 +11,15 @@ import httpx
 from openai import AsyncOpenAI
 
 from config.settings import settings
-from src.compensation import canonicalize_url, parse_compensation, parse_job_posting
+from src.compensation import (
+    Compensation,
+    ats_json_url,
+    canonicalize_url,
+    is_search_serp,
+    parse_ats_json,
+    parse_compensation,
+    parse_job_posting,
+)
 from src.models import Opportunity
 
 _LISTING_CAP = 600_000
@@ -48,7 +56,7 @@ class Engine:
         return await self._search_brave(query)
 
     async def enrich(self, opportunities: list[Opportunity]) -> None:
-        """Fill missing pay from schema.org JobPosting on the listing page."""
+        """Fill missing pay from ATS JSON, then schema.org JobPosting HTML."""
         need = [o for o in opportunities if not o.pay]
         if not need:
             return
@@ -62,24 +70,29 @@ class Engine:
 
             async def one(opp: Opportunity) -> None:
                 async with sem:
+                    ats = await self._fetch_ats(opp.url, client)
+                    if ats:
+                        _apply_comp(opp, ats, "ats")
+                        if ats.posted:
+                            return
                     html = await self._fetch_listing(opp.url, client)
                 if not html:
                     return
-                parsed = parse_job_posting(html)
-                if parsed.posted:
-                    opp.pay_low = parsed.pay_low
-                    opp.pay_high = parsed.pay_high
-                    opp.pay_source = "schema"
-                if parsed.hours and not opp.hours_per_week:
-                    opp.hours_per_week = parsed.hours
-                    opp.hours_source = "schema"
-                if parsed.remote is not None:
-                    opp.remote = parsed.remote
-                if parsed.company and not opp.company:
-                    opp.company = parsed.company
-                opp.efficiency = opp.dollars_per_hour
+                _apply_comp(opp, parse_job_posting(html), "schema")
 
             await asyncio.gather(*(one(o) for o in need), return_exceptions=True)
+
+    async def _fetch_ats(self, url: str, client: httpx.AsyncClient) -> Compensation | None:
+        endpoint = ats_json_url(url)
+        if not endpoint:
+            return None
+        try:
+            resp = await client.get(endpoint, headers={"Accept": "application/json"})
+            if resp.status_code >= 400:
+                return None
+            return parse_ats_json(url, resp.json())
+        except Exception:
+            return None
 
     async def _fetch_listing(self, url: str, client: httpx.AsyncClient) -> str | None:
         parts = urlsplit(url)
@@ -406,7 +419,7 @@ def _parse_ddg_html(html: str) -> list[dict]:
 def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportunity | None:
     """Build an opportunity from a search hit. Pay/hours only if the text states them."""
     url = canonicalize_url(raw.get("url", ""))
-    if not url:
+    if not url or is_search_serp(url):
         return None
     title = raw.get("title") or "Unknown"
     description = raw.get("description") or ""
@@ -433,6 +446,23 @@ def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportun
     )
     opp.efficiency = opp.dollars_per_hour
     return opp
+
+
+def _apply_comp(opp: Opportunity, parsed: Compensation, source: str) -> None:
+    if parsed.posted:
+        opp.pay_low = parsed.pay_low
+        opp.pay_high = parsed.pay_high
+        opp.pay_source = source
+    if parsed.hours and not opp.hours_per_week:
+        opp.hours_per_week = parsed.hours
+        opp.hours_source = source
+    if parsed.remote is not None:
+        opp.remote = parsed.remote
+    if parsed.company and not opp.company:
+        opp.company = parsed.company
+    if parsed.title and opp.title in {"Unknown", ""}:
+        opp.title = parsed.title
+    opp.efficiency = opp.dollars_per_hour
 
 
 def _guess_remote(title: str, description: str) -> bool:

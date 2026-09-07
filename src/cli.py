@@ -64,7 +64,7 @@ def display(opportunities: list[Opportunity]):
 
     for i, opp in enumerate(opportunities, 1):
         pay = f"${opp.pay:,}" if opp.pay else "?"
-        if opp.pay and opp.pay_source in ("posted", "schema"):
+        if opp.pay and opp.pay_source in ("posted", "schema", "ats"):
             pay = f"{pay}*"
         if opp.hours_per_week:
             hours = str(opp.hours_per_week)
@@ -90,8 +90,8 @@ def display(opportunities: list[Opportunity]):
         )
 
     console.print(table)
-    if any(o.pay_source in ("posted", "schema") for o in opportunities):
-        console.print("[dim]* pay stated on the listing or JobPosting schema[/dim]")
+    if any(o.pay_source in ("posted", "schema", "ats") for o in opportunities):
+        console.print("[dim]* pay stated on the listing, ATS, or JobPosting schema[/dim]")
     console.print()
 
     # Show top 3 URLs

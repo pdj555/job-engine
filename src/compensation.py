@@ -110,6 +110,179 @@ def parse_job_posting(html: str) -> Compensation:
     return Compensation()
 
 
+_LEVER_UNIT = {
+    "per-year-salary": "YEAR",
+    "year": "YEAR",
+    "per-month-salary": "MONTH",
+    "month": "MONTH",
+    "per-week-salary": "WEEK",
+    "week": "WEEK",
+    "per-day-wage": "DAY",
+    "day": "DAY",
+    "per-hour-wage": "HOUR",
+    "hour": "HOUR",
+}
+
+
+def ats_json_url(url: str) -> str | None:
+    """Public board JSON for a canonical Greenhouse, Lever, or Ashby listing."""
+    parts = urlsplit(canonicalize_url(url))
+    host = parts.hostname or ""
+    segs = [p for p in parts.path.split("/") if p]
+    if host.endswith("greenhouse.io") and len(segs) >= 3 and segs[-2] == "jobs":
+        board, job_id = segs[0], segs[-1]
+        if job_id.isdigit():
+            return (
+                f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs/{job_id}"
+                "?pay_transparency=true"
+            )
+    if host.endswith("lever.co") and len(segs) >= 2:
+        api = "api.eu.lever.co" if ".eu." in host else "api.lever.co"
+        return f"https://{api}/v0/postings/{segs[0]}/{segs[1]}?mode=json"
+    if host == "jobs.ashbyhq.com" and len(segs) >= 2:
+        return f"https://api.ashbyhq.com/posting-api/job-board/{segs[0]}?includeCompensation=true"
+    return None
+
+
+def parse_ats_json(url: str, payload) -> Compensation:
+    """Employer-posted USD pay from an ATS board JSON payload. Invents nothing."""
+    host = (urlsplit(canonicalize_url(url)).hostname or "")
+    if host.endswith("greenhouse.io"):
+        return _greenhouse_pay(payload)
+    if host.endswith("lever.co"):
+        return _lever_pay(payload)
+    if host == "jobs.ashbyhq.com":
+        segs = [p for p in urlsplit(canonicalize_url(url)).path.split("/") if p]
+        job_id = segs[1] if len(segs) >= 2 else ""
+        return _ashby_pay(payload, job_id)
+    return Compensation()
+
+
+def is_search_serp(url: str) -> bool:
+    """True for job-board search pages, not individual listings."""
+    parts = urlsplit(canonicalize_url(url))
+    host = parts.hostname or ""
+    path = (parts.path or "").lower()
+    if host.endswith("indeed.com"):
+        if "/viewjob" in path or "/rc/clk" in path or "/pagead/" in path:
+            return False
+        return "/q-" in path or path.endswith("-jobs.html") or path.rstrip("/") == "/jobs"
+    if host.endswith("linkedin.com"):
+        return "/jobs/search" in path
+    if host.endswith("ziprecruiter.com"):
+        return "jobs-search" in path or path.rstrip("/") == "/jobs"
+    if host.endswith("google.com") or host.endswith("duckduckgo.com") or host.endswith("bing.com"):
+        return True
+    return False
+
+
+def _greenhouse_pay(payload) -> Compensation:
+    if not isinstance(payload, dict):
+        return Compensation()
+    job = payload.get("job") if isinstance(payload.get("job"), dict) else payload
+    title = _text(job.get("title"))
+    remote = None
+    offices = job.get("offices") or []
+    if isinstance(offices, list):
+        names = " ".join(_text(o.get("name") if isinstance(o, dict) else o) for o in offices)
+        if "remote" in names.lower():
+            remote = True
+    usd = []
+    for row in job.get("pay_input_ranges") or []:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("currency_type") or "USD").upper() not in _USD:
+            continue
+        low = _cents(row.get("min_cents"))
+        high = _cents(row.get("max_cents"))
+        if low is None and high is None:
+            continue
+        usd.append((low or high, high or low))
+    if not usd:
+        return Compensation(remote=remote, title=title or None)
+    lows, highs = zip(*usd)
+    annual = _clamp_annual(min(lows), max(highs))
+    if not annual:
+        return Compensation(remote=remote, title=title or None)
+    return Compensation(pay_low=annual[0], pay_high=annual[1], remote=remote, title=title or None)
+
+
+def _cents(value) -> float | None:
+    amount = _number(value)
+    if amount is None:
+        return None
+    return amount / 100.0
+
+
+def _lever_pay(payload) -> Compensation:
+    if not isinstance(payload, dict):
+        return Compensation()
+    title = _text(payload.get("text") or payload.get("title"))
+    company = _text((payload.get("categories") or {}).get("team")) or None
+    workplace = str(payload.get("workplaceType") or "").upper()
+    remote = True if workplace in {"REMOTE", "TELECOMMUTE"} else None
+    sr = payload.get("salaryRange")
+    if not isinstance(sr, dict):
+        return Compensation(remote=remote, company=company, title=title or None)
+    if str(sr.get("currency") or "USD").upper() not in _USD:
+        return Compensation(remote=remote, company=company, title=title or None)
+    unit = _LEVER_UNIT.get(str(sr.get("interval") or "per-year-salary").lower(), "YEAR")
+    low, high = _number(sr.get("min")), _number(sr.get("max"))
+    if low is None and high is None:
+        return Compensation(remote=remote, company=company, title=title or None)
+    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    if not annual:
+        return Compensation(remote=remote, company=company, title=title or None)
+    return Compensation(
+        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company, title=title or None
+    )
+
+
+def _ashby_pay(payload, job_id: str) -> Compensation:
+    jobs = []
+    if isinstance(payload, dict):
+        jobs = payload.get("jobs") or payload.get("jobPostings") or []
+        if isinstance(payload.get("id"), str):
+            jobs = [payload]
+    elif isinstance(payload, list):
+        jobs = payload
+    match = None
+    for job in jobs:
+        if isinstance(job, dict) and str(job.get("id") or "") == job_id:
+            match = job
+            break
+    if match is None and len(jobs) == 1 and isinstance(jobs[0], dict):
+        match = jobs[0]
+    if not isinstance(match, dict):
+        return Compensation()
+    title = _text(match.get("title"))
+    company = _text(match.get("departmentName")) or None
+    remote = True if match.get("isRemote") is True else None
+    comp = match.get("compensation") if isinstance(match.get("compensation"), dict) else {}
+    salary = None
+    for row in comp.get("summaryComponents") or []:
+        if isinstance(row, dict) and str(row.get("compensationType") or "") == "Salary":
+            salary = row
+            break
+    if salary is None:
+        return Compensation(remote=remote, company=company, title=title or None)
+    if str(salary.get("currencyCode") or "USD").upper() not in _USD:
+        return Compensation(remote=remote, company=company, title=title or None)
+    interval = str(salary.get("interval") or "1 YEAR").upper().replace("1 ", "")
+    unit = {"YEAR": "YEAR", "MONTH": "MONTH", "WEEK": "WEEK", "DAY": "DAY", "HOUR": "HOUR"}.get(
+        interval, "YEAR"
+    )
+    low, high = _number(salary.get("minValue")), _number(salary.get("maxValue"))
+    if low is None and high is None:
+        return Compensation(remote=remote, company=company, title=title or None)
+    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    if not annual:
+        return Compensation(remote=remote, company=company, title=title or None)
+    return Compensation(
+        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company, title=title or None
+    )
+
+
 def canonicalize_url(url: str) -> str:
     """Identity key: https, lowercase host, ATS rewrite, tracking stripped."""
     raw = (url or "").strip()

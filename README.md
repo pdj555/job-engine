@@ -33,7 +33,7 @@ One number orders every result:
 $/hour  =  annual pay ÷ (hours per week × 50)
 ```
 
-Office roles take a 30% penalty. Rank uses pay stated on the listing or schema.org JobPosting — never seniority guesses. Missing hours impute 40/wk so thin listings still sort; `$/hour` stays blank until both numbers are observed.
+Office roles take a 30% penalty. Rank uses pay stated on the listing, ATS board JSON, or schema.org JobPosting — never seniority guesses. Missing hours impute 40/wk so thin listings still sort; `$/hour` stays blank until both numbers are observed. Job-board search pages are dropped.
 
 ## Autonomous agent
 
