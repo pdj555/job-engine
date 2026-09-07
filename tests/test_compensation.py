@@ -249,6 +249,35 @@ def test_parse_lever_salary_range_and_ashby_salary_component():
     assert (ashby.pay_low, ashby.pay_high) == (170_000, 225_000)
     assert ashby.remote is True
 
+    tiers = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-2",
+        {
+            "jobs": [
+                {
+                    "id": "job-2",
+                    "title": "EM",
+                    "compensation": {
+                        "summaryComponents": None,
+                        "compensationTiers": [
+                            {
+                                "components": [
+                                    {
+                                        "compensationType": "Salary",
+                                        "minValue": 110000,
+                                        "maxValue": 185000,
+                                        "currencyCode": "USD",
+                                        "interval": "1 YEAR",
+                                    }
+                                ]
+                            }
+                        ],
+                    },
+                }
+            ]
+        },
+    )
+    assert (tiers.pay_low, tiers.pay_high) == (110_000, 185_000)
+
 
 def test_parse_ats_rejects_foreign_and_missing():
     cad = parse_ats_json(

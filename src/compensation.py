@@ -259,11 +259,7 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
     company = _text(match.get("departmentName")) or None
     remote = True if match.get("isRemote") is True else None
     comp = match.get("compensation") if isinstance(match.get("compensation"), dict) else {}
-    salary = None
-    for row in comp.get("summaryComponents") or []:
-        if isinstance(row, dict) and str(row.get("compensationType") or "") == "Salary":
-            salary = row
-            break
+    salary = _ashby_salary_row(comp)
     if salary is None:
         return Compensation(remote=remote, company=company, title=title or None)
     if str(salary.get("currencyCode") or "USD").upper() not in _USD:
@@ -281,6 +277,17 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
     return Compensation(
         pay_low=annual[0], pay_high=annual[1], remote=remote, company=company, title=title or None
     )
+
+
+def _ashby_salary_row(comp: dict) -> dict | None:
+    rows = list(comp.get("summaryComponents") or [])
+    for tier in comp.get("compensationTiers") or []:
+        if isinstance(tier, dict):
+            rows.extend(tier.get("components") or [])
+    for row in rows:
+        if isinstance(row, dict) and str(row.get("compensationType") or "") == "Salary":
+            return row
+    return None
 
 
 def canonicalize_url(url: str) -> str:
