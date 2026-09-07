@@ -4408,6 +4408,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group jet boatjacht insurance") == (None, None)
     assert _parse_pay("group jet boatjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group jet boatjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group jet boatjachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtjacht insurance") == (None, None)
+    assert _parse_pay("group jet boatjachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group jet boatjachtschip") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht schip") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtschip insurance") == (None, None)
+    assert _parse_pay("group jet boatjachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group jet boatjachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachttjalk insurance") == (None, None)
+    assert _parse_pay("group jet boatjachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group jet boatjachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtboeier insurance") == (None, None)
+    assert _parse_pay("group jet boatjachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group jet boatjachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group jet boatschip") == (None, None)
     assert _parse_pay("$15,000 group jet-boat-schip") == (None, None)
     assert _parse_pay("$15,000 group jet boat schip") == (None, None)
@@ -25290,6 +25318,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 jet boatschi") == (None, 15_000)
     assert _parse_pay("$15,000 jet boattjal") == (None, 15_000)
     assert _parse_pay("$15,000 jet boatboei") == (None, 15_000)
+    assert _parse_pay("$15,000 group jet boatjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group jet boatjachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group jet boatjachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group jet boatjachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group jet boatjachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 kay") == (None, 15_000)
     assert _parse_pay("$15,000 kayaking") == (None, 15_000)
     assert _parse_pay("$15,000 kayakjac") == (None, 15_000)
@@ -31682,11 +31715,47 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group jet boat insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group jet boatjacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group jet boat jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group jet boatjacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -63744,6 +63813,20 @@ def test_guess_pay_annualizes_hourly():
         groupjetboatjachtmix, "<p>$15,000 group jet boatjacht. Salary $180,000</p>"
     ) is True
     assert groupjetboatjachtmix.pay_high == 180_000
+    groupjetboatjachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupjetboatjachtjachtonly"
+    )
+    assert _apply_listing(
+        groupjetboatjachtjachtonly, "<p>$15,000 group jet boatjachtjacht. Apply now.</p>"
+    ) is False
+    assert groupjetboatjachtjachtonly.pay_high is None
+    groupjetboatjachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupjetboatjachtjachtmix"
+    )
+    assert _apply_listing(
+        groupjetboatjachtjachtmix, "<p>$15,000 group jet boatjachtjacht. Salary $180,000</p>"
+    ) is True
+    assert groupjetboatjachtjachtmix.pay_high == 180_000
     groupjetboatschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/groupjetboatschiponly"
     )
