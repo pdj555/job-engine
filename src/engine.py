@@ -15,6 +15,7 @@ from src.compensation import (
     Compensation,
     ats_json_url,
     canonicalize_url,
+    is_aggregate_pay,
     is_search_serp,
     parse_ats_json,
     parse_compensation,
@@ -426,8 +427,11 @@ def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportun
     source = raw.get("source") or ""
     if listing_text is None and source == "perplexity":
         listing_text = ""
-    blob = f"{title} {description}" if listing_text is None else listing_text
-    parsed = parse_compensation(blob)
+    if listing_text is None and is_aggregate_pay(title):
+        parsed = Compensation()
+    else:
+        blob = f"{title} {description}" if listing_text is None else listing_text
+        parsed = parse_compensation(blob)
     remote = raw.get("remote")
     if remote is None:
         remote = _guess_remote(title, description)

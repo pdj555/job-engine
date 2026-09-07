@@ -94,6 +94,57 @@ def test_extract_drops_indeed_search_pages():
     )
 
 
+def test_extract_drops_career_now_index():
+    assert (
+        opportunity_from_raw(
+            {
+                "title": "Python Engineer Remote Jobs - Median $105/hr | Career.now",
+                "url": "https://career.now/remote-jobs/python-engineer",
+                "description": "",
+            }
+        )
+        is None
+    )
+
+
+def test_extract_keeps_real_listing_pay_with_board_noise():
+    linkedin = opportunity_from_raw(
+        {
+            "title": "Staff Engineer $180k | LinkedIn",
+            "url": "https://www.linkedin.com/jobs/view/12345",
+            "description": "Acme · Remote · 12 jobs",
+        }
+    )
+    assert linkedin is not None
+    assert linkedin.pay == 180_000
+    assert linkedin.pay_source == "posted"
+
+    greenhouse = opportunity_from_raw(
+        {
+            "title": "Staff Engineer $180k",
+            "url": "https://job-boards.greenhouse.io/acme/jobs/1",
+            "description": "The estimated salary range for this role is $150,000-$180,000. 12 jobs.",
+        }
+    )
+    assert greenhouse is not None
+    assert greenhouse.pay == 180_000
+    assert greenhouse.pay_source == "posted"
+
+
+def test_extract_ignores_seo_title_pay_on_unknown_host():
+    opp = opportunity_from_raw(
+        {
+            "title": "Python Engineer Salary: $95k-$140k (Glassdoor estimate)",
+            "url": "https://careers.acme.com/python-engineer",
+            "description": "",
+        }
+    )
+    assert opp is not None
+    assert opp.pay is None
+    assert opp.pay_source is None
+    assert opp.score() == 0
+
+
 def test_guess_remote_penalizes_onsite_signals():
     assert _guess_remote("Engineer", "hybrid schedule") is False
     assert _guess_remote("Engineer", "must be onsite") is False
@@ -170,6 +221,50 @@ def test_search_all_dedupes_canonical_ats_urls():
 
     results = asyncio.run(engine._search_all("anything"))
     assert [r["url"] for r in results] == ["https://job-boards.greenhouse.io/Acme/jobs/1"]
+
+
+def test_find_drops_aggregator_seo_pay_below_real_listings():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Python Engineer Remote Jobs - Median $105/hr | Career.now",
+                "url": "https://career.now/remote-jobs/python-engineer",
+                "description": "",
+            },
+            {
+                "title": "Python Developer Remote Jobs $200k",
+                "url": "https://www.linkedin.com/jobs/python-developer-remote-jobs",
+                "description": "",
+            },
+            {
+                "title": "Engineer $90k",
+                "url": "https://jobs.lever.co/acme/abc",
+                "description": "40 hours/week",
+            },
+            {
+                "title": "Python Engineer Salary: $95k-$140k (Glassdoor estimate)",
+                "url": "https://careers.acme.com/python-engineer",
+                "description": "",
+            },
+        ]
+
+    async def no_fetch(url, client=None):
+        return None
+
+    engine._search_all = fake_search
+    engine._fetch_listing = no_fetch
+    engine._fetch_ats = no_fetch
+    ranked = asyncio.run(engine.find("eng", limit=10))
+    urls = [o.url for o in ranked]
+    assert ranked[0].url == "https://jobs.lever.co/acme/abc"
+    assert ranked[0].pay_source == "posted"
+    assert all("career.now" not in u and "linkedin.com/jobs/python" not in u for u in urls)
+    acme = next(o for o in ranked if "careers.acme.com" in o.url)
+    assert acme.pay is None
+    assert acme.score() == 0
 
 
 def test_find_ranks_posted_pay_above_thin_listings():

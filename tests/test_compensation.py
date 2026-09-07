@@ -1,6 +1,7 @@
 from src.compensation import (
     ats_json_url,
     canonicalize_url,
+    is_aggregate_pay,
     is_search_serp,
     parse_ats_json,
     parse_compensation,
@@ -291,5 +292,31 @@ def test_parse_ats_rejects_foreign_and_missing():
 def test_is_search_serp_drops_indeed_query_pages_not_viewjob():
     assert is_search_serp("https://www.indeed.com/q-python-engineer-jobs.html")
     assert is_search_serp("https://www.linkedin.com/jobs/search/?keywords=python")
+    assert is_search_serp("https://www.linkedin.com/jobs/python-developer-remote-jobs")
+    assert is_search_serp("https://www.linkedin.com/company/acme/jobs")
+    assert is_search_serp("https://www.simplyhired.com/search?l=remote&q=python+engineer")
+    assert is_search_serp("https://www.simplyhired.com/k-python-engineer-jobs.html")
+    assert is_search_serp("https://career.now/remote-jobs/python-engineer")
+    assert is_search_serp("https://www.jooble.org/jobs-python-engineer")
+    assert is_search_serp("https://www.glassdoor.com/Job/python-engineer-jobs-SRCH_KO0,16.htm")
+    assert is_search_serp("https://www.glassdoor.com/Jobs/Google-Jobs-E9079.htm")
+    assert is_search_serp("https://www.indeed.com/cmp/Acme/jobs")
+    assert not is_search_serp("https://www.linkedin.com/jobs/view/12345")
+    assert not is_search_serp("https://www.linkedin.com/learning/jobs-to-be-done")
     assert not is_search_serp("https://www.indeed.com/viewjob?jk=abc")
+    assert not is_search_serp("https://www.glassdoor.com/job-listing/staff-engineer-JV_123.htm")
     assert not is_search_serp("https://job-boards.greenhouse.io/acme/jobs/1")
+
+
+def test_is_aggregate_pay_rejects_seo_market_titles():
+    assert is_aggregate_pay("Python Engineer Remote Jobs - Median $105/hr | Career.now")
+    assert is_aggregate_pay("Python Engineer Jobs - Average $120k")
+    assert is_aggregate_pay("Python Engineer Salary: $95k-$140k (Glassdoor estimate)")
+    assert is_aggregate_pay("Python Engineer $180k Jobs, Employment | Indeed.com")
+    assert not is_aggregate_pay("Staff Engineer $180k")
+    assert not is_aggregate_pay("Staff Engineer $180k | LinkedIn")
+    assert not is_aggregate_pay("Engineer $90k · 40 hours/week")
+    assert not is_aggregate_pay("Role pays $180,000 a year")
+    assert not is_aggregate_pay("The estimated salary range for this role is $150,000-$180,000")
+    assert not is_aggregate_pay("Salary for this role is $180,000")
+    assert not is_aggregate_pay("Senior ML Engineer")

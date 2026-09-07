@@ -62,6 +62,21 @@ _LD_SCRIPT = re.compile(
 )
 _SCHEMA_HOURS = re.compile(r"(?i)(\d{1,2}(?:\.\d)?)\s*(?:hours?|hrs?)\b")
 _USD = {"", "USD", "US", "USA"}
+_AGGREGATE_PAY = re.compile(
+    r"(?i)"
+    r"(?:"
+    r"\bmedian\b.{0,32}(?:\$|salary|pay)|(?:\$|salary|pay).{0,32}\bmedian\b|"
+    r"\bjobs\b.{0,48}\$|"
+    r"\bjobs,?\s+employment\b|"
+    r"\bglassdoor\b.{0,40}\bestimat|\bestimat.{0,40}\bglassdoor\b"
+    r")"
+)
+_INDEX_HOSTS = (
+    "career.now",
+    "jooble.org",
+    "levels.fyi",
+    "salary.com",
+)
 
 
 @dataclass(frozen=True)
@@ -158,19 +173,47 @@ def parse_ats_json(url: str, payload) -> Compensation:
     return Compensation()
 
 
+def is_aggregate_pay(text: str) -> bool:
+    """True when text quotes market/SEO pay, not one employer's listing."""
+    return bool(text) and bool(_AGGREGATE_PAY.search(text))
+
+
 def is_search_serp(url: str) -> bool:
     """True for job-board search pages, not individual listings."""
     parts = urlsplit(canonicalize_url(url))
     host = parts.hostname or ""
     path = (parts.path or "").lower()
+    if any(host.endswith(h) for h in _INDEX_HOSTS):
+        return True
     if host.endswith("indeed.com"):
         if "/viewjob" in path or "/rc/clk" in path or "/pagead/" in path:
             return False
-        return "/q-" in path or path.endswith("-jobs.html") or path.rstrip("/") == "/jobs"
+        return (
+            "/q-" in path
+            or path.endswith("-jobs.html")
+            or path.rstrip("/") == "/jobs"
+            or ("/cmp/" in path and path.rstrip("/").endswith("/jobs"))
+        )
     if host.endswith("linkedin.com"):
-        return "/jobs/search" in path
+        if "/jobs/view" in path:
+            return False
+        return path.startswith("/jobs") or path.rstrip("/").endswith("/jobs")
     if host.endswith("ziprecruiter.com"):
         return "jobs-search" in path or path.rstrip("/") == "/jobs"
+    if host.endswith("simplyhired.com"):
+        return "/search" in path or "/k-" in path or path.endswith("-jobs.html")
+    if host.endswith("glassdoor.com"):
+        return "srch_" in path or "/salary" in path or bool(re.search(r"-jobs-e\d", path))
+    if host.endswith("dice.com"):
+        return "/jobs/q-" in path
+    if host.endswith("monster.com"):
+        return "/jobs/search" in path
+    if host.endswith("talent.com"):
+        return path.rstrip("/") == "/jobs"
+    if host.endswith("hiring.cafe"):
+        return path.startswith("/search")
+    if host.endswith("weworkremotely.com"):
+        return "/remote-jobs/search" in path
     if host.endswith("google.com") or host.endswith("duckduckgo.com") or host.endswith("bing.com"):
         return True
     return False
