@@ -4043,6 +4043,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group snowbikejacht insurance") == (None, None)
     assert _parse_pay("group snowbikejacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group snowbikejacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group snowbikejachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtjacht insurance") == (None, None)
+    assert _parse_pay("group snowbikejachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group snowbikejachtschip") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht schip") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtschip insurance") == (None, None)
+    assert _parse_pay("group snowbikejachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group snowbikejachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachttjalk insurance") == (None, None)
+    assert _parse_pay("group snowbikejachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group snowbikejachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtboeier insurance") == (None, None)
+    assert _parse_pay("group snowbikejachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group snowbikejachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group snowbikeschip") == (None, None)
     assert _parse_pay("$15,000 group snowbike-schip") == (None, None)
     assert _parse_pay("$15,000 group snowbike schip") == (None, None)
@@ -24841,6 +24869,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 snowbikeboei") == (None, 15_000)
     assert _parse_pay("$15,000 group snowbiking") == (None, 15_000)
     assert _parse_pay("$15,000 group snowbikejac") == (None, 15_000)
+    assert _parse_pay("$15,000 group snowbikejachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group snowbikejachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group snowbikejachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group snowbikejachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 group snowbikeschi") == (None, 15_000)
     assert _parse_pay("$15,000 group snowbiketjal") == (None, 15_000)
     assert _parse_pay("$15,000 group snowbikeboei") == (None, 15_000)
@@ -30847,11 +30879,47 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group snowbike insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group snowbikejacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group snow bike jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group snowbikejacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -62424,6 +62492,20 @@ def test_guess_pay_annualizes_hourly():
         groupsnowbikejachtmix, "<p>$15,000 group snowbikejacht. Salary $180,000</p>"
     ) is True
     assert groupsnowbikejachtmix.pay_high == 180_000
+    groupsnowbikejachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupsnowbikejachtjachtonly"
+    )
+    assert _apply_listing(
+        groupsnowbikejachtjachtonly, "<p>$15,000 group snowbikejachtjacht. Apply now.</p>"
+    ) is False
+    assert groupsnowbikejachtjachtonly.pay_high is None
+    groupsnowbikejachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupsnowbikejachtjachtmix"
+    )
+    assert _apply_listing(
+        groupsnowbikejachtjachtmix, "<p>$15,000 group snowbikejachtjacht. Salary $180,000</p>"
+    ) is True
+    assert groupsnowbikejachtjachtmix.pay_high == 180_000
     groupsnowbikeschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/groupsnowbikeschiponly"
     )
