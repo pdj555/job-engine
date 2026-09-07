@@ -339,6 +339,28 @@ def test_enrich_does_not_override_posted_snippet_pay():
     assert opp.pay == 90_000
 
 
+def test_enrich_reads_workday_cxs_json():
+    engine = Engine()
+
+    async def fake_ats(url, client=None):
+        return Compensation(pay_low=207_000, pay_high=351_225, remote=True, title="Manager")
+
+    async def boom(url, client=None):
+        raise AssertionError("HTML fetch should not run when Workday pay exists")
+
+    engine._fetch_ats = fake_ats
+    engine._fetch_listing = boom
+    opp = Opportunity(
+        title="Manager",
+        url="https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
+    )
+    asyncio.run(engine.enrich([opp]))
+    assert opp.pay == 351_225
+    assert opp.pay_source == "ats"
+    assert opp.remote is True
+    assert opp.score() == 351_225 / (40 * 50)
+
+
 def test_enrich_prefers_ats_json_over_html_schema():
     engine = Engine()
 

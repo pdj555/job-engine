@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from html import unescape
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 _TRACKING = {
@@ -49,7 +50,7 @@ _HOURS = re.compile(
 )
 _AMOUNT = r"(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?"
 _RANGE = re.compile(
-    rf"{_AMOUNT}\s*(?:[-–—]|to)\s*(?:USD|US\$|\$)?\s*"
+    rf"{_AMOUNT}\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
     r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?",
     re.I,
 )
@@ -76,6 +77,12 @@ _INDEX_HOSTS = (
     "jooble.org",
     "levels.fyi",
     "salary.com",
+)
+_LABELED_PAY = re.compile(
+    r"(?i)(?:pay|salary|compensation)\s+range|"
+    r"\bbase\s+salary\b|"
+    r"\bsalary\s+for\s+this\b|"
+    r"\bthis\s+(?:position|role|job)\s+pays\b"
 )
 
 
@@ -137,10 +144,17 @@ _LEVER_UNIT = {
     "per-hour-wage": "HOUR",
     "hour": "HOUR",
 }
+_SR_PERIOD = {
+    "YEARLY": "YEAR",
+    "MONTHLY": "MONTH",
+    "WEEKLY": "WEEK",
+    "DAILY": "DAY",
+    "HOURLY": "HOUR",
+}
 
 
 def ats_json_url(url: str) -> str | None:
-    """Public board JSON for a canonical Greenhouse, Lever, or Ashby listing."""
+    """Public board JSON for a canonical Greenhouse, Lever, Ashby, Workday, or SmartRecruiters listing."""
     parts = urlsplit(canonicalize_url(url))
     host = parts.hostname or ""
     segs = [p for p in parts.path.split("/") if p]
@@ -156,6 +170,15 @@ def ats_json_url(url: str) -> str | None:
         return f"https://{api}/v0/postings/{segs[0]}/{segs[1]}?mode=json"
     if host == "jobs.ashbyhq.com" and len(segs) >= 2:
         return f"https://api.ashbyhq.com/posting-api/job-board/{segs[0]}?includeCompensation=true"
+    if host.endswith("myworkdayjobs.com") and len(segs) >= 3 and segs[1] == "job":
+        tenant = host.split(".")[0]
+        return f"https://{host}/wday/cxs/{tenant}/{segs[0]}/{'/'.join(segs[1:])}"
+    if host.endswith("smartrecruiters.com") and len(segs) >= 2:
+        job_id = re.match(r"(\d+)", segs[1])
+        if job_id:
+            return (
+                f"https://api.smartrecruiters.com/v1/companies/{segs[0]}/postings/{job_id.group(1)}"
+            )
     return None
 
 
@@ -170,6 +193,10 @@ def parse_ats_json(url: str, payload) -> Compensation:
         segs = [p for p in urlsplit(canonicalize_url(url)).path.split("/") if p]
         job_id = segs[1] if len(segs) >= 2 else ""
         return _ashby_pay(payload, job_id)
+    if host.endswith("myworkdayjobs.com"):
+        return _workday_pay(payload)
+    if host.endswith("smartrecruiters.com"):
+        return _smartrecruiters_pay(payload)
     return Compensation()
 
 
@@ -333,6 +360,92 @@ def _ashby_salary_row(comp: dict) -> dict | None:
     return None
 
 
+def _workday_pay(payload) -> Compensation:
+    if not isinstance(payload, dict):
+        return Compensation()
+    info = payload.get("jobPostingInfo") if isinstance(payload.get("jobPostingInfo"), dict) else {}
+    org = payload.get("hiringOrganization") if isinstance(payload.get("hiringOrganization"), dict) else {}
+    title = _text(info.get("title"))
+    company = _text(org.get("name")) or None
+    remote = _workday_remote(info)
+    text = _html_text(info.get("jobDescription") or "")
+    parsed = _labeled_compensation(text)
+    if not parsed.posted:
+        return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
+        return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
+    return Compensation(
+        pay_low=parsed.pay_low,
+        pay_high=parsed.pay_high,
+        hours=parsed.hours,
+        remote=remote,
+        company=company,
+        title=title or None,
+    )
+
+
+def _workday_remote(info: dict) -> bool | None:
+    remote_type = _text(info.get("remoteType")).upper()
+    if "REMOTE" in remote_type or "TELECOMMUTE" in remote_type:
+        return True
+    loc = _text(info.get("location"))
+    if re.search(r"(?i)\b(?:not\s+remote|on-?site|hybrid)\b", loc):
+        return None
+    if re.search(r"(?i)(?:^|\b)remote\b", loc):
+        return True
+    return None
+
+
+def _labeled_compensation(text: str) -> Compensation:
+    hours = parse_compensation(text).hours
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if "$" not in sentence and not _BARE_USD.search(sentence):
+            continue
+        if not _LABELED_PAY.search(sentence):
+            continue
+        if re.search(r"(?i)\b(?:CAD|AUD|GBP|EUR)\b", sentence) and not re.search(
+            r"(?i)\bUSD\b|US\$", sentence
+        ):
+            continue
+        parsed = parse_compensation(sentence)
+        if parsed.posted:
+            return Compensation(pay_low=parsed.pay_low, pay_high=parsed.pay_high, hours=hours)
+    return Compensation(hours=hours)
+
+
+def _smartrecruiters_pay(payload) -> Compensation:
+    if not isinstance(payload, dict):
+        return Compensation()
+    title = _text(payload.get("name") or payload.get("title"))
+    company = payload.get("company")
+    company_name = _text(company.get("name") if isinstance(company, dict) else company) or None
+    loc = payload.get("location") if isinstance(payload.get("location"), dict) else {}
+    remote = True if loc.get("remote") is True else None
+    comp = payload.get("compensation")
+    if not isinstance(comp, dict):
+        return Compensation(remote=remote, company=company_name, title=title or None)
+    if str(comp.get("currency") or "").upper() not in {"USD", "US", "USA"}:
+        return Compensation(remote=remote, company=company_name, title=title or None)
+    unit = _SR_PERIOD.get(str(comp.get("period") or "").upper())
+    if unit is None:
+        return Compensation(remote=remote, company=company_name, title=title or None)
+    low, high = _number(comp.get("min")), _number(comp.get("max"))
+    if low is None and high is None:
+        return Compensation(remote=remote, company=company_name, title=title or None)
+    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    if not annual:
+        return Compensation(remote=remote, company=company_name, title=title or None)
+    return Compensation(
+        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company_name, title=title or None
+    )
+
+
+def _html_text(html: str) -> str:
+    text = unescape(html or "")
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def canonicalize_url(url: str) -> str:
     """Identity key: https, lowercase host, ATS rewrite, tracking stripped."""
     raw = (url or "").strip()
@@ -477,8 +590,10 @@ def _ats_shape(
         return host, trimmed or path, []
     if host.endswith("myworkdayjobs.com"):
         parts = [p for p in path.split("/") if p]
-        if parts and re.fullmatch(r"[a-z]{2}-[A-Z]{2}", parts[0]):
+        if parts and re.fullmatch(r"[a-z]{2}(?:-[A-Za-z]{2})?", parts[0], re.I):
             parts = parts[1:]
+        if parts and parts[-1].lower() == "apply":
+            parts = parts[:-1]
         return host, "/" + "/".join(parts) if parts else "/", []
     kept = []
     if "gh_jid" in params:

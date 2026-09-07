@@ -24,6 +24,11 @@ def test_parse_shorthand_range_applies_k_to_both():
     assert (parsed.pay_low, parsed.pay_high) == (120_000, 150_000)
 
 
+def test_parse_double_hyphen_range():
+    parsed = parse_compensation("The U.S. pay range for this position is $207,000 -- $351,225 annually.")
+    assert (parsed.pay_low, parsed.pay_high) == (207_000, 351_225)
+
+
 def test_parse_hourly_annualizes_at_stated_or_40h():
     stated = parse_compensation("$75/hr · 20 hours/week")
     assert stated.hours == 20
@@ -83,6 +88,9 @@ def test_canonicalize_greenhouse_lever_ashby_workday():
     assert canonicalize_url(
         "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Israel-Tel-Aviv/Software-Engineer_JR2025162/?source=LinkedIn"
     ) == "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/Israel-Tel-Aviv/Software-Engineer_JR2025162"
+    assert canonicalize_url(
+        "https://adobe.wd5.myworkdayjobs.com/en/external_experienced/job/Remote-California/Role_R1/apply"
+    ) == "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1"
 
 
 def test_canonicalize_generic_and_custom_ats_embed():
@@ -188,6 +196,15 @@ def test_ats_json_url_maps_greenhouse_lever_ashby():
     assert ats_json_url(
         "https://jobs.ashbyhq.com/luminary/84c74ea8-20b1-4e0d-9aa5-731da2cb1bf3"
     ) == "https://api.ashbyhq.com/posting-api/job-board/luminary?includeCompensation=true"
+    assert ats_json_url(
+        "https://adobe.wd5.myworkdayjobs.com/en-US/external_experienced/job/Remote-California/Manager--Enterprise-Architecture_R167331?source=LinkedIn"
+    ) == (
+        "https://adobe.wd5.myworkdayjobs.com/wday/cxs/adobe/external_experienced"
+        "/job/Remote-California/Manager--Enterprise-Architecture_R167331"
+    )
+    assert ats_json_url(
+        "https://jobs.smartrecruiters.com/Experian/744000144815929-senior-compensation-analyst-remote-"
+    ) == "https://api.smartrecruiters.com/v1/companies/Experian/postings/744000144815929"
     assert ats_json_url("https://example.com/jobs/1") is None
 
 
@@ -287,6 +304,94 @@ def test_parse_ats_rejects_foreign_and_missing():
     )
     assert cad.pay_high is None
     assert parse_ats_json("https://example.com/x", {"pay_input_ranges": []}).posted is False
+
+
+def test_parse_workday_job_description_pay():
+    parsed = parse_ats_json(
+        "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
+        {
+            "jobPostingInfo": {
+                "title": "Manager, Enterprise Architecture",
+                "location": "Remote California",
+                "jobDescription": (
+                    "<p>The U.S. pay range for this position is $207,000 -- $351,225 annually.</p>"
+                ),
+            },
+            "hiringOrganization": {"name": "Adobe Inc."},
+        },
+    )
+    assert (parsed.pay_low, parsed.pay_high) == (207_000, 351_225)
+    assert parsed.remote is True
+    assert parsed.company == "Adobe Inc."
+    assert parsed.title == "Manager, Enterprise Architecture"
+    unlabeled = parse_ats_json(
+        "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
+        {
+            "jobPostingInfo": {
+                "title": "Eng",
+                "location": "San Jose",
+                "jobDescription": (
+                    "<p>Team budget is $80,000 -- $120,000.</p>"
+                    "<p>The pay range for this position is $207,000 -- $351,225 annually.</p>"
+                ),
+            }
+        },
+    )
+    assert (unlabeled.pay_low, unlabeled.pay_high) == (207_000, 351_225)
+    cad = parse_ats_json(
+        "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Toronto/Role_R1",
+        {
+            "jobPostingInfo": {
+                "jobDescription": "The pay range for this position is CAD $140,000 -- $180,000 annually."
+            }
+        },
+    )
+    assert cad.posted is False
+    empty = parse_ats_json(
+        "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
+        {"jobPostingInfo": {"title": "Eng", "jobDescription": ""}},
+    )
+    assert empty.posted is False
+    onsite = parse_ats_json(
+        "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/San-Jose/Role_R1",
+        {"jobPostingInfo": {"location": "Onsite (not remote)", "jobDescription": ""}},
+    )
+    assert onsite.remote is None
+
+
+def test_parse_smartrecruiters_compensation():
+    parsed = parse_ats_json(
+        "https://jobs.smartrecruiters.com/Experian/744000144815929-senior-compensation-analyst-remote-",
+        {
+            "name": "Senior Compensation Analyst (Remote)",
+            "company": {"name": "Experian"},
+            "location": {"remote": True},
+            "compensation": {"min": 80237, "max": 139077, "currency": "USD", "period": "YEARLY"},
+        },
+    )
+    assert (parsed.pay_low, parsed.pay_high) == (80_237, 139_077)
+    assert parsed.remote is True
+    cad = parse_ats_json(
+        "https://jobs.smartrecruiters.com/acme/1",
+        {"compensation": {"min": 100000, "max": 120000, "currency": "CAD", "period": "YEARLY"}},
+    )
+    assert cad.posted is False
+    empty = parse_ats_json(
+        "https://jobs.smartrecruiters.com/acme/1",
+        {"name": "Eng", "compensation": None},
+    )
+    assert empty.posted is False
+    assert empty.title == "Eng"
+    missing = parse_ats_json(
+        "https://jobs.smartrecruiters.com/acme/1",
+        {"compensation": {"min": 80000, "max": 90000}},
+    )
+    assert missing.posted is False
+    hourly = parse_ats_json(
+        "https://jobs.smartrecruiters.com/acme/1",
+        {"compensation": {"min": 50, "max": 75, "currency": "USD", "period": "HOURLY"}},
+    )
+    assert (hourly.pay_low, hourly.pay_high) == (100_000, 150_000)
 
 
 def test_is_search_serp_drops_indeed_query_pages_not_viewjob():
