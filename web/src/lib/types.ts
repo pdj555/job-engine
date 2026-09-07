@@ -1,3 +1,5 @@
+export type PaySource = "posted" | "schema" | null;
+
 export type Opportunity = {
   title: string;
   company: string | null;
@@ -5,8 +7,12 @@ export type Opportunity = {
   pay: number | null;
   hours_per_week: number | null;
   dollars_per_hour: number | null;
+  refined_rate: number | null;
+  rate_imputed: boolean;
   remote: boolean;
   score: number;
+  pay_source: PaySource;
+  hours_source: "posted" | "schema" | null;
 };
 
 export type SearchResponse = {
@@ -14,7 +20,6 @@ export type SearchResponse = {
   count: number;
 };
 
-// The agent response adds the autonomous trace — the queries the agent chose to run.
 export type AgentResponse = SearchResponse & {
   searches: string[];
 };

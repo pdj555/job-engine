@@ -7,7 +7,7 @@ hands *finding* to an in-process brain and keeps *ranking* in Python.
 goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportunities}
             search_web tool / open-web engine              │
                                                            ▼
-                                                   _rank → Opportunity.score()
+                                                   _rank → posted/schema pay → Opportunity.score()
                                                    deterministic  $ / hr
 ```
 
@@ -17,7 +17,9 @@ The previous brain was an external [Hermes Agent](https://github.com/NousResearc
 server. It is not running in Cloud Agents or on Vercel, so `/agent` failed with a
 connection error. [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 is the in-process tool loop: the model calls our `search_web` tool (Brave, or
-DuckDuckGo with no key). `Opportunity.score()` still owns the $/hour.
+DuckDuckGo with no key). URLs must match search hits. Pay comes from listing
+text or schema.org JobPosting JSON-LD — never from the model. `Opportunity.score()`
+owns the $/hour.
 
 With no `OPENAI_API_KEY`, agent mode uses the same Engine search as `find` and
 returns the search angles as the trace — it does not require a sidecar process.
