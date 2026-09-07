@@ -4286,6 +4286,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group pontoonjacht insurance") == (None, None)
     assert _parse_pay("group pontoonjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group pontoonjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group pontoonjachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtjacht insurance") == (None, None)
+    assert _parse_pay("group pontoonjachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group pontoonjachtschip") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht schip") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtschip insurance") == (None, None)
+    assert _parse_pay("group pontoonjachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group pontoonjachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachttjalk insurance") == (None, None)
+    assert _parse_pay("group pontoonjachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group pontoonjachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtboeier insurance") == (None, None)
+    assert _parse_pay("group pontoonjachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group pontoonjachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group pontoonschip") == (None, None)
     assert _parse_pay("$15,000 group pontoon-schip") == (None, None)
     assert _parse_pay("$15,000 group pontoon schip") == (None, None)
@@ -25143,6 +25171,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 pontoonboei") == (None, 15_000)
     assert _parse_pay("$15,000 group pont") == (None, 15_000)
     assert _parse_pay("$15,000 group pontoonjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group pontoonjachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group pontoonjachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group pontoonjachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group pontoonjachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 group pontoonschi") == (None, 15_000)
     assert _parse_pay("$15,000 group pontoontjal") == (None, 15_000)
     assert _parse_pay("$15,000 group pontoonboei") == (None, 15_000)
@@ -31400,12 +31432,48 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group pontoon insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group pontoonjacht $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group pontoonjacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group pontoon jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group pontoonjacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -63304,6 +63372,20 @@ def test_guess_pay_annualizes_hourly():
         grouppontoonjachtmix, "<p>$15,000 group pontoonjacht. Salary $180,000</p>"
     ) is True
     assert grouppontoonjachtmix.pay_high == 180_000
+    grouppontoonjachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouppontoonjachtjachtonly"
+    )
+    assert _apply_listing(
+        grouppontoonjachtjachtonly, "<p>$15,000 group pontoonjachtjacht. Apply now.</p>"
+    ) is False
+    assert grouppontoonjachtjachtonly.pay_high is None
+    grouppontoonjachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouppontoonjachtjachtmix"
+    )
+    assert _apply_listing(
+        grouppontoonjachtjachtmix, "<p>$15,000 group pontoonjachtjacht. Salary $180,000</p>"
+    ) is True
+    assert grouppontoonjachtjachtmix.pay_high == 180_000
     grouppontoonschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/grouppontoonschiponly"
     )
