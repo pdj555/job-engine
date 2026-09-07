@@ -5337,6 +5337,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group ski boatjacht insurance") == (None, None)
     assert _parse_pay("group ski boatjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group ski boatjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group ski boatjachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtjacht insurance") == (None, None)
+    assert _parse_pay("group ski boatjachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group ski boatjachtschip") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht schip") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtschip insurance") == (None, None)
+    assert _parse_pay("group ski boatjachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group ski boatjachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachttjalk insurance") == (None, None)
+    assert _parse_pay("group ski boatjachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group ski boatjachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtboeier insurance") == (None, None)
+    assert _parse_pay("group ski boatjachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group ski boatjachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group ski boatschip") == (None, None)
     assert _parse_pay("$15,000 group ski-boat-schip") == (None, None)
     assert _parse_pay("$15,000 group ski boat schip") == (None, None)
@@ -29308,6 +29336,11 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group bass") == (None, 15_000)
     assert _parse_pay("$15,000 group ski boa") == (None, 15_000)
     assert _parse_pay("$15,000 group ski boating") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boatjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boatjachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boatjachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boatjachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group ski boatjachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 group runabou") == (None, 15_000)
     assert _parse_pay("$15,000 group runabouting") == (None, 15_000)
     assert _parse_pay("$15,000 group runaboutjac") == (None, 15_000)
@@ -33809,11 +33842,47 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group ski boat insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group ski boatjacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group ski boat jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group ski boatjacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -67099,6 +67168,20 @@ def test_guess_pay_annualizes_hourly():
         groupskiboatjachtmix, "<p>$15,000 group ski boatjacht. Salary $180,000</p>"
     ) is True
     assert groupskiboatjachtmix.pay_high == 180_000
+    groupskiboatjachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupskiboatjachtjachtonly"
+    )
+    assert _apply_listing(
+        groupskiboatjachtjachtonly, "<p>$15,000 group ski boatjachtjacht. Apply now.</p>"
+    ) is False
+    assert groupskiboatjachtjachtonly.pay_high is None
+    groupskiboatjachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupskiboatjachtjachtmix"
+    )
+    assert _apply_listing(
+        groupskiboatjachtjachtmix, "<p>$15,000 group ski boatjachtjacht. Salary $180,000</p>"
+    ) is True
+    assert groupskiboatjachtjachtmix.pay_high == 180_000
     groupskiboatschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/groupskiboatschiponly"
     )
