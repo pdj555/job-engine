@@ -2940,6 +2940,46 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group hurricane insurance") == (None, None)
     assert _parse_pay("group hurricane of $15,000") == (None, None)
     assert _parse_pay("$15,000 group hurricane. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group hurricanejacht") == (None, None)
+    assert _parse_pay("$15,000 group hurricane-jacht") == (None, None)
+    assert _parse_pay("$15,000 group hurricane jacht") == (None, None)
+    assert _parse_pay("$15,000 group hurricanejachten") == (None, None)
+    assert _parse_pay("$15,000 group hurricanejacht insurance") == (None, None)
+    assert _parse_pay("group hurricanejacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group hurricanejacht. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 group hurricaneschip") == (None, None)
+    assert _parse_pay("$15,000 group hurricane-schip") == (None, None)
+    assert _parse_pay("$15,000 group hurricane schip") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneschepen") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneschip insurance") == (None, None)
+    assert _parse_pay("group hurricaneschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneschip. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 group hurricanetjalk") == (None, None)
+    assert _parse_pay("$15,000 group hurricane-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group hurricane tjalk") == (None, None)
+    assert _parse_pay("$15,000 group hurricanetjalken") == (None, None)
+    assert _parse_pay("$15,000 group hurricanetjalk insurance") == (None, None)
+    assert _parse_pay("group hurricanetjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group hurricanetjalk. Salary $180,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("$15,000 group hurricaneboeier") == (None, None)
+    assert _parse_pay("$15,000 group hurricane-boeier") == (None, None)
+    assert _parse_pay("$15,000 group hurricane boeier") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneboeiers") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneboeier insurance") == (None, None)
+    assert _parse_pay("group hurricaneboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group hurricaneboeier. Salary $180,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("$15,000 group windstorm") == (None, None)
     assert _parse_pay("$15,000 group tornado") == (None, None)
     assert _parse_pay("$15,000 group cyclone") == (None, None)
@@ -17622,6 +17662,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 quake") == (None, 15_000)
     assert _parse_pay("$15,000 windstorm") == (None, 15_000)
     assert _parse_pay("$15,000 hurricane") == (None, 15_000)
+    assert _parse_pay("$15,000 group hurricanejac") == (None, 15_000)
+    assert _parse_pay("$15,000 group hurricaneschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group hurricanetjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group hurricaneboei") == (None, 15_000)
     assert _parse_pay("$15,000 tornado") == (None, 15_000)
     assert _parse_pay("$15,000 cyclone") == (None, 15_000)
     assert _parse_pay("$15,000 typhoon") == (None, 15_000)
@@ -21347,6 +21391,44 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     )
     assert _parse_pay("base $180,000 group hurricane $15,000") == (None, 180_000)
     assert _parse_pay("base $180,000 group hurricane insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay(
+        "base $180,000 group hurricane insurance jacht insurance $15,000"
+    ) == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricanejacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricane jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricaneschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricane schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricanetjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricane tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricaneboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group hurricane boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -43752,6 +43834,67 @@ def test_guess_pay_annualizes_hourly():
         grouphurricanemix, "<p>$15,000 group hurricane. Salary $180,000</p>"
     ) is True
     assert grouphurricanemix.pay_high == 180_000
+    grouphurricanejachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricanejachtonly"
+    )
+    assert _apply_listing(
+        grouphurricanejachtonly, "<p>$15,000 group hurricanejacht. Apply now.</p>"
+    ) is False
+    assert grouphurricanejachtonly.pay_high is None
+    grouphurricanejachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricanejachtmix"
+    )
+    assert _apply_listing(
+        grouphurricanejachtmix,
+        "<p>$15,000 group hurricanejacht. Salary $180,000</p>",
+    ) is True
+    assert grouphurricanejachtmix.pay_high == 180_000
+    grouphurricaneschiponly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricaneschiponly"
+    )
+    assert _apply_listing(
+        grouphurricaneschiponly, "<p>$15,000 group hurricaneschip. Apply now.</p>"
+    ) is False
+    assert grouphurricaneschiponly.pay_high is None
+    grouphurricaneschipmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricaneschipmix"
+    )
+    assert _apply_listing(
+        grouphurricaneschipmix,
+        "<p>$15,000 group hurricaneschip. Salary $180,000</p>",
+    ) is True
+    assert grouphurricaneschipmix.pay_high == 180_000
+    grouphurricanetjalkonly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricanetjalkonly"
+    )
+    assert _apply_listing(
+        grouphurricanetjalkonly, "<p>$15,000 group hurricanetjalk. Apply now.</p>"
+    ) is False
+    assert grouphurricanetjalkonly.pay_high is None
+    grouphurricanetjalkmix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricanetjalkmix"
+    )
+    assert _apply_listing(
+        grouphurricanetjalkmix,
+        "<p>$15,000 group hurricanetjalk. Salary $180,000</p>",
+    ) is True
+    assert grouphurricanetjalkmix.pay_high == 180_000
+    grouphurricaneboeieronly = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricaneboeieronly"
+    )
+    assert _apply_listing(
+        grouphurricaneboeieronly,
+        "<p>$15,000 group hurricaneboeier. Apply now.</p>",
+    ) is False
+    assert grouphurricaneboeieronly.pay_high is None
+    grouphurricaneboeiermix = Opportunity(
+        title="Engineer", url="https://jobs.example/grouphurricaneboeiermix"
+    )
+    assert _apply_listing(
+        grouphurricaneboeiermix,
+        "<p>$15,000 group hurricaneboeier. Salary $180,000</p>",
+    ) is True
+    assert grouphurricaneboeiermix.pay_high == 180_000
     groupwindstormonly = Opportunity(
         title="Engineer", url="https://jobs.example/groupwindstormonly"
     )
