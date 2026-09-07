@@ -13641,6 +13641,34 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group commuterjacht insurance") == (None, None)
     assert _parse_pay("group commuterjacht of $15,000") == (None, None)
     assert _parse_pay("$15,000 group commuterjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group commuterjachtjacht") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht-jacht") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht jacht") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtjachten") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtjacht insurance") == (None, None)
+    assert _parse_pay("group commuterjachtjacht of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtjacht. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group commuterjachtschip") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht-schip") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht schip") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtschepen") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtschip insurance") == (None, None)
+    assert _parse_pay("group commuterjachtschip of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtschip. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group commuterjachttjalk") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht-tjalk") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht tjalk") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachttjalken") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachttjalk insurance") == (None, None)
+    assert _parse_pay("group commuterjachttjalk of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachttjalk. Salary $180,000") == (None, 180_000)
+    assert _parse_pay("$15,000 group commuterjachtboeier") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht-boeier") == (None, None)
+    assert _parse_pay("$15,000 group commuterjacht boeier") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtboeiers") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtboeier insurance") == (None, None)
+    assert _parse_pay("group commuterjachtboeier of $15,000") == (None, None)
+    assert _parse_pay("$15,000 group commuterjachtboeier. Salary $180,000") == (None, 180_000)
     assert _parse_pay("$15,000 group commuterschip") == (None, None)
     assert _parse_pay("$15,000 group commuter-schip") == (None, None)
     assert _parse_pay("$15,000 group commuter schip") == (None, None)
@@ -24018,6 +24046,10 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
     assert _parse_pay("$15,000 group camperboei") == (None, 15_000)
     assert _parse_pay("$15,000 group commute") == (None, 15_000)
     assert _parse_pay("$15,000 group commuterjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group commuterjachtjac") == (None, 15_000)
+    assert _parse_pay("$15,000 group commuterjachtschi") == (None, 15_000)
+    assert _parse_pay("$15,000 group commuterjachttjal") == (None, 15_000)
+    assert _parse_pay("$15,000 group commuterjachtboei") == (None, 15_000)
     assert _parse_pay("$15,000 group commuterschi") == (None, 15_000)
     assert _parse_pay("$15,000 group commutertjal") == (None, 15_000)
     assert _parse_pay("$15,000 group commuterboei") == (None, 15_000)
@@ -41739,11 +41771,47 @@ def test_guess_pay_parses_real_numbers_and_refuses_to_invent():
         None,
         180_000,
     )
+    assert _parse_pay("base $180,000 group commuter insurance jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
     assert _parse_pay("base $180,000 group commuterjacht insurance $15,000") == (
         None,
         180_000,
     )
     assert _parse_pay("base $180,000 group commuter jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjachtjacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjacht jacht insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjachtschip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjacht schip insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjachttjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjacht tjalk insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjachtboeier insurance $15,000") == (
+        None,
+        180_000,
+    )
+    assert _parse_pay("base $180,000 group commuterjacht boeier insurance $15,000") == (
         None,
         180_000,
     )
@@ -79155,6 +79223,20 @@ def test_guess_pay_annualizes_hourly():
         groupcommuterjachtmix, "<p>$15,000 group commuterjacht. Salary $180,000</p>"
     ) is True
     assert groupcommuterjachtmix.pay_high == 180_000
+    groupcommuterjachtjachtonly = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcommuterjachtjachtonly"
+    )
+    assert _apply_listing(
+        groupcommuterjachtjachtonly, "<p>$15,000 group commuterjachtjacht. Apply now.</p>"
+    ) is False
+    assert groupcommuterjachtjachtonly.pay_high is None
+    groupcommuterjachtjachtmix = Opportunity(
+        title="Engineer", url="https://jobs.example/groupcommuterjachtjachtmix"
+    )
+    assert _apply_listing(
+        groupcommuterjachtjachtmix, "<p>$15,000 group commuterjachtjacht. Salary $180,000</p>"
+    ) is True
+    assert groupcommuterjachtjachtmix.pay_high == 180_000
     groupcommuterschiponly = Opportunity(
         title="Engineer", url="https://jobs.example/groupcommuterschiponly"
     )
