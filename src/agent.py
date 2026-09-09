@@ -14,16 +14,20 @@ from pydantic import BaseModel, Field
 
 from config.settings import settings
 from src.compensation import canonicalize_url
-from src.engine import Engine, opportunity_from_raw
+from src.engine import Engine, opportunity_from_raw, search_angles
 from src.models import Opportunity
 
 INSTRUCTIONS = """You are an opportunity scout. Use search_web to research the
-open web across remote roles, contracts/freelance, grants, and cofounder/equity.
-Then return searches you actually ran plus opportunities you found.
+open web across remote roles, contracts/freelance, grants, cofounder/equity,
+and ATS boards (Greenhouse, Lever, Ashby, Workday). Prefer listing URLs on
+those hosts — they often expose posted pay.
 
-Copy title, url, company, remote, and any stated pay/hours into description.
-Do not invent pay or hours. Only include http(s) listing URLs that appeared
-in search_web results. Copy those URLs exactly."""
+Use read_listing on promising search hits to confirm posted pay before
+including them. Then return searches you actually ran plus opportunities.
+
+Copy title, url, company, remote from search hits. Do not invent pay or hours.
+Only include http(s) listing URLs that appeared in search_web results.
+Copy those URLs exactly."""
 
 
 @dataclass
@@ -48,12 +52,7 @@ class ScoutResult(BaseModel):
 
 
 def _angles(query: str) -> list[str]:
-    return [
-        f"{query} remote job hiring",
-        f"{query} freelance contract",
-        f"{query} grant funding opportunity",
-        f"{query} startup equity cofounder",
-    ]
+    return search_angles(query)
 
 
 def _http_url(url: str) -> bool:
@@ -157,20 +156,25 @@ async def _sdk_run(query: str, limit: int) -> AgentRun:
 
     @function_tool
     async def search_web(q: str) -> str:
-        """Search the open web for roles, contracts, grants, or equity."""
+        """Search the open web for roles, contracts, grants, equity, or ATS boards."""
         searches.append(q)
         hits = await engine.search_web(q)
         search_hits.extend(hits[:10])
         return json.dumps(hits[:10])
 
+    @function_tool
+    async def read_listing(url: str) -> str:
+        """Fetch posted pay/hours for a listing URL from ATS JSON or JobPosting schema."""
+        return json.dumps(await engine.read_listing(url))
+
     agent = Agent(
         name="OpportunityScout",
         instructions=INSTRUCTIONS,
-        tools=[search_web],
+        tools=[search_web, read_listing],
         output_type=ScoutResult,
         model=settings.fast_model,
     )
-    result = await Runner.run(agent, query, max_turns=8)
+    result = await Runner.run(agent, query, max_turns=10)
     out = result.final_output
     if isinstance(out, ScoutResult):
         run = _from_scout(out, searches, limit, search_hits)

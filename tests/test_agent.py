@@ -119,8 +119,11 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
             ScoutHit(title="Lush $200k 20 hours/week", url="u2"),
         ],
     )
+    captured = {}
 
     async def fake_run(agent, input, max_turns=None):
+        captured["tools"] = [t.name for t in agent.tools]
+        captured["max_turns"] = max_turns
         return types.SimpleNamespace(final_output=out)
 
     async def no_enrich(self, opportunities):
@@ -132,8 +135,22 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
     run = asyncio.run(agent_run("find me work"))
 
     assert run.searches == ["remote ml contract", "ai grants"]
+    assert set(captured["tools"]) == {"search_web", "read_listing"}
+    assert captured["max_turns"] == 10
     assert {o.title for o in run.ranked} == {
         "Lush $200k 20 hours/week",
         "Cheap $100k 40 hours/week",
     }
     assert all(o.pay is None and o.pay_source is None and o.score() == 0 for o in run.ranked)
+
+
+def test_agent_fallback_searches_include_ats_angles(monkeypatch):
+    monkeypatch.setattr("src.agent.settings.openai_api_key", "")
+
+    async def fake_find(self, query, limit=20):
+        return []
+
+    monkeypatch.setattr(Engine, "find", fake_find)
+    run = asyncio.run(agent_run("staff eng"))
+    assert any("greenhouse.io" in s for s in run.searches)
+    assert any("ashbyhq.com" in s for s in run.searches)

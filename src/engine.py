@@ -71,17 +71,46 @@ class Engine:
 
             async def one(opp: Opportunity) -> None:
                 async with sem:
-                    ats = await self._fetch_ats(opp.url, client)
-                    if ats:
-                        _apply_comp(opp, ats, "ats")
-                        if ats.posted:
-                            return
-                    html = await self._fetch_listing(opp.url, client)
-                if not html:
-                    return
-                _apply_comp(opp, parse_job_posting(html), "schema")
+                    await self._enrich_one(opp, client)
 
             await asyncio.gather(*(one(o) for o in need), return_exceptions=True)
+
+    async def read_listing(self, url: str) -> dict:
+        """Posted pay/hours for one listing URL. Invents nothing."""
+        url = canonicalize_url(url)
+        if not url:
+            return {"url": "", "pay_source": None, "pay": None, "hours_per_week": None}
+        opp = Opportunity(title="Unknown", url=url, description="")
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=8.0,
+            headers={"User-Agent": "JobEngine/1.0 (listing-schema)"},
+            max_redirects=3,
+        ) as client:
+            await self._enrich_one(opp, client)
+        return {
+            "url": opp.url,
+            "title": opp.title if opp.title != "Unknown" else None,
+            "company": opp.company,
+            "pay": opp.pay,
+            "pay_low": opp.pay_low,
+            "pay_high": opp.pay_high,
+            "hours_per_week": opp.hours_per_week,
+            "remote": opp.remote,
+            "pay_source": opp.pay_source,
+            "hours_source": opp.hours_source,
+        }
+
+    async def _enrich_one(self, opp: Opportunity, client: httpx.AsyncClient) -> None:
+        ats = await self._fetch_ats(opp.url, client)
+        if ats:
+            _apply_comp(opp, ats, "ats")
+            if ats.posted:
+                return
+        html = await self._fetch_listing(opp.url, client)
+        if not html:
+            return
+        _apply_comp(opp, parse_job_posting(html), "schema")
 
     async def _fetch_ats(self, url: str, client: httpx.AsyncClient) -> Compensation | None:
         endpoint = ats_json_url(url)
@@ -113,12 +142,7 @@ class Engine:
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
-        searches = [
-            self._search_brave(f"{query} remote job hiring"),
-            self._search_brave(f"{query} freelance contract"),
-            self._search_brave(f"{query} grant funding opportunity"),
-            self._search_brave(f"{query} startup equity cofounder"),
-        ]
+        searches = [self._search_brave(angle) for angle in search_angles(query)]
 
         if self.perplexity_key:
             searches.append(self._search_perplexity(query))
@@ -415,6 +439,18 @@ def _parse_ddg_html(html: str) -> list[dict]:
             item["description"] = unescape(re.sub(r"\s+", " ", snippet.group(1)).strip())
 
     return results[:20]
+
+
+def search_angles(query: str) -> list[str]:
+    """Open-web angles plus ATS hosts that expose posted pay JSON."""
+    return [
+        f"{query} remote job hiring",
+        f"{query} freelance contract",
+        f"{query} grant funding opportunity",
+        f"{query} startup equity cofounder",
+        f"{query} site:boards.greenhouse.io OR site:jobs.lever.co",
+        f"{query} site:jobs.ashbyhq.com OR site:myworkdayjobs.com",
+    ]
 
 
 def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportunity | None:

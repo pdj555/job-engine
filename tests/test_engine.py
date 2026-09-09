@@ -7,8 +7,35 @@ from src.engine import (
     _guess_remote,
     _parse_ddg_html,
     opportunity_from_raw,
+    search_angles,
 )
 from src.models import Opportunity
+
+
+def test_search_angles_include_ats_hosts():
+    angles = search_angles("ml engineer")
+    assert any("boards.greenhouse.io" in a for a in angles)
+    assert any("jobs.ashbyhq.com" in a for a in angles)
+    assert any("remote job hiring" in a for a in angles)
+
+
+def test_read_listing_returns_ats_pay(monkeypatch):
+    engine = Engine()
+
+    async def fake_ats(url, client):
+        return Compensation(pay_low=150_000, pay_high=180_000, hours=40, company="Acme")
+
+    async def fake_html(url, client):
+        return None
+
+    monkeypatch.setattr(engine, "_fetch_ats", fake_ats)
+    monkeypatch.setattr(engine, "_fetch_listing", fake_html)
+
+    out = asyncio.run(engine.read_listing("https://boards.greenhouse.io/acme/jobs/1"))
+    assert out["pay"] == 180_000
+    assert out["pay_source"] == "ats"
+    assert out["company"] == "Acme"
+    assert out["hours_per_week"] == 40
 
 
 def test_extract_does_not_invent_pay_from_title():
