@@ -3,7 +3,7 @@ import { Panel } from "./panel";
 const STACK: [string, string][] = [
   ["brain", "OpenAI Agents SDK — plans web searches"],
   ["transport", "search_web tool · Engine fallback"],
-  ["ranking", "deterministic · Opportunity.score()"],
+  ["ranking", "posted/schema pay · Opportunity.score()"],
   ["surfaces", "CLI · API · Web"],
 ];
 
@@ -32,7 +32,7 @@ export function ArchitectureView() {
             <span className="flow-title">
               rank · <b>$/hour</b>
             </span>
-            <span className="flow-sub">office −30% · thin listings sink</span>
+            <span className="flow-sub">posted + JobPosting schema · office −30%</span>
           </div>
 
           <span className="flow-arrow" aria-hidden>
