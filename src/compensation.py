@@ -82,7 +82,18 @@ _LABELED_PAY = re.compile(
     r"(?i)(?:pay|salary|compensation)\s+range|"
     r"\bbase\s+salary\b|"
     r"\bsalary\s+for\s+this\b|"
-    r"\bthis\s+(?:position|role|job)\s+pays\b"
+    r"\bthis\s+(?:position|role|job)\s+pays\b|"
+    r"\b(?:salary|compensation)\s*(?:is|:)|"
+    r"\bstarting\s+(?:pay|salary)\b"
+)
+_ATS_HREF = re.compile(
+    r"https?://(?:(?:job-boards|boards)\.greenhouse\.io|jobs\.lever\.co|"
+    r"jobs\.ashbyhq\.com|jobs\.smartrecruiters\.com|"
+    r"[a-z0-9-]+\.myworkdayjobs\.com)/[^\s\"'<>]+",
+    re.I,
+)
+_GH_BOARD = re.compile(
+    r"(?i)greenhouse\.io/(?:embed/[^\"'?]*\?[^\"']*\bfor=|job-board/js\?for=)([a-z0-9_-]+)"
 )
 
 
@@ -108,6 +119,39 @@ def parse_compensation(text: str) -> Compensation:
         return Compensation(hours=hours)
     annual = _parse_annual(blob, hours)
     return Compensation(pay_low=annual[0], pay_high=annual[1], hours=hours)
+
+
+def parse_listing_pay(html: str) -> Compensation:
+    """Employer-posted USD pay from visible listing copy. Invents nothing."""
+    text = _html_text(html)
+    if not text or is_aggregate_pay(text[:800]):
+        return Compensation()
+    return _labeled_compensation(text)
+
+
+def ats_source_url(url: str, html: str | None = None) -> str | None:
+    """Canonical ATS listing URL from a native host, embed query, or page HTML."""
+    if ats_json_url(url):
+        return canonicalize_url(url)
+    parts = urlsplit(canonicalize_url(url))
+    params = {k.lower(): v for k, v in parse_qsl(parts.query)}
+    if not html:
+        return None
+    job_id = params.get("gh_jid")
+    ashby_id = params.get("ashby_jid")
+    board_match = _GH_BOARD.search(html)
+    if board_match and job_id and job_id.isdigit():
+        return f"https://job-boards.greenhouse.io/{board_match.group(1)}/jobs/{job_id}"
+    for match in _ATS_HREF.finditer(html):
+        found = canonicalize_url(match.group(0).rstrip(").,;"))
+        if not ats_json_url(found) or is_search_serp(found):
+            continue
+        if job_id and job_id not in found:
+            continue
+        if ashby_id and ashby_id not in found:
+            continue
+        return found
+    return None
 
 
 def parse_job_posting(html: str) -> Compensation:
@@ -296,7 +340,12 @@ def _lever_pay(payload) -> Compensation:
         return Compensation(remote=remote, company=company, title=title or None)
     if str(sr.get("currency") or "USD").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
-    unit = _LEVER_UNIT.get(str(sr.get("interval") or "per-year-salary").lower(), "YEAR")
+    interval = sr.get("interval")
+    if not interval:
+        return Compensation(remote=remote, company=company, title=title or None)
+    unit = _LEVER_UNIT.get(str(interval).lower())
+    if unit is None:
+        return Compensation(remote=remote, company=company, title=title or None)
     low, high = _number(sr.get("min")), _number(sr.get("max"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
@@ -334,10 +383,15 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
         return Compensation(remote=remote, company=company, title=title or None)
     if str(salary.get("currencyCode") or "USD").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
-    interval = str(salary.get("interval") or "1 YEAR").upper().replace("1 ", "")
+    raw_interval = salary.get("interval")
+    if not raw_interval:
+        return Compensation(remote=remote, company=company, title=title or None)
+    interval = str(raw_interval).upper().replace("1 ", "")
     unit = {"YEAR": "YEAR", "MONTH": "MONTH", "WEEK": "WEEK", "DAY": "DAY", "HOUR": "HOUR"}.get(
-        interval, "YEAR"
+        interval
     )
+    if unit is None:
+        return Compensation(remote=remote, company=company, title=title or None)
     low, high = _number(salary.get("minValue")), _number(salary.get("maxValue"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
@@ -371,7 +425,6 @@ def _workday_pay(payload) -> Compensation:
     text = _html_text(info.get("jobDescription") or "")
     parsed = _labeled_compensation(text)
     if not parsed.posted:
-        return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
         return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
     return Compensation(
         pay_low=parsed.pay_low,
@@ -441,6 +494,8 @@ def _smartrecruiters_pay(payload) -> Compensation:
 
 def _html_text(html: str) -> str:
     text = unescape(html or "")
+    text = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", text)
+    text = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", text)
     text = re.sub(r"(?i)<br\s*/?>", "\n", text)
     text = re.sub(r"<[^>]+>", " ", text)
     return re.sub(r"\s+", " ", text).strip()

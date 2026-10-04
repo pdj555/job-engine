@@ -10,6 +10,17 @@ export function formatPay(n: number | null): string {
   return `$${n}`;
 }
 
+export function formatPayRange(
+  low: number | null,
+  high: number | null,
+  mid: number | null,
+): string {
+  if (low != null && high != null && low !== high) {
+    return `${formatPay(low)}–${formatPay(high)}`;
+  }
+  return formatPay(mid ?? high ?? low);
+}
+
 export function isListed(source: string | null | undefined): boolean {
   return source === "posted" || source === "schema" || source === "ats";
 }
