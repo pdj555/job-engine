@@ -25,12 +25,14 @@ class Opportunity(BaseModel):
     # Metadata
     source: str = ""
     posted: Optional[datetime] = None
-    pay_source: Optional[str] = None  # "posted" | "schema" | None
+    pay_source: Optional[str] = None  # "posted" | "schema" | "ats" | None
     hours_source: Optional[str] = None
 
     @property
     def pay(self) -> Optional[int]:
-        """Best estimate of pay."""
+        """Best estimate of pay: midpoint when both bounds are posted."""
+        if self.pay_low and self.pay_high:
+            return (self.pay_low + self.pay_high) // 2
         return self.pay_high or self.pay_low
 
     @property

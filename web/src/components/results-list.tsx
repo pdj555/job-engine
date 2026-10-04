@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Opportunity } from "@/lib/types";
-import { formatPay, formatRate, isListed } from "@/lib/format";
+import { formatPayRange, formatRate, isListed } from "@/lib/format";
 import { Panel } from "./panel";
 
 type Filter = "all" | "listed";
@@ -60,7 +60,7 @@ export function ResultsList({
                   : opp.pay_source === "posted"
                     ? " listed"
                     : "";
-            const pay = `${formatPay(opp.pay)}/yr${origin}`;
+            const pay = `${formatPayRange(opp.pay_low, opp.pay_high, opp.pay)}/yr${origin}`;
 
             return (
               <li key={opp.url} className="result-row">
