@@ -63,7 +63,12 @@ def display(opportunities: list[Opportunity]):
     table.add_column("$/hr", style="bold magenta", justify="right")
 
     for i, opp in enumerate(opportunities, 1):
-        pay = f"${opp.pay:,}" if opp.pay else "?"
+        if opp.pay_low and opp.pay_high and opp.pay_low != opp.pay_high:
+            pay = f"${opp.pay_low:,}–${opp.pay_high:,}"
+        elif opp.pay:
+            pay = f"${opp.pay:,}"
+        else:
+            pay = "?"
         if opp.pay and opp.pay_source in ("posted", "schema", "ats"):
             pay = f"{pay}*"
         if opp.hours_per_week:
