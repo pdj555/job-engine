@@ -183,6 +183,52 @@ def test_parse_job_posting_rejects_foreign_and_estimated():
     assert parse_job_posting(estimated).pay_high is None
 
 
+def test_parse_job_posting_skips_unknown_interval():
+    missing = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "value": 180000}
+    }}
+    </script>
+    """
+    scalar = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD", "value": 180000
+    }}
+    </script>
+    """
+    unknown = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "value": 180000, "unitText": "ONE_TIME"}
+    }}
+    </script>
+    """
+    assert parse_job_posting(missing).posted is False
+    assert parse_job_posting(scalar).posted is False
+    assert parse_job_posting(unknown).posted is False
+
+
+def test_parse_job_posting_reads_later_block_when_first_has_no_pay():
+    html = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "hiringOrganization": {"name": "Acme"},
+     "jobLocationType": "TELECOMMUTE"}
+    </script>
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "minValue": 140000, "maxValue": 180000, "unitText": "YEAR"}
+    }}
+    </script>
+    """
+    parsed = parse_job_posting(html)
+    assert (parsed.pay_low, parsed.pay_high) == (140_000, 180_000)
+
+
 def test_parse_job_posting_empty_html():
     assert parse_job_posting("").pay_high is None
     assert parse_job_posting("<html></html>").posted is False
@@ -457,6 +503,15 @@ def test_ats_source_url_resolves_greenhouse_embed():
     assert ats_source_url("https://job-boards.greenhouse.io/acme/jobs/1") == (
         "https://job-boards.greenhouse.io/acme/jobs/1"
     )
+    assert ats_source_url(
+        "https://careers.acme.com/eng?gh_jid=123",
+        '<a href="https://job-boards.greenhouse.io/acme/jobs/12345">no</a>',
+    ) is None
+    assert ats_source_url(
+        "https://careers.acme.com/eng?ashby_jid=job-1",
+        '<a href="https://jobs.ashbyhq.com/acme/job-2">no</a>'
+        '<a href="https://jobs.ashbyhq.com/acme/job-1">yes</a>',
+    ) == "https://jobs.ashbyhq.com/acme/job-1"
 
 
 def test_parse_ats_skips_unknown_interval():

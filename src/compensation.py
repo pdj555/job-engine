@@ -147,9 +147,9 @@ def ats_source_url(url: str, html: str | None = None) -> str | None:
         candidate = canonicalize_url(match.group(0).rstrip(").,;"))
         if not ats_json_url(candidate) or is_search_serp(candidate):
             continue
-        if job_id and job_id not in candidate:
+        if job_id and not _path_has_id(candidate, job_id):
             continue
-        if ashby_id and ashby_id not in candidate:
+        if ashby_id and not _path_has_id(candidate, ashby_id):
             continue
         if candidate not in found:
             found.append(candidate)
@@ -160,24 +160,23 @@ def ats_source_url(url: str, html: str | None = None) -> str | None:
 
 def parse_job_posting(html: str) -> Compensation:
     """Employer-posted USD pay from schema.org JobPosting JSON-LD. Invents nothing."""
+    fallback = Compensation()
     for posting in _job_postings(html):
         hours = _schema_hours(posting)
         pay_low, pay_high = _schema_salary(posting.get("baseSalary"), hours)
-        if pay_low is None and pay_high is None and hours is None:
-            remote = _schema_remote(posting)
-            company = _schema_company(posting)
-            if remote is None and not company:
-                continue
-            return Compensation(hours=hours, remote=remote, company=company, title=_text(posting.get("title")))
-        return Compensation(
+        parsed = Compensation(
             pay_low=pay_low,
             pay_high=pay_high,
             hours=hours,
             remote=_schema_remote(posting),
             company=_schema_company(posting),
-            title=_text(posting.get("title")),
+            title=_text(posting.get("title")) or None,
         )
-    return Compensation()
+        if parsed.posted:
+            return parsed
+        if parsed.hours or parsed.remote is not None or parsed.company:
+            fallback = parsed
+    return fallback
 
 
 _LEVER_UNIT = {
@@ -505,6 +504,10 @@ def _html_text(html: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _path_has_id(url: str, identifier: str) -> bool:
+    return identifier in (urlsplit(url).path.split("/"))
+
+
 def canonicalize_url(url: str) -> str:
     """Identity key: https, lowercase host, ATS rewrite, tracking stripped."""
     raw = (url or "").strip()
@@ -717,13 +720,13 @@ def _schema_salary(block, hours: int | None) -> tuple[int | None, int | None]:
     if currency not in _USD:
         return None, None
     value = block.get("value")
-    if isinstance(value, dict):
-        unit = str(value.get("unitText") or "YEAR").upper()
-        low = _number(value.get("minValue", value.get("value")))
-        high = _number(value.get("maxValue", value.get("value")))
-    else:
-        unit = "YEAR"
-        low = high = _number(value)
+    if not isinstance(value, dict):
+        return None, None
+    unit = str(value.get("unitText") or "").upper()
+    if unit not in {"HOUR", "DAY", "WEEK", "MONTH", "YEAR"}:
+        return None, None
+    low = _number(value.get("minValue", value.get("value")))
+    high = _number(value.get("maxValue", value.get("value")))
     if low is None and high is None:
         return None, None
     if low is None:
