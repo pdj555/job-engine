@@ -154,3 +154,4 @@ def test_agent_fallback_searches_include_ats_angles(monkeypatch):
     run = asyncio.run(agent_run("staff eng"))
     assert any("greenhouse.io" in s for s in run.searches)
     assert any("ashbyhq.com" in s for s in run.searches)
+    assert any("smartrecruiters.com" in s for s in run.searches)
