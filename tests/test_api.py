@@ -35,6 +35,9 @@ def test_payload_includes_honesty_fields():
     opp = Opportunity(title="x", url="https://u", pay_high=80_000, pay_source="posted")
     body = _payload([opp])
     assert set(body["results"][0]) >= {
+        "pay",
+        "pay_low",
+        "pay_high",
         "refined_rate",
         "rate_imputed",
         "dollars_per_hour",
@@ -42,6 +45,16 @@ def test_payload_includes_honesty_fields():
         "pay_source",
         "hours_source",
     }
+
+
+def test_payload_pay_is_range_midpoint():
+    opp = Opportunity(title="x", url="https://u", pay_low=120_000, pay_high=180_000, hours_per_week=40)
+    row = _payload([opp])["results"][0]
+    assert row["pay"] == 150_000
+    assert row["pay_low"] == 120_000
+    assert row["pay_high"] == 180_000
+    assert row["refined_rate"] == 75.0
+    assert row["score"] == 75.0
 
 
 def test_health_reports_agent_ready():

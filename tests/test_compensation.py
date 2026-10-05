@@ -1,11 +1,13 @@
 from src.compensation import (
     ats_json_url,
+    ats_source_url,
     canonicalize_url,
     is_aggregate_pay,
     is_search_serp,
     parse_ats_json,
     parse_compensation,
     parse_job_posting,
+    parse_listing_pay,
 )
 
 
@@ -179,6 +181,52 @@ def test_parse_job_posting_rejects_foreign_and_estimated():
     """
     assert parse_job_posting(cad).pay_high is None
     assert parse_job_posting(estimated).pay_high is None
+
+
+def test_parse_job_posting_skips_unknown_interval():
+    missing = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "value": 180000}
+    }}
+    </script>
+    """
+    scalar = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD", "value": 180000
+    }}
+    </script>
+    """
+    unknown = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "value": 180000, "unitText": "ONE_TIME"}
+    }}
+    </script>
+    """
+    assert parse_job_posting(missing).posted is False
+    assert parse_job_posting(scalar).posted is False
+    assert parse_job_posting(unknown).posted is False
+
+
+def test_parse_job_posting_reads_later_block_when_first_has_no_pay():
+    html = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "hiringOrganization": {"name": "Acme"},
+     "jobLocationType": "TELECOMMUTE"}
+    </script>
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "minValue": 140000, "maxValue": 180000, "unitText": "YEAR"}
+    }}
+    </script>
+    """
+    parsed = parse_job_posting(html)
+    assert (parsed.pay_low, parsed.pay_high) == (140_000, 180_000)
 
 
 def test_parse_job_posting_empty_html():
@@ -411,6 +459,89 @@ def test_is_search_serp_drops_indeed_query_pages_not_viewjob():
     assert not is_search_serp("https://www.indeed.com/viewjob?jk=abc")
     assert not is_search_serp("https://www.glassdoor.com/job-listing/staff-engineer-JV_123.htm")
     assert not is_search_serp("https://job-boards.greenhouse.io/acme/jobs/1")
+
+
+def test_parse_listing_pay_uses_labeled_copy_not_budget():
+    html = """
+    <html><body>
+      <p>Team budget is $80,000 -- $120,000.</p>
+      <p>Compensation is $210,000 -- $240,000.</p>
+    </body></html>
+    """
+    parsed = parse_listing_pay(html)
+    assert (parsed.pay_low, parsed.pay_high) == (210_000, 240_000)
+    unlabeled = parse_listing_pay("<p>Related roles pay $400,000 nearby.</p>")
+    assert unlabeled.posted is False
+    scripted = parse_listing_pay(
+        "<script>const compensation = {min: 500000};</script><p>Build systems.</p>"
+    )
+    assert scripted.posted is False
+
+
+def test_ats_source_url_resolves_greenhouse_embed():
+    html = '<script src="https://boards.greenhouse.io/embed/job_board/js?for=datadog"></script>'
+    assert ats_source_url(
+        "https://careers.datadoghq.com/detail/6572669/?gh_jid=6572669", html
+    ) == "https://job-boards.greenhouse.io/datadog/jobs/6572669"
+    assert ats_source_url("https://careers.datadoghq.com/detail/6572669/?gh_jid=6572669") is None
+    poisoned = (
+        '<a href="https://jobs.lever.co/other/681fbc53-1e34-4a46-8677-3a78118674eb">Similar</a>'
+        '<script src="https://boards.greenhouse.io/embed/job_board/js?for=datadog"></script>'
+    )
+    assert ats_source_url(
+        "https://careers.datadoghq.com/detail/6572669/?gh_jid=6572669", poisoned
+    ) == "https://job-boards.greenhouse.io/datadog/jobs/6572669"
+    assert ats_source_url(
+        "https://careers.acme.com/eng",
+        '<a href="https://jobs.lever.co/acme/681fbc53-1e34-4a46-8677-3a78118674eb">Apply</a>',
+    ) == "https://jobs.lever.co/acme/681fbc53-1e34-4a46-8677-3a78118674eb"
+    assert ats_source_url(
+        "https://careers.acme.com/eng",
+        '<a href="https://jobs.lever.co/acme/aaa">A</a>'
+        '<a href="https://jobs.lever.co/other/bbb">B</a>',
+    ) is None
+    assert ats_source_url("https://job-boards.greenhouse.io/acme/jobs/1") == (
+        "https://job-boards.greenhouse.io/acme/jobs/1"
+    )
+    assert ats_source_url(
+        "https://careers.acme.com/eng?gh_jid=123",
+        '<a href="https://job-boards.greenhouse.io/acme/jobs/12345">no</a>',
+    ) is None
+    assert ats_source_url(
+        "https://careers.acme.com/eng?ashby_jid=job-1",
+        '<a href="https://jobs.ashbyhq.com/acme/job-2">no</a>'
+        '<a href="https://jobs.ashbyhq.com/acme/job-1">yes</a>',
+    ) == "https://jobs.ashbyhq.com/acme/job-1"
+
+
+def test_parse_ats_skips_unknown_interval():
+    lever = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {"salaryRange": {"currency": "USD", "min": 140000, "max": 170000}},
+    )
+    assert lever.posted is False
+    ashby = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 170000,
+                                "maxValue": 225000,
+                                "currencyCode": "USD",
+                                "interval": "NONE",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert ashby.posted is False
 
 
 def test_is_aggregate_pay_rejects_seo_market_titles():
