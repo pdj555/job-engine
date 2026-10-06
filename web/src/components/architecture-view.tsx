@@ -32,7 +32,7 @@ export function ArchitectureView() {
             <span className="flow-title">
               rank · <b>$/hour</b>
             </span>
-            <span className="flow-sub">posted + JobPosting schema · office −30%</span>
+            <span className="flow-sub">midpoint of posted/ATS/schema pay · office −30%</span>
           </div>
 
           <span className="flow-arrow" aria-hidden>

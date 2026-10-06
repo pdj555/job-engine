@@ -542,6 +542,181 @@ def test_parse_ats_skips_unknown_interval():
         },
     )
     assert ashby.posted is False
+    timed = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 170000,
+                                "maxValue": 225000,
+                                "currencyCode": "USD",
+                                "interval": "1 TIME",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert timed.posted is False
+
+
+def test_parse_ashby_documented_intervals_annualize():
+    biweekly = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 4000,
+                                "maxValue": 5000,
+                                "currencyCode": "USD",
+                                "interval": "2 WEEK",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (biweekly.pay_low, biweekly.pay_high) == (100_000, 125_000)
+    semiannual = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 60000,
+                                "maxValue": 80000,
+                                "currencyCode": "USD",
+                                "interval": "6 MONTH",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (semiannual.pay_low, semiannual.pay_high) == (120_000, 160_000)
+    hourly = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 75,
+                                "maxValue": 90,
+                                "currencyCode": "USD",
+                                "interval": "1 HOUR",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (hourly.pay_low, hourly.pay_high) == (150_000, 180_000)
+
+
+def test_parse_ashby_skips_unmatched_board_job():
+    parsed = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/wanted",
+        {
+            "jobs": [
+                {
+                    "id": "other",
+                    "title": "Wrong role",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 400000,
+                                "maxValue": 500000,
+                                "currencyCode": "USD",
+                                "interval": "1 YEAR",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert parsed.posted is False
+    assert parsed.title is None
+    nameless = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/wanted",
+        {
+            "jobs": [
+                {
+                    "title": "Wrong role",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "minValue": 400000,
+                                "maxValue": 500000,
+                                "currencyCode": "USD",
+                                "interval": "1 YEAR",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert nameless.posted is False
+
+
+def test_live_posted_ranges_rank_at_midpoint():
+    from src.models import Opportunity
+
+    engine = parse_ats_json(
+        "https://job-boards.greenhouse.io/engine/jobs/7994750003",
+        {
+            "pay_input_ranges": [
+                {"min_cents": 20_000_000, "max_cents": 24_500_000, "currency_type": "USD"}
+            ]
+        },
+    )
+    datadog = parse_ats_json(
+        "https://job-boards.greenhouse.io/datadog/jobs/6572669",
+        {
+            "pay_input_ranges": [
+                {"min_cents": 32_000_000, "max_cents": 40_000_000, "currency_type": "USD"}
+            ]
+        },
+    )
+    aeva = parse_ats_json(
+        "https://jobs.lever.co/aeva/6b5a6135-d57d-4413-9b92-2938ed080af8",
+        {
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "per-year-salary",
+                "min": 123900,
+                "max": 167700,
+            }
+        },
+    )
+    assert Opportunity(title="e", url="u", pay_low=engine.pay_low, pay_high=engine.pay_high).pay == 222_500
+    assert Opportunity(title="d", url="u", pay_low=datadog.pay_low, pay_high=datadog.pay_high).pay == 360_000
+    assert Opportunity(title="a", url="u", pay_low=aeva.pay_low, pay_high=aeva.pay_high).pay == 145_800
 
 
 def test_is_aggregate_pay_rejects_seo_market_titles():
