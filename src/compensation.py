@@ -198,6 +198,19 @@ _SR_PERIOD = {
     "DAILY": "DAY",
     "HOURLY": "HOUR",
 }
+# Ashby partner-feed interval enum. Skip NONE / 1 TIME / unknown.
+_ASHBY_UNIT = {
+    "1 YEAR": "YEAR",
+    "1 MONTH": "MONTH",
+    "2 MONTH": "2MONTH",
+    "3 MONTH": "3MONTH",
+    "6 MONTH": "6MONTH",
+    "0.5 MONTH": "HALFMONTH",
+    "1 WEEK": "WEEK",
+    "2 WEEK": "2WEEK",
+    "1 DAY": "DAY",
+    "1 HOUR": "HOUR",
+}
 
 
 def ats_json_url(url: str) -> str | None:
@@ -374,7 +387,10 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
             match = job
             break
     if match is None and len(jobs) == 1 and isinstance(jobs[0], dict):
-        match = jobs[0]
+        only = jobs[0]
+        only_id = str(only.get("id") or "")
+        if only_id == job_id or (not job_id and not only_id):
+            match = only
     if not isinstance(match, dict):
         return Compensation()
     title = _text(match.get("title"))
@@ -389,10 +405,7 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
     raw_interval = salary.get("interval")
     if not raw_interval:
         return Compensation(remote=remote, company=company, title=title or None)
-    interval = str(raw_interval).upper().replace("1 ", "")
-    unit = {"YEAR": "YEAR", "MONTH": "MONTH", "WEEK": "WEEK", "DAY": "DAY", "HOUR": "HOUR"}.get(
-        interval
-    )
+    unit = _ASHBY_UNIT.get(str(raw_interval).upper())
     if unit is None:
         return Compensation(remote=remote, company=company, title=title or None)
     low, high = _number(salary.get("minValue")), _number(salary.get("maxValue"))
@@ -744,7 +757,12 @@ def _to_annual(
     factor = {
         "YEAR": 1,
         "MONTH": 12,
+        "2MONTH": 6,
+        "3MONTH": 4,
+        "6MONTH": 2,
+        "HALFMONTH": 24,
         "WEEK": 50,
+        "2WEEK": 25,
         "DAY": 250,
         "HOUR": week * 50,
     }.get(unit)

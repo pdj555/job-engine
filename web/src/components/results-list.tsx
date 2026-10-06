@@ -77,7 +77,7 @@ export function ResultsList({
                         >
                           {opp.title}
                         </a>
-                        <p className="hint mt-1 truncate">
+                        <p className="hint mt-1 break-words">
                           {opp.company ?? "—"} · {opp.remote ? "remote" : "onsite"} · {pay} · {hours}
                         </p>
                       </div>
