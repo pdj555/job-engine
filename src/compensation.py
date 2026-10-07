@@ -50,9 +50,12 @@ _HOURS = re.compile(
 )
 _AMOUNT = r"(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?"
 _RANGE = re.compile(
-    rf"{_AMOUNT}\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
+    rf"{_AMOUNT}(?:\s*(?:USD|US\$))?\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
     r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?",
     re.I,
+)
+_GH_SKIP_TITLE = re.compile(
+    r"(?i)^\s*(?:(?:sign[- ]on|signing|annual)\s+)?(?:bonus|equity|rsus?|espp|commission)\b"
 )
 _SINGLE = re.compile(_AMOUNT, re.I)
 _HOUR_TAIL = re.compile(r"(?i)(?:/|\bper\b|\b)\s*(?:hr|hour|hourly)\b")
@@ -323,6 +326,8 @@ def _greenhouse_pay(payload) -> Compensation:
             continue
         if str(row.get("currency_type") or "USD").upper() not in _USD:
             continue
+        if _GH_SKIP_TITLE.search(_text(row.get("title"))):
+            continue
         low = _cents(row.get("min_cents"))
         high = _cents(row.get("max_cents"))
         if low is None and high is None:
@@ -339,7 +344,7 @@ def _greenhouse_pay(payload) -> Compensation:
 
 def _cents(value) -> float | None:
     amount = _number(value)
-    if amount is None:
+    if amount is None or amount == 0:
         return None
     return amount / 100.0
 

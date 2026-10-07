@@ -31,6 +31,11 @@ def test_parse_double_hyphen_range():
     assert (parsed.pay_low, parsed.pay_high) == (207_000, 351_225)
 
 
+def test_parse_usd_token_between_range_bounds():
+    parsed = parse_compensation("Primary Location Base Pay Range: $148,000 USD - $222,000 USD")
+    assert (parsed.pay_low, parsed.pay_high) == (148_000, 222_000)
+
+
 def test_parse_hourly_annualizes_at_stated_or_40h():
     stated = parse_compensation("$75/hr · 20 hours/week")
     assert stated.hours == 20
@@ -272,6 +277,78 @@ def test_parse_greenhouse_pay_transparency_cents():
     assert parsed.title == "Staff Engineer"
 
 
+def test_parse_greenhouse_skips_unfilled_cents_and_non_salary():
+    mixed = parse_ats_json(
+        "https://job-boards.greenhouse.io/acme/jobs/1",
+        {
+            "pay_input_ranges": [
+                {
+                    "min_cents": 15_000_000,
+                    "max_cents": 18_000_000,
+                    "currency_type": "USD",
+                    "title": "Base Pay Range",
+                },
+                {
+                    "min_cents": 0,
+                    "max_cents": 0,
+                    "currency_type": "USD",
+                    "title": "Unfilled",
+                },
+                {
+                    "min_cents": 5_000_000,
+                    "max_cents": 5_000_000,
+                    "currency_type": "USD",
+                    "title": "Sign-on Bonus",
+                },
+                {
+                    "min_cents": 2_000_000,
+                    "max_cents": 4_000_000,
+                    "currency_type": "USD",
+                    "title": "Equity",
+                },
+            ]
+        },
+    )
+    assert (mixed.pay_low, mixed.pay_high) == (150_000, 180_000)
+    bonus_only = parse_ats_json(
+        "https://job-boards.greenhouse.io/acme/jobs/1",
+        {
+            "pay_input_ranges": [
+                {
+                    "min_cents": 5_000_000,
+                    "max_cents": 5_000_000,
+                    "currency_type": "USD",
+                    "title": "Sign-on Bonus",
+                }
+            ]
+        },
+    )
+    assert bonus_only.posted is False
+    unfilled = parse_ats_json(
+        "https://job-boards.greenhouse.io/acme/jobs/1",
+        {
+            "pay_input_ranges": [
+                {"min_cents": 0, "max_cents": 0, "currency_type": "USD", "title": "Base Salary"}
+            ]
+        },
+    )
+    assert unfilled.posted is False
+    clarifying = parse_ats_json(
+        "https://job-boards.greenhouse.io/acme/jobs/1",
+        {
+            "pay_input_ranges": [
+                {
+                    "min_cents": 15_000_000,
+                    "max_cents": 18_000_000,
+                    "currency_type": "USD",
+                    "title": "Base Pay Range (excluding bonus)",
+                }
+            ]
+        },
+    )
+    assert (clarifying.pay_low, clarifying.pay_high) == (150_000, 180_000)
+
+
 def test_parse_lever_salary_range_and_ashby_salary_component():
     lever = parse_ats_json(
         "https://jobs.lever.co/acme/abc",
@@ -395,6 +472,18 @@ def test_parse_workday_job_description_pay():
         },
     )
     assert cad.posted is False
+    workday_usd_between = parse_ats_json(
+        "https://workday.wd5.myworkdayjobs.com/Workday/job/US/Role_JR1",
+        {
+            "jobPostingInfo": {
+                "title": "Software Development Engineer",
+                "jobDescription": (
+                    "<p>Primary Location Base Pay Range: $148,000 USD - $222,000 USD</p>"
+                ),
+            }
+        },
+    )
+    assert (workday_usd_between.pay_low, workday_usd_between.pay_high) == (148_000, 222_000)
     empty = parse_ats_json(
         "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
         {"jobPostingInfo": {"title": "Eng", "jobDescription": ""}},
