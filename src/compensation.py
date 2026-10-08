@@ -429,10 +429,22 @@ def _ashby_salary_row(comp: dict) -> dict | None:
     for tier in comp.get("compensationTiers") or []:
         if isinstance(tier, dict):
             rows.extend(tier.get("components") or [])
+    salary = None
+    commission = None
     for row in rows:
-        if isinstance(row, dict) and str(row.get("compensationType") or "") == "Salary":
-            return row
-    return None
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("compensationType") or "")
+        if kind == "Salary" and salary is None:
+            if row.get("minValue") is not None or row.get("maxValue") is not None:
+                salary = row
+        elif (
+            kind == "Commission"
+            and commission is None
+            and (row.get("minValue") is not None or row.get("maxValue") is not None)
+        ):
+            commission = row
+    return salary or commission
 
 
 def _workday_pay(payload) -> Compensation:

@@ -212,9 +212,18 @@ def test_parse_job_posting_skips_unknown_interval():
     }}
     </script>
     """
+    empty = """
+    <script type="application/ld+json">
+    {"@type": "JobPosting", "baseSalary": {
+      "@type": "MonetaryAmount", "currency": "USD",
+      "value": {"@type": "QuantitativeValue", "value": 180000, "unitText": ""}
+    }}
+    </script>
+    """
     assert parse_job_posting(missing).posted is False
     assert parse_job_posting(scalar).posted is False
     assert parse_job_posting(unknown).posted is False
+    assert parse_job_posting(empty).posted is False
 
 
 def test_parse_job_posting_reads_later_block_when_first_has_no_pay():
@@ -565,6 +574,12 @@ def test_parse_listing_pay_uses_labeled_copy_not_budget():
         "<script>const compensation = {min: 500000};</script><p>Build systems.</p>"
     )
     assert scripted.posted is False
+    greenhouse = parse_listing_pay(
+        '<div class="content-pay-transparency"><div class="title">Base Pay Range</div>'
+        '<div class="pay-range"><span>$200,000</span>'
+        '<span class="divider">&mdash;</span><span>$245,000 USD</span></div></div>'
+    )
+    assert (greenhouse.pay_low, greenhouse.pay_high) == (200_000, 245_000)
 
 
 def test_ats_source_url_resolves_greenhouse_embed():
@@ -724,6 +739,124 @@ def test_parse_ashby_documented_intervals_annualize():
     assert (hourly.pay_low, hourly.pay_high) == (150_000, 180_000)
 
 
+def test_parse_ashby_commission_when_salary_absent():
+    commission = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "EquityPercentage",
+                                "interval": "NONE",
+                                "minValue": 0.5,
+                                "maxValue": 1.5,
+                            },
+                            {
+                                "compensationType": "Commission",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": 80_000,
+                                "maxValue": 120_000,
+                            },
+                            {
+                                "compensationType": "Bonus",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": None,
+                                "maxValue": None,
+                            },
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (commission.pay_low, commission.pay_high) == (80_000, 120_000)
+    salary_wins = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": 150_000,
+                                "maxValue": 180_000,
+                            },
+                            {
+                                "compensationType": "Commission",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": 80_000,
+                                "maxValue": 120_000,
+                            },
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (salary_wins.pay_low, salary_wins.pay_high) == (150_000, 180_000)
+    empty_bonus = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Commission",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": None,
+                                "maxValue": None,
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert empty_bonus.posted is False
+    salary_empty = parse_ats_json(
+        "https://jobs.ashbyhq.com/acme/job-1",
+        {
+            "jobs": [
+                {
+                    "id": "job-1",
+                    "compensation": {
+                        "summaryComponents": [
+                            {
+                                "compensationType": "Salary",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": None,
+                                "maxValue": None,
+                            },
+                            {
+                                "compensationType": "Commission",
+                                "interval": "1 YEAR",
+                                "currencyCode": "USD",
+                                "minValue": 80_000,
+                                "maxValue": 120_000,
+                            },
+                        ]
+                    },
+                }
+            ]
+        },
+    )
+    assert (salary_empty.pay_low, salary_empty.pay_high) == (80_000, 120_000)
+
+
 def test_parse_ashby_skips_unmatched_board_job():
     parsed = parse_ats_json(
         "https://jobs.ashbyhq.com/acme/wanted",
@@ -780,7 +913,12 @@ def test_live_posted_ranges_rank_at_midpoint():
         "https://job-boards.greenhouse.io/engine/jobs/7994750003",
         {
             "pay_input_ranges": [
-                {"min_cents": 20_000_000, "max_cents": 24_500_000, "currency_type": "USD"}
+                {
+                    "min_cents": 20_000_000,
+                    "max_cents": 24_500_000,
+                    "currency_type": "USD",
+                    "title": "Base Pay Range",
+                }
             ]
         },
     )
@@ -788,7 +926,12 @@ def test_live_posted_ranges_rank_at_midpoint():
         "https://job-boards.greenhouse.io/datadog/jobs/6572669",
         {
             "pay_input_ranges": [
-                {"min_cents": 32_000_000, "max_cents": 40_000_000, "currency_type": "USD"}
+                {
+                    "min_cents": 32_000_000,
+                    "max_cents": 40_000_000,
+                    "currency_type": "USD",
+                    "title": "The reasonably estimated yearly salary for this role at Datadog is:",
+                }
             ]
         },
     )

@@ -57,6 +57,25 @@ def test_payload_pay_is_range_midpoint():
     assert row["score"] == 75.0
 
 
+def test_payload_engine_job_midpoint_fields():
+    opp = Opportunity(
+        title="Staff Software Engineer",
+        url="https://job-boards.greenhouse.io/engine/jobs/7994750003",
+        pay_low=200_000,
+        pay_high=245_000,
+        hours_per_week=40,
+        pay_source="ats",
+        remote=True,
+    )
+    row = _payload([opp])["results"][0]
+    assert row["pay"] == 222_500
+    assert row["pay_low"] == 200_000
+    assert row["pay_high"] == 245_000
+    assert row["refined_rate"] == 111.25
+    assert row["score"] == 111.25
+    assert row["pay_source"] == "ats"
+
+
 def test_health_reports_agent_ready():
     import asyncio
 

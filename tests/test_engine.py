@@ -1,7 +1,7 @@
 import asyncio
 import types
 
-from src.compensation import Compensation
+from src.compensation import Compensation, parse_ats_json
 from src.engine import (
     Engine,
     _guess_remote,
@@ -491,6 +491,38 @@ def test_enrich_reads_labeled_listing_body_when_schema_missing():
     assert (opp.pay_low, opp.pay_high) == (160_000, 200_000)
     assert opp.pay_source == "posted"
     assert opp.score() == 90.0
+
+
+def test_enrich_engine_greenhouse_range_midpoint():
+    engine = Engine()
+    payload = {
+        "title": "Staff Software Engineer",
+        "pay_input_ranges": [
+            {
+                "min_cents": 20_000_000,
+                "max_cents": 24_500_000,
+                "currency_type": "USD",
+                "title": "Base Pay Range",
+            }
+        ],
+        "offices": [{"name": "Remote - US"}],
+    }
+
+    async def fake_ats(url, client=None):
+        return parse_ats_json(url, payload)
+
+    engine._fetch_ats = fake_ats
+    opp = Opportunity(
+        title="Unknown",
+        url="https://job-boards.greenhouse.io/engine/jobs/7994750003",
+    )
+    asyncio.run(engine.enrich([opp]))
+    assert opp.pay == 222_500
+    assert (opp.pay_low, opp.pay_high) == (200_000, 245_000)
+    assert opp.pay_source == "ats"
+    assert opp.refined_rate == 111.25
+    assert opp.score() == 111.25
+    assert opp.title == "Staff Software Engineer"
 
 
 def test_enrich_discovers_greenhouse_embed_from_career_html():

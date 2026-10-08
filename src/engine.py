@@ -506,7 +506,7 @@ def _apply_comp(opp: Opportunity, parsed: Compensation, source: str) -> None:
         opp.pay_low = parsed.pay_low
         opp.pay_high = parsed.pay_high
         opp.pay_source = source
-    if parsed.hours and not opp.hours_per_week:
+    if parsed.hours is not None and opp.hours_per_week is None:
         opp.hours_per_week = parsed.hours
         opp.hours_source = source
     if parsed.remote is not None:

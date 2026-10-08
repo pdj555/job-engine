@@ -44,6 +44,12 @@ def test_pay_uses_single_bound_when_range_incomplete():
     assert low_only.pay == 90_000
 
 
+def test_pay_midpoint_keeps_zero_bounds():
+    opp = Opportunity(title="x", url="u", pay_low=0, pay_high=80_000)
+    assert opp.pay == 40_000
+    assert opp.rate_is_imputed is True
+
+
 def test_dollars_per_hour_none_when_missing_data():
     no_pay = Opportunity(title="x", url="u", hours_per_week=40)
     no_hours = Opportunity(title="x", url="u", pay_high=100_000)
