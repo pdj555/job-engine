@@ -7,8 +7,8 @@ hands *finding* to an in-process brain and keeps *ranking* in Python.
 goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportunities}
             search_web + read_listing / open-web engine     │
                                                            ▼
-                                                   enrich ATS/schema → Opportunity.score()
-                                                   deterministic  $ / hr
+                                                   enrich ATS (beats snippet) / schema / listing → midpoint $/hr
+                                                   deterministic  Opportunity.score()
 ```
 
 ## Why a client-side tool loop
@@ -17,9 +17,14 @@ The previous brain was an external [Hermes Agent](https://github.com/NousResearc
 server. It is not running in Cloud Agents or on Vercel, so `/agent` failed with a
 connection error. [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 is the in-process tool loop: the model calls `search_web` (Brave, or DuckDuckGo
-with no key) and `read_listing` (ATS JSON / JobPosting schema). Search angles
-bias toward Greenhouse, Lever, Ashby, and Workday hosts. URLs must match search
-hits. Pay comes from posted listing data — never from the model.
+with no key) and `read_listing` (ATS JSON / JobPosting schema / labeled listing
+copy). Search angles bias toward Greenhouse, Lever, Ashby, Workday, and
+SmartRecruiters hosts. Custom career pages resolve to those boards when the HTML
+embeds them. URLs must match search hits. All snippet pay remains unverified until ATS JSON, schema, or labeled listing copy
+confirms it. Pay is the midpoint of posted range data, never from the model.
+Candidates are enriched and remote goals filtered before the result limit applies.
+Unknown arrangements are excluded from remote goals. An SDK result with no
+matching search hit cannot create a recommendation.
 `Opportunity.score()` owns the $/hour.
 
 With no `OPENAI_API_KEY`, agent mode uses the same Engine search as `find` and
@@ -38,4 +43,10 @@ from open-web search.
 ## What's verified
 
 `tests/test_agent.py` covers `_rank`, `_parse`, Engine fallback, and a mocked
-SDK run. A live SDK run needs `OPENAI_API_KEY`.
+SDK run. `tests/test_search_pipeline.py` runs Brave response parsing, real HTTP
+enrichment via fixture transport, API serialization, and both typed and JSON SDK
+outputs with actual search-tool invocation. It checks midpoint ranking, snippet
+provenance, remote negatives and unknowns, unavailable listings, missing pay,
+embedded ATS resolution, unverified hours, and filtering before limiting.
+A live SDK planner run needs `OPENAI_API_KEY`; fixture runs do not establish
+model planning quality, employer quality, role fit, or geographic eligibility.

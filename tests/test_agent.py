@@ -6,12 +6,12 @@ from src.engine import Engine
 from src.models import Opportunity
 
 
-def test_rank_orders_by_dollars_per_hour():
+def test_unverified_snippets_do_not_rank_by_dollar_figures():
     items = [
         {"title": "Low $100k 40 hours/week", "url": "u1"},
         {"title": "High $200k 20 hours/week", "url": "u2"},
     ]
-    assert [o.title for o in _rank(items)] == ["High $200k 20 hours/week", "Low $100k 40 hours/week"]
+    assert [o.title for o in _rank(items)] == ["Low $100k 40 hours/week", "High $200k 20 hours/week"]
 
 
 def test_rank_skips_items_without_url():
@@ -32,7 +32,7 @@ def test_rank_ignores_invented_pay_fields():
         ]
     )
     assert ranked[0].url == "https://jobs.lever.co/acme/abc"
-    assert ranked[0].pay_source == "posted"
+    assert ranked[0].pay_source == "snippet"
     assert ranked[1].pay is None
     assert ranked[1].pay_source is None
     assert ranked[1].score() == 0
@@ -44,7 +44,7 @@ def test_rank_reads_pay_from_description():
     )
     assert ranked[0].pay == 180_000
     assert ranked[0].hours_per_week == 40
-    assert ranked[0].pay_source == "posted"
+    assert ranked[0].pay_source == "snippet"
 
 
 def test_rank_builds_opportunity_models_with_fields():
@@ -137,11 +137,8 @@ def test_agent_run_with_openai_uses_agents_sdk(monkeypatch):
     assert run.searches == ["remote ml contract", "ai grants"]
     assert set(captured["tools"]) == {"search_web", "read_listing"}
     assert captured["max_turns"] == 10
-    assert {o.title for o in run.ranked} == {
-        "Lush $200k 20 hours/week",
-        "Cheap $100k 40 hours/week",
-    }
-    assert all(o.pay is None and o.pay_source is None and o.score() == 0 for o in run.ranked)
+    # A scout response without actual search hits cannot create recommendations.
+    assert run.ranked == []
 
 
 def test_agent_fallback_searches_include_ats_angles(monkeypatch):
@@ -154,3 +151,4 @@ def test_agent_fallback_searches_include_ats_angles(monkeypatch):
     run = asyncio.run(agent_run("staff eng"))
     assert any("greenhouse.io" in s for s in run.searches)
     assert any("ashbyhq.com" in s for s in run.searches)
+    assert any("smartrecruiters.com" in s for s in run.searches)

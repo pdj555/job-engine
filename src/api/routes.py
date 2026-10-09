@@ -37,6 +37,8 @@ def _payload(results: list[Opportunity]) -> dict:
                 "company": o.company,
                 "url": o.url,
                 "pay": o.pay,
+                "pay_low": o.pay_low,
+                "pay_high": o.pay_high,
                 "hours_per_week": o.hours_per_week,
                 "dollars_per_hour": o.dollars_per_hour,
                 "refined_rate": o.refined_rate,
@@ -44,7 +46,10 @@ def _payload(results: list[Opportunity]) -> dict:
                 "remote": o.remote,
                 "score": o.score(),
                 "pay_source": o.pay_source,
+                "pay_source_url": o.pay_source_url,
+                "pay_is_annualized": o.pay_is_annualized,
                 "hours_source": o.hours_source,
+                "remote_source": o.remote_source,
             }
             for o in results
         ],

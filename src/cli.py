@@ -63,10 +63,19 @@ def display(opportunities: list[Opportunity]):
     table.add_column("$/hr", style="bold magenta", justify="right")
 
     for i, opp in enumerate(opportunities, 1):
-        pay = f"${opp.pay:,}" if opp.pay else "?"
-        if opp.pay and opp.pay_source in ("posted", "schema", "ats"):
+        if opp.pay_low is not None and opp.pay_high is not None and opp.pay_low != opp.pay_high:
+            pay = f"${opp.pay_low:,}–${opp.pay_high:,}"
+        elif opp.pay is not None:
+            pay = f"${opp.pay:,}"
+        else:
+            pay = "?"
+        if opp.pay_source in {"snippet", "unverified"}:
+            pay += " (unverified)"
+        elif opp.pay_is_annualized:
+            pay = "~" + pay + " (annualized)"
+        if opp.pay is not None and opp.pay_source in ("posted", "schema", "ats"):
             pay = f"{pay}*"
-        if opp.hours_per_week:
+        if opp.hours_per_week and opp.hours_source not in {"snippet", "unverified"}:
             hours = str(opp.hours_per_week)
         elif opp.rate_is_imputed:
             hours = "~40"
@@ -78,7 +87,15 @@ def display(opportunities: list[Opportunity]):
             efficiency = f"~${opp.refined_rate:.0f}"
         else:
             efficiency = f"${opp.refined_rate:.0f}"
-        remote_tag = "" if opp.remote else " [red](office)[/red]"
+        remote_tag = (
+            " [red](office)[/red]"
+            if opp.remote is False
+            else " (remote ?)"
+            if opp.remote is None
+            else ""
+            if opp.remote_source not in {"snippet", "unverified"}
+            else " (remote unverified)"
+        )
 
         table.add_row(
             str(i),
@@ -166,6 +183,7 @@ def research(url: str = typer.Argument(..., help="URL to research")):
 def serve(port: int = typer.Option(8000, "-p")):
     """Start API server."""
     import uvicorn
+
     console.print(f"[green]Starting on :{port}[/green]")
     uvicorn.run("src.api.routes:app", host="0.0.0.0", port=port)
 

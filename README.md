@@ -33,7 +33,13 @@ One number orders every result:
 $/hour  =  annual pay ÷ (hours per week × 50)
 ```
 
-Office roles take a 30% penalty. Rank uses pay stated on the listing, ATS board JSON, or schema.org JobPosting — never seniority guesses. Search also targets Greenhouse, Lever, Ashby, and Workday so posted pay is fetchable. The agent can `read_listing` to confirm pay before shortlisting. Missing hours impute 40/wk so thin listings still sort; `$/hour` stays blank until both numbers are observed. Job-board search pages are dropped.
+Rank uses the midpoint of an employer-posted salary range, while CLI, API, and web retain the full range. ATS JSON takes priority over JobPosting schema and labeled listing copy. Search-snippet pay is marked `snippet`, stays unverified, and contributes no score until the listing confirms it. Custom career pages are fetched even when snippets contain pay, so embedded Greenhouse, Lever, and Ashby listings can be resolved.
+
+A query containing `remote` or `work from home` requires affirmative remote evidence from the ATS, schema, or listing. Hybrid, onsite, and unknown arrangements are excluded before sorting and limiting, in both the engine and agent paths. Other queries retain the 30% office penalty. Remote navigation links and model guesses do not establish the job's arrangement.
+
+Missing compensation remains unknown with score zero. Snippet-only hours cannot inflate the rate: missing or unverified hours impute 40/week and the rate is labeled approximate. Conversions from hourly or other non-annual rates are labeled annualized projections, not a posted annual salary. Bonuses, equity, commission-only figures, unknown pay intervals, and upper-only earning claims do not become base salary. API results include the pay source URL and work-arrangement provenance. Job-board search pages, category pages, and salary guides are dropped. Known aggregators and recruiter boards use `unverified` provenance until an employer ATS counterpart confirms the evidence.
+
+These checks establish pay and work-arrangement evidence, not employer quality, role fit, or eligibility in a particular state.
 
 ## Autonomous agent
 

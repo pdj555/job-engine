@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from config.settings import settings
 from src.compensation import canonicalize_url
-from src.engine import Engine, opportunity_from_raw, search_angles
+from src.engine import Engine, opportunity_from_raw, rank_opportunities, search_angles
 from src.models import Opportunity
 
 INSTRUCTIONS = """You are an opportunity scout. Use search_web to research the
@@ -43,7 +43,7 @@ class ScoutHit(BaseModel):
     url: str
     company: str | None = None
     description: str | None = None
-    remote: bool = True
+    remote: bool | None = None
 
 
 class ScoutResult(BaseModel):
@@ -80,7 +80,7 @@ def _ground_to_search_hits(items: list[dict], search_hits: list[dict]) -> list[d
                 "url": raw["url"],
                 "company": item.get("company") or raw.get("company"),
                 "description": raw.get("description") or "",
-                "remote": item.get("remote", raw.get("remote", True)),
+                "remote": raw.get("remote"),
                 "source": "agent",
             }
         )
@@ -97,7 +97,7 @@ def _rank(items: list[dict], *, from_search: bool = True) -> list[Opportunity]:
                 "url": o.get("url") or "",
                 "company": o.get("company"),
                 "description": o.get("description") or "",
-                "remote": o.get("remote", True),
+                "remote": o.get("remote"),
                 "source": o.get("source") or "agent",
             },
             listing_text=None if from_search else "",
@@ -133,12 +133,9 @@ def _from_scout(
     search_hits: list[dict],
 ) -> AgentRun:
     items = [o.model_dump() for o in out.opportunities]
-    if search_hits:
-        items = _ground_to_search_hits(items, search_hits)
-        ranked = _rank(items, from_search=True)
-    else:
-        ranked = _rank(items, from_search=False)
-    return AgentRun(searches=out.searches or searches, ranked=ranked[:limit])
+    items = _ground_to_search_hits(items, search_hits)
+    ranked = _rank(items, from_search=True)
+    return AgentRun(searches=out.searches or searches, ranked=ranked)
 
 
 async def _search_run(query: str, limit: int) -> AgentRun:
@@ -181,14 +178,11 @@ async def _sdk_run(query: str, limit: int) -> AgentRun:
     else:
         data = _parse(str(out or ""))
         items = data.get("opportunities", [])
-        if search_hits:
-            items = _ground_to_search_hits(items, search_hits)
-            ranked = _rank(items, from_search=True)
-        else:
-            ranked = _rank(items, from_search=False)
-        run = AgentRun(searches=data.get("searches") or searches, ranked=ranked[:limit])
+        items = _ground_to_search_hits(items, search_hits)
+        ranked = _rank(items, from_search=True)
+        run = AgentRun(searches=data.get("searches") or searches, ranked=ranked)
     await engine.enrich(run.ranked)
-    run.ranked = sorted(run.ranked, key=lambda o: o.score(), reverse=True)[:limit]
+    run.ranked = rank_opportunities(run.ranked, query, limit)
     return run
 
 
