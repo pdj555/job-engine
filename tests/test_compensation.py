@@ -1,5 +1,6 @@
 from src.compensation import (
     ats_json_url,
+    ats_recoverable,
     ats_source_url,
     canonicalize_url,
     is_aggregate_pay,
@@ -268,6 +269,15 @@ def test_ats_json_url_maps_greenhouse_lever_ashby():
         "https://jobs.smartrecruiters.com/Experian/744000144815929-senior-compensation-analyst-remote-"
     ) == "https://api.smartrecruiters.com/v1/companies/Experian/postings/744000144815929"
     assert ats_json_url("https://example.com/jobs/1") is None
+
+
+def test_ats_recoverable_native_board_or_embed_id():
+    assert ats_recoverable("https://job-boards.greenhouse.io/engine/jobs/7994750003")
+    assert ats_recoverable("https://jobs.lever.co/aeva/6b5a6135-d57d-4413-9b92-2938ed080af8")
+    assert ats_recoverable("https://careers.datadoghq.com/detail/6572669/?gh_jid=6572669")
+    assert ats_recoverable("https://careers.acme.com/eng?ashby_jid=job-1")
+    assert not ats_recoverable("https://example.com/j")
+    assert not ats_recoverable("https://example.com/j?gh_src=xyz")
 
 
 def test_parse_greenhouse_pay_transparency_cents():
@@ -616,6 +626,57 @@ def test_ats_source_url_resolves_greenhouse_embed():
         '<a href="https://jobs.ashbyhq.com/acme/job-2">no</a>'
         '<a href="https://jobs.ashbyhq.com/acme/job-1">yes</a>',
     ) == "https://jobs.ashbyhq.com/acme/job-1"
+
+
+def test_parse_lever_calendar_intervals():
+    semi = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "semi-month-salary",
+                "min": 6250,
+                "max": 7500,
+            }
+        },
+    )
+    assert (semi.pay_low, semi.pay_high) == (150_000, 180_000)
+    biweek = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "bi-week-salary",
+                "min": 6000,
+                "max": 7200,
+            }
+        },
+    )
+    assert (biweek.pay_low, biweek.pay_high) == (150_000, 180_000)
+    bimonth = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "bi-month-salary",
+                "min": 25000,
+                "max": 30000,
+            }
+        },
+    )
+    assert (bimonth.pay_low, bimonth.pay_high) == (150_000, 180_000)
+    once = parse_ats_json(
+        "https://jobs.lever.co/acme/abc",
+        {
+            "salaryRange": {
+                "currency": "USD",
+                "interval": "one-time",
+                "min": 150000,
+                "max": 180000,
+            }
+        },
+    )
+    assert once.posted is False
 
 
 def test_parse_ats_skips_unknown_interval():

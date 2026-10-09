@@ -33,7 +33,7 @@ One number orders every result:
 $/hour  =  annual pay ÷ (hours per week × 50)
 ```
 
-Office roles take a 30% penalty. Rank uses the midpoint of posted range pay from the listing, ATS board JSON, or schema.org JobPosting — never seniority guesses. Custom career pages are resolved to Greenhouse/Lever/Ashby JSON when the HTML embeds those boards. Search also targets Greenhouse, Lever, Ashby, Workday, and SmartRecruiters so posted pay is fetchable. The agent can `read_listing` to confirm pay before shortlisting. Missing hours impute 40/wk so thin listings still sort; `$/hour` stays blank until both numbers are observed. Job-board search pages are dropped.
+Office roles take a 30% penalty. Rank uses the midpoint of posted range pay from the listing, ATS board JSON, or schema.org JobPosting — never seniority guesses. A search-snippet dollar figure does not lock rank: Greenhouse/Lever/Ashby/Workday/SmartRecruiters URLs (and `gh_jid`/`ashby_jid` embeds) are re-fetched so structured ranges replace snippet ceilings. Custom career pages are resolved to those boards when the HTML embeds them. Search also targets those hosts so posted pay is fetchable. The agent can `read_listing` to confirm pay before shortlisting. Missing hours impute 40/wk so thin listings still sort; `$/hour` stays blank until both numbers are observed. Job-board search pages are dropped.
 
 ## Autonomous agent
 

@@ -132,6 +132,14 @@ def parse_listing_pay(html: str) -> Compensation:
     return _labeled_compensation(text)
 
 
+def ats_recoverable(url: str) -> bool:
+    """True when ATS JSON can replace snippet pay (native board URL or embed job id)."""
+    if ats_json_url(url):
+        return True
+    params = {k.lower(): v for k, v in parse_qsl(urlsplit(canonicalize_url(url)).query)}
+    return bool(params.get("gh_jid") or params.get("ashby_jid"))
+
+
 def ats_source_url(url: str, html: str | None = None) -> str | None:
     """Canonical ATS listing URL from a native host, embed query, or page HTML."""
     if ats_json_url(url):
@@ -187,8 +195,11 @@ _LEVER_UNIT = {
     "year": "YEAR",
     "per-month-salary": "MONTH",
     "month": "MONTH",
+    "semi-month-salary": "HALFMONTH",
+    "bi-month-salary": "2MONTH",
     "per-week-salary": "WEEK",
     "week": "WEEK",
+    "bi-week-salary": "2WEEK",
     "per-day-wage": "DAY",
     "day": "DAY",
     "per-hour-wage": "HOUR",

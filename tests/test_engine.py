@@ -351,9 +351,10 @@ def test_enrich_applies_jobposting_schema_when_snippet_has_no_pay():
 
 def test_enrich_does_not_override_posted_snippet_pay():
     engine = Engine()
+    fetched = []
 
     async def boom(url, client=None):
-        raise AssertionError("should not fetch when pay is already posted")
+        fetched.append(url)
 
     engine._fetch_listing = boom
     engine._fetch_ats = boom
@@ -366,26 +367,101 @@ def test_enrich_does_not_override_posted_snippet_pay():
         hours_source="posted",
     )
     asyncio.run(engine.enrich([opp]))
+    assert fetched == []
     assert opp.pay_source == "posted"
     assert opp.pay == 90_000
 
 
+def test_enrich_ats_json_overrides_snippet_ceiling():
+    engine = Engine()
+    html_urls = []
+
+    async def fake_ats(url, client=None):
+        return parse_ats_json(
+            url,
+            {
+                "title": "Staff Software Engineer",
+                "pay_input_ranges": [
+                    {
+                        "min_cents": 20_000_000,
+                        "max_cents": 24_500_000,
+                        "currency_type": "USD",
+                        "title": "Base Pay Range",
+                    }
+                ],
+            },
+        )
+
+    async def fake_html(url, client=None):
+        html_urls.append(url)
+        return "<html></html>"
+
+    engine._fetch_ats = fake_ats
+    engine._fetch_listing = fake_html
+    opp = Opportunity(
+        title="Staff Software Engineer $245k",
+        url="https://job-boards.greenhouse.io/engine/jobs/7994750003",
+        pay_high=245_000,
+        pay_source="posted",
+    )
+    asyncio.run(engine.enrich([opp]))
+    assert html_urls == []
+    assert opp.pay == 222_500
+    assert (opp.pay_low, opp.pay_high) == (200_000, 245_000)
+    assert opp.pay_source == "ats"
+    assert opp.score() == 111.25
+
+
+def test_enrich_gh_jid_overrides_snippet_ceiling():
+    engine = Engine()
+    html = """
+    <html><body>
+      <script src="https://boards.greenhouse.io/embed/job_board/js?for=datadog"></script>
+    </body></html>
+    """
+
+    async def fake_ats(url, client=None):
+        if "job-boards.greenhouse.io/datadog/jobs/6572669" in url:
+            return Compensation(pay_low=320_000, pay_high=400_000, title="AI Research Scientist")
+        return None
+
+    async def fake_html(url, client=None):
+        return html
+
+    engine._fetch_ats = fake_ats
+    engine._fetch_listing = fake_html
+    opp = Opportunity(
+        title="AI Research Scientist $400k",
+        url="https://careers.datadoghq.com/detail/6572669/?gh_jid=6572669",
+        pay_high=400_000,
+        pay_source="posted",
+    )
+    asyncio.run(engine.enrich([opp]))
+    assert opp.pay == 360_000
+    assert (opp.pay_low, opp.pay_high) == (320_000, 400_000)
+    assert opp.pay_source == "ats"
+    assert opp.score() == 180.0
+
+
 def test_enrich_reads_workday_cxs_json():
     engine = Engine()
+    html_urls = []
 
     async def fake_ats(url, client=None):
         return Compensation(pay_low=207_000, pay_high=351_225, remote=True, title="Manager")
 
-    async def boom(url, client=None):
-        raise AssertionError("HTML fetch should not run when Workday pay exists")
+    async def fake_html(url, client=None):
+        html_urls.append(url)
+        return "<html></html>"
 
     engine._fetch_ats = fake_ats
-    engine._fetch_listing = boom
+    engine._fetch_listing = fake_html
     opp = Opportunity(
         title="Manager",
         url="https://adobe.wd5.myworkdayjobs.com/external_experienced/job/Remote-California/Role_R1",
     )
     asyncio.run(engine.enrich([opp]))
+    assert html_urls == []
     assert opp.pay == (207_000 + 351_225) // 2
     assert opp.pay_source == "ats"
     assert opp.remote is True
@@ -394,20 +470,23 @@ def test_enrich_reads_workday_cxs_json():
 
 def test_enrich_prefers_ats_json_over_html_schema():
     engine = Engine()
+    html_urls = []
 
     async def fake_ats(url, client=None):
         return Compensation(pay_low=150_000, pay_high=180_000, remote=True, title="Staff")
 
-    async def boom(url, client=None):
-        raise AssertionError("HTML fetch should not run when ATS pay exists")
+    async def fake_html(url, client=None):
+        html_urls.append(url)
+        return "<html></html>"
 
     engine._fetch_ats = fake_ats
-    engine._fetch_listing = boom
+    engine._fetch_listing = fake_html
     opp = Opportunity(
         title="Engineer",
         url="https://job-boards.greenhouse.io/acme/jobs/1",
     )
     asyncio.run(engine.enrich([opp]))
+    assert html_urls == []
     assert opp.pay == 165_000
     assert opp.pay_source == "ats"
     assert opp.remote is True
@@ -583,6 +662,60 @@ def test_find_ranks_range_midpoint_not_ceiling():
     assert ranked[0].pay == 170_000
     assert ranked[1].pay == 160_000
     assert ranked[1].score() == 80.0
+
+
+def test_find_ats_midpoint_outranks_snippet_ceiling():
+    engine = Engine()
+    engine.openai = None
+
+    async def fake_search(_query: str):
+        return [
+            {
+                "title": "Staff Software Engineer $245k",
+                "url": "https://job-boards.greenhouse.io/engine/jobs/7994750003",
+                "description": "40 hours/week",
+            },
+            {
+                "title": "Point $230k",
+                "url": "https://example.com/point",
+                "description": "40 hours/week",
+            },
+        ]
+
+    async def fake_ats(url, client=None):
+        if "greenhouse.io/engine/jobs/7994750003" in url:
+            return parse_ats_json(
+                url,
+                {
+                    "pay_input_ranges": [
+                        {
+                            "min_cents": 20_000_000,
+                            "max_cents": 24_500_000,
+                            "currency_type": "USD",
+                            "title": "Base Pay Range",
+                        }
+                    ]
+                },
+            )
+        return None
+
+    async def no_html(url, client=None):
+        return None
+
+    engine._search_all = fake_search
+    engine._fetch_ats = fake_ats
+    engine._fetch_listing = no_html
+    ranked = asyncio.run(engine.find("eng", limit=10))
+    assert [o.url for o in ranked] == [
+        "https://example.com/point",
+        "https://job-boards.greenhouse.io/engine/jobs/7994750003",
+    ]
+    assert ranked[0].pay == 230_000
+    assert ranked[0].score() == 115.0
+    assert ranked[1].pay == 222_500
+    assert (ranked[1].pay_low, ranked[1].pay_high) == (200_000, 245_000)
+    assert ranked[1].pay_source == "ats"
+    assert ranked[1].score() == 111.25
 
 
 def test_search_all_drops_failed_sources():

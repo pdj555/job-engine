@@ -7,7 +7,7 @@ hands *finding* to an in-process brain and keeps *ranking* in Python.
 goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportunities}
             search_web + read_listing / open-web engine     │
                                                            ▼
-                                                   enrich ATS/schema/listing → midpoint $/hr
+                                                   enrich ATS (beats snippet) / schema / listing → midpoint $/hr
                                                    deterministic  Opportunity.score()
 ```
 
@@ -20,8 +20,9 @@ is the in-process tool loop: the model calls `search_web` (Brave, or DuckDuckGo
 with no key) and `read_listing` (ATS JSON / JobPosting schema / labeled listing
 copy). Search angles bias toward Greenhouse, Lever, Ashby, Workday, and
 SmartRecruiters hosts. Custom career pages resolve to those boards when the HTML
-embeds them. URLs must match search hits. Pay is the midpoint of posted range
-data — never from the model. `Opportunity.score()` owns the $/hour.
+embeds them. URLs must match search hits. Snippet pay on an ATS URL is replaced
+by board JSON. Pay is the midpoint of posted range data — never from the model.
+`Opportunity.score()` owns the $/hour.
 
 With no `OPENAI_API_KEY`, agent mode uses the same Engine search as `find` and
 returns the search angles as the trace — it does not require a sidecar process.

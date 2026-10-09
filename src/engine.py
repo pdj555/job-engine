@@ -14,6 +14,7 @@ from config.settings import settings
 from src.compensation import (
     Compensation,
     ats_json_url,
+    ats_recoverable,
     ats_source_url,
     canonicalize_url,
     is_aggregate_pay,
@@ -59,8 +60,11 @@ class Engine:
         return await self._search_brave(query)
 
     async def enrich(self, opportunities: list[Opportunity]) -> None:
-        """Fill missing pay from ATS JSON, then schema.org JobPosting HTML."""
-        need = [o for o in opportunities if not o.pay]
+        """Fill missing pay from ATS JSON, then schema.org JobPosting HTML.
+
+        Snippet pay on a recoverable ATS URL is replaced by board JSON when present.
+        """
+        need = [o for o in opportunities if o.pay is None or ats_recoverable(o.url)]
         if not need:
             return
         sem = asyncio.Semaphore(_FETCH_CONCURRENCY)
