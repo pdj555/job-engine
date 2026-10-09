@@ -50,9 +50,12 @@ _HOURS = re.compile(
 )
 _AMOUNT = r"(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?"
 _RANGE = re.compile(
-    rf"{_AMOUNT}\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
+    rf"{_AMOUNT}(?:\s*(?:USD|US\$))?\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
     r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?",
     re.I,
+)
+_GH_SKIP_TITLE = re.compile(
+    r"(?i)^\s*(?:(?:sign[- ]on|signing|annual)\s+)?(?:bonus|equity|rsus?|espp|commission)\b"
 )
 _SINGLE = re.compile(_AMOUNT, re.I)
 _HOUR_TAIL = re.compile(r"(?i)(?:/|\bper\b|\b)\s*(?:hr|hour|hourly)\b")
@@ -82,7 +85,18 @@ _LABELED_PAY = re.compile(
     r"(?i)(?:pay|salary|compensation)\s+range|"
     r"\bbase\s+salary\b|"
     r"\bsalary\s+for\s+this\b|"
-    r"\bthis\s+(?:position|role|job)\s+pays\b"
+    r"\bthis\s+(?:position|role|job)\s+pays\b|"
+    r"\b(?:salary|compensation)\s*(?:is|:)|"
+    r"\bstarting\s+(?:pay|salary)\b"
+)
+_ATS_HREF = re.compile(
+    r"https?://(?:(?:job-boards|boards)\.greenhouse\.io|jobs\.lever\.co|"
+    r"jobs\.ashbyhq\.com|jobs\.smartrecruiters\.com|"
+    r"[a-z0-9-]+\.myworkdayjobs\.com)/[^\s\"'<>]+",
+    re.I,
+)
+_GH_BOARD = re.compile(
+    r"(?i)greenhouse\.io/(?:embed/[^\"'?]*\?[^\"']*\bfor=|job-board/js\?for=)([a-z0-9_-]+)"
 )
 
 
@@ -110,26 +124,62 @@ def parse_compensation(text: str) -> Compensation:
     return Compensation(pay_low=annual[0], pay_high=annual[1], hours=hours)
 
 
+def parse_listing_pay(html: str) -> Compensation:
+    """Employer-posted USD pay from visible listing copy. Invents nothing."""
+    text = _html_text(html)
+    if not text or is_aggregate_pay(text[:800]):
+        return Compensation()
+    return _labeled_compensation(text)
+
+
+def ats_source_url(url: str, html: str | None = None) -> str | None:
+    """Canonical ATS listing URL from a native host, embed query, or page HTML."""
+    if ats_json_url(url):
+        return canonicalize_url(url)
+    if not html:
+        return None
+    parts = urlsplit(canonicalize_url(url))
+    params = {k.lower(): v for k, v in parse_qsl(parts.query)}
+    job_id = params.get("gh_jid")
+    ashby_id = params.get("ashby_jid")
+    board_match = _GH_BOARD.search(html)
+    if board_match and job_id and job_id.isdigit():
+        return f"https://job-boards.greenhouse.io/{board_match.group(1)}/jobs/{job_id}"
+    found: list[str] = []
+    for match in _ATS_HREF.finditer(html):
+        candidate = canonicalize_url(match.group(0).rstrip(").,;"))
+        if not ats_json_url(candidate) or is_search_serp(candidate):
+            continue
+        if job_id and not _path_has_id(candidate, job_id):
+            continue
+        if ashby_id and not _path_has_id(candidate, ashby_id):
+            continue
+        if candidate not in found:
+            found.append(candidate)
+    if len(found) == 1:
+        return found[0]
+    return None
+
+
 def parse_job_posting(html: str) -> Compensation:
     """Employer-posted USD pay from schema.org JobPosting JSON-LD. Invents nothing."""
+    fallback = Compensation()
     for posting in _job_postings(html):
         hours = _schema_hours(posting)
         pay_low, pay_high = _schema_salary(posting.get("baseSalary"), hours)
-        if pay_low is None and pay_high is None and hours is None:
-            remote = _schema_remote(posting)
-            company = _schema_company(posting)
-            if remote is None and not company:
-                continue
-            return Compensation(hours=hours, remote=remote, company=company, title=_text(posting.get("title")))
-        return Compensation(
+        parsed = Compensation(
             pay_low=pay_low,
             pay_high=pay_high,
             hours=hours,
             remote=_schema_remote(posting),
             company=_schema_company(posting),
-            title=_text(posting.get("title")),
+            title=_text(posting.get("title")) or None,
         )
-    return Compensation()
+        if parsed.posted:
+            return parsed
+        if parsed.hours or parsed.remote is not None or parsed.company:
+            fallback = parsed
+    return fallback
 
 
 _LEVER_UNIT = {
@@ -150,6 +200,19 @@ _SR_PERIOD = {
     "WEEKLY": "WEEK",
     "DAILY": "DAY",
     "HOURLY": "HOUR",
+}
+# Ashby partner-feed interval enum. Skip NONE / 1 TIME / unknown.
+_ASHBY_UNIT = {
+    "1 YEAR": "YEAR",
+    "1 MONTH": "MONTH",
+    "2 MONTH": "2MONTH",
+    "3 MONTH": "3MONTH",
+    "6 MONTH": "6MONTH",
+    "0.5 MONTH": "HALFMONTH",
+    "1 WEEK": "WEEK",
+    "2 WEEK": "2WEEK",
+    "1 DAY": "DAY",
+    "1 HOUR": "HOUR",
 }
 
 
@@ -263,6 +326,8 @@ def _greenhouse_pay(payload) -> Compensation:
             continue
         if str(row.get("currency_type") or "USD").upper() not in _USD:
             continue
+        if _GH_SKIP_TITLE.search(_text(row.get("title"))):
+            continue
         low = _cents(row.get("min_cents"))
         high = _cents(row.get("max_cents"))
         if low is None and high is None:
@@ -279,7 +344,7 @@ def _greenhouse_pay(payload) -> Compensation:
 
 def _cents(value) -> float | None:
     amount = _number(value)
-    if amount is None:
+    if amount is None or amount == 0:
         return None
     return amount / 100.0
 
@@ -296,7 +361,12 @@ def _lever_pay(payload) -> Compensation:
         return Compensation(remote=remote, company=company, title=title or None)
     if str(sr.get("currency") or "USD").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
-    unit = _LEVER_UNIT.get(str(sr.get("interval") or "per-year-salary").lower(), "YEAR")
+    interval = sr.get("interval")
+    if not interval:
+        return Compensation(remote=remote, company=company, title=title or None)
+    unit = _LEVER_UNIT.get(str(interval).lower())
+    if unit is None:
+        return Compensation(remote=remote, company=company, title=title or None)
     low, high = _number(sr.get("min")), _number(sr.get("max"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
@@ -322,7 +392,10 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
             match = job
             break
     if match is None and len(jobs) == 1 and isinstance(jobs[0], dict):
-        match = jobs[0]
+        only = jobs[0]
+        only_id = str(only.get("id") or "")
+        if only_id == job_id or (not job_id and not only_id):
+            match = only
     if not isinstance(match, dict):
         return Compensation()
     title = _text(match.get("title"))
@@ -334,10 +407,12 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
         return Compensation(remote=remote, company=company, title=title or None)
     if str(salary.get("currencyCode") or "USD").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
-    interval = str(salary.get("interval") or "1 YEAR").upper().replace("1 ", "")
-    unit = {"YEAR": "YEAR", "MONTH": "MONTH", "WEEK": "WEEK", "DAY": "DAY", "HOUR": "HOUR"}.get(
-        interval, "YEAR"
-    )
+    raw_interval = salary.get("interval")
+    if not raw_interval:
+        return Compensation(remote=remote, company=company, title=title or None)
+    unit = _ASHBY_UNIT.get(str(raw_interval).upper())
+    if unit is None:
+        return Compensation(remote=remote, company=company, title=title or None)
     low, high = _number(salary.get("minValue")), _number(salary.get("maxValue"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
@@ -354,10 +429,22 @@ def _ashby_salary_row(comp: dict) -> dict | None:
     for tier in comp.get("compensationTiers") or []:
         if isinstance(tier, dict):
             rows.extend(tier.get("components") or [])
+    salary = None
+    commission = None
     for row in rows:
-        if isinstance(row, dict) and str(row.get("compensationType") or "") == "Salary":
-            return row
-    return None
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("compensationType") or "")
+        if kind == "Salary" and salary is None:
+            if row.get("minValue") is not None or row.get("maxValue") is not None:
+                salary = row
+        elif (
+            kind == "Commission"
+            and commission is None
+            and (row.get("minValue") is not None or row.get("maxValue") is not None)
+        ):
+            commission = row
+    return salary or commission
 
 
 def _workday_pay(payload) -> Compensation:
@@ -371,7 +458,6 @@ def _workday_pay(payload) -> Compensation:
     text = _html_text(info.get("jobDescription") or "")
     parsed = _labeled_compensation(text)
     if not parsed.posted:
-        return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
         return Compensation(hours=parsed.hours, remote=remote, company=company, title=title or None)
     return Compensation(
         pay_low=parsed.pay_low,
@@ -441,9 +527,15 @@ def _smartrecruiters_pay(payload) -> Compensation:
 
 def _html_text(html: str) -> str:
     text = unescape(html or "")
+    text = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", text)
+    text = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", text)
     text = re.sub(r"(?i)<br\s*/?>", "\n", text)
     text = re.sub(r"<[^>]+>", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _path_has_id(url: str, identifier: str) -> bool:
+    return identifier in (urlsplit(url).path.split("/"))
 
 
 def canonicalize_url(url: str) -> str:
@@ -658,13 +750,13 @@ def _schema_salary(block, hours: int | None) -> tuple[int | None, int | None]:
     if currency not in _USD:
         return None, None
     value = block.get("value")
-    if isinstance(value, dict):
-        unit = str(value.get("unitText") or "YEAR").upper()
-        low = _number(value.get("minValue", value.get("value")))
-        high = _number(value.get("maxValue", value.get("value")))
-    else:
-        unit = "YEAR"
-        low = high = _number(value)
+    if not isinstance(value, dict):
+        return None, None
+    unit = str(value.get("unitText") or "").upper()
+    if unit not in {"HOUR", "DAY", "WEEK", "MONTH", "YEAR"}:
+        return None, None
+    low = _number(value.get("minValue", value.get("value")))
+    high = _number(value.get("maxValue", value.get("value")))
     if low is None and high is None:
         return None, None
     if low is None:
@@ -682,7 +774,12 @@ def _to_annual(
     factor = {
         "YEAR": 1,
         "MONTH": 12,
+        "2MONTH": 6,
+        "3MONTH": 4,
+        "6MONTH": 2,
+        "HALFMONTH": 24,
         "WEEK": 50,
+        "2WEEK": 25,
         "DAY": 250,
         "HOUR": week * 50,
     }.get(unit)

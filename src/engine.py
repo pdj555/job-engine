@@ -14,12 +14,14 @@ from config.settings import settings
 from src.compensation import (
     Compensation,
     ats_json_url,
+    ats_source_url,
     canonicalize_url,
     is_aggregate_pay,
     is_search_serp,
     parse_ats_json,
     parse_compensation,
     parse_job_posting,
+    parse_listing_pay,
 )
 from src.models import Opportunity
 
@@ -102,7 +104,8 @@ class Engine:
         }
 
     async def _enrich_one(self, opp: Opportunity, client: httpx.AsyncClient) -> None:
-        ats = await self._fetch_ats(opp.url, client)
+        ats_url = ats_source_url(opp.url)
+        ats = await self._fetch_ats(ats_url or opp.url, client)
         if ats:
             _apply_comp(opp, ats, "ats")
             if ats.posted:
@@ -110,7 +113,16 @@ class Engine:
         html = await self._fetch_listing(opp.url, client)
         if not html:
             return
+        discovered = ats_source_url(opp.url, html)
+        if discovered and discovered != (ats_url or canonicalize_url(opp.url)):
+            nested = await self._fetch_ats(discovered, client)
+            if nested:
+                _apply_comp(opp, nested, "ats")
+                if nested.posted:
+                    return
         _apply_comp(opp, parse_job_posting(html), "schema")
+        if not opp.pay:
+            _apply_comp(opp, parse_listing_pay(html), "posted")
 
     async def _fetch_ats(self, url: str, client: httpx.AsyncClient) -> Compensation | None:
         endpoint = ats_json_url(url)
@@ -450,6 +462,7 @@ def search_angles(query: str) -> list[str]:
         f"{query} startup equity cofounder",
         f"{query} site:boards.greenhouse.io OR site:jobs.lever.co",
         f"{query} site:jobs.ashbyhq.com OR site:myworkdayjobs.com",
+        f"{query} site:jobs.smartrecruiters.com",
     ]
 
 
@@ -493,7 +506,7 @@ def _apply_comp(opp: Opportunity, parsed: Compensation, source: str) -> None:
         opp.pay_low = parsed.pay_low
         opp.pay_high = parsed.pay_high
         opp.pay_source = source
-    if parsed.hours and not opp.hours_per_week:
+    if parsed.hours is not None and opp.hours_per_week is None:
         opp.hours_per_week = parsed.hours
         opp.hours_source = source
     if parsed.remote is not None:

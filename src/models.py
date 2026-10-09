@@ -25,25 +25,29 @@ class Opportunity(BaseModel):
     # Metadata
     source: str = ""
     posted: Optional[datetime] = None
-    pay_source: Optional[str] = None  # "posted" | "schema" | None
+    pay_source: Optional[str] = None  # "posted" | "schema" | "ats" | None
     hours_source: Optional[str] = None
 
     @property
     def pay(self) -> Optional[int]:
-        """Best estimate of pay."""
-        return self.pay_high or self.pay_low
+        """Best estimate of pay: midpoint when both bounds are posted."""
+        if self.pay_low is not None and self.pay_high is not None:
+            return (self.pay_low + self.pay_high) // 2
+        if self.pay_high is not None:
+            return self.pay_high
+        return self.pay_low
 
     @property
     def dollars_per_hour(self) -> Optional[float]:
         """Strict $/hour. None unless both pay and hours are known."""
-        if not self.pay or not self.hours_per_week:
+        if self.pay is None or not self.hours_per_week:
             return None
         return self.pay / (self.hours_per_week * 50)
 
     @property
     def refined_rate(self) -> Optional[float]:
         """Displayable $/hour. Missing hours impute 40/wk. None if no pay."""
-        if not self.pay:
+        if self.pay is None:
             return None
         hours = self.hours_per_week or 40
         if hours == 0:
@@ -52,7 +56,7 @@ class Opportunity(BaseModel):
 
     @property
     def rate_is_imputed(self) -> bool:
-        return bool(self.pay) and self.hours_per_week is None
+        return self.pay is not None and self.hours_per_week is None
 
     def score(self) -> float:
         """Rank key: refined $/hour, then 30% penalty for office roles."""
