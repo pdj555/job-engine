@@ -47,7 +47,7 @@ export function ResultsList({
         <ul className="result-list">
           {shown.map((opp, i) => {
             const pct = maxScore > 0 ? (opp.score / maxScore) * 100 : 0;
-            const hours = opp.hours_per_week
+            const hours = opp.hours_per_week && !["snippet", "unverified"].includes(opp.hours_source ?? "")
               ? `${opp.hours_per_week}h/wk`
               : opp.rate_imputed
                 ? "~40h/wk"
@@ -59,8 +59,13 @@ export function ResultsList({
                   ? " schema"
                   : opp.pay_source === "posted"
                     ? " listed"
+                    : opp.pay_source === "snippet" || opp.pay_source === "unverified"
+                      ? " unverified"
                     : "";
-            const pay = `${formatPayRange(opp.pay_low, opp.pay_high, opp.pay)}/yr${origin}`;
+            const pay = `${opp.pay_is_annualized ? "~" : ""}${formatPayRange(opp.pay_low, opp.pay_high, opp.pay)}/yr${opp.pay_is_annualized ? " annualized" : ""}${origin}`;
+            const arrangement = opp.remote == null ? "remote unknown" : opp.remote
+              ? opp.remote_source === "snippet" || opp.remote_source === "unverified" ? "remote unverified" : "remote"
+              : "office / hybrid";
 
             return (
               <li key={opp.url} className="result-row">
@@ -78,7 +83,10 @@ export function ResultsList({
                           {opp.title}
                         </a>
                         <p className="hint mt-1 break-words">
-                          {opp.company ?? "—"} · {opp.remote ? "remote" : "onsite"} · {pay} · {hours}
+                          {opp.company ?? "—"} · {arrangement} · {pay} · {hours}
+                          {opp.pay_source_url && !["snippet", "unverified"].includes(opp.pay_source ?? "") && (
+                            <> · <a href={opp.pay_source_url} target="_blank" rel="noopener noreferrer" className="underline">pay source</a></>
+                          )}
                         </p>
                       </div>
                       <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">

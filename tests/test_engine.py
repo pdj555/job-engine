@@ -62,10 +62,10 @@ def test_extract_parses_posted_pay_and_hours():
     assert opp is not None
     assert opp.pay == 180_000
     assert opp.hours_per_week == 40
-    assert opp.pay_source == "posted"
-    assert opp.hours_source == "posted"
-    assert opp.dollars_per_hour == 90.0
-    assert opp.refined_rate == 90.0
+    assert opp.pay_source == "snippet"
+    assert opp.hours_source == "snippet"
+    assert opp.dollars_per_hour is None
+    assert opp.refined_rate is None
 
 
 def test_extract_ignores_perplexity_prose_pay():
@@ -147,7 +147,7 @@ def test_extract_keeps_real_listing_pay_with_board_noise():
     )
     assert linkedin is not None
     assert linkedin.pay == 180_000
-    assert linkedin.pay_source == "posted"
+    assert linkedin.pay_source == "snippet"
 
     greenhouse = opportunity_from_raw(
         {
@@ -159,7 +159,7 @@ def test_extract_keeps_real_listing_pay_with_board_noise():
     assert greenhouse is not None
     assert greenhouse.pay == 165_000
     assert (greenhouse.pay_low, greenhouse.pay_high) == (150_000, 180_000)
-    assert greenhouse.pay_source == "posted"
+    assert greenhouse.pay_source == "snippet"
 
 
 def test_extract_ignores_seo_title_pay_on_unknown_host():
@@ -179,7 +179,7 @@ def test_extract_ignores_seo_title_pay_on_unknown_host():
 def test_guess_remote_penalizes_onsite_signals():
     assert _guess_remote("Engineer", "hybrid schedule") is False
     assert _guess_remote("Engineer", "must be onsite") is False
-    assert _guess_remote("Engineer", "fully distributed team") is True
+    assert _guess_remote("Engineer", "fully distributed team") is None
 
 
 DDG_HTML = """
@@ -287,11 +287,14 @@ def test_find_drops_aggregator_seo_pay_below_real_listings():
 
     engine._search_all = fake_search
     engine._fetch_listing = no_fetch
-    engine._fetch_ats = no_fetch
+    async def verified_ats(url, client=None):
+        return Compensation(pay_low=90_000, pay_high=90_000, remote=True) if "lever.co" in url else None
+
+    engine._fetch_ats = verified_ats
     ranked = asyncio.run(engine.find("eng", limit=10))
     urls = [o.url for o in ranked]
     assert ranked[0].url == "https://jobs.lever.co/acme/abc"
-    assert ranked[0].pay_source == "posted"
+    assert ranked[0].pay_source == "ats"
     assert all("career.now" not in u and "linkedin.com/jobs/python" not in u for u in urls)
     acme = next(o for o in ranked if "careers.acme.com" in o.url)
     assert acme.pay is None
@@ -313,7 +316,7 @@ def test_find_ranks_posted_pay_above_thin_listings():
         ]
 
     async def no_fetch(url, client=None):
-        return None
+        return "<p>Base salary: $90k annually.</p>" if "listed" in url else None
 
     engine._search_all = fake_search
     engine._fetch_listing = no_fetch
@@ -349,7 +352,7 @@ def test_enrich_applies_jobposting_schema_when_snippet_has_no_pay():
     assert listed.score() == 80.0
 
 
-def test_enrich_does_not_override_posted_snippet_pay():
+def test_enrich_skips_already_verified_non_ats_listing():
     engine = Engine()
     fetched = []
 
@@ -365,6 +368,7 @@ def test_enrich_does_not_override_posted_snippet_pay():
         pay_source="posted",
         hours_per_week=40,
         hours_source="posted",
+        remote=True, remote_source="posted",
     )
     asyncio.run(engine.enrich([opp]))
     assert fetched == []
@@ -381,6 +385,7 @@ def test_enrich_ats_json_overrides_snippet_ceiling():
             url,
             {
                 "title": "Staff Software Engineer",
+                "offices": [{"name": "Remote - US"}],
                 "pay_input_ranges": [
                     {
                         "min_cents": 20_000_000,
@@ -517,7 +522,7 @@ def test_extract_batch_drops_ungrounded_urls():
     opps = asyncio.run(engine._extract_batch(batch, "eng"))
     assert [o.url for o in opps] == ["https://example.com/real"]
     assert opps[0].pay == 90_000
-    assert opps[0].pay_source == "posted"
+    assert opps[0].pay_source == "snippet"
 
 
 def test_extract_batch_does_not_trust_llm_title_pay():
@@ -652,11 +657,14 @@ def test_find_ranks_range_midpoint_not_ceiling():
         ]
 
     async def no_fetch(url, client=None):
-        return None
+        return "<p>Base salary: $120k-$200k annually.</p>" if "wide" in url else "<p>Base salary: $170k annually.</p>"
 
     engine._search_all = fake_search
     engine._fetch_listing = no_fetch
-    engine._fetch_ats = no_fetch
+    async def no_ats(url, client=None):
+        return None
+
+    engine._fetch_ats = no_ats
     ranked = asyncio.run(engine.find("eng", limit=10))
     assert [o.url for o in ranked] == ["https://example.com/point", "https://example.com/wide"]
     assert ranked[0].pay == 170_000
@@ -700,7 +708,7 @@ def test_find_ats_midpoint_outranks_snippet_ceiling():
         return None
 
     async def no_html(url, client=None):
-        return None
+        return "<p>Base salary: $230k annually.</p>" if "point" in url else None
 
     engine._search_all = fake_search
     engine._fetch_ats = fake_ats

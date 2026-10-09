@@ -41,13 +41,9 @@ _BENEFIT = re.compile(
 )
 _FOREIGN = re.compile(r"(?i)(?:£|€|¥|(?<![A-Z])(?:CAD|AUD|GBP|EUR))\s*[\d$]")
 _USD_MARK = re.compile(r"(?:USD|US\$|\$)\s*\d")
-_BARE_USD_RANGE = re.compile(
-    r"(?i)(?<![\d$])(\d{2,3})\s*k\s*(?:[-–—]|to)\s*(\d{2,3})\s*k\s*USD\b"
-)
+_BARE_USD_RANGE = re.compile(r"(?i)(?<![\d$])(\d{2,3})\s*k\s*(?:[-–—]|to)\s*(\d{2,3})\s*k\s*USD\b")
 _BARE_USD = re.compile(r"(?i)(?<![\d$])(\d{2,3})\s*k\s*USD\b")
-_HOURS = re.compile(
-    r"(?i)(\d{1,2}(?:\.\d)?)\s*(?:hours?|hrs?|h)\s*(?:/|per)?\s*(?:week|wk)"
-)
+_HOURS = re.compile(r"(?i)(\d{1,2}(?:\.\d)?)\s*(?:hours?|hrs?|h)\s*(?:/|per)?\s*(?:week|wk)")
 _AMOUNT = r"(?:USD|US\$|\$)\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s*[kK])?"
 _RANGE = re.compile(
     rf"{_AMOUNT}(?:\s*(?:USD|US\$))?\s*(?:[-–—]+|to)\s*(?:USD|US\$|\$)?\s*"
@@ -65,7 +61,17 @@ _LD_SCRIPT = re.compile(
     re.I | re.S,
 )
 _SCHEMA_HOURS = re.compile(r"(?i)(\d{1,2}(?:\.\d)?)\s*(?:hours?|hrs?)\b")
-_USD = {"", "USD", "US", "USA"}
+_USD = {"USD", "US", "USA"}
+_SYNDICATED_HOSTS = (
+    "indeed.com",
+    "linkedin.com",
+    "glassdoor.com",
+    "ziprecruiter.com",
+    "simplyhired.com",
+    "remoteai.io",
+    "jobgether.com",
+    "aitrainingjobs.org",
+)
 _AGGREGATE_PAY = re.compile(
     r"(?i)"
     r"(?:"
@@ -108,6 +114,7 @@ class Compensation:
     remote: bool | None = None
     company: str | None = None
     title: str | None = None
+    annualized: bool = False
 
     @property
     def posted(self) -> bool:
@@ -116,12 +123,21 @@ class Compensation:
 
 def parse_compensation(text: str) -> Compensation:
     """Extract explicit USD pay and weekly hours. Invents nothing."""
-    blob = _scrub_benefits(text or "")
+    text = text or ""
+    # Upper-only earning claims are not a representative base salary.
+    if re.search(r"(?i)\b(?:up to|potential earnings|on.target earnings)\b", text):
+        return Compensation(hours=_parse_hours(text))
+    blob = _scrub_benefits(text)
     hours = _parse_hours(blob)
     if _FOREIGN.search(blob) and not _USD_MARK.search(blob) and not _BARE_USD.search(blob):
         return Compensation(hours=hours)
     annual = _parse_annual(blob, hours)
-    return Compensation(pay_low=annual[0], pay_high=annual[1], hours=hours)
+    return Compensation(
+        pay_low=annual[0],
+        pay_high=annual[1],
+        hours=hours,
+        annualized=bool(re.search(r"(?i)\b(?:hr|hour|hourly)\b", blob) and annual[1] is not None),
+    )
 
 
 def parse_listing_pay(html: str) -> Compensation:
@@ -129,7 +145,36 @@ def parse_listing_pay(html: str) -> Compensation:
     text = _html_text(html)
     if not text or is_aggregate_pay(text[:800]):
         return Compensation()
-    return _labeled_compensation(text)
+    parsed = _labeled_compensation(text)
+    return Compensation(
+        pay_low=parsed.pay_low,
+        pay_high=parsed.pay_high,
+        hours=parsed.hours,
+        remote=parse_remote(text),
+        annualized=parsed.annualized,
+    )
+
+
+def parse_remote(text: str) -> bool | None:
+    """Explicit work arrangement; absence of office language is not remote evidence."""
+    if re.search(
+        r"(?i)\b(?:not\s+(?:fully\s+)?remote|no\s+remote|non.remote|on[ -]?site|"
+        r"in[ -]office|hybrid|office[ -]based|remote[ -]sensing)\b|"
+        r"\b(?:\d+|one|two|three|four|five)\s+days?\s+(?:a\s+week\s+)?(?:in\s+(?:the\s+)?office|onsite)\b",
+        text or "",
+    ):
+        return False
+    if re.search(
+        r"(?i)\b(?:fully|entirely|completely|100%)\s+remote\b|"
+        r"\bremote[ -]+(?:first|only|role|position|job|work|opportunity)\b|"
+        r"\b(?:role|position|job|location|workplace)\s*(?:is|:|-)\s*remote\b|"
+        r"\b(?:work(?:ing)?\s+remotely|telecommut\w*|work\s+from\s+home)\b",
+        text or "",
+    ):
+        return True
+    if len(text or "") < 160 and re.search(r"(?i)\bremote\b", text or ""):
+        return True
+    return None
 
 
 def ats_recoverable(url: str) -> bool:
@@ -182,6 +227,7 @@ def parse_job_posting(html: str) -> Compensation:
             remote=_schema_remote(posting),
             company=_schema_company(posting),
             title=_text(posting.get("title")) or None,
+            annualized=_schema_unit(posting.get("baseSalary")) not in {"", "YEAR"},
         )
         if parsed.posted:
             return parsed
@@ -258,7 +304,7 @@ def ats_json_url(url: str) -> str | None:
 
 def parse_ats_json(url: str, payload) -> Compensation:
     """Employer-posted USD pay from an ATS board JSON payload. Invents nothing."""
-    host = (urlsplit(canonicalize_url(url)).hostname or "")
+    host = urlsplit(canonicalize_url(url)).hostname or ""
     if host.endswith("greenhouse.io"):
         return _greenhouse_pay(payload)
     if host.endswith("lever.co"):
@@ -284,6 +330,12 @@ def is_search_serp(url: str) -> bool:
     parts = urlsplit(canonicalize_url(url))
     host = parts.hostname or ""
     path = (parts.path or "").lower()
+    if path.rstrip("/") in {"/jobs", "/v2/jobs", "/careers", "/remote-jobs"}:
+        return True
+    if re.match(r"^/(?:salaries|salary|find-work)(?:/|$)", path):
+        return True
+    if path.count("/") == 1 and path.rstrip("/").endswith("-jobs"):
+        return True
     if any(host.endswith(h) for h in _INDEX_HOSTS):
         return True
     if host.endswith("indeed.com"):
@@ -320,22 +372,48 @@ def is_search_serp(url: str) -> bool:
     return False
 
 
+def is_syndicated_listing(url: str) -> bool:
+    """Known aggregators require an employer/ATS counterpart before trusting pay."""
+    host = urlsplit(url).hostname or ""
+    if any(host == h or host.endswith("." + h) for h in _SYNDICATED_HOSTS):
+        return True
+    parts = [p.lower() for p in urlsplit(url).path.split("/") if p]
+    if (
+        host == "jobs.smartrecruiters.com"
+        and parts
+        and parts[0]
+        in {
+            "phillytechco",
+            "nextstepsystems",
+            "parallelpartners1",
+        }
+    ):
+        return True
+    return host.endswith("lever.co") and urlsplit(url).path.lower().startswith("/jobgether/")
+
+
 def _greenhouse_pay(payload) -> Compensation:
     if not isinstance(payload, dict):
         return Compensation()
     job = payload.get("job") if isinstance(payload.get("job"), dict) else payload
     title = _text(job.get("title"))
-    remote = None
+    remote = parse_remote(_html_text(job.get("content") or ""))
+    location = job.get("location") or {}
+    location_remote = parse_remote(
+        _text(location.get("name")) if isinstance(location, dict) else _text(location)
+    )
+    if remote is None:
+        remote = location_remote
     offices = job.get("offices") or []
     if isinstance(offices, list):
         names = " ".join(_text(o.get("name") if isinstance(o, dict) else o) for o in offices)
-        if "remote" in names.lower():
-            remote = True
+        if remote is None:
+            remote = parse_remote(names)
     usd = []
     for row in job.get("pay_input_ranges") or []:
         if not isinstance(row, dict):
             continue
-        if str(row.get("currency_type") or "USD").upper() not in _USD:
+        if str(row.get("currency_type") or "").upper() not in _USD:
             continue
         if _GH_SKIP_TITLE.search(_text(row.get("title"))):
             continue
@@ -364,13 +442,24 @@ def _lever_pay(payload) -> Compensation:
     if not isinstance(payload, dict):
         return Compensation()
     title = _text(payload.get("text") or payload.get("title"))
-    company = _text((payload.get("categories") or {}).get("team")) or None
+    company = _text(payload.get("company")) or None
     workplace = str(payload.get("workplaceType") or "").upper()
-    remote = True if workplace in {"REMOTE", "TELECOMMUTE"} else None
+    remote = (
+        True
+        if workplace in {"REMOTE", "TELECOMMUTE"}
+        else False
+        if workplace in {"ONSITE", "ON-SITE", "HYBRID"}
+        else None
+    )
+    described = parse_remote(
+        _html_text(payload.get("description") or payload.get("descriptionPlain") or "")
+    )
+    if remote is None or described is False:
+        remote = described
     sr = payload.get("salaryRange")
     if not isinstance(sr, dict):
         return Compensation(remote=remote, company=company, title=title or None)
-    if str(sr.get("currency") or "USD").upper() not in _USD:
+    if str(sr.get("currency") or "").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
     interval = sr.get("interval")
     if not interval:
@@ -381,11 +470,18 @@ def _lever_pay(payload) -> Compensation:
     low, high = _number(sr.get("min")), _number(sr.get("max"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
-    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    annual = _to_annual(
+        low if low is not None else high, high if high is not None else low, unit, None
+    )
     if not annual:
         return Compensation(remote=remote, company=company, title=title or None)
     return Compensation(
-        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company, title=title or None
+        pay_low=annual[0],
+        pay_high=annual[1],
+        remote=remote,
+        company=company,
+        title=title or None,
+        annualized=unit != "YEAR",
     )
 
 
@@ -410,13 +506,27 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
     if not isinstance(match, dict):
         return Compensation()
     title = _text(match.get("title"))
-    company = _text(match.get("departmentName")) or None
-    remote = True if match.get("isRemote") is True else None
+    company = _text(match.get("companyName")) or None
+    workplace = str(match.get("workplaceType") or "").lower()
+    remote = (
+        True
+        if workplace == "remote"
+        else False
+        if workplace in {"hybrid", "onsite"}
+        else match.get("isRemote")
+    )
+    if not isinstance(remote, bool):
+        remote = None
+    described = parse_remote(
+        _html_text(match.get("descriptionHtml") or match.get("descriptionPlain") or "")
+    )
+    if remote is None or described is False:
+        remote = described
     comp = match.get("compensation") if isinstance(match.get("compensation"), dict) else {}
     salary = _ashby_salary_row(comp)
     if salary is None:
         return Compensation(remote=remote, company=company, title=title or None)
-    if str(salary.get("currencyCode") or "USD").upper() not in _USD:
+    if str(salary.get("currencyCode") or "").upper() not in _USD:
         return Compensation(remote=remote, company=company, title=title or None)
     raw_interval = salary.get("interval")
     if not raw_interval:
@@ -427,11 +537,18 @@ def _ashby_pay(payload, job_id: str) -> Compensation:
     low, high = _number(salary.get("minValue")), _number(salary.get("maxValue"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company, title=title or None)
-    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    annual = _to_annual(
+        low if low is not None else high, high if high is not None else low, unit, None
+    )
     if not annual:
         return Compensation(remote=remote, company=company, title=title or None)
     return Compensation(
-        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company, title=title or None
+        pay_low=annual[0],
+        pay_high=annual[1],
+        remote=remote,
+        company=company,
+        title=title or None,
+        annualized=unit != "YEAR",
     )
 
 
@@ -441,7 +558,6 @@ def _ashby_salary_row(comp: dict) -> dict | None:
         if isinstance(tier, dict):
             rows.extend(tier.get("components") or [])
     salary = None
-    commission = None
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -449,20 +565,18 @@ def _ashby_salary_row(comp: dict) -> dict | None:
         if kind == "Salary" and salary is None:
             if row.get("minValue") is not None or row.get("maxValue") is not None:
                 salary = row
-        elif (
-            kind == "Commission"
-            and commission is None
-            and (row.get("minValue") is not None or row.get("maxValue") is not None)
-        ):
-            commission = row
-    return salary or commission
+    return salary
 
 
 def _workday_pay(payload) -> Compensation:
     if not isinstance(payload, dict):
         return Compensation()
     info = payload.get("jobPostingInfo") if isinstance(payload.get("jobPostingInfo"), dict) else {}
-    org = payload.get("hiringOrganization") if isinstance(payload.get("hiringOrganization"), dict) else {}
+    org = (
+        payload.get("hiringOrganization")
+        if isinstance(payload.get("hiringOrganization"), dict)
+        else {}
+    )
     title = _text(info.get("title"))
     company = _text(org.get("name")) or None
     remote = _workday_remote(info)
@@ -477,19 +591,24 @@ def _workday_pay(payload) -> Compensation:
         remote=remote,
         company=company,
         title=title or None,
+        annualized=parsed.annualized,
     )
 
 
 def _workday_remote(info: dict) -> bool | None:
     remote_type = _text(info.get("remoteType")).upper()
-    if "REMOTE" in remote_type or "TELECOMMUTE" in remote_type:
+    arrangement = parse_remote(remote_type)
+    described = parse_remote(_html_text(info.get("jobDescription") or ""))
+    if arrangement is False or described is False:
+        return False
+    if arrangement is True:
         return True
     loc = _text(info.get("location"))
     if re.search(r"(?i)\b(?:not\s+remote|on-?site|hybrid)\b", loc):
-        return None
+        return False
     if re.search(r"(?i)(?:^|\b)remote\b", loc):
         return True
-    return None
+    return described
 
 
 def _labeled_compensation(text: str) -> Compensation:
@@ -505,7 +624,12 @@ def _labeled_compensation(text: str) -> Compensation:
             continue
         parsed = parse_compensation(sentence)
         if parsed.posted:
-            return Compensation(pay_low=parsed.pay_low, pay_high=parsed.pay_high, hours=hours)
+            return Compensation(
+                pay_low=parsed.pay_low,
+                pay_high=parsed.pay_high,
+                hours=hours,
+                annualized=parsed.annualized,
+            )
     return Compensation(hours=hours)
 
 
@@ -516,7 +640,20 @@ def _smartrecruiters_pay(payload) -> Compensation:
     company = payload.get("company")
     company_name = _text(company.get("name") if isinstance(company, dict) else company) or None
     loc = payload.get("location") if isinstance(payload.get("location"), dict) else {}
-    remote = True if loc.get("remote") is True else None
+    remote = (
+        False
+        if loc.get("hybrid") is True
+        else loc.get("remote")
+        if isinstance(loc.get("remote"), bool)
+        else None
+    )
+    sections = (payload.get("jobAd") or {}).get("sections") or {}
+    text = " ".join(
+        _html_text(s.get("text") or "") for s in sections.values() if isinstance(s, dict)
+    )
+    described = parse_remote(text)
+    if remote is None or described is False:
+        remote = described
     comp = payload.get("compensation")
     if not isinstance(comp, dict):
         return Compensation(remote=remote, company=company_name, title=title or None)
@@ -528,11 +665,18 @@ def _smartrecruiters_pay(payload) -> Compensation:
     low, high = _number(comp.get("min")), _number(comp.get("max"))
     if low is None and high is None:
         return Compensation(remote=remote, company=company_name, title=title or None)
-    annual = _to_annual(low if low is not None else high, high if high is not None else low, unit, None)
+    annual = _to_annual(
+        low if low is not None else high, high if high is not None else low, unit, None
+    )
     if not annual:
         return Compensation(remote=remote, company=company_name, title=title or None)
     return Compensation(
-        pay_low=annual[0], pay_high=annual[1], remote=remote, company=company_name, title=title or None
+        pay_low=annual[0],
+        pay_high=annual[1],
+        remote=remote,
+        company=company_name,
+        title=title or None,
+        annualized=unit != "YEAR",
     )
 
 
@@ -564,9 +708,7 @@ def canonicalize_url(url: str) -> str:
     query = parse_qsl(parts.query, keep_blank_values=True)
     host, path, query = _ats_shape(host, path, query)
     keep = []
-    drop_all = host.endswith(
-        ("greenhouse.io", "lever.co", "ashbyhq.com", "myworkdayjobs.com")
-    )
+    drop_all = host.endswith(("greenhouse.io", "lever.co", "ashbyhq.com", "myworkdayjobs.com"))
     for key, value in query:
         low = key.lower()
         if drop_all or low.startswith("utm_") or low in _TRACKING:
@@ -680,8 +822,10 @@ def _ats_shape(
     params = {k.lower(): v for k, v in query}
     if host in {"boards.greenhouse.io", "job-boards.greenhouse.io"}:
         host = "job-boards.greenhouse.io"
-        if path.rstrip("/").endswith("/embed/job_app") and params.get("for") and params.get(
-            "token"
+        if (
+            path.rstrip("/").endswith("/embed/job_app")
+            and params.get("for")
+            and params.get("token")
         ):
             path = f"/{params['for']}/jobs/{params['token']}"
         return host, path, []
@@ -778,9 +922,7 @@ def _schema_salary(block, hours: int | None) -> tuple[int | None, int | None]:
     return (annual[0], annual[1]) if annual else (None, None)
 
 
-def _to_annual(
-    low: float, high: float, unit: str, hours: int | None
-) -> tuple[int, int] | None:
+def _to_annual(low: float, high: float, unit: str, hours: int | None) -> tuple[int, int] | None:
     week = hours or 40
     factor = {
         "YEAR": 1,
@@ -799,11 +941,22 @@ def _to_annual(
     return _clamp_annual(low * factor, high * factor)
 
 
+def _schema_unit(block) -> str:
+    if isinstance(block, list) and block:
+        block = block[0]
+    if not isinstance(block, dict) or not isinstance(block.get("value"), dict):
+        return ""
+    return str(block["value"].get("unitText") or "").upper()
+
+
 def _schema_remote(posting: dict) -> bool | None:
     location_type = _text(posting.get("jobLocationType")).upper()
-    if "TELECOMMUTE" in location_type:
+    described = parse_remote(_html_text(posting.get("description") or ""))
+    if described is False:
+        return False
+    if location_type == "TELECOMMUTE":
         return True
-    return None
+    return parse_remote(location_type) if location_type else described
 
 
 def _schema_company(posting: dict) -> str | None:

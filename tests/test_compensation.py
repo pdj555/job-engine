@@ -512,7 +512,7 @@ def test_parse_workday_job_description_pay():
         "https://adobe.wd5.myworkdayjobs.com/external_experienced/job/San-Jose/Role_R1",
         {"jobPostingInfo": {"location": "Onsite (not remote)", "jobDescription": ""}},
     )
-    assert onsite.remote is None
+    assert onsite.remote is False
 
 
 def test_parse_smartrecruiters_compensation():
@@ -800,7 +800,7 @@ def test_parse_ashby_documented_intervals_annualize():
     assert (hourly.pay_low, hourly.pay_high) == (150_000, 180_000)
 
 
-def test_parse_ashby_commission_when_salary_absent():
+def test_parse_ashby_skips_commission_when_salary_absent():
     commission = parse_ats_json(
         "https://jobs.ashbyhq.com/acme/job-1",
         {
@@ -835,7 +835,7 @@ def test_parse_ashby_commission_when_salary_absent():
             ]
         },
     )
-    assert (commission.pay_low, commission.pay_high) == (80_000, 120_000)
+    assert not commission.posted
     salary_wins = parse_ats_json(
         "https://jobs.ashbyhq.com/acme/job-1",
         {
@@ -915,7 +915,7 @@ def test_parse_ashby_commission_when_salary_absent():
             ]
         },
     )
-    assert (salary_empty.pay_low, salary_empty.pay_high) == (80_000, 120_000)
+    assert not salary_empty.posted
 
 
 def test_parse_ashby_skips_unmatched_board_job():
