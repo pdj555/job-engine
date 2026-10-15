@@ -44,9 +44,8 @@ tests and UI while preserving the branch history. The merged baseline passed all
 - Local marketplace install succeeded in an isolated Claude configuration. Claude
   discovered `jobhunter` and `hunt` as the two skill/command components.
 - The plugin runtime installed from the Claude cache as a wheel. Both CLIs and
-  engine/config/plugin imports worked from outside the repository. The initial
-  installed build passed its 161-test suite on Python 3.14; final-build validation
-  is recorded separately when repeated after review fixes.
+  engine/config/plugin imports worked from outside the repository. The final
+  installed build passed all 175 tests on Python 3.14 from outside the checkout.
 - A live Google Sheet dry run requires selecting the installer's Google account.
   Unit tests use mocked Google transport and do not establish a live write.
 
