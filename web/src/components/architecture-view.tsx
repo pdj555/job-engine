@@ -1,9 +1,9 @@
 import { Panel } from "./panel";
 
 const STACK: [string, string][] = [
-  ["brain", "Hermes Agent — autonomous web research"],
-  ["transport", "OpenAI-compatible API"],
-  ["ranking", "deterministic · Opportunity.score()"],
+  ["brain", "OpenAI Agents SDK — plans web searches"],
+  ["transport", "search_web tool · Engine fallback"],
+  ["ranking", "midpoint of posted/ATS/schema pay · Opportunity.score()"],
   ["surfaces", "CLI · API · Web"],
 ];
 
@@ -19,7 +19,7 @@ export function ArchitectureView() {
 
           <div className="flow-node">
             <span className="flow-zone">autonomous</span>
-            <span className="flow-title">Hermes Agent</span>
+            <span className="flow-title">OpenAI Agents SDK</span>
             <span className="flow-sub">plan · research the open web · extract</span>
           </div>
 
@@ -32,7 +32,7 @@ export function ArchitectureView() {
             <span className="flow-title">
               rank · <b>$/hour</b>
             </span>
-            <span className="flow-sub">office −30% · thin listings sink</span>
+            <span className="flow-sub">midpoint of posted/ATS/schema pay · office −30%</span>
           </div>
 
           <span className="flow-arrow" aria-hidden>

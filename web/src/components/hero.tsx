@@ -22,9 +22,9 @@ export function Hero({
         </h1>
 
         <p className="about">
-          Search contracts, grants, and roles across sources. Every listing is ranked by
-          effective hourly rate — annual compensation divided by expected hours — so
-          opportunities compare on equal footing. Track applications from search to offer.
+          Search contracts, grants, and roles across sources. Rank uses pay stated
+          on the listing or schema.org JobPosting — never a seniority guess — divided
+          by hours so opportunities compare on equal footing.
         </p>
 
         <Panel label="Search Progress" className="mt-auto">

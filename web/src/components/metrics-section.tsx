@@ -1,7 +1,7 @@
 "use client";
 
 import type { Opportunity } from "@/lib/types";
-import { formatRate } from "@/lib/format";
+import { formatRate, isListed } from "@/lib/format";
 import { LineChart } from "./line-chart";
 
 function series(values: number[], points = 16): number[] {
@@ -39,11 +39,11 @@ function MetricCell({
 
 export function MetricsSection({ results }: { results: Opportunity[] }) {
   const idle = results.length === 0;
-  const rates = results.map((r) => r.dollars_per_hour ?? 0).filter((r) => r > 0);
-  const avg = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
-  const remotePct = results.length
-    ? Math.round((results.filter((r) => r.remote).length / results.length) * 100)
+  const rates = results.map((r) => r.refined_rate ?? 0).filter((r) => r > 0);
+  const listedPct = results.length
+    ? Math.round((results.filter((r) => isListed(r.pay_source)).length / results.length) * 100)
     : 0;
+  const avg = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
   const top = rates.length ? Math.max(...rates) : 0;
 
   return (
@@ -57,9 +57,11 @@ export function MetricsSection({ results }: { results: Opportunity[] }) {
           active={!idle}
         />
         <MetricCell
-          title="Remote"
-          value={idle ? "—" : `${remotePct}%`}
-          data={series(idle ? [] : results.map((r) => (r.remote ? 100 : 0)))}
+          title="Listed pay"
+          value={idle ? "—" : `${listedPct}%`}
+          data={series(
+            idle ? [] : results.map((r) => (isListed(r.pay_source) ? 100 : 0)),
+          )}
           active={!idle}
         />
         <MetricCell

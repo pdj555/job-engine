@@ -63,10 +63,39 @@ def display(opportunities: list[Opportunity]):
     table.add_column("$/hr", style="bold magenta", justify="right")
 
     for i, opp in enumerate(opportunities, 1):
-        pay = f"${opp.pay:,}" if opp.pay else "?"
-        hours = str(opp.hours_per_week) if opp.hours_per_week else "?"
-        efficiency = f"${opp.dollars_per_hour:.0f}" if opp.dollars_per_hour else "?"
-        remote_tag = "" if opp.remote else " [red](office)[/red]"
+        if opp.pay_low is not None and opp.pay_high is not None and opp.pay_low != opp.pay_high:
+            pay = f"${opp.pay_low:,}–${opp.pay_high:,}"
+        elif opp.pay is not None:
+            pay = f"${opp.pay:,}"
+        else:
+            pay = "?"
+        if opp.pay_source in {"snippet", "unverified"}:
+            pay += " (unverified)"
+        elif opp.pay_is_annualized:
+            pay = "~" + pay + " (annualized)"
+        if opp.pay is not None and opp.pay_source in ("posted", "schema", "ats"):
+            pay = f"{pay}*"
+        if opp.hours_per_week and opp.hours_source not in {"snippet", "unverified"}:
+            hours = str(opp.hours_per_week)
+        elif opp.rate_is_imputed:
+            hours = "~40"
+        else:
+            hours = "?"
+        if opp.refined_rate is None:
+            efficiency = "?"
+        elif opp.rate_is_imputed:
+            efficiency = f"~${opp.refined_rate:.0f}"
+        else:
+            efficiency = f"${opp.refined_rate:.0f}"
+        remote_tag = (
+            " [red](office)[/red]"
+            if opp.remote is False
+            else " (remote ?)"
+            if opp.remote is None
+            else ""
+            if opp.remote_source not in {"snippet", "unverified"}
+            else " (remote unverified)"
+        )
 
         table.add_row(
             str(i),
@@ -78,12 +107,19 @@ def display(opportunities: list[Opportunity]):
         )
 
     console.print(table)
+    if any(o.pay_source in ("posted", "schema", "ats") for o in opportunities):
+        console.print("[dim]* pay stated on the listing, ATS, or JobPosting schema[/dim]")
     console.print()
 
     # Show top 3 URLs
     console.print("[bold]Top picks:[/bold]")
     for i, opp in enumerate(opportunities[:3], 1):
-        eff = f"${opp.dollars_per_hour:.0f}/hr" if opp.dollars_per_hour else ""
+        if opp.refined_rate is None:
+            eff = ""
+        elif opp.rate_is_imputed:
+            eff = f"~${opp.refined_rate:.0f}/hr"
+        else:
+            eff = f"${opp.refined_rate:.0f}/hr"
         console.print(f"  {i}. {opp.title[:50]}")
         console.print(f"     [dim]{opp.url}[/dim]")
         if eff:
@@ -97,10 +133,10 @@ def agent(
     limit: int = typer.Option(15, "-n", help="Results"),
 ):
     """
-    Find opportunities autonomously via the Hermes Agent brain.
+    Find opportunities autonomously.
 
-    The agent plans its own searches, extracts opportunities, and ranks by
-    $/hour. Requires a running Hermes Agent server (see docs/AGENT.md).
+    Plans its own searches, then ranks by $/hour. Uses the OpenAI Agents SDK
+    when OPENAI_API_KEY is set; otherwise the same open-web path as `find`.
     """
     from src.agent import agent_find
 
@@ -118,7 +154,6 @@ def agent(
                 results = await agent_find(query, limit)
             except Exception as e:
                 console.print(f"[red]Agent error:[/red] {e}")
-                console.print("[dim]Is Hermes Agent running? See docs/AGENT.md[/dim]")
                 return
 
         if not results:
@@ -148,6 +183,7 @@ def research(url: str = typer.Argument(..., help="URL to research")):
 def serve(port: int = typer.Option(8000, "-p")):
     """Start API server."""
     import uvicorn
+
     console.print(f"[green]Starting on :{port}[/green]")
     uvicorn.run("src.api.routes:app", host="0.0.0.0", port=port)
 

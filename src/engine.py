@@ -5,12 +5,31 @@ import json
 import re
 from html import unescape
 from typing import Optional
+from urllib.parse import urlsplit
 
 import httpx
 from openai import AsyncOpenAI
 
-from src.models import Opportunity
 from config.settings import settings
+from src.compensation import (
+    Compensation,
+    ats_json_url,
+    ats_recoverable,
+    ats_source_url,
+    canonicalize_url,
+    is_aggregate_pay,
+    is_search_serp,
+    is_syndicated_listing,
+    parse_ats_json,
+    parse_compensation,
+    parse_job_posting,
+    parse_listing_pay,
+    parse_remote,
+)
+from src.models import Opportunity
+
+_LISTING_CAP = 600_000
+_FETCH_CONCURRENCY = 8
 
 
 class Engine:
@@ -23,7 +42,9 @@ class Engine:
     """
 
     def __init__(self):
-        self.openai = AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
+        self.openai = (
+            AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
+        )
         self.brave_key = settings.brave_api_key
         self.perplexity_key = settings.perplexity_api_key
 
@@ -33,25 +54,124 @@ class Engine:
 
         That's all you need to know.
         """
-        # Search everything in parallel
         raw_results = await self._search_all(query)
-
-        # Extract structured data
         opportunities = await self._extract_opportunities(raw_results, query)
+        await self.enrich(opportunities)
+        return rank_opportunities(opportunities, query, limit)
 
-        # Rank by efficiency ($/hour)
-        ranked = sorted(opportunities, key=lambda x: x.score(), reverse=True)
+    async def search_web(self, query: str) -> list[dict]:
+        """One web search. Brave, or DuckDuckGo when no Brave key."""
+        return await self._search_brave(query)
 
-        return ranked[:limit]
+    async def enrich(self, opportunities: list[Opportunity]) -> None:
+        """Verify snippet pay and work arrangements against the actual listing."""
+        need = [
+            o
+            for o in opportunities
+            if o.pay is None
+            or o.pay_source in {"snippet", "unverified"}
+            or o.remote_source not in {"ats", "schema", "posted"}
+            or ats_recoverable(o.url)
+        ]
+        if not need:
+            return
+        sem = asyncio.Semaphore(_FETCH_CONCURRENCY)
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=8.0,
+            headers={"User-Agent": "JobEngine/1.0 (listing-schema)"},
+            max_redirects=3,
+        ) as client:
+
+            async def one(opp: Opportunity) -> None:
+                async with sem:
+                    await self._enrich_one(opp, client)
+
+            await asyncio.gather(*(one(o) for o in need), return_exceptions=True)
+
+    async def read_listing(self, url: str) -> dict:
+        """Posted pay/hours for one listing URL. Invents nothing."""
+        url = canonicalize_url(url)
+        if not url:
+            return {"url": "", "pay_source": None, "pay": None, "hours_per_week": None}
+        opp = Opportunity(title="Unknown", url=url, description="")
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=8.0,
+            headers={"User-Agent": "JobEngine/1.0 (listing-schema)"},
+            max_redirects=3,
+        ) as client:
+            await self._enrich_one(opp, client)
+        return {
+            "url": opp.url,
+            "title": opp.title if opp.title != "Unknown" else None,
+            "company": opp.company,
+            "pay": opp.pay,
+            "pay_low": opp.pay_low,
+            "pay_high": opp.pay_high,
+            "hours_per_week": opp.hours_per_week,
+            "remote": opp.remote,
+            "pay_source": opp.pay_source,
+            "pay_source_url": opp.pay_source_url,
+            "pay_is_annualized": opp.pay_is_annualized,
+            "hours_source": opp.hours_source,
+            "remote_source": opp.remote_source,
+        }
+
+    async def _enrich_one(self, opp: Opportunity, client: httpx.AsyncClient) -> None:
+        ats_url = ats_source_url(opp.url)
+        ats = await self._fetch_ats(ats_url or opp.url, client)
+        if ats:
+            source = "unverified" if is_syndicated_listing(ats_url or opp.url) else "ats"
+            _apply_comp(opp, ats, source, ats_json_url(ats_url or opp.url))
+            if source == "ats" and ats.posted and ats.remote is not None:
+                return
+        html = await self._fetch_listing(opp.url, client)
+        if not html:
+            return
+        discovered = ats_source_url(opp.url, html)
+        if discovered and discovered != (ats_url or canonicalize_url(opp.url)):
+            nested = await self._fetch_ats(discovered, client)
+            if nested:
+                source = "unverified" if is_syndicated_listing(discovered) else "ats"
+                _apply_comp(opp, nested, source, ats_json_url(discovered))
+                if source == "ats" and nested.posted and nested.remote is not None:
+                    return
+        syndicated = is_syndicated_listing(opp.url)
+        _apply_comp(opp, parse_job_posting(html), "unverified" if syndicated else "schema", opp.url)
+        _apply_comp(opp, parse_listing_pay(html), "unverified" if syndicated else "posted", opp.url)
+
+    async def _fetch_ats(self, url: str, client: httpx.AsyncClient) -> Compensation | None:
+        endpoint = ats_json_url(url)
+        if not endpoint:
+            return None
+        try:
+            resp = await client.get(endpoint, headers={"Accept": "application/json"})
+            if resp.status_code >= 400:
+                return None
+            return parse_ats_json(url, resp.json())
+        except Exception:
+            return None
+
+    async def _fetch_listing(self, url: str, client: httpx.AsyncClient) -> str | None:
+        parts = urlsplit(url)
+        if parts.scheme not in ("http", "https") or not parts.hostname or "." not in parts.hostname:
+            return None
+        try:
+            resp = await client.get(url)
+            if resp.status_code >= 400:
+                return None
+            ctype = (resp.headers.get("content-type") or "").lower()
+            if ctype and not any(kind in ctype for kind in ("html", "json", "xml", "text")):
+                return None
+            text = resp.text
+            return text[:_LISTING_CAP] if len(text) > _LISTING_CAP else text
+        except Exception:
+            return None
 
     async def _search_all(self, query: str) -> list[dict]:
         """Search all sources in parallel."""
-        searches = [
-            self._search_brave(f"{query} remote job hiring"),
-            self._search_brave(f"{query} freelance contract"),
-            self._search_brave(f"{query} grant funding opportunity"),
-            self._search_brave(f"{query} startup equity cofounder"),
-        ]
+        searches = [self._search_brave(angle) for angle in search_angles(query)]
 
         if self.perplexity_key:
             searches.append(self._search_perplexity(query))
@@ -63,14 +183,13 @@ class Engine:
             if isinstance(r, list):
                 all_results.extend(r)
 
-        # Dedupe by URL
         seen = set()
         unique = []
         for r in all_results:
-            url = r.get("url", "")
+            url = canonicalize_url(r.get("url", ""))
             if url and url not in seen:
                 seen.add(url)
-                unique.append(r)
+                unique.append({**r, "url": url})
 
         return unique
 
@@ -85,7 +204,7 @@ class Engine:
                     "https://api.search.brave.com/res/v1/web/search",
                     params={"q": query, "count": 20, "freshness": "pm"},
                     headers={"X-Subscription-Token": self.brave_key},
-                    timeout=30.0
+                    timeout=30.0,
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -95,7 +214,7 @@ class Engine:
                         "title": r.get("title", ""),
                         "url": r.get("url", ""),
                         "description": r.get("description", ""),
-                        "source": "brave"
+                        "source": "brave",
                     }
                     for r in data.get("web", {}).get("results", [])
                 ]
@@ -124,7 +243,7 @@ class Engine:
                 return []
 
     async def _search_perplexity(self, query: str) -> list[dict]:
-        """Deep search with Perplexity."""
+        """Deep search with Perplexity. URLs and text only — never estimated pay."""
         if not self.perplexity_key:
             return []
 
@@ -139,12 +258,9 @@ Return as JSON array with objects containing:
 - title
 - company (if known)
 - url
-- description
-- estimated_pay (annual USD, just a number)
-- estimated_hours_per_week (just a number)
 - remote (boolean)
 
-Only return the JSON array, nothing else."""
+Only return the JSON array, nothing else. Do not invent compensation or copy pay into titles."""
 
         async with httpx.AsyncClient() as client:
             try:
@@ -152,21 +268,19 @@ Only return the JSON array, nothing else."""
                     "https://api.perplexity.ai/chat/completions",
                     headers={
                         "Authorization": f"Bearer {self.perplexity_key}",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
                     json={
                         "model": "llama-3.1-sonar-large-128k-online",
                         "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.1
+                        "temperature": 0.1,
                     },
-                    timeout=60.0
+                    timeout=60.0,
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
 
-                # Parse JSON from response
                 try:
-                    # Find JSON array in response
                     start = content.find("[")
                     end = content.rfind("]") + 1
                     if start >= 0 and end > start:
@@ -175,13 +289,12 @@ Only return the JSON array, nothing else."""
                             {
                                 "title": r.get("title", ""),
                                 "url": r.get("url", ""),
-                                "description": r.get("description", ""),
-                                "pay": r.get("estimated_pay"),
-                                "hours": r.get("estimated_hours_per_week"),
+                                "description": "",
                                 "remote": r.get("remote", True),
-                                "source": "perplexity"
+                                "source": "perplexity",
                             }
-                            for r in data if r.get("url")
+                            for r in data
+                            if r.get("url")
                         ]
                 except json.JSONDecodeError:
                     pass
@@ -191,61 +304,36 @@ Only return the JSON array, nothing else."""
                 return []
 
     async def _extract_opportunities(
-        self,
-        raw_results: list[dict],
-        query: str
+        self, raw_results: list[dict], query: str
     ) -> list[Opportunity]:
         """Extract structured opportunities from raw results."""
         if not raw_results:
             return []
 
-        # If we have OpenAI, use it to extract structured data
         if self.openai:
             return await self._extract_with_llm(raw_results, query)
+        return [o for r in raw_results if (o := opportunity_from_raw(r))]
 
-        # Otherwise, create basic opportunities with conservative guesses
-        return [
-            Opportunity(
-                title=r.get("title", "Unknown"),
-                url=r.get("url", ""),
-                description=r.get("description", ""),
-                company=r.get("company"),
-                pay_high=r.get("pay") or _guess_pay(r.get("title", ""), r.get("description", "")),
-                hours_per_week=r.get("hours")
-                or _guess_hours(r.get("title", ""), r.get("description", "")),
-                remote=r.get("remote", _guess_remote(r.get("title", ""), r.get("description", ""))),
-                source=r.get("source", "")
-            )
-            for r in raw_results if r.get("url")
-        ]
-
-    async def _extract_with_llm(
-        self,
-        raw_results: list[dict],
-        query: str
-    ) -> list[Opportunity]:
+    async def _extract_with_llm(self, raw_results: list[dict], query: str) -> list[Opportunity]:
         """Use LLM to extract structured opportunity data."""
-        # Process in batches
         batch_size = 10
         all_opportunities = []
 
         for i in range(0, len(raw_results), batch_size):
-            batch = raw_results[i:i + batch_size]
+            batch = raw_results[i : i + batch_size]
             opportunities = await self._extract_batch(batch, query)
             all_opportunities.extend(opportunities)
 
         return all_opportunities
 
-    async def _extract_batch(
-        self,
-        batch: list[dict],
-        query: str
-    ) -> list[Opportunity]:
+    async def _extract_batch(self, batch: list[dict], query: str) -> list[Opportunity]:
         """Extract opportunities from a batch of results."""
-        batch_text = "\n\n".join([
-            f"Title: {r.get('title', '')}\nURL: {r.get('url', '')}\nDescription: {r.get('description', '')}"
-            for r in batch
-        ])
+        batch_text = "\n\n".join(
+            [
+                f"Title: {r.get('title', '')}\nURL: {r.get('url', '')}\nDescription: {r.get('description', '')}"
+                for r in batch
+            ]
+        )
 
         prompt = f"""Extract opportunity data from these search results.
 User is looking for: {query}
@@ -256,15 +344,11 @@ Results:
 For each result, extract:
 - title
 - company (if mentioned)
-- url
-- pay_low (annual USD estimate, null if unknown)
-- pay_high (annual USD estimate, null if unknown)
-- hours_per_week (estimate, null if unknown)
-- remote (true/false, assume true if not specified)
+- url (must be copied exactly from the result above)
+- remote (true/false/null; null if not specified)
 
-Return JSON array. Be aggressive estimating pay/hours from context clues.
-If it looks like full-time, assume 40hrs. If senior role, estimate $150k+.
-Only return valid JSON array."""
+Return JSON array. Do not invent compensation.
+Only include urls that appear in the results."""
 
         try:
             response = await self.openai.chat.completions.create(
@@ -272,48 +356,38 @@ Only return valid JSON array."""
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0,
                 max_tokens=2000,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
 
             content = response.choices[0].message.content
-
-            # Parse response
             data = json.loads(content)
-            items = data if isinstance(data, list) else data.get("opportunities", data.get("results", []))
+            items = (
+                data
+                if isinstance(data, list)
+                else data.get("opportunities", data.get("results", []))
+            )
 
+            by_url = {canonicalize_url(r["url"]): r for r in batch if r.get("url")}
             opportunities = []
             for item in items:
-                if not item.get("url"):
+                raw = by_url.get(canonicalize_url(item.get("url") or ""))
+                if not raw:
                     continue
-
-                opp = Opportunity(
-                    title=item.get("title", "Unknown"),
-                    company=item.get("company"),
-                    url=item.get("url"),
-                    description=item.get("description", ""),
-                    pay_low=item.get("pay_low"),
-                    pay_high=item.get("pay_high"),
-                    hours_per_week=item.get("hours_per_week"),
-                    remote=item.get("remote", True),
-                    source="extracted"
-                )
-                opp.efficiency = opp.dollars_per_hour
-                opportunities.append(opp)
-
+                parsed = opportunity_from_raw({**raw, "source": "extracted"})
+                if not parsed:
+                    continue
+                title = item.get("title")
+                if title and not parse_compensation(title).posted:
+                    parsed.title = title
+                if item.get("company"):
+                    parsed.company = item["company"]
+                # Work arrangement comes from the hit/listing, never model guesses.
+                opportunities.append(parsed)
             return opportunities
 
         except Exception as e:
             print(f"LLM extraction error: {e}")
-            # Fallback to basic extraction
-            return [
-                Opportunity(
-                    title=r.get("title", "Unknown"),
-                    url=r.get("url", ""),
-                    description=r.get("description", ""),
-                    source=r.get("source", "")
-                )
-                for r in batch if r.get("url")
-            ]
+            return [o for r in batch if (o := opportunity_from_raw(r))]
 
     async def research(self, opportunity: Opportunity) -> str:
         """Deep dive on a specific opportunity."""
@@ -321,7 +395,7 @@ Only return valid JSON array."""
             return "Perplexity API key required for deep research."
 
         prompt = f"""Research this opportunity:
-{opportunity.title} at {opportunity.company or 'Unknown Company'}
+{opportunity.title} at {opportunity.company or "Unknown Company"}
 URL: {opportunity.url}
 
 Tell me:
@@ -339,14 +413,14 @@ Be direct. No fluff."""
                     "https://api.perplexity.ai/chat/completions",
                     headers={
                         "Authorization": f"Bearer {self.perplexity_key}",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
                     json={
                         "model": "llama-3.1-sonar-large-128k-online",
                         "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.1
+                        "temperature": 0.1,
                     },
-                    timeout=60.0
+                    timeout=60.0,
                 )
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"]
@@ -392,32 +466,108 @@ def _parse_ddg_html(html: str) -> list[dict]:
     return results[:20]
 
 
-def _guess_pay(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("senior", "staff", "principal", "lead")):
-        return 180_000
-    if any(w in text for w in ("junior", "entry", "intern")):
-        return 90_000
-    if any(w in text for w in ("contract", "freelance", "consultant")):
-        return 130_000
-    return 120_000
+def search_angles(query: str) -> list[str]:
+    """Open-web angles plus ATS hosts that expose posted pay JSON."""
+    return [
+        f"{query} remote job hiring",
+        f"{query} freelance contract",
+        f"{query} grant funding opportunity",
+        f"{query} startup equity cofounder",
+        f"{query} site:boards.greenhouse.io OR site:jobs.lever.co",
+        f"{query} site:jobs.ashbyhq.com OR site:myworkdayjobs.com",
+        f"{query} site:jobs.smartrecruiters.com",
+    ]
 
 
-def _guess_hours(title: str, description: str) -> int:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("contract", "freelance", "part-time", "part time")):
-        return 30
-    return 40
+def opportunity_from_raw(raw: dict, listing_text: str | None = None) -> Opportunity | None:
+    """Build an opportunity from a search hit. Pay/hours only if the text states them."""
+    url = canonicalize_url(raw.get("url", ""))
+    if not url or is_search_serp(url):
+        return None
+    title = raw.get("title") or "Unknown"
+    if re.search(r"(?i)\bsalary\s+(?:guide|report|calculator)\b", title):
+        return None
+    description = raw.get("description") or ""
+    source = raw.get("source") or ""
+    if listing_text is None and source == "perplexity":
+        listing_text = ""
+    if listing_text is None and is_aggregate_pay(title):
+        parsed = Compensation()
+    else:
+        blob = f"{title} {description}" if listing_text is None else listing_text
+        parsed = parse_compensation(blob)
+    remote = _guess_remote(title, description)
+    if remote is None and isinstance(raw.get("remote"), bool):
+        remote = raw["remote"]
+    provenance = "posted" if listing_text is not None else "snippet"
+    opp = Opportunity(
+        title=title,
+        url=url,
+        description=description,
+        company=raw.get("company"),
+        pay_low=parsed.pay_low,
+        pay_high=parsed.pay_high,
+        hours_per_week=parsed.hours,
+        remote=remote,
+        source=source,
+        pay_source=provenance if parsed.posted else None,
+        pay_source_url=url if parsed.posted else None,
+        pay_is_annualized=parsed.annualized,
+        hours_source=provenance if parsed.hours else None,
+        remote_source=provenance if remote is not None else None,
+    )
+    opp.efficiency = opp.dollars_per_hour
+    return opp
 
 
-def _guess_remote(title: str, description: str) -> bool:
-    text = f"{title} {description}".lower()
-    if any(w in text for w in ("onsite", "on-site", "in-office", "in office", "hybrid")):
-        return False
-    return True
+def _apply_comp(
+    opp: Opportunity, parsed: Compensation, source: str, source_url: str | None = None
+) -> None:
+    priority = {None: 0, "snippet": 0, "unverified": 0, "posted": 1, "schema": 2, "ats": 3}
+    if parsed.posted and priority.get(source, 0) >= priority.get(opp.pay_source, 0):
+        opp.pay_low = parsed.pay_low
+        opp.pay_high = parsed.pay_high
+        opp.pay_source = source
+        opp.pay_source_url = source_url
+        opp.pay_is_annualized = parsed.annualized
+        if parsed.title:
+            opp.title = parsed.title
+    if parsed.hours is not None and (
+        opp.hours_per_week is None or opp.hours_source in {"snippet", "unverified"}
+    ):
+        opp.hours_per_week = parsed.hours
+        opp.hours_source = source
+    if parsed.remote is not None and (
+        parsed.remote is False
+        or opp.remote is not False
+        or opp.remote_source not in {"ats", "schema", "posted"}
+    ):
+        opp.remote = parsed.remote
+        opp.remote_source = source
+    if parsed.company and not opp.company:
+        opp.company = parsed.company
+    if parsed.title and opp.title in {"Unknown", ""}:
+        opp.title = parsed.title
+    opp.efficiency = opp.dollars_per_hour
 
 
-# Singleton
+def _guess_remote(title: str, description: str) -> bool | None:
+    return parse_remote(f"{title} {description}")
+
+
+def rank_opportunities(
+    opportunities: list[Opportunity], query: str, limit: int
+) -> list[Opportunity]:
+    """Filter remote goals on verified evidence, then rank and apply the limit."""
+    if re.search(r"(?i)\bremote\b|\bwork\s+from\s+home\b", query):
+        opportunities = [
+            o
+            for o in opportunities
+            if o.remote is True and o.remote_source in {"ats", "schema", "posted"}
+        ]
+    return sorted(opportunities, key=lambda o: o.score(), reverse=True)[:limit]
+
+
 _engine: Optional[Engine] = None
 
 

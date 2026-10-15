@@ -1,6 +1,6 @@
 """API - one endpoint that matters."""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -37,10 +37,19 @@ def _payload(results: list[Opportunity]) -> dict:
                 "company": o.company,
                 "url": o.url,
                 "pay": o.pay,
+                "pay_low": o.pay_low,
+                "pay_high": o.pay_high,
                 "hours_per_week": o.hours_per_week,
                 "dollars_per_hour": o.dollars_per_hour,
+                "refined_rate": o.refined_rate,
+                "rate_imputed": o.rate_is_imputed,
                 "remote": o.remote,
                 "score": o.score(),
+                "pay_source": o.pay_source,
+                "pay_source_url": o.pay_source_url,
+                "pay_is_annualized": o.pay_is_annualized,
+                "hours_source": o.hours_source,
+                "remote_source": o.remote_source,
             }
             for o in results
         ],
@@ -55,14 +64,16 @@ async def root():
 
 @app.get("/health")
 async def health():
+    openai = bool(settings.openai_api_key)
     return {
         "status": "ok",
         "apis": {
-            "openai": bool(settings.openai_api_key),
+            "openai": openai,
             "brave": bool(settings.brave_api_key),
             "perplexity": bool(settings.perplexity_api_key),
         },
         "search_ready": True,
+        "agent_ready": openai,
     }
 
 
@@ -88,16 +99,11 @@ async def agent_search(req: SearchRequest):
     """
     Autonomous agent search.
 
-    The Hermes Agent brain plans searches, extracts opportunities, and ranks
-    them by $/hour. Returns the same shape as /search.
+    Plans its own web searches (OpenAI Agents SDK when OPENAI_API_KEY is set,
+    otherwise the open-web engine), then ranks by $/hour. Same shape as /search
+    plus `searches`.
     """
     from src.agent import agent_run
 
-    try:
-        run = await agent_run(req.q, req.limit)
-    except Exception as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Agent unavailable (is Hermes Agent running?): {e}",
-        ) from e
+    run = await agent_run(req.q, req.limit)
     return {**_payload(run.ranked), "searches": run.searches}
