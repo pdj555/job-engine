@@ -1,0 +1,12 @@
+{
+  "name": "jobhunter-marketplace",
+  "metadata": {"description": "Install Jobhunter for verified job hunts and a personal application tracker."},
+  "owner": {"name": "Preston Jones"},
+  "plugins": [
+    {
+      "name": "jobhunter",
+      "source": "./",
+      "description": "Verified job hunts and a personal Google Sheets application pipeline."
+    }
+  ]
+}

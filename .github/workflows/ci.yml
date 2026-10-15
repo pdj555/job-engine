@@ -20,4 +20,6 @@ jobs:
       - name: Unit tests
         run: python -m pytest -q
       - name: CLI smoke
-        run: job-engine --help
+        run: |
+          job-engine --help
+          jobhunter --help

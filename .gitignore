@@ -79,3 +79,9 @@ logs/
 .DS_Store
 Thumbs.db
 .vercel/
+
+# Jobhunter installer state and Google OAuth material
+.jobhunter/
+google-token.json
+client_secret*.json
+credentials.json

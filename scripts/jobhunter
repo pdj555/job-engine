@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+state_dir=${JOBHUNTER_HOME:-"$HOME/.local/share/jobhunter"}
+if [ ! -x "$state_dir/runtime/bin/jobhunter" ]; then
+    printf '%s\n' 'Install jobhunter first with scripts/install.sh from the plugin root.' >&2
+    exit 1
+fi
+exec "$state_dir/runtime/bin/jobhunter" "$@"

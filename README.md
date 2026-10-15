@@ -1,5 +1,16 @@
 # Job Engine
 
+Install it as **jobhunter**, a Claude Code plugin with strict evidence gates,
+repeat hunts, deduplication and your own Google Sheets application tracker:
+
+```sh
+claude plugin marketplace add pdj555/job-engine
+claude plugin install jobhunter@jobhunter-marketplace
+```
+
+Then describe your job goal to `/jobhunter:jobhunter`. See
+[the plugin setup guide](docs/JOBHUNTER.md) for Google OAuth and scheduled hunts.
+
 Find roles, contracts, grants, and equity — ranked by what they truly pay per hour.
 
 ```mermaid

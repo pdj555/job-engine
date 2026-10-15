@@ -1,0 +1,10 @@
+{
+  "name": "jobhunter",
+  "version": "0.1.0",
+  "description": "Hunt for verified roles, rank by dollars per hour, and track applications in your own Google Sheet.",
+  "author": {"name": "Preston Jones"},
+  "repository": "https://github.com/pdj555/job-engine",
+  "license": "MIT",
+  "keywords": ["jobs", "remote", "salary", "google-sheets"],
+  "skills": ["./"]
+}
