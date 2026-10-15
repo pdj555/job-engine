@@ -46,8 +46,19 @@ tests and UI while preserving the branch history. The merged baseline passed all
 - The plugin runtime installed from the Claude cache as a wheel. Both CLIs and
   engine/config/plugin imports worked from outside the repository. The final
   installed build passed all 175 tests on Python 3.14 from outside the checkout.
-- A live Google Sheet dry run requires selecting the installer's Google account.
-  Unit tests use mocked Google transport and do not establish a live write.
+- Live dry run: the locally installed plugin wrote three synthetic roles to a
+  separate Google Sheet in the user's selected Personal account. Readback matched
+  the adapter's output: one qualified role at $80/hour, and two unverified roles
+  with blank score cells. A repeat was silent, made no Sheets requests, and left
+  exactly three rows. The live seen registry was untouched.
+- The installed tracker command changed a fixture's state to `interviewing` and
+  its notes; Google readback confirmed the change. The fixture was then restored
+  to `shortlisted`. The native dropdown contained all seven pipeline states.
+- Live verification used a session-boundary adapter to the user's connected
+  Google account. Search fixtures, CLI behavior, gates, ranking, deduplication,
+  registry, Sheets serialization and tracker code ran from the installed package.
+  Desktop OAuth consent/refresh is unit-tested; a new desktop consent flow was
+  not performed during this integration check. No credentials were copied.
 
 ## Deliberate limits
 
