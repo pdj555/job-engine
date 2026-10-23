@@ -11,13 +11,13 @@ claude plugin install jobhunter@jobhunter-marketplace
 Then describe your job goal to `/jobhunter:jobhunter`. See
 [the plugin setup guide](docs/JOBHUNTER.md) for Google OAuth and scheduled hunts.
 
-Find roles, contracts, grants, and equity — ranked by what they truly pay per hour.
+Find roles, contracts, grants, and equity — ranked by what they pay per hour.
 
 ```mermaid
 flowchart LR
   G([goal]) --> S[search<br/>multi-source web]
   G --> A[agent<br/>plans searches]
-  S --> R{{rank · $/hour}}
+  S --> R{{rank by $/hour}}
   A --> R
   R --> O([CLI · API · Web])
 ```
@@ -54,7 +54,7 @@ These checks establish pay and work-arrangement evidence, not employer quality, 
 
 ## Autonomous agent
 
-Hand the search to an autonomous brain:
+Hand the search to the autonomous agent:
 
 ```bash
 job-engine agent "senior ML contract, remote"
@@ -73,13 +73,13 @@ flowchart LR
   A -->|searches + opportunities| D
 
   subgraph D[deterministic · code owns the math]
-    R{{rank · $/hour · office −30%}}
+    R{{rank by $/hour · office −30%}}
   end
 
   D --> O([CLI · API · Web])
 ```
 
-The brain decides *what* to surface; the deterministic core owns *the $/hour* — it never invents a number it's graded on.
+The agent decides *what* to surface; the deterministic core owns *the $/hour* — it never invents a number it's graded on.
 
 ## API & Web
 

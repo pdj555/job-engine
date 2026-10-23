@@ -1,7 +1,7 @@
 # Autonomous Opportunity Agent
 
 job-engine's core is `search → extract → rank by $/hour`. The agent path
-hands *finding* to an in-process brain and keeps *ranking* in Python.
+hands *finding* to an in-process agent and keeps *ranking* in Python.
 
 ```
 goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportunities}
@@ -13,7 +13,7 @@ goal ─▶ OPENAI AGENTS SDK (or Engine fallback) ─▶ {searches, opportuniti
 
 ## Why a client-side tool loop
 
-The previous brain was an external [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+The previous agent ran as an external [Hermes Agent](https://github.com/NousResearch/hermes-agent)
 server. It is not running in Cloud Agents or on Vercel, so `/agent` failed with a
 connection error. [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 is the in-process tool loop: the model calls `search_web` (Brave, or DuckDuckGo
