@@ -1,7 +1,6 @@
 # Job Engine
 
-Install it as **jobhunter**, a Claude Code plugin with strict evidence gates,
-repeat hunts, deduplication and your own Google Sheets application tracker:
+Install it as **jobhunter**, a Claude Code plugin with repeat hunts, deduplication and your own Google Sheets application tracker:
 
 ```sh
 claude plugin marketplace add pdj555/job-engine
@@ -11,7 +10,7 @@ claude plugin install jobhunter@jobhunter-marketplace
 Then describe your job goal to `/jobhunter:jobhunter`. See
 [the plugin setup guide](docs/JOBHUNTER.md) for Google OAuth and scheduled hunts.
 
-Find roles, contracts, grants, and equity — ranked by what they pay per hour.
+Find roles, contracts, grants, and equity, ranked by what they pay per hour.
 
 ```mermaid
 flowchart LR
@@ -29,7 +28,7 @@ pip install -e .
 job-engine find "AI engineer"
 ```
 
-Runs with zero configuration — it falls back to open web search. Add keys to sharpen results:
+Runs with zero configuration. It falls back to open web search. Add keys for structured extraction and richer search:
 
 ```bash
 export OPENAI_API_KEY=sk-...     # structured extraction
@@ -66,20 +65,20 @@ The [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) plans it
 flowchart LR
   G([goal]) --> A
 
-  subgraph A[autonomous · agent decides what]
+  subgraph A[autonomous · agent decides what to surface]
     H[plan · research web · extract]
   end
 
   A -->|searches + opportunities| D
 
-  subgraph D[deterministic · code owns the math]
-    R{{rank by $/hour · office −30%}}
+  subgraph D[deterministic · code calculates $/hour]
+    R{{rank by $/hour · office −30% if remote not required}}
   end
 
   D --> O([CLI · API · Web])
 ```
 
-The agent decides *what* to surface; the deterministic core owns *the $/hour* — it never invents a number it's graded on.
+The agent decides what to surface. The code calculates the $/hour from the listing evidence; the agent does not supply the pay figures.
 
 ## API & Web
 
@@ -92,7 +91,7 @@ curl "localhost:8000/search?q=AI+engineer"
 cd web && npm install && npm run dev        # UI → :3000
 ```
 
-Both halves deploy to Vercel from this repo — the UI (root directory `web/`) and the API (repo root, FastAPI via Fluid Compute). Point the UI's `JOB_ENGINE_API_URL` at the API deployment.
+Both parts deploy to Vercel from this repo: the UI (root directory `web/`) and the API (repo root, FastAPI via Fluid Compute). Point the UI's `JOB_ENGINE_API_URL` at the API deployment.
 
 ## Develop
 
